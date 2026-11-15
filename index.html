@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SILENCE_PROTOCOL // SOMA_LINK</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@300;400;500;600;700&display=swap');
+        .font-mono-tech { font-family: 'Share Tech Mono', monospace; }
+        body { font-family: 'Inter', sans-serif; background-color: #0b0708; color: #d1c5c6; overscroll-behavior: none; }
+        .crt::after {
+            content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 0, 0, 0.01), rgba(255, 0, 0, 0.02));
+            z-index: 99999; background-size: 100% 3px, 3px 100%; pointer-events: none;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+        .animate-shake { animation: shake 0.25s ease-in-out; }
+        @keyframes eq { 0%, 100% { height: 12%; } 50% { height: 100%; } }
+        .eq-bar { width: 6px; height: 12%; background: linear-gradient(#ef4444, #7f1d1d); border-radius: 2px; animation: eq 0.9s ease-in-out infinite; }
+        ::-webkit-scrollbar { width: 3px; }
+        ::-webkit-scrollbar-track { background: #12090b; }
+        ::-webkit-scrollbar-thumb { background: #7f1d1d; }
+    </style>
+</head>
+<body class="crt min-h-screen flex flex-col items-center justify-center p-0 md:p-4">
+
+    <!-- БЛОКИРОВКА ПОМОЩИ ("ЧЕСОТКА БЕССИЛИЯ") -->
+    <div id="block-modal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-6">
+        <div id="block-card" class="w-full max-w-sm bg-[#14080a] border border-red-500/80 p-6 rounded-2xl space-y-4 shadow-2xl text-center">
+            <div class="text-red-500 font-mono-tech text-xs tracking-widest uppercase">// ПРОТОКОЛ БЕЗОПАСНОСТИ SOMA_LINK</div>
+            <h3 class="text-base font-bold text-white">Прямой контакт заблокирован</h3>
+            <p class="text-xs text-gray-300 leading-relaxed">
+                Система запрещает перевод средств, передачу контактов и спасательство. Ваша единственная задача в NEEO_CITY — наблюдать.
+            </p>
+            <div class="bg-black/50 p-3 rounded-xl text-[11px] font-mono-tech text-red-400 border border-red-500/20">
+                Доступны только реакции для прокачки ранга.
+            </div>
+            <button onclick="closeBlockModal()" class="w-full py-2.5 bg-red-950/60 hover:bg-red-900/80 border border-red-500/50 text-red-200 text-xs font-mono-tech rounded-xl transition">
+                ПРИНЯТЬ БЕССИЛИЕ И ПРОДОЛЖИТЬ
+            </button>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО ПУБЛИКАЦИИ (666 СИМВОЛОВ) -->
+    <div id="post-modal" class="hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="w-full max-w-md bg-[#12080a] border border-red-500/50 p-5 rounded-2xl space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center">
+                <span class="text-xs font-mono-tech text-red-400 uppercase">// РЕЖИМ «ЗОВ»</span>
+                <button onclick="closePostModal()" class="text-gray-500 hover:text-white text-sm">✕</button>
+            </div>
+            <p class="text-xs text-gray-400">
+                Опишите свою реальную проблему или страх. Пост уйдет в общую сеть. Никто не сможет вам помочь — люди будут только смотреть.
+            </p>
+            <div class="space-y-1.5">
+                <input id="new-pain-tag" maxlength="24" placeholder="Свой тег (необязательно)" class="w-full bg-[#080405] border border-red-500/30 focus:border-red-500 rounded-xl px-3 py-2 text-xs text-white outline-none font-mono-tech uppercase">
+                <div id="tag-chips" class="flex flex-wrap gap-1.5"></div>
+            </div>
+            <textarea id="new-pain-text" rows="5" maxlength="666" oninput="updateCharCount()" placeholder="Выплесните то, о чем молчите..." class="w-full bg-[#080405] border border-red-500/30 focus:border-red-500 rounded-xl p-3 text-sm text-white outline-none resize-none font-mono-tech"></textarea>
+            <div class="flex justify-between items-center text-[11px] text-gray-500 font-mono-tech">
+                <span class="text-red-400/80">Анонимный сигнал</span>
+                <span id="char-count" class="text-red-400 font-bold">0 / 666</span>
+            </div>
+            <button id="send-btn" onclick="submitPainPost()" class="w-full py-3 bg-red-950 hover:bg-red-900 border border-red-500/60 text-red-200 font-bold text-xs font-mono-tech uppercase tracking-wider rounded-xl transition">
+                ОТПРАВИТЬ СИГНАЛ В ПУСТОТУ
+            </button>
+            <button onclick="openSafety()" class="w-full text-[10px] text-gray-500 hover:text-red-300 font-mono-tech">🛟 мне тяжело — что делать?</button>
+        </div>
+    </div>
+
+    <!-- ПАСХАЛКА: 10 ПОПЫТОК ПОМОЧЬ -->
+    <div id="egg-modal" class="hidden fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-6">
+        <div class="w-full max-w-sm bg-[#0b0708] border border-amber-400/70 p-6 rounded-2xl space-y-4 shadow-2xl text-center">
+            <div class="text-amber-400 font-mono-tech text-xs tracking-widest">// СБОЙ ПРОТОКОЛА</div>
+            <h3 class="text-base font-bold text-white">Вы нарушитель</h3>
+            <p class="text-xs text-gray-300 leading-relaxed">Десять попыток помочь. Система не рассчитана на тех, кто не готов просто смотреть. Настоящая помощь существует только за пределами SOMA_LINK: напишите живому человеку, который молчит.</p>
+            <div class="bg-black/50 p-3 rounded-xl text-[11px] font-mono-tech text-amber-300 border border-amber-400/30">Статус: НАРУШИТЕЛЬ ПРОТОКОЛА // +100 XP</div>
+            <button onclick="shareEgg()" class="w-full py-2.5 bg-amber-950/50 hover:bg-amber-900/60 border border-amber-400/50 text-amber-200 text-xs font-mono-tech rounded-xl transition">РАССКАЗАТЬ ДРУГИМ</button>
+            <button onclick="closeEgg(); openMusic()" class="w-full py-2 text-amber-300/70 text-[11px] font-mono-tech tracking-widest">▸ ПРИНЯТЬ СИГНАЛ</button>
+            <button onclick="closeEgg()" class="w-full py-2 text-gray-500 text-xs font-mono-tech">ЗАКРЫТЬ</button>
+        </div>
+    </div>
+
+    <!-- ПОМОЩЬ РЯДОМ -->
+    <div id="safety-modal" class="hidden fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4">
+        <div class="w-full max-w-md max-h-[88vh] overflow-y-auto bg-[#0b0708] border border-red-500/40 p-5 rounded-2xl space-y-3 shadow-2xl">
+            <div class="flex justify-between items-center">
+                <span class="text-xs font-mono-tech text-red-400 uppercase">// ПОМОЩЬ РЯДОМ</span>
+                <button onclick="closeSafety()" class="text-gray-500 hover:text-white text-sm">✕</button>
+            </div>
+            <div id="safety-auto" class="hidden text-[11px] text-amber-300 font-mono-tech border border-amber-400/30 rounded-xl p-2.5">В вашем сообщении звучит очень тяжёлая боль. Пожалуйста, прочитайте это до конца.</div>
+            <p class="text-xs text-gray-300 leading-relaxed">SOMA LINK — художественный проект и игра, а не служба помощи. Он не заменяет живого человека и специалиста. Если боль настоящая, не оставайтесь с ней один на один.</p>
+            <div class="text-[11px] font-mono-tech text-red-400 pt-1">ПРЯМО СЕЙЧАС (2–3 МИНУТЫ)</div>
+            <ul class="text-xs text-gray-300 leading-relaxed space-y-1.5 list-disc pl-4">
+                <li>Дыхание: вдох на 4 счёта, выдох на 6. Повторите 5–6 раз.</li>
+                <li>Заземление 5-4-3-2-1: назовите 5 предметов, которые видите, 4, которых можете коснуться, 3 звука, 2 запаха, 1 вкус.</li>
+                <li>Выпейте воды, откройте окно, выйдите на пару минут на воздух.</li>
+            </ul>
+            <div class="text-[11px] font-mono-tech text-red-400 pt-1">НЕ МОЛЧИТЕ</div>
+            <p class="text-xs text-gray-300 leading-relaxed">Напишите или позвоните человеку, которому доверяете: «Мне тяжело, просто выслушай». Решения не нужны, достаточно, чтобы вас услышали.</p>
+            <div class="text-[11px] font-mono-tech text-red-400 pt-1">СПЕЦИАЛИСТ</div>
+            <p class="text-xs text-gray-300 leading-relaxed">Психолог, психотерапевт или врач — особенно если тяжесть держится больше двух недель, нарушены сон и аппетит, пропал интерес к жизни.</p>
+            <div class="text-[11px] font-mono-tech text-red-400 pt-1">ЕСЛИ ЕСТЬ МЫСЛИ НАВРЕДИТЬ СЕБЕ</div>
+            <p class="text-xs text-gray-300 leading-relaxed">Это срочно. Не оставайтесь одни: попросите кого-нибудь быть рядом и позвоните.</p>
+            <div class="text-xs font-mono-tech text-gray-200 space-y-1 bg-black/50 border border-red-500/20 rounded-xl p-3">
+                <div>112 — экстренная помощь (Россия)</div>
+                <div>8-800-2000-122 — бесплатно, анонимно (для детей и подростков)</div>
+                <div>8-800-333-44-34 — кризисная линия по России</div>
+            </div>
+            <button onclick="openExt('https://findahelpline.com')" class="w-full py-2.5 bg-red-950/60 border border-red-500/50 text-red-200 text-xs font-mono-tech rounded-xl">НАЙТИ ЛИНИЮ ПОМОЩИ В ВАШЕЙ СТРАНЕ</button>
+            <button onclick="closeSafety()" class="w-full py-2 text-gray-500 text-xs font-mono-tech">ЗАКРЫТЬ</button>
+        </div>
+    </div>
+
+    <!-- ПАСХАЛКА: ПЕРЕХВАЧЕННЫЙ СИГНАЛ (МУЗЫКА) -->
+    <div id="music-modal" class="hidden fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-6">
+        <div class="w-full max-w-sm bg-[#0b0708] border border-red-500/70 p-6 rounded-2xl space-y-4 shadow-2xl text-center">
+            <div class="text-red-400 font-mono-tech text-xs tracking-widest">// ПЕРЕХВАЧЕН СИГНАЛ</div>
+            <div id="music-eq" class="flex items-end justify-center gap-1 h-14"></div>
+            <h3 id="music-name" class="text-lg font-bold text-white tracking-widest font-mono-tech">NEEOSOMA</h3>
+            <p class="text-xs text-gray-300 leading-relaxed">Весь этот шум не случаен. У NEEO_CITY есть голос, и он звучит там, где нет ленты и реакций. Включи звук и просто послушай.</p>
+            <div id="music-bonus" class="hidden bg-black/50 p-2 rounded-xl text-[11px] font-mono-tech text-amber-300 border border-amber-400/30">Частота найдена // +50 XP</div>
+            <div id="music-links" class="space-y-2"></div>
+            <button onclick="shareMusic()" class="w-full py-2 bg-red-950/50 border border-red-500/40 text-red-200 text-[11px] font-mono-tech rounded-xl">РАССКАЗАТЬ ДРУГИМ</button>
+            <button onclick="closeMusic()" class="w-full py-1.5 text-gray-500 text-xs font-mono-tech">ЗАКРЫТЬ</button>
+        </div>
+    </div>
+
+    <!-- ТРЕНАЖЁР «СЛУШАТЕЛЬ» -->
+    <div id="trainer-modal" class="hidden fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4">
+        <div class="w-full max-w-md max-h-[88vh] overflow-y-auto bg-[#0b0708] border border-red-500/40 p-5 rounded-2xl space-y-3 shadow-2xl">
+            <div class="flex justify-between items-center">
+                <span class="text-xs font-mono-tech text-red-400 uppercase">// ТРЕНАЖЁР «СЛУШАТЕЛЬ»</span>
+                <button onclick="closeTrainer()" class="text-gray-500 hover:text-white text-sm">✕</button>
+            </div>
+            <div id="trainer-body" class="space-y-3"></div>
+        </div>
+    </div>
+
+    <!-- ОСНОВНОЙ ИНТЕРФЕЙС -->
+    <div class="w-full max-w-md bg-[#0e0608] md:border md:border-red-500/30 md:rounded-3xl shadow-2xl flex flex-col h-screen md:h-[840px] overflow-hidden relative">
+        
+        <!-- СТАТУС-БАР -->
+        <div class="bg-[#12080a] px-4 py-3 border-b border-red-500/20 space-y-2">
+            <div class="flex justify-between items-center text-[11px] font-mono-tech">
+                <div class="flex items-center space-x-2 text-red-400">
+                    <button onclick="pulseTap()" class="w-6 h-6 flex items-center justify-center -ml-1"><span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span></button>
+                    <span id="user-badge">@GUEST</span>
+                    <button id="snd-btn" onclick="toggleSound()" class="text-xs opacity-80 pl-1">🔊</button>
+                </div>
+                <div class="text-red-400 font-bold" id="rank-title">УР. 1 // СЛУЧАЙНЫЙ ПРОХОЖИЙ</div>
+            </div>
+            <div class="w-full bg-[#080405] h-1.5 rounded-full overflow-hidden border border-red-950">
+                <div id="xp-bar" class="bg-gradient-to-r from-red-900 to-red-500 h-full transition-all duration-500" style="width: 10%;"></div>
+            </div>
+            <div class="flex justify-between text-[10px] font-mono-tech text-gray-500">
+                <span>ОПЫТ СВИДЕТЕЛЯ: <b id="xp-val" class="text-gray-300">0 XP</b></span>
+                <span>ИНДЕКС РАВНОДУШИЯ: <b id="indiff-val" class="text-red-400">100%</b></span>
+            </div>
+        </div>
+
+        <!-- ВКЛАДКИ -->
+        <div class="bg-[#100709] px-2 py-2 border-b border-red-500/20 grid grid-cols-3 gap-1 text-center text-[11px] font-mono-tech">
+            <button id="tab-feed" onclick="switchTab('feed')" class="py-1.5 rounded-lg bg-red-950/60 text-red-400 font-bold border border-red-500/40 transition">ЛЕНТА БОЛИ</button>
+            <button id="tab-top" onclick="switchTab('top')" class="py-1.5 rounded-lg text-gray-400 hover:text-white transition">ТОП ЦИНИКОВ</button>
+            <button id="tab-profile" onclick="switchTab('profile')" class="py-1.5 rounded-lg text-gray-400 hover:text-white transition">МОЯ КОМНАТА</button>
+        </div>
+
+        <button onclick="openSafety()" class="w-full py-1.5 bg-[#0e0608] border-b border-red-500/10 text-[10px] font-mono-tech text-gray-500 hover:text-red-300 transition">🛟 ЕСЛИ ВАМ ТЯЖЕЛО — ПОМОЩЬ РЯДОМ</button>
+
+        <!-- ЭКРАН 1: ЛЕНТА -->
+        <div id="view-feed" class="flex-1 overflow-y-auto p-3 space-y-3 pb-20">
+            <button onclick="openPostModal()" class="w-full py-2.5 px-4 bg-[#12080a] hover:bg-[#1a0b0e] border border-dashed border-red-500/40 rounded-xl text-left flex justify-between items-center transition group">
+                <div>
+                    <div class="text-xs font-bold text-red-400 group-hover:text-red-300">+ Рассказать свою историю</div>
+                    <div class="text-[10px] text-gray-500">Анонимный крик в сеть SOMA_LINK.</div>
+                </div>
+                <span class="text-red-400 font-mono-tech text-lg">→</span>
+            </button>
+            <div id="posts-container" class="space-y-3">
+                <div class="text-center text-xs text-gray-500 py-10 font-mono-tech">Загрузка данных NEEO_CITY...</div>
+            </div>
+        </div>
+
+        <!-- ЭКРАН 2: ТОП -->
+        <div id="view-top" class="hidden flex-1 overflow-y-auto p-4 space-y-3">
+            <div class="text-xs font-mono-tech text-red-400 uppercase tracking-wider border-b border-red-500/20 pb-2">// РЕЙТИНГ АБСОЛЮТНЫХ НАБЛЮДАТЕЛЕЙ</div>
+            <div id="leaderboard-list" class="space-y-2"></div>
+        </div>
+
+        <!-- ЭКРАН 3: ПРОФИЛЬ -->
+        <div id="view-profile" class="hidden flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+            <div class="space-y-1.5">
+                <div class="flex justify-between text-[10px] font-mono-tech text-gray-500"><span id="room-label">КОМНАТА</span><span>ТЕПЛО: <b id="warmth-val" class="text-amber-400">0</b></span></div>
+                <svg id="room" viewBox="0 0 320 170" class="w-full rounded-xl border border-red-500/20">
+                    <defs>
+                        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop id="sky1" offset="0" stop-color="#0a0608"/><stop id="sky2" offset="1" stop-color="#1a0b0e"/></linearGradient>
+                        <radialGradient id="glow"><stop offset="0" stop-color="#fbbf24" stop-opacity=".5"/><stop offset="1" stop-color="#fbbf24" stop-opacity="0"/></radialGradient>
+                    </defs>
+                    <rect width="320" height="170" fill="#12080a"/>
+                    <rect y="135" width="320" height="35" fill="#0b0506"/>
+                    <rect x="24" y="22" width="112" height="78" fill="url(#sky)" stroke="#7f1d1d" stroke-width="3"/>
+                    <g id="r-city" fill="#050203" style="transition:opacity .8s"><rect x="28" y="64" width="16" height="36"/><rect x="48" y="52" width="14" height="48"/><rect x="66" y="70" width="18" height="30"/><rect x="88" y="48" width="12" height="52"/><rect x="104" y="62" width="28" height="38"/></g>
+                    <g fill="#fbbf24" opacity=".7"><rect x="52" y="58" width="3" height="3"/><rect x="91" y="56" width="3" height="3"/><rect x="108" y="70" width="3" height="3"/><rect x="72" y="78" width="3" height="3"/></g>
+                    <path d="M80 22V100M24 61H136" stroke="#7f1d1d" stroke-width="2"/>
+                    <rect x="165" y="100" width="140" height="35" rx="3" fill="#1f0d11"/><rect x="165" y="92" width="40" height="16" rx="6" fill="#2b1217"/>
+                    <rect x="14" y="118" width="96" height="7" fill="#2b1217"/><rect x="22" y="125" width="5" height="12" fill="#2b1217"/><rect x="98" y="125" width="5" height="12" fill="#2b1217"/>
+                    <rect x="56" y="102" width="12" height="16" rx="2" fill="#000" stroke="#ef4444"/>
+                    <g id="r-lamp" style="opacity:0;transition:opacity .8s"><circle cx="250" cy="70" r="70" fill="url(#glow)"/><path d="M250 20V50" stroke="#7f1d1d"/><path d="M238 50h24l-4 14h-16z" fill="#fbbf24"/></g>
+                    <g id="r-plant" style="opacity:0;transition:opacity .8s"><rect x="88" y="106" width="12" height="12" fill="#7c2d12"/><path d="M94 106c-8-14-14-16-18-14 6 2 10 8 12 14M94 106c4-16 12-20 16-18-6 3-10 10-12 18" fill="#16a34a"/></g>
+                    <g id="r-lights" style="opacity:0;transition:opacity .8s"><path d="M0 8Q80 26 160 8T320 8" stroke="#52525b" fill="none"/><g fill="#fbbf24"><circle cx="40" cy="15" r="2"/><circle cx="90" cy="19" r="2"/><circle cx="140" cy="14" r="2"/><circle cx="190" cy="11" r="2"/><circle cx="240" cy="16" r="2"/><circle cx="290" cy="12" r="2"/></g></g>
+                    <g id="r-cat" style="opacity:0;transition:opacity .8s" fill="#3f1d24"><ellipse cx="275" cy="98" rx="16" ry="8"/><circle cx="260" cy="92" r="6"/><path d="M256 88l2-5 3 4zM262 87l3-5 2 5z"/></g>
+                    <g id="r-radio" onclick="openRadio()" style="opacity:0;transition:opacity .8s;cursor:pointer"><rect x="20" y="104" width="26" height="14" rx="2" fill="#7f1d1d"/><circle cx="29" cy="111" r="4" fill="#0b0506"/><path d="M36 106h6M36 111h6M36 116h6" stroke="#fbbf24"/><path d="M40 104l8-10" stroke="#9ca3af"/></g>
+                </svg>
+            </div>
+            <div class="mx-auto w-60 bg-black border-2 border-red-900/60 rounded-3xl p-3 space-y-2 shadow-lg">
+                <div class="text-center text-[9px] font-mono-tech text-gray-600">NEEO_PHONE</div>
+                <div class="grid grid-cols-4 gap-2 text-center">
+                    <button onclick="openTrainer()" class="flex flex-col items-center text-xl">🎧<span class="text-[8px] font-mono-tech text-gray-400">ТРЕНЕР</span></button>
+                    <button id="app-radio" onclick="openRadio()" class="flex flex-col items-center text-xl">📻<span class="text-[8px] font-mono-tech text-gray-400">РАДИО</span></button>
+                    <button onclick="openSafety()" class="flex flex-col items-center text-xl">🛟<span class="text-[8px] font-mono-tech text-gray-400">ПОМОЩЬ</span></button>
+                    <button onclick="openWhisper()" class="flex flex-col items-center text-xl">🔒<span class="text-[8px] font-mono-tech text-gray-400">ШЁПОТ</span></button>
+                </div>
+            </div>
+            <div class="bg-[#12080a] border border-red-500/40 p-5 rounded-2xl space-y-4 relative overflow-hidden">
+                <div class="flex justify-between items-center text-[10px] font-mono-tech text-gray-500">
+                    <span>NEEOSOMA // SOMA_LINK</span>
+                    <span>SECURE NODE // ПУЛЬС: ЖИВ</span>
+                </div>
+                <div>
+                    <div class="text-xs text-gray-400 font-mono-tech">СВИДЕТЕЛЬ:</div>
+                    <div id="card-name" class="text-xl font-bold text-white tracking-wide">@USER</div>
+                    <div id="card-rank" class="text-xs font-mono-tech text-red-400 mt-0.5">УР. 1 // СЛУЧАЙНЫЙ ПРОХОЖИЙ</div>
+                </div>
+                <div class="grid grid-cols-2 gap-2 pt-2 border-t border-red-500/20 font-mono-tech">
+                    <div class="bg-[#080405] p-2.5 rounded-xl border border-red-950">
+                        <div class="text-[10px] text-gray-500">ПРОСМОТРЕНО ДРАМ</div>
+                        <div id="stat-seen" class="text-lg font-bold text-white">0</div>
+                    </div>
+                    <div class="bg-[#080405] p-2.5 rounded-xl border border-red-950">
+                        <div class="text-[10px] text-gray-500">ПУСТЫХ РЕАКЦИЙ</div>
+                        <div id="stat-reacts" class="text-lg font-bold text-red-400">0</div>
+                    </div>
+                    <div class="bg-[#080405] p-2.5 rounded-xl border border-red-950">
+                        <div class="text-[10px] text-gray-500">ПОПЫТОК ПОМОЧЬ</div>
+                        <div id="stat-attempts" class="text-lg font-bold text-red-600">0</div>
+                    </div>
+                    <div class="bg-[#080405] p-2.5 rounded-xl border border-red-950">
+                        <div class="text-[10px] text-gray-500">РЕАЛЬНАЯ ПОМОЩЬ</div>
+                        <div class="text-lg font-bold text-gray-600">0</div>
+                    </div>
+                </div>
+            </div>
+            <button onclick="copyShareText()" class="w-full py-3.5 bg-red-950 hover:bg-red-900 border border-red-500/50 text-red-200 font-bold text-xs font-mono-tech uppercase tracking-wider rounded-xl transition">
+                ПОДЕЛИТЬСЯ ОТЧЁТОМ СОУЧАСТИЯ
+            </button>
+        </div>
+    </div>
+
+<script src="config.js"></script>
+<script src="music.js"></script>
+<script>
+    const cfg = window.SOMA_CONFIG || {};
+    const SUPABASE_URL = cfg.SUPABASE_URL;
+    const SUPABASE_ANON_KEY = cfg.SUPABASE_KEY;
+    let supabaseClient = null;
+    try { supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); }
+    catch (e) { console.error('Supabase не подключён:', e); }
+    const BOT_LINK = cfg.BOT_LINK || location.href;
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const safeId = s => String(s).replace(/[^\w-]/g, '');
+
+    // ===== ЗВУК: синтез в браузере, файлов нет =====
+    let audioCtx = null, soundOn = true, drone = null;
+    try { soundOn = localStorage.getItem('soma_sound') !== '0'; } catch (e) {}
+    function ac() {
+        try {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        } catch (e) { return null; }
+        return audioCtx;
+    }
+    function tone(freq, dur, type, vol, when, slideTo) {
+        if (!soundOn) return; const c = ac(); if (!c) return;
+        const t = c.currentTime + (when || 0), o = c.createOscillator(), g = c.createGain();
+        o.type = type || 'sine'; o.frequency.setValueAtTime(freq, t);
+        if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(vol || 0.05, t + 0.015);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + dur + 0.05);
+    }
+    function noise(dur, vol, when, freq) {
+        if (!soundOn) return; const c = ac(); if (!c) return;
+        const n = Math.floor(c.sampleRate * dur), buf = c.createBuffer(1, n, c.sampleRate), d = buf.getChannelData(0);
+        for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+        const s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+        s.buffer = buf; f.type = 'bandpass'; f.frequency.value = freq; g.gain.value = vol;
+        s.connect(f); f.connect(g); g.connect(c.destination); s.start(c.currentTime + (when || 0));
+    }
+    const SFX = {
+        tap:   () => tone(1200, 0.04, 'square', 0.02),
+        key:   () => noise(0.03, 0.03, 0, 3000),
+        tab:   () => tone(380, 0.09, 'triangle', 0.05, 0, 760),
+        react: () => { tone(392, 0.5, 'sine', 0.06); tone(587, 0.7, 'sine', 0.04, 0.09); },
+        block: () => { tone(130, 0.4, 'sawtooth', 0.08, 0, 45); noise(0.3, 0.07, 0, 300); },
+        send:  () => { tone(520, 1.1, 'sine', 0.06, 0, 50); noise(1, 0.03, 0, 600); },
+        egg:   () => { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.25, 'square', 0.04, i * 0.09)); noise(0.4, 0.05, 0.3, 2500); },
+        calm:  () => { tone(262, 1.2, 'sine', 0.04); tone(330, 1.4, 'sine', 0.03, 0.2); tone(392, 1.6, 'sine', 0.03, 0.4); },
+        beat:  () => { tone(60, 0.12, 'sine', 0.12); tone(50, 0.15, 'sine', 0.09, 0.14); },
+        tune:  () => { noise(1.1, 0.06, 0, 900); tone(200, 1.1, 'sine', 0.05, 0, 1600); tone(440, 0.3, 'square', 0.03, 1.1); tone(660, 0.6, 'sine', 0.04, 1.15); }
+    };
+    function startDrone() {
+        if (!soundOn || drone) return; const c = ac(); if (!c) return;
+        const g = c.createGain(), f = c.createBiquadFilter(), o1 = c.createOscillator(), o2 = c.createOscillator(), lfo = c.createOscillator(), lg = c.createGain();
+        g.gain.setValueAtTime(0.0001, c.currentTime); g.gain.exponentialRampToValueAtTime(0.03, c.currentTime + 3);
+        f.type = 'lowpass'; f.frequency.value = 220;
+        o1.type = 'sawtooth'; o1.frequency.value = 55; o2.type = 'sawtooth'; o2.frequency.value = 55.4;
+        lfo.frequency.value = 0.07; lg.gain.value = 90; lfo.connect(lg); lg.connect(f.frequency);
+        o1.connect(f); o2.connect(f); f.connect(g); g.connect(c.destination);
+        o1.start(); o2.start(); lfo.start();
+        drone = { g: g, nodes: [o1, o2, lfo] };
+    }
+    function stopDrone() {
+        if (!drone) return; const d = drone; drone = null;
+        try { d.g.gain.cancelScheduledValues(audioCtx.currentTime); d.g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5); } catch (e) {}
+        setTimeout(() => d.nodes.forEach(n => { try { n.stop(); } catch (e) {} }), 600);
+    }
+    function initSoundUI() {
+        document.getElementById('snd-btn').innerText = soundOn ? '🔊' : '🔇';
+        document.addEventListener('pointerdown', () => { if (soundOn) startDrone(); }, { once: true });
+    }
+    function toggleSound() {
+        soundOn = !soundOn;
+        try { localStorage.setItem('soma_sound', soundOn ? '1' : '0'); } catch (e) {}
+        document.getElementById('snd-btn').innerText = soundOn ? '🔊' : '🔇';
+        if (soundOn) { startDrone(); SFX.tap(); } else stopDrone();
+    }
+
+    // ===== КОМНАТА, ТЕПЛО, ТРЕНАЖЁР, УДЕРЖАНИЕ ВЗГЛЯДА =====
+    const lsNum = k => { try { return parseInt(localStorage.getItem(k) || '0', 10) || 0; } catch (e) { return 0; } };
+    const musicFound = () => { try { return !!localStorage.getItem('soma_music'); } catch (e) { return false; } };
+    function rankIdx() { let i = 0; ranks.forEach((r, n) => { if (player.xp >= r.minXp) i = n; }); return i; }
+    function addWarmth(n) {
+        player.warmth = (player.warmth || 0) + n;
+        try { localStorage.setItem('soma_warmth', String(player.warmth)); } catch (e) {}
+        try { supabaseClient.from('soma_users').update({ warmth: player.warmth }).eq('username', player.uid).then(() => {}, () => {}); } catch (e) {}
+    }
+    function renderRoom() {
+        if (!document.getElementById('room')) return;
+        const r = rankIdx(), w = player.warmth || 0;
+        const show = (id, on) => { document.getElementById(id).style.opacity = on ? 1 : 0; };
+        show('r-lamp', r >= 1); show('r-plant', r >= 2); show('r-lights', r >= 3); show('r-cat', r >= 4); show('r-radio', musicFound());
+        const sky = w >= 30 ? ['#fb7185', '#fbbf24'] : w >= 15 ? ['#4c1d3a', '#f59e0b'] : w >= 5 ? ['#1a0b14', '#7c2d12'] : ['#0a0608', '#1a0b0e'];
+        document.getElementById('sky1').setAttribute('stop-color', sky[0]);
+        document.getElementById('sky2').setAttribute('stop-color', sky[1]);
+        document.getElementById('r-city').style.opacity = Math.min(1, 0.3 + w / 20);
+        document.getElementById('warmth-val').innerText = w;
+        document.getElementById('room-label').innerText = 'КОМНАТА // ' + ranks[r].title;
+        document.getElementById('app-radio').style.opacity = musicFound() ? 1 : 0.35;
+    }
+    function openRadio() { if (musicFound()) openMusic(); else { SFX.block(); notify('Приёмник молчит. Найдите частоту.'); } }
+    function openWhisper() { SFX.block(); notify('Шёпоты скоро. Тренируйте слушание и копите Тепло.'); }
+    function showPts() {
+        const b = document.createElement('div');
+        b.textContent = '// PTS — ТЕСТОВАЯ ВЕРСИЯ. ДАННЫЕ НЕНАСТОЯЩИЕ';
+        b.className = 'fixed top-0 left-0 right-0 bg-amber-400 text-black text-[10px] font-mono-tech text-center py-0.5';
+        b.style.zIndex = '100000';
+        document.body.appendChild(b);
+        document.title = 'PTS ' + document.title;
+    }
+
+    // Удержание взгляда: 3 секунды внимания к чужой боли
+    let held = {}, holding = false, holdT = null, holdRAF = null;
+    try { held = JSON.parse(localStorage.getItem('soma_held') || '{}'); } catch (e) {}
+    function holdStart(id, el) {
+        if (held[id]) return; holding = true; SFX.beat();
+        const fill = el.querySelector('.hold-fill'), t0 = performance.now();
+        const step = () => { const p = Math.min(1, (performance.now() - t0) / 3000); fill.style.transform = `scaleX(${p})`; if (p < 1) holdRAF = requestAnimationFrame(step); };
+        holdRAF = requestAnimationFrame(step);
+        holdT = setTimeout(() => holdDone(id), 3000);
+    }
+    function holdCancel() {
+        clearTimeout(holdT); cancelAnimationFrame(holdRAF); holding = false;
+        document.querySelectorAll('.hold-fill').forEach(f => { f.style.transform = 'scaleX(0)'; });
+    }
+    function holdDone(id) {
+        holding = false; held[id] = 1;
+        try { localStorage.setItem('soma_held', JSON.stringify(held)); } catch (e) {}
+        try { Telegram.WebApp.HapticFeedback.notificationOccurred('success'); } catch (e) {}
+        SFX.react(); player.xp += 15; addWarmth(1);
+        updateCloudProfile(); updateHeader(); renderFeed();
+    }
+
+    // Тренажёр: слушать, а не советовать
+    const SCEN = [
+        { t: 'Мне 34, и полгода никто не звонил просто так.', o: [
+            ['Держись, всё наладится!', 0, 'Торопит к «хорошему» и не замечает одиночества.'],
+            ['Это звучит очень одиноко. Каково это, когда телефон молчит?', 1, 'Называет чувство и приглашает рассказать.'],
+            ['Позвони кому-нибудь сам, делов-то.', 0, 'Совет-давление: человек и так это знает.'] ] },
+        { t: 'Меня уволили, а жене я до сих пор не сказал.', o: [
+            ['Надо было сразу сказать, она же жена.', 0, 'Осуждение добавляет стыда.'],
+            ['Сколько ты носишь это в себе? Звучит очень тяжело.', 1, 'Видит усилие человека и не оценивает его.'],
+            ['Другие и не такое переживают.', 0, 'Сравнение обесценивает его боль.'] ] },
+        { t: 'Мама сказала, что я её разочаровал.', o: [
+            ['Ты, наверное, преувеличиваешь.', 0, 'Ставит под сомнение чувства.'],
+            ['Услышать такое от мамы больно. Что именно она сказала?', 1, 'Признаёт боль и просит рассказать больше.'],
+            ['Не обращай внимания, все родители так.', 0, 'Отмахивается и закрывает разговор.'] ] },
+        { t: 'Боюсь, что проживу жизнь зря.', o: [
+            ['Не думай об этом, займись делом.', 0, 'Запрещает чувство вместо того, чтобы его услышать.'],
+            ['Этот страх говорит, что тебе важно, как ты живёшь. Что бы ты хотел успеть?', 1, 'Уважает страх и мягко направляет к смыслу.'],
+            ['Всем так кажется, это возрастное.', 0, 'Объясняет, а не слушает.'] ] },
+        { t: 'Врач сказал ждать результатов неделю. Седьмой день, не сплю.', o: [
+            ['Всё будет хорошо, не накручивай!', 0, 'Обещание, которое нельзя выполнить.'],
+            ['Ждать такое мучительно. Что сейчас тревожит сильнее всего?', 1, 'Признаёт тяжесть и даёт выговориться.'],
+            ['Перестань гуглить симптомы.', 0, 'Критика вместо поддержки.'] ] }
+    ];
+    let trSc = 0;
+    function openTrainer() { SFX.tap(); renderTrainer(); document.getElementById('trainer-modal').classList.remove('hidden'); }
+    function closeTrainer() { document.getElementById('trainer-modal').classList.add('hidden'); }
+    function renderTrainer() {
+        let done = {}; try { done = JSON.parse(localStorage.getItem('soma_trained') || '{}'); } catch (e) {}
+        const today = new Date().toISOString().slice(0, 10);
+        const left = SCEN.map((s, i) => i).filter(i => done[i] !== today);
+        const body = document.getElementById('trainer-body');
+        if (!left.length) { body.innerHTML = '<p class="text-xs text-gray-300 leading-relaxed">На сегодня всё. Возвращайтесь завтра: слушать — это мышца, ей нужен отдых.</p>'; return; }
+        trSc = left[Math.floor(Math.random() * left.length)];
+        const order = SCEN[trSc].o.map((x, k) => k).sort(() => Math.random() - 0.5);
+        body.innerHTML = `<p class="text-[11px] font-mono-tech text-gray-500">Человек пишет:</p>
+            <div class="bg-[#12080a] border border-red-500/20 rounded-xl p-3 text-sm text-gray-200 font-mono-tech">«${esc(SCEN[trSc].t)}»</div>
+            <p class="text-[11px] font-mono-tech text-gray-500">Что вы ответите?</p>
+            ${order.map(k => `<button onclick="trainerPick(${k})" class="w-full text-left px-3 py-2 bg-[#180a0d] hover:bg-red-950/40 text-xs text-gray-200 rounded-lg border border-red-500/20">${esc(SCEN[trSc].o[k][0])}</button>`).join('')}`;
+    }
+    function trainerPick(k) {
+        const s = SCEN[trSc], o = s.o[k], best = s.o.find(x => x[1]);
+        let done = {}; try { done = JSON.parse(localStorage.getItem('soma_trained') || '{}'); } catch (e) {}
+        done[trSc] = new Date().toISOString().slice(0, 10);
+        try { localStorage.setItem('soma_trained', JSON.stringify(done)); } catch (e) {}
+        if (o[1]) { SFX.react(); player.xp += 20; addWarmth(1); updateCloudProfile(); updateHeader(); }
+        else SFX.block();
+        document.getElementById('trainer-body').innerHTML = `
+            <div class="text-sm font-bold ${o[1] ? 'text-amber-300' : 'text-red-400'}">${o[1] ? '✓ Это слушание // +20 XP, +1 ТЕПЛО' : '✕ Это совет или защита'}</div>
+            <p class="text-xs text-gray-300 leading-relaxed">${esc(o[2])}</p>
+            ${o[1] ? '' : `<p class="text-xs text-gray-400 leading-relaxed">Лучше: «${esc(best[0])}». ${esc(best[2])}</p>`}
+            <button onclick="renderTrainer()" class="w-full py-2 bg-red-950/60 border border-red-500/50 text-red-200 text-xs font-mono-tech rounded-xl">ДАЛЬШЕ</button>`;
+    }
+
+    // ===== ТЕГИ =====
+    const TAGS = ['ДОЛГИ', 'ОДИНОЧЕСТВО', 'СЕМЬЯ', 'РАБОТА', 'ЗДОРОВЬЕ', 'СТРАХ', 'ПОТЕРЯ', 'ЛЮБОВЬ'];
+    function renderTagChips() {
+        document.getElementById('tag-chips').innerHTML = TAGS.map(t => `<button type="button" onclick="pickTag('${t}')" class="px-2 py-0.5 bg-red-950/40 hover:bg-red-900/50 border border-red-500/30 rounded text-[10px] font-mono-tech text-red-300">${t}</button>`).join('');
+    }
+    function pickTag(t) { document.getElementById('new-pain-tag').value = t; SFX.tap(); }
+
+    // ===== ПОМОЩЬ РЯДОМ =====
+    const CRISIS = /(суицид|самоубийств|покончить с собой|убить себя|не хочу жить|хочу умереть|свести счёты|свести счеты|вскрыть вены)/i;
+    function openSafety(auto) {
+        document.getElementById('safety-auto').classList.toggle('hidden', !auto);
+        document.getElementById('safety-modal').classList.remove('hidden');
+        SFX.calm();
+    }
+    function closeSafety() { document.getElementById('safety-modal').classList.add('hidden'); }
+    function openExt(url) {
+        try { if (window.Telegram && Telegram.WebApp.initData) { Telegram.WebApp.openLink(url); return; } } catch (e) {}
+        window.open(url, '_blank');
+    }
+
+    // ===== ПАСХАЛКА: ПЕРЕХВАЧЕННЫЙ СИГНАЛ (7 нажатий на красный пульс) =====
+    const MUSIC = window.SOMA_MUSIC || {};
+    let pulseN = 0, pulseT = null;
+    function pulseTap() {
+        pulseN++; SFX.beat();
+        try { Telegram.WebApp.HapticFeedback.impactOccurred('medium'); } catch (e) {}
+        clearTimeout(pulseT); pulseT = setTimeout(() => { pulseN = 0; }, 1800);
+        if (pulseN >= 7) { pulseN = 0; openMusic(); }
+    }
+    function openMusic() {
+        const links = [['yandex', 'Яндекс Музыка'], ['spotify', 'Spotify'], ['youtube', 'YouTube']].filter(p => MUSIC[p[0]]);
+        document.getElementById('music-name').innerText = MUSIC.name || 'NEEOSOMA';
+        document.getElementById('music-eq').innerHTML = Array.from({ length: 18 }, () => `<span class="eq-bar" style="animation-duration:${(0.45 + Math.random() * 0.9).toFixed(2)}s;animation-delay:-${Math.random().toFixed(2)}s"></span>`).join('');
+        document.getElementById('music-links').innerHTML = links.length
+            ? links.map(p => `<button onclick="openExt(MUSIC['${p[0]}'])" class="w-full py-2.5 bg-red-950 hover:bg-red-900 border border-red-500/60 text-red-200 font-bold text-xs font-mono-tech rounded-xl transition">▶ ${p[1]}</button>`).join('')
+            : '<div class="text-[11px] font-mono-tech text-gray-500">Сигнал слабый. Частота ещё настраивается.</div>';
+        let first = false;
+        try { first = !localStorage.getItem('soma_music'); if (first) localStorage.setItem('soma_music', '1'); } catch (e) {}
+        if (first) { player.xp += 50; updateCloudProfile(); updateHeader(); }
+        document.getElementById('music-bonus').classList.toggle('hidden', !first);
+        document.getElementById('music-modal').classList.remove('hidden');
+        SFX.tune();
+    }
+    function closeMusic() { document.getElementById('music-modal').classList.add('hidden'); }
+    function shareMusic() {
+        const text = 'Я перехватил скрытую частоту в SOMA LINK. Не скажу как. Попробуй найти сам:';
+        if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) {
+            Telegram.WebApp.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(BOT_LINK) + '&text=' + encodeURIComponent(text));
+        } else { notify(text + ' ' + BOT_LINK); }
+    }
+
+    // Номер для топа считается из анонимного id (ника в базе нет)
+    function anonLabel(s) {
+        let n = 0; const str = String(s);
+        for (let i = 0; i < str.length; i++) n = (n * 31 + str.charCodeAt(i)) >>> 0;
+        return 'Аноним #' + (1000 + n % 9000);
+    }
+    // Номер под постом случайный на КАЖДЫЙ пост: связать его с человеком нельзя
+    const randAnon = () => 'Аноним #' + (1000 + Math.floor(Math.random() * 9000));
+    const displayAuthor = a => /\(АНОНИМ\)\s*$/.test(a || '') ? 'Аноним' : a;
+    // В базу пишется не ник, а необратимый id
+    async function makeUid(raw) {
+        try {
+            const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('soma:' + raw));
+            return 'u_' + Array.from(new Uint8Array(buf)).slice(0, 8).map(b => b.toString(16).padStart(2, '0')).join('');
+        } catch (e) {
+            return 'u_' + String(raw).split('').reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7).toString(16);
+        }
+    }
+
+    let player = { name: "GUEST", uid: "", warmth: lsNum('soma_warmth'), xp: 0, seen: 0, reacts: 0, helpAttempts: 0, reactedPosts: {} };
+    let feedPosts = [];
+
+    const ranks = [
+        { minXp: 0, title: "УР. 1 // СЛУЧАЙНЫЙ ПРОХОЖИЙ" },
+        { minXp: 500, title: "УР. 2 // ЛЮБОПЫТНЫЙ ЗРИТЕЛЬ" },
+        { minXp: 1500, title: "УР. 3 // ПОТРЕБИТЕЛЬ ДРАМ" },
+        { minXp: 3000, title: "УР. 4 // ЦИНИЧНЫЙ ОБЫВАТЕЛЬ" },
+        { minXp: 5000, title: "УР. 5 // МОЛЧАЛИВЫЙ АНГЕЛ" },
+        { minXp: 10000, title: "УР. 10 // АБСОЛЮТНЫЙ НАБЛЮДАТЕЛЬ" }
+    ];
+
+    async function initApp() {
+        try { Telegram.WebApp.ready(); Telegram.WebApp.expand(); } catch (e) {}
+        renderTagChips(); initSoundUI();
+        if (cfg.ENV === 'pts') showPts();
+        try { player.reactedPosts = JSON.parse(localStorage.getItem('soma_reacted') || '{}'); } catch (e) {}
+        const k = SUPABASE_ANON_KEY || '';
+        if (!/^https:\/\/[a-z0-9]+\.supabase\.co\/?$/.test(SUPABASE_URL || '')) notify('В config.js неверный SUPABASE_URL. Нужен вид https://abcdefgh.supabase.co (без /dashboard, без пробелов).');
+        else if (/^sb_secret_/.test(k)) notify('В config.js вставлен Secret-ключ. Нужен Publishable (sb_publishable_...). Secret-ключ лучше пересоздать в Supabase.');
+        else if (k.length < 20 || /ВСТАВЬ/.test(k)) notify('В config.js не вписан SUPABASE_KEY.');
+        else if (!supabaseClient) notify('Сеть не подключена. Проверь config.js.');
+        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe?.user) {
+            const tgUser = window.Telegram.WebApp.initDataUnsafe.user;
+            player.name = tgUser.username || tgUser.first_name || "AGENT_" + Math.floor(Math.random()*1000);
+            player.uid = await makeUid(tgUser.id);
+        } else {
+            let savedName = localStorage.getItem('soma_local_name');
+            if (!savedName) {
+                savedName = "AGENT_" + Math.floor(1000 + Math.random() * 9000);
+                localStorage.setItem('soma_local_name', savedName);
+            }
+            player.name = savedName;
+            player.uid = await makeUid(savedName);
+        }
+
+        try {
+            let { data } = await supabaseClient.from('soma_users').select('*').eq('username', player.uid).single();
+            if (data) {
+                player = { ...player, xp: data.xp || 0, seen: data.seen || 0, reacts: data.reacts || 0, helpAttempts: data.help_attempts || 0, warmth: Math.max(player.warmth || 0, data.warmth || 0) };
+            } else {
+                await supabaseClient.from('soma_users').insert([{ username: player.uid, xp: 0, seen: 0, reacts: 0, help_attempts: 0 }]);
+            }
+        } catch(e) {}
+
+        updateHeader();
+        await fetchPosts();
+        setInterval(refreshFeed, 8000);
+        document.addEventListener('visibilitychange', refreshFeed);
+    }
+
+    async function refreshFeed() {
+        if (!supabaseClient || document.hidden || holding) return;
+        try {
+            const { data, error } = await supabaseClient.from('soma_posts').select('*').order('created_at', { ascending: false }).limit(50);
+            if (error || !data || !data.length) return;
+            const sig = d => d.map(p => p.id + ':' + p.likes).join('|');
+            if (sig(data) !== sig(feedPosts)) { feedPosts = data; renderFeed(); }
+        } catch (e) {}
+    }
+
+    async function fetchPosts() {
+        try {
+            let { data } = await supabaseClient.from('soma_posts').select('*').order('created_at', { ascending: false }).limit(50);
+            if (data && data.length > 0) {
+                feedPosts = data;
+            } else {
+                throw new Error('Empty');
+            }
+        } catch(e) {
+            if (feedPosts.length === 0) {
+                feedPosts = [{ id: 'demo_1', author: 'Аноним #4092', tag: 'ДОЛГИ', text: 'Сегодня закрыли доступ к рабочей учетке. На карте 400 рублей, завтра платить за аренду. Впервые не знаю, что делать.', likes: 42, created_at: new Date() }];
+            }
+        }
+        renderFeed();
+    }
+
+    async function updateCloudProfile() {
+        try {
+            await supabaseClient.from('soma_users').update({
+                xp: player.xp,
+                seen: player.seen,
+                reacts: player.reacts,
+                help_attempts: player.helpAttempts
+            }).eq('username', player.uid);
+        } catch(e) {}
+    }
+
+    function updateHeader() {
+        document.getElementById('user-badge').innerText = `@${player.name}`;
+        document.getElementById('xp-val').innerText = `${player.xp} XP`;
+        
+        let currentRank = ranks[0], nextRank = ranks[1];
+        for (let i = 0; i < ranks.length; i++) {
+            if (player.xp >= ranks[i].minXp) {
+                currentRank = ranks[i];
+                nextRank = ranks[i + 1] || { minXp: player.xp + 500 };
+            }
+        }
+        document.getElementById('rank-title').innerText = currentRank.title;
+        const progress = Math.min(100, ((player.xp - currentRank.minXp) / (nextRank.minXp - currentRank.minXp)) * 100);
+        document.getElementById('xp-bar').style.width = `${Math.max(8, progress)}%`;
+
+        document.getElementById('card-name').innerText = `@${player.name}`;
+        document.getElementById('card-rank').innerText = currentRank.title;
+        document.getElementById('stat-seen').innerText = player.seen;
+        document.getElementById('stat-reacts').innerText = player.reacts;
+        document.getElementById('stat-attempts').innerText = player.helpAttempts;
+        renderRoom();
+    }
+
+    function renderFeed() {
+        const container = document.getElementById('posts-container');
+        container.innerHTML = '';
+
+        feedPosts.forEach(post => {
+            const isReacted = player.reactedPosts[post.id];
+            const card = document.createElement('div');
+            card.className = "bg-[#12080a] border border-red-500/20 rounded-2xl p-4 space-y-3 transition";
+            card.innerHTML = `
+                <div class="flex justify-between items-center text-[10px] font-mono-tech">
+                    <span class="text-red-400 font-bold">${esc(displayAuthor(post.author))}</span>
+                    <span class="px-2 py-0.5 bg-red-950/60 text-red-300 rounded border border-red-500/20">${esc(post.tag || 'ЛИЧНАЯ БОЛЬ')}</span>
+                </div>
+                <p class="text-xs sm:text-sm text-gray-200 leading-relaxed font-mono-tech">${esc(post.text)}</p>
+                <button onclick="triggerHelpBlock()" class="w-full py-2 bg-red-950/40 hover:bg-red-900/50 border border-red-500/40 rounded-xl text-[11px] font-mono-tech text-red-400 flex items-center justify-center space-x-2 transition">
+                    <span>⛔ ПОМОЧЬ РЕАЛЬНО / НАПИСАТЬ В ЛС</span>
+                </button>
+                ${held[post.id] ? `<div class="text-center text-[11px] font-mono-tech text-amber-300/80">👁 Дочитано до конца // +15 XP</div>` : `<button onpointerdown="holdStart('${safeId(post.id)}', this)" onpointerup="holdCancel()" onpointerleave="holdCancel()" onpointercancel="holdCancel()" oncontextmenu="return false" class="relative overflow-hidden w-full py-2 bg-amber-950/20 border border-amber-400/30 rounded-xl text-[11px] font-mono-tech text-amber-300 select-none touch-none"><span class="hold-fill absolute inset-0 bg-amber-500/25" style="transform:scaleX(0);transform-origin:left"></span><span class="relative">👁 УДЕРЖАТЬ ВЗГЛЯД (3 с)</span></button>`}
+                <div class="pt-2 border-t border-red-500/10 space-y-2">
+                    ${isReacted ? `
+                        <div class="text-[11px] font-mono-tech text-red-400 flex justify-between items-center">
+                            <span>✓ Суррогат отправлен: «${esc(isReacted)}»</span>
+                            <span class="text-amber-400">Реакций: ${post.likes || 0}</span>
+                        </div>
+                    ` : `
+                        <div class="flex justify-between items-center">
+                            <div class="flex space-x-1.5">
+                                <button onclick="reactToPost('${safeId(post.id)}', '❤️', 10)" class="px-2.5 py-1 bg-[#1a0b0e] hover:bg-red-950 rounded-lg text-sm border border-red-500/20">❤️</button>
+                                <button onclick="reactToPost('${safeId(post.id)}', '🤗', 10)" class="px-2.5 py-1 bg-[#1a0b0e] hover:bg-red-950 rounded-lg text-sm border border-red-500/20">🤗</button>
+                                <button onclick="reactToPost('${safeId(post.id)}', '🙏', 10)" class="px-2.5 py-1 bg-[#1a0b0e] hover:bg-red-950 rounded-lg text-sm border border-red-500/20">🙏</button>
+                            </div>
+                            <span class="text-[10px] font-mono-tech text-gray-500">Реакций: ${post.likes || 0}</span>
+                        </div>
+                        <div class="grid grid-cols-1 gap-1.5">
+                            <button onclick="reactToPost('${safeId(post.id)}', 'Держись, всё наладится!', 25)" class="w-full text-left px-3 py-1.5 bg-[#180a0d] hover:bg-red-950/40 text-[11px] text-gray-300 rounded-lg border border-red-500/20 flex justify-between items-center">
+                                <span>💬 «Держись, всё наладится!»</span>
+                                <span class="text-[10px] font-mono-tech text-red-400">+25 XP</span>
+                            </button>
+                        </div>
+                    `}
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    async function reactToPost(postId, reactionText, xpGain) {
+        if (player.reactedPosts[postId]) return;
+        player.reactedPosts[postId] = reactionText;
+        try { localStorage.setItem('soma_reacted', JSON.stringify(player.reactedPosts)); } catch (e) {}
+        try { Telegram.WebApp.HapticFeedback.impactOccurred('light'); } catch (e) {}
+        SFX.react();
+        player.xp += xpGain;
+        player.reacts++;
+        player.seen++;
+
+        const post = feedPosts.find(p => p.id === postId);
+        if (post) {
+            post.likes = (post.likes || 0) + 1;
+            try {
+                await supabaseClient.from('soma_posts').update({ likes: post.likes }).eq('id', postId);
+            } catch(e) {}
+        }
+
+        await updateCloudProfile();
+        updateHeader();
+        renderFeed();
+    }
+
+    function triggerHelpBlock() {
+        player.helpAttempts++;
+        try { Telegram.WebApp.HapticFeedback.notificationOccurred('error'); } catch (e) {}
+        const bc = document.getElementById('block-card');
+        bc.classList.remove('animate-shake'); void bc.offsetWidth; bc.classList.add('animate-shake');
+        let egg = false;
+        try { egg = player.helpAttempts >= 10 && !localStorage.getItem('soma_egg'); } catch (e) {}
+        if (egg) {
+            try { localStorage.setItem('soma_egg', '1'); } catch (e) {}
+            player.xp += 100;
+            try { Telegram.WebApp.HapticFeedback.notificationOccurred('success'); } catch (e) {}
+        }
+        updateCloudProfile();
+        updateHeader();
+        egg ? SFX.egg() : SFX.block();
+        document.getElementById(egg ? 'egg-modal' : 'block-modal').classList.remove('hidden');
+    }
+    function closeEgg() { document.getElementById('egg-modal').classList.add('hidden'); }
+    function shareEgg() {
+        const text = 'Я нарушил протокол SOMA LINK. Не скажу как. Попробуй сам:';
+        if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) {
+            Telegram.WebApp.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(BOT_LINK) + '&text=' + encodeURIComponent(text));
+        } else { notify(text + ' ' + BOT_LINK); }
+    }
+    function closeBlockModal() { document.getElementById('block-modal').classList.add('hidden'); }
+
+    function openPostModal() { SFX.tap(); document.getElementById('post-modal').classList.remove('hidden'); }
+    function closePostModal() { document.getElementById('post-modal').classList.add('hidden'); }
+
+    function updateCharCount() {
+        const len = document.getElementById('new-pain-text').value.length;
+        document.getElementById('char-count').innerText = `${len} / 666`;
+        if (len) SFX.key();
+    }
+
+    function notify(msg) {
+        try { Telegram.WebApp.showAlert(msg); } catch (e) { alert(msg); }
+    }
+
+    async function submitPainPost() {
+        const textareaEl = document.getElementById('new-pain-text');
+        const btn = document.getElementById('send-btn');
+        const text = textareaEl.value.trim().slice(0, 666);
+        if (!text) return;
+
+        const tag = (document.getElementById('new-pain-tag').value || '').replace(/[^\p{L}\p{N} _#-]/gu, '').trim().toUpperCase().slice(0, 24) || 'ЛИЧНАЯ БОЛЬ';
+        const newPost = { id: 'p_' + Date.now(), author: randAnon(), tag: tag, text: text, likes: 0 };
+
+        const label = btn.innerText;
+        btn.disabled = true;
+        btn.innerText = 'ОТПРАВКА...';
+        let failed = false, reason = '';
+        try {
+            if (!supabaseClient) throw new Error('Supabase не подключён');
+            const { error } = await supabaseClient.from('soma_posts').insert([newPost]);
+            if (error) throw error;
+        } catch (e) {
+            console.error('Ошибка отправки:', e);
+            failed = true;
+            reason = [e && e.message, e && e.code, e && e.hint].filter(Boolean).join(' | ') || String(e);
+        }
+        btn.disabled = false;
+        btn.innerText = label;
+
+        if (failed) {
+            notify('Сигнал не дошёл до сети.\n\nПричина: ' + reason);
+            return;
+        }
+        feedPosts.unshift(newPost);
+        closePostModal();
+        textareaEl.value = '';
+        document.getElementById('new-pain-tag').value = '';
+        updateCharCount();
+        SFX.send();
+        if (CRISIS.test(text)) setTimeout(() => openSafety(true), 1200);
+        renderFeed();
+        switchTab('feed');
+    }
+
+    function switchTab(tab) {
+        SFX.tab();
+        ['feed', 'top', 'profile'].forEach(t => {
+            document.getElementById(`view-${t}`).classList.add('hidden');
+            document.getElementById(`tab-${t}`).classList.remove('bg-red-950/60', 'text-red-400', 'font-bold', 'border', 'border-red-500/40');
+            document.getElementById(`tab-${t}`).classList.add('text-gray-400');
+        });
+        document.getElementById(`view-${tab}`).classList.remove('hidden');
+        document.getElementById(`tab-${tab}`).classList.add('bg-red-950/60', 'text-red-400', 'font-bold', 'border', 'border-red-500/40');
+        document.getElementById(`tab-${tab}`).classList.remove('text-gray-400');
+
+        if (tab === 'top') renderLeaderboard();
+        if (tab === 'profile') updateHeader();
+    }
+
+    async function renderLeaderboard() {
+        let data = null, myRank = null;
+        try {
+            const res = await supabaseClient.from('soma_users').select('username,xp,help_attempts').order('xp', { ascending: false }).limit(50);
+            data = res.data;
+            const c = await supabaseClient.from('soma_users').select('username', { count: 'exact', head: true }).gt('xp', player.xp);
+            if (typeof c.count === 'number') myRank = c.count + 1;
+        } catch(e) {}
+
+        const list = document.getElementById('leaderboard-list');
+        if (!data || data.length === 0) {
+            data = [{ username: player.uid, xp: player.xp, help_attempts: player.helpAttempts }];
+        }
+
+        const row = (b, place) => {
+            const me = b.username === player.uid;
+            return `
+            <div class="p-3 bg-[#12080a] border ${me ? 'border-red-500/60' : 'border-red-500/20'} rounded-xl flex justify-between items-center text-xs font-mono-tech">
+                <div class="flex items-center space-x-3">
+                    <span class="text-gray-500 font-bold">#${place}</span>
+                    <div>
+                        <div class="text-white font-bold">${esc(anonLabel(b.username))}${me ? ' <span class="text-amber-400">// ВЫ</span>' : ''}</div>
+                        <div class="text-[10px] text-gray-500">Попыток помочь: ${b.help_attempts || 0}</div>
+                    </div>
+                </div>
+                <div class="text-red-400 font-bold">${b.xp || 0} XP</div>
+            </div>`;
+        };
+
+        let html = data.map((b, idx) => row(b, idx + 1)).join('');
+        if (!data.some(b => b.username === player.uid) && myRank) {
+            html += `<div class="text-center text-[10px] text-gray-600 font-mono-tech py-1">· · ·</div>` + row({ username: player.uid, xp: player.xp, help_attempts: player.helpAttempts }, myRank);
+        }
+        list.innerHTML = html;
+    }
+
+    function copyShareText() {
+        const rank = document.getElementById('rank-title').innerText;
+        const text = `SOMA_LINK // SILENCE PROTOCOL\nСвидетель: @${player.name}\nРанг: ${rank}\nПросмотрено драм: ${player.seen} | Пустых реакций: ${player.reacts} | Реальной помощи: 0.\n\nПопробуй не вмешаться:`;
+        if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) {
+            Telegram.WebApp.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(BOT_LINK) + '&text=' + encodeURIComponent(text));
+            return;
+        }
+        try { navigator.clipboard.writeText(text + ' ' + BOT_LINK); notify('Отчёт соучастия скопирован!'); }
+        catch (e) { notify(text + ' ' + BOT_LINK); }
+    }
+
+    window.addEventListener('load', initApp);
+</script>
+</body>
+</html>

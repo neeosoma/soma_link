@@ -222,7 +222,7 @@
         </div>
 
         <!-- ЭКРАН 3: ПРОФИЛЬ -->
-        <div id="view-profile" class="hidden flex-1 overflow-y-auto p-4 pb-24 flex flex-col gap-4">
+        <div id="view-profile" class="hidden flex-1 overflow-y-auto p-4 pb-24 space-y-4">
             <div class="space-y-1.5">
                 <div class="flex justify-between text-[10px] font-mono-tech text-gray-500"><span id="room-label">КОМНАТА</span><span>ТЕПЛО: <b id="warmth-val" class="text-amber-400">0</b></span></div>
                 <svg id="room" viewBox="0 0 360 220" class="w-full rounded-xl border border-red-500/20" style="touch-action:pan-y" onpointermove="roomMove(event)" onpointerleave="pxT=0" onpointerup="pxT=0" onpointercancel="pxT=0">
@@ -250,8 +250,10 @@
                     </g>
                     <rect x="22" y="26" width="120" height="96" fill="none" stroke="#7f1d1d" stroke-width="4"/><path d="M82 26V122M22 74H142" stroke="#7f1d1d" stroke-width="2.5"/><rect x="14" y="122" width="136" height="6" fill="#2b1217"/>
                     <g id="r-curtain" class="fade"><path d="M22 26h28l-8 96H22z" fill="#4c1d2a"/><path d="M142 26h-28l8 96h20z" fill="#4c1d2a"/><path d="M34 26l-4 96M130 26l4 96" stroke="#3a1219"/></g>
-                    <g class="px1"><circle cx="212" cy="52" r="40" fill="url(#neon)"/><g class="flick"><text x="180" y="60" font-family="monospace" font-size="24" letter-spacing="4" fill="none" stroke="#fca5a5" stroke-width="1.2">NEEO</text><text x="180" y="60" font-family="monospace" font-size="24" letter-spacing="4" fill="#ef4444" opacity=".35">NEEO</text></g></g>
+                    <g id="r-rays" class="fade px2"><path d="M32 100L70 168H170L108 100Z" fill="#fde68a" opacity=".13"/><path d="M80 100L118 168H210L150 100Z" fill="#fde68a" opacity=".08"/></g>
+                    <g class="px1"><circle cx="223" cy="52" r="62" fill="url(#neon)"/><g class="flick"><text id="neon-a" x="223" y="60" text-anchor="middle" font-family="monospace" font-size="24" letter-spacing="2" fill="none" stroke="#fca5a5" stroke-width="1.2">NEEO</text><text id="neon-b" x="223" y="60" text-anchor="middle" font-family="monospace" font-size="24" letter-spacing="2" fill="#ef4444" opacity=".35">NEEO</text></g></g>
                     <g class="px1"><g id="r-poster" class="fade"><rect x="296" y="34" width="44" height="58" fill="#150a10" stroke="#7f1d1d"/><circle cx="318" cy="58" r="11" fill="none" stroke="#ef4444"/><path d="M304 78h28M308 84h20" stroke="#7f1d1d"/></g></g>
+                    <g class="px1"><g id="r-gold" class="fade"><rect x="274" y="98" width="32" height="30" fill="#150a10" stroke="#fbbf24"/><circle cx="290" cy="113" r="11" fill="#fbbf24"/><circle cx="290" cy="113" r="4" fill="#150a10"/><circle cx="290" cy="113" r="1.2" fill="#fbbf24"/></g></g>
                     <g class="px1"><g id="r-shelf" class="fade"><rect x="170" y="96" width="92" height="4" fill="#3f1d24"/><rect x="176" y="74" width="6" height="22" fill="#7f1d1d"/><rect x="184" y="78" width="5" height="18" fill="#4c1d2a"/><rect x="191" y="72" width="7" height="24" fill="#9a3412"/><circle cx="222" cy="86" r="10" fill="#0b0506" stroke="#52525b"/><circle cx="222" cy="86" r="3" fill="#ef4444"/><rect x="240" y="82" width="16" height="14" fill="#1f0d11" stroke="#7f1d1d"/></g></g>
                     <g class="px1"><g id="r-lights" class="fade"><path d="M0 8Q90 30 180 10T360 8" stroke="#52525b" fill="none"/><g fill="#fbbf24"><circle class="twinkle" cx="45" cy="18" r="2.2"/><circle class="twinkle" cx="100" cy="24" r="2.2" style="animation-delay:-.5s"/><circle class="twinkle" cx="150" cy="20" r="2.2" style="animation-delay:-1s"/><circle class="twinkle" cx="210" cy="14" r="2.2" style="animation-delay:-1.4s"/><circle class="twinkle" cx="270" cy="12" r="2.2" style="animation-delay:-.3s"/><circle class="twinkle" cx="325" cy="9" r="2.2" style="animation-delay:-.9s"/></g></g></g>
                     <g class="px4">
@@ -265,12 +267,13 @@
                     </g>
                     <g class="px5">
                         <ellipse cx="150" cy="198" rx="86" ry="12" fill="#3a1219"/><ellipse cx="150" cy="198" rx="62" ry="8" fill="none" stroke="#7f1d1d"/>
-                        <g id="r-lamp" class="fade"><circle cx="212" cy="110" r="84" fill="url(#glow)"/><path d="M212 94V168" stroke="#52525b" stroke-width="3"/><path d="M199 96h26l-6-20h-14z" fill="#fbbf24"/><rect x="204" y="166" width="16" height="3" fill="#3f3f46"/></g>
+                        <g id="r-lamp" class="fade"><circle cx="212" cy="128" r="84" fill="url(#glow)"/><path d="M212 122V168" stroke="#52525b" stroke-width="3"/><path d="M199 124h26l-6-20h-14z" fill="#fbbf24"/><rect x="204" y="166" width="16" height="3" fill="#3f3f46"/></g>
                         <g id="r-plant" class="fade"><g class="sway"><rect x="168" y="152" width="14" height="16" rx="2" fill="#7c2d12"/><path d="M175 152c-10-18-18-22-24-18 8 3 14 10 16 18M175 152c6-22 16-28 22-24-8 4-14 12-16 24M175 152c0-20 2-30 6-36-6 4-8 16-6 36" fill="#16a34a"/></g></g>
                         <g fill="#fde68a"><circle class="mote" cx="90" cy="100" r="1.2"/><circle class="mote" cx="180" cy="60" r="1" style="animation-delay:-2s"/><circle class="mote" cx="260" cy="90" r="1.2" style="animation-delay:-4s"/><circle class="mote" cx="130" cy="140" r="1" style="animation-delay:-1s"/></g>
                     </g>
                 </svg>
                 <p class="text-[10px] font-mono-tech text-gray-600 text-center">проведите пальцем по комнате // нажимайте на предметы</p>
+                <button id="pts-preview" onclick="togglePreview()" class="hidden w-full py-1.5 border border-amber-400/40 text-amber-300 text-[10px] font-mono-tech rounded-lg">PTS: ПОКАЗАТЬ / СКРЫТЬ МАКС. УРОВЕНЬ</button>
             </div>
             <div class="mx-auto w-60 bg-black border-2 border-red-900/60 rounded-3xl p-3 space-y-2 shadow-lg">
                 <div class="text-center text-[9px] font-mono-tech text-gray-600">NEEO_PHONE</div>
@@ -407,10 +410,13 @@
     }
     function renderRoom() {
         if (!document.getElementById('room')) return;
-        const r = rankIdx(), w = player.warmth || 0, el = id => document.getElementById(id);
+        const r = roomPreview ? ranks.length - 1 : rankIdx(), w = roomPreview ? 40 : (player.warmth || 0), music = roomPreview || musicFound(), el = id => document.getElementById(id);
         const show = (id, on) => { const n = el(id); if (n) n.style.opacity = on ? 1 : 0; };
         show('r-lamp', r >= 1); show('r-shelf', r >= 1); show('r-plant', r >= 2); show('r-poster', r >= 2);
-        show('r-curtain', r >= 3); show('r-lights', r >= 3); show('r-cat', r >= 4); show('r-radio', musicFound());
+        show('r-curtain', r >= 3); show('r-lights', r >= 3); show('r-cat', r >= 4); show('r-radio', music); show('r-gold', r >= 5); show('r-rays', w >= 30);
+        const nick = ('@' + (player.name || 'GUEST')).toUpperCase().slice(0, 18);
+        const fs = Math.max(11, Math.min(24, Math.floor((130 / nick.length - 2) / 0.6)));
+        ['neon-a', 'neon-b'].forEach(id => { const t = el(id); t.textContent = nick; t.setAttribute('font-size', fs); });
         show('r-rain', w < 5); show('r-stars', w < 15); show('r-moon', w < 15); show('r-sun', w >= 5);
         el('r-sun').style.transform = 'translateY(' + (w >= 30 ? -34 : w >= 15 ? -14 : 12) + 'px)';
         const sky = w >= 30 ? ['#fb7185', '#fbbf24'] : w >= 15 ? ['#4c1d3a', '#f59e0b'] : w >= 5 ? ['#1a0b14', '#7c2d12'] : ['#0a0608', '#1a0b0e'];
@@ -432,14 +438,17 @@
     }
     function openRadio() { if (musicFound()) openMusic(); else { SFX.block(); notify('Приёмник молчит. Найдите частоту.'); } }
     function openWhisper() { SFX.block(); notify('Шёпоты скоро. Тренируйте слушание и копите Тепло.'); }
+    let roomPreview = false;
     function showPts() {
         const b = document.createElement('div');
         b.textContent = '// PTS — ТЕСТОВАЯ ВЕРСИЯ. ДАННЫЕ НЕНАСТОЯЩИЕ';
-        b.className = 'fixed top-0 left-0 right-0 bg-amber-400 text-black text-[10px] font-mono-tech text-center py-0.5';
-        b.style.zIndex = '100000';
-        document.body.appendChild(b);
+        b.className = 'shrink-0 bg-amber-400 text-black text-[10px] font-mono-tech text-center py-0.5';
+        const app = document.querySelector('.app-h'); if (app) app.prepend(b);
         document.title = 'PTS ' + document.title;
+        document.getElementById('pts-preview').classList.remove('hidden');
+        if (/[?&]room=max/.test(location.search)) { roomPreview = true; renderRoom(); }
     }
+    function togglePreview() { roomPreview = !roomPreview; renderRoom(); }
 
     // Удержание взгляда: 3 секунды внимания к чужой боли
     let held = {}, holding = false, holdT = null, holdRAF = null;

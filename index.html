@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="room.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@300;400;500;600;700&display=swap');
         .font-mono-tech { font-family: 'Share Tech Mono', monospace; }
@@ -223,13 +224,47 @@
 
         <!-- ЭКРАН 3: ПРОФИЛЬ -->
         <div id="view-profile" class="hidden flex-1 overflow-y-auto p-4 pb-24 space-y-4">
-            <div class="space-y-1.5">
-                <div class="flex justify-between text-[10px] font-mono-tech text-gray-500"><span id="room-label">КОМНАТА</span><span>ТЕПЛО: <b id="warmth-val" class="text-amber-400">0</b></span></div>
-                <canvas id="room" width="180" height="110" class="w-full rounded-xl border border-red-500/20" style="image-rendering:pixelated;touch-action:pan-y;aspect-ratio:180/110" onpointermove="roomMove(event)" onpointerleave="pxT=0" onpointerup="pxT=0" onpointercancel="pxT=0" onclick="roomClick(event)"></canvas>
-                <p id="plant-label" class="text-[10px] font-mono-tech text-amber-300/80 text-center"></p>
-                <p class="text-[10px] font-mono-tech text-gray-600 text-center">проведите пальцем по комнате // нажимайте на предметы</p>
-                <button id="pts-preview" onclick="togglePreview()" class="hidden w-full py-1.5 border border-amber-400/40 text-amber-300 text-[10px] font-mono-tech rounded-lg">PTS: ПОКАЗАТЬ / СКРЫТЬ МАКС. УРОВЕНЬ</button>
-            </div>
+            <section id="station" class="station" aria-labelledby="station-title">
+                <header class="station-head">
+                    <div><div id="station-mode" class="station-meta">ЛИЧНАЯ СТАНЦИЯ // 01</div><h2 id="station-title">Между сигналами</h2></div>
+                    <div class="station-meta station-heat">ТЕПЛО <b id="warmth-val">0</b></div>
+                </header>
+                <div class="station-scene">
+                    <img src="assets/quiet-station.jpg" width="1586" height="992" alt="Комната над ночным городом с круглым окном и маленьким ростком">
+                    <div class="station-light" aria-hidden="true"></div>
+                    <div class="station-rain" aria-hidden="true"></div>
+                    <svg class="station-sky" viewBox="0 0 1000 625" aria-hidden="true">
+                        <line data-star="2" x1="441" y1="274" x2="465" y2="236" stroke="currentColor" stroke-width="1.4"/>
+                        <line data-star="3" x1="465" y1="236" x2="498" y2="249" stroke="currentColor" stroke-width="1.4"/>
+                        <line data-star="4" x1="498" y1="249" x2="524" y2="195" stroke="currentColor" stroke-width="1.4"/>
+                        <line data-star="5" x1="524" y1="195" x2="562" y2="219" stroke="currentColor" stroke-width="1.4"/>
+                        <line data-star="6" x1="562" y1="219" x2="584" y2="175" stroke="currentColor" stroke-width="1.4"/>
+                        <circle data-star="1" cx="441" cy="274" r="4" fill="currentColor"/>
+                        <circle data-star="2" cx="465" cy="236" r="4" fill="currentColor"/>
+                        <circle data-star="3" cx="498" cy="249" r="4" fill="currentColor"/>
+                        <circle data-star="4" cx="524" cy="195" r="4" fill="currentColor"/>
+                        <circle data-star="5" cx="562" cy="219" r="4" fill="currentColor"/>
+                        <circle data-star="6" cx="584" cy="175" r="4" fill="currentColor"/>
+                    </svg>
+                    <button type="button" class="station-point" style="left:23%;top:65%" onclick="openTrainer()">Тренажёр</button>
+                    <button type="button" class="station-point" style="left:84%;top:58%" onclick="openRadio()">Радио</button>
+                </div>
+                <div class="station-log">
+                    <div class="station-meta">ЖУРНАЛ СТАНЦИИ</div>
+                    <p><strong id="station-entry"></strong></p>
+                    <p id="station-next"></p>
+                    <progress id="station-meter" aria-label="Прогресс до следующей атмосферы"></progress>
+                    <div class="station-presets" role="group" aria-label="Атмосфера комнаты">
+                        <button type="button" data-preset onclick="equipStationPhase(0)">Дождь<span></span></button>
+                        <button type="button" data-preset onclick="equipStationPhase(1)">Оттепель<span></span></button>
+                        <button type="button" data-preset onclick="equipStationPhase(2)">Очаг<span></span></button>
+                        <button type="button" data-preset onclick="equipStationPhase(3)">Рассвет<span></span></button>
+                    </div>
+                    <p id="station-stars"></p>
+                    <p>Тепло не тратится. Его можно получить за внимательное чтение и удачные ответы в тренажёре.</p>
+                    <button id="pts-preview" onclick="togglePreview()" class="hidden w-full py-1.5 border border-amber-400/40 text-amber-300 text-[10px] font-mono-tech rounded-lg">PTS: ПОКАЗАТЬ / СКРЫТЬ МАКС. УРОВЕНЬ</button>
+                </div>
+            </section>
             <div class="mx-auto w-60 bg-black border-2 border-red-900/60 rounded-3xl p-3 space-y-2 shadow-lg">
                 <div class="text-center text-[9px] font-mono-tech text-gray-600">NEEO_PHONE</div>
                 <div class="grid grid-cols-4 gap-2 text-center">
@@ -275,6 +310,7 @@
     </div>
 
 <script src="config.js"></script>
+<script src="room.js"></script>
 <script src="music.js"></script>
 <script>
     const cfg = window.SOMA_CONFIG || {};
@@ -363,211 +399,8 @@
         try { localStorage.setItem('soma_warmth', String(player.warmth)); } catch (e) {}
         try { supabaseClient.from('soma_users').update({ warmth: player.warmth }).eq('username', player.uid).then(() => {}, () => {}); } catch (e) {}
     }
-    // ===== ПИКСЕЛЬНАЯ КОМНАТА: канвас 180x110, всё рисуется кодом =====
-    const RW = 180, RH = 110, WX = 10, WY = 10, WW = 48, WH = 42;
-    const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
-    const mkC = (w, h) => { const c = document.createElement('canvas'); c.width = w || RW; c.height = h || RH; return c; };
-    const R = (c, x, y, w, h, col) => { const g = c.getContext('2d'); g.fillStyle = col; g.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h)); };
-    const P = (c, x, y, col) => R(c, x, y, 1, 1, col);
-    function disc(c, cx, cy, r, col) { for (let y = -r; y <= r; y++) for (let x = -r; x <= r; x++) if (x * x + y * y <= r * r + r * 0.4) P(c, cx + x, cy + y, col); }
-    function line(c, x0, y0, x1, y1, col) {
-        x0 = Math.round(x0); y0 = Math.round(y0); x1 = Math.round(x1); y1 = Math.round(y1);
-        const dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1; let e = dx + dy;
-        for (;;) { P(c, x0, y0, col); if (x0 === x1 && y0 === y1) break; const e2 = 2 * e; if (e2 >= dy) { e += dy; x0 += sx; } if (e2 <= dx) { e += dx; y0 += sy; } }
-    }
-    const lerpC = (a, b, t) => { const p = s => [1, 3, 5].map(i => parseInt(s.substr(i, 2), 16)); const A = p(a), B = p(b); return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, '0')).join(''); };
-    function hashStr(s) { let n = 2166136261; const str = String(s); for (let i = 0; i < str.length; i++) { n ^= str.charCodeAt(i); n = Math.imul(n, 16777619); } return n >>> 0; }
-    function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
-    const GL = {};
-    function glow(key, r, col) {
-        if (GL[key]) return GL[key];
-        const c = mkC(r * 2 + 1, r * 2 + 1), g = c.getContext('2d'); g.fillStyle = col;
-        for (let y = -r; y <= r; y++) for (let x = -r; x <= r; x++) { const d = Math.sqrt(x * x + y * y) / r; if (d < 1 && (1 - d) * 19 > BAYER[((y + r) & 3) * 4 + ((x + r) & 3)]) g.fillRect(x + r, y + r, 1, 1); }
-        return (GL[key] = c);
-    }
-
-    // Растение: у каждого игрока свой вид, цвета, горшок и форма (из его анонимного id)
-    const LEAF = [['#14452f', '#2f8f5b'], ['#1d4a3c', '#3fae8a'], ['#3b4a1c', '#8fae3f'], ['#2f2b57', '#7a6fd1'], ['#4a1d3a', '#c2548f'], ['#1c3f4a', '#4aa8c2']];
-    const BLOOM = ['#ff4e6a', '#f5f5f0', '#ffd23f', '#b57bff', '#ff8a3d', '#5fd3ff'];
-    const POTS = [['#8a3b1f', '#b95a32'], ['#aab4c8', '#dfe5f0'], ['#22252f', '#3a3f4f'], ['#27506b', '#3d7ba3'], ['#6b2740', '#9c3d5f']];
-    const KINDS = ['ПАПОРОТНИК', 'КАКТУС', 'СУККУЛЕНТ', 'БАМБУК', 'ЛИАНА', 'ЦВЕТОК', 'БОНСАЙ'];
-    function plantSpec() {
-        const r = rng(hashStr(player.uid || player.name || 'x'));
-        return { kind: Math.floor(r() * 7), leaf: LEAF[Math.floor(r() * LEAF.length)], bloom: BLOOM[Math.floor(r() * BLOOM.length)], pot: POTS[Math.floor(r() * POTS.length)], seed: Math.floor(r() * 1e9), lean: r() * 2 - 1, potShape: Math.floor(r() * 3) };
-    }
-    function drawPlant(c, sp, s, bx) {
-        const r = rng(sp.seed), d = sp.leaf[0], l = sp.leaf[1], bl = sp.bloom, p1 = sp.pot[0], p2 = sp.pot[1], k = sp.kind, n = s + 1;
-        const ph = [10, 8, 12][sp.potShape], pw = [12, 15, 9][sp.potShape], top = 84 - ph, by = top - 1;
-        R(c, bx - pw / 2, top + 2, pw, ph - 2, '#07070d'); R(c, bx - pw / 2 + 1, top + 2, pw - 2, ph - 3, p1); R(c, bx - pw / 2 + 1, top + 2, 2, ph - 3, p2);
-        R(c, bx - pw / 2 - 1, top - 1, pw + 2, 1, '#07070d'); R(c, bx - pw / 2 - 1, top, pw + 2, 2, p2); R(c, bx - pw / 2, top + 1, pw, 1, p1); R(c, bx - pw / 2 + 1, top, pw - 2, 1, '#1a120d');
-        if (k === 0) {
-            const cnt = 1 + n; for (let i = 0; i < cnt; i++) { const a = (i / Math.max(1, cnt - 1) - 0.5) * 2.2 + sp.lean * 0.3, L = 4 + n * 3.2 + r() * 3, tx = bx + Math.sin(a) * L, ty = by - Math.cos(a) * L, w = n > 3 ? 3 : 2; line(c, bx, by, tx, ty, d); R(c, tx - w, ty - 1, w * 2 + 1, 2, l); P(c, tx, ty - 2, l); P(c, tx - w, ty, d); P(c, tx + w, ty, d); }
-        } else if (k === 1) {
-            const h = 5 + n * 3.5, w = n > 3 ? 7 : 5, x0 = bx - (w >> 1);
-            R(c, x0 - 1, by - h - 1, w + 2, h + 1, '#07070d'); R(c, x0, by - h, w, h, d); R(c, x0 + 1, by - h + 1, 2, h - 1, l);
-            for (let y = by - h + 2; y < by; y += 3) { P(c, x0 + w - 2, y, '#e8e4c8'); P(c, x0 + 1, y + 1, '#e8e4c8'); }
-            if (n >= 3) { const ay = by - h * 0.55; R(c, x0 - 4, ay, 4, 2, d); R(c, x0 - 4, ay - 4, 2, 5, d); P(c, x0 - 4, ay - 4, l); }
-            if (n >= 5) { const ay = by - h * 0.4; R(c, x0 + w, ay, 4, 2, d); R(c, x0 + w + 2, ay - 4, 2, 5, d); P(c, x0 + w + 2, ay - 4, l); }
-            if (n >= 6) { R(c, bx - 1, by - h - 3, 3, 2, bl); P(c, bx, by - h - 4, bl); }
-        } else if (k === 2) {
-            const layers = 1 + (n >> 1) + (n > 4 ? 1 : 0);
-            for (let ly = layers; ly >= 1; ly--) { const cnt = 4 + ly * 2, rad = 2 + ly * 2.2, off = layers - ly; for (let i = 0; i < cnt; i++) { const a = Math.PI * (i / (cnt - 1)), tx = bx + Math.cos(a) * rad * 1.6, ty = by - 2 - Math.sin(a) * rad * 0.9 - off; line(c, bx, by - 1 - off, tx, ty, ly % 2 ? d : l); P(c, tx, ty, l); } }
-            if (n >= 6) { line(c, bx, by - 3, bx, by - layers * 3 - 8, d); R(c, bx - 1, by - layers * 3 - 11, 3, 3, bl); }
-        } else if (k === 3) {
-            const cnt = 1 + (n >> 1);
-            for (let i = 0; i < cnt; i++) { const x = bx + (i - (cnt - 1) / 2) * 4, h = 6 + n * 4 + i * 2 + r() * 4; R(c, x - 1, by - h, 2, h, d); R(c, x, by - h, 1, h, l); for (let y = by - 4; y > by - h; y -= 5) R(c, x - 1, y, 2, 1, '#07070d'); if (n > 1) { line(c, x, by - h, x - 4, by - h + 3, l); line(c, x, by - h, x + 4, by - h + 3, l); line(c, x, by - h + 1, x, by - h - 3, l); } }
-        } else if (k === 4) {
-            for (let i = 0; i < 2; i++) { const h = 3 + n * 3.5 - i * 3, x = bx - 2 + i * 4, tx = x + (i ? 2 : -2); line(c, x, by, tx, by - h, d); R(c, tx - 1, by - h - 1, 3, 2, l); }
-            const dir = sp.lean >= 0 ? 1 : -1, len = 3 + n * 3, sx = bx + dir * (pw / 2 + 1);
-            for (let i = 0; i < len; i++) { const x = sx + dir * Math.floor(i / 7), y = top + 1 + i; if (y > 83) break; P(c, x, y, d); if (i % 3 === 1) { R(c, x + dir, y, 2, 2, l); P(c, x - dir, y, l); } }
-        } else if (k === 5) {
-            const cnt = 1 + (n >> 1);
-            for (let i = 0; i < cnt; i++) { const x = bx + (i - (cnt - 1) / 2) * 5, h = 6 + n * 3.5 + r() * 4, tx = x + (r() - 0.5) * 4; line(c, x, by, tx, by - h, d); line(c, x, by - h * 0.5, x + 3, by - h * 0.5 - 2, l); line(c, x, by - h * 0.35, x - 3, by - h * 0.35 - 2, l); if (n >= 3) { P(c, tx, by - h - 1, '#ffd23f'); P(c, tx - 1, by - h - 1, bl); P(c, tx + 1, by - h - 1, bl); P(c, tx, by - h - 2, bl); P(c, tx, by - h, bl); } }
-        } else {
-            const h = 6 + n * 2.6, tx = bx + sp.lean * 4; line(c, bx, by, tx, by - h, '#4a2e1c'); line(c, bx + 1, by, tx + 1, by - h, '#4a2e1c');
-            const blobs = 1 + (n >> 1) + (n > 4 ? 1 : 0);
-            for (let i = 0; i < blobs; i++) { const cx = tx + (i - (blobs - 1) / 2) * 5, cy = by - h - 1 + (i % 2) * 3, rad = 3 + (n > 3 ? 1 : 0) + (i === 0 ? 1 : 0); disc(c, cx, cy, rad, d); for (let j = 0; j < rad * 3; j++) P(c, cx + Math.round((r() - 0.5) * rad * 2), cy + Math.round((r() - 0.5) * rad * 1.6), l); if (n >= 6) { P(c, cx + 1, cy - 1, bl); P(c, cx - 2, cy + 1, bl); } }
-        }
-    }
-
-    let RC = null, RKEY = '', flashT = 0;
-    const drops = Array.from({ length: 16 }, (_, i) => ({ x: WX + (i * 37) % WW, y: WY + (i * 53) % WH, v: 1.2 + (i % 4) * 0.4 }));
-    function roomState() { return { r: roomPreview ? ranks.length - 1 : rankIdx(), w: roomPreview ? 40 : (player.warmth || 0), music: roomPreview || musicFound(), nick: ('@' + (player.name || 'GUEST')).toUpperCase().slice(0, 18) }; }
-
-    function buildRoom(st) {
-        const C = { st }, sp = C.sp = plantSpec(), r = st.r, w = st.w, stage = Math.min(5, r);
-        const wall = C.wall = mkC(), furn = C.furn = mkC(), fg = C.fg = mkC();
-        // стена, потолок в тени, плинтус
-        R(wall, 0, 0, RW, 84, '#10131f');
-        for (let x = 0; x < RW; x += 6) R(wall, x, 0, 1, 84, '#141829');
-        for (let y = 5; y < 80; y += 8) for (let x = 3 + ((y >> 3) % 2) * 6; x < RW; x += 12) P(wall, x, y, '#1b2138');
-        for (let y = 0; y < 14; y++) for (let x = 0; x < RW; x++) if (((x + y) & 1) && y < 14 - (x % 5)) P(wall, x, y, '#0a0c14');
-        for (let i = 0; i < 40; i++) P(wall, 150 + (i * 7) % 20, 2 + (i * 5) % 12, '#0c0e17');
-        R(wall, 0, 79, RW, 1, '#232a42'); R(wall, 0, 80, RW, 4, '#07080d');
-        // пол: доски и потёртости
-        R(wall, 0, 84, RW, 26, '#0b0c12');
-        for (let y = 84, row = 0; y < RH; y += 5, row++) { R(wall, 0, y, RW, 1, '#05060a'); for (let x = (row % 2) * 22; x < RW; x += 44) R(wall, x, y, 1, 5, '#05060a'); }
-        for (let i = 0; i < 60; i++) P(wall, (i * 37) % RW, 86 + (i * 11) % 22, '#10121a');
-        // окно: рама, стекло (дырка), жалюзи, переплёт, подоконник
-        R(wall, WX - 3, WY - 3, WW + 6, WH + 6, '#06070b'); R(wall, WX - 2, WY - 2, WW + 4, WH + 4, '#2a3350'); R(wall, WX - 1, WY - 1, WW + 2, WH + 2, '#0a0b11');
-        wall.getContext('2d').clearRect(WX, WY, WW, WH);
-        const bh = w >= 30 ? 10 : w >= 15 ? 18 : 26; for (let y = WY; y < WY + bh; y += 4) { R(wall, WX, y, WW, 2, '#171c2e'); R(wall, WX, y, WW, 1, '#2d3652'); }
-        R(wall, WX + 3, WY, 1, bh + 2, '#2d3652'); R(wall, WX + 23, WY, 2, WH, '#0a0b11'); R(wall, WX, WY + 20, WW, 2, '#0a0b11');
-        R(wall, WX - 4, WY + WH + 3, WW + 8, 3, '#2a3350'); R(wall, WX - 4, WY + WH + 6, WW + 8, 1, '#07080d');
-        if (r >= 3) for (let sd = 0; sd < 2; sd++) { const x0 = sd ? WX + WW + 1 : WX - 12; for (let x = 0; x < 11; x++) R(wall, x0 + x, WY - 4, 1, WH + 8, (x % 4 < 2) ? '#4a1424' : '#34101c'); R(wall, x0, WY - 5, 11, 2, '#2a3350'); }
-        // плащ и шляпа на крючке (нуар)
-        R(wall, 130, 12, 2, 2, '#6b7a99'); R(wall, 127, 13, 10, 6, '#0a0b11'); R(wall, 127, 17, 10, 1, '#6e2a1c'); R(wall, 124, 19, 16, 2, '#0a0b11');
-        R(wall, 126, 22, 12, 32, '#1c2236'); R(wall, 127, 23, 10, 30, '#262e48'); R(wall, 131, 23, 2, 30, '#1c2236'); R(wall, 126, 22, 12, 3, '#323c5c');
-        for (const yy of [30, 37, 44]) { P(wall, 129, yy, '#aab4c8'); P(wall, 134, yy, '#aab4c8'); }
-        // полка с пластинками (ур. 2+)
-        if (r >= 1) {
-            R(wall, 72, 41, 48, 2, '#3b2a20'); R(wall, 72, 43, 48, 1, '#06070a'); R(wall, 76, 43, 2, 3, '#2a1d16'); R(wall, 114, 43, 2, 3, '#2a1d16');
-            const cols = ['#6e2a1c', '#2a3350', '#a8431f', '#3d4a6b', '#4a1424', '#c98a2a', '#1d2236']; for (let i = 0; i < 7; i++) R(wall, 74 + i * 3, 31 + (i % 3), 2, 10 - (i % 3), cols[i]);
-            disc(wall, 100, 37, 4, '#06070d'); disc(wall, 100, 37, 1, '#ff3b4e'); R(wall, 108, 34, 8, 7, '#06070d'); R(wall, 109, 35, 6, 5, '#2a3350');
-        }
-        // плакат (ур. 3+)
-        if (r >= 2) { R(wall, 146, 12, 26, 32, '#06070d'); R(wall, 147, 13, 24, 30, '#161b2e'); disc(wall, 159, 24, 6, '#8a1a2a'); R(wall, 147, 30, 24, 13, '#0a0c14'); for (let x = 148; x < 170; x += 5) R(wall, x, 30 + (x % 3) * 2, 4, 13 - (x % 3) * 2, '#06070d'); R(wall, 150, 15, 18, 1, '#6b7a99'); R(wall, 153, 17, 12, 1, '#3d4a6b'); }
-        // золотая пластинка (макс. ур.)
-        if (r >= 5) { R(wall, 68, 48, 18, 14, '#06070d'); R(wall, 69, 49, 16, 12, '#141826'); disc(wall, 77, 55, 5, '#e0a830'); disc(wall, 77, 55, 2, '#141826'); P(wall, 77, 55, '#e0a830'); }
-
-        // мебель: стол, ЭЛТ-монитор, кружка, телефон, радио
-        R(furn, 4, 66, 64, 3, '#3b2a20'); R(furn, 4, 66, 64, 1, '#5a4030'); R(furn, 6, 69, 60, 2, '#2a1d16'); R(furn, 6, 71, 3, 13, '#2a1d16'); R(furn, 63, 71, 3, 13, '#2a1d16'); R(furn, 38, 71, 22, 8, '#241912'); R(furn, 38, 71, 22, 1, '#3b2a20'); R(furn, 48, 74, 4, 1, '#c98a2a'); R(furn, 4, 84, 66, 2, '#06070a');
-        R(furn, 7, 45, 26, 22, '#06070d'); R(furn, 8, 46, 24, 20, '#2a3350'); R(furn, 8, 46, 24, 2, '#3d4a6b'); R(furn, 14, 67, 12, 1, '#1d2236'); R(furn, 9, 47, 22, 16, '#06070d'); P(furn, 29, 65, '#ff3b4e');
-        R(furn, 35, 62, 5, 4, '#a8431f'); R(furn, 35, 62, 5, 1, '#d36a38'); P(furn, 40, 63, '#a8431f'); P(furn, 40, 64, '#a8431f');
-        R(furn, 57, 64, 6, 2, '#06070d'); P(furn, 58, 64, '#6ec6ff');
-        if (st.music) { R(furn, 42, 57, 14, 9, '#06070d'); R(furn, 43, 58, 12, 7, '#6e2a1c'); R(furn, 44, 59, 5, 5, '#2a0f0a'); for (let y = 60; y < 64; y += 2) R(furn, 45, y, 3, 1, '#a8431f'); disc(furn, 52, 61, 2, '#e0a830'); P(furn, 52, 61, '#06070d'); line(furn, 54, 57, 58, 52, '#aab4c8'); }
-        // тумбочка с лампой (ур. 2+)
-        R(furn, 103, 69, 14, 2, '#3b2a20'); R(furn, 104, 71, 12, 13, '#2a1d16'); R(furn, 104, 71, 12, 1, '#3b2a20'); R(furn, 108, 77, 4, 1, '#c98a2a'); R(furn, 104, 84, 12, 2, '#06070a');
-        if (r >= 1) { R(furn, 109, 63, 2, 6, '#6b7a99'); R(furn, 106, 56, 8, 2, '#c98a2a'); R(furn, 105, 58, 10, 3, '#e0a830'); R(furn, 106, 61, 8, 2, '#ffd27a'); R(furn, 107, 69, 6, 1, '#6b7a99'); }
-        // кровать
-        R(furn, 118, 60, 3, 24, '#1d2236'); R(furn, 172, 48, 4, 36, '#1d2236'); P(furn, 172, 47, '#3d4a6b'); P(furn, 175, 47, '#3d4a6b');
-        R(furn, 121, 78, 51, 2, '#141826'); R(furn, 121, 66, 51, 12, '#6b7a99'); R(furn, 121, 66, 51, 1, '#aab4c8'); R(furn, 133, 64, 39, 16, '#4a1424');
-        for (let x = 135; x < 172; x += 4) R(furn, x, 64, 1, 16, '#34101c'); for (let y = 66; y < 80; y += 4) R(furn, 133, y, 39, 1, '#5e1a2e'); R(furn, 133, 64, 39, 1, '#7a2438');
-        R(furn, 159, 59, 13, 6, '#aab4c8'); R(furn, 159, 59, 13, 1, '#cfd8e8'); R(furn, 159, 64, 13, 1, '#6b7a99'); R(furn, 120, 80, 3, 4, '#141826'); R(furn, 170, 80, 3, 4, '#141826'); R(furn, 118, 84, 58, 2, '#06070a');
-
-        // передний план: ковёр и растение (горшок есть с самого начала)
-        for (let y = 90; y <= 104; y++) { const t = (y - 97) / 7.5, half = Math.round(46 * Math.sqrt(Math.max(0, 1 - t * t))); R(fg, 91 - half, y, half * 2, 1, Math.abs(t) > 0.75 ? '#5e1a2e' : '#3a1219'); P(fg, 91 - half, y, '#7a2030'); P(fg, 90 + half, y, '#7a2030'); }
-        R(fg, 84, 84, 14, 2, '#06070a'); drawPlant(fg, sp, stage, 91);
-
-        // окно: небо (дизеринг), звёзды, луна/солнце, два слоя города
-        C.sky = mkC(WW + 16, WH); C.far = mkC(WW + 16, WH); C.near = mkC(WW + 16, WH);
-        const pal = w >= 30 ? ['#4a3a6b', '#ffb35a'] : w >= 15 ? ['#241a3a', '#c2603a'] : w >= 5 ? ['#0b1022', '#3a1d2e'] : ['#04050b', '#101830'];
-        const B = [0, 1, 2, 3].map(i => lerpC(pal[0], pal[1], i / 3));
-        for (let y = 0; y < WH; y++) for (let x = 0; x < WW + 16; x++) { const q = y / WH * 3, b = Math.min(2, Math.floor(q)), f = q - b; P(C.sky, x, y, f * 16 > BAYER[(y & 3) * 4 + (x & 3)] ? B[b + 1] : B[b]); }
-        if (w < 15) { const rs = rng(5); for (let i = 0; i < 14; i++) P(C.sky, (rs() * (WW + 16)) | 0, (rs() * WH * 0.45) | 0, rs() > 0.5 ? '#aab4c8' : '#6b7a99'); disc(C.sky, 48, 9, 4, '#cfd8e8'); P(C.sky, 50, 8, '#aab4c8'); }
-        if (w >= 30) { disc(C.sky, 24, WH - 16, 8, '#ffb35a'); disc(C.sky, 24, WH - 16, 6, '#ffe08a'); }
-        const bld = (c, seed, hMin, hMax, col, lit, litCol) => { const rs = rng(seed); let x = -2; while (x < WW + 16) { const bw = 6 + ((rs() * 8) | 0), bh = hMin + ((rs() * (hMax - hMin)) | 0); R(c, x, WH - bh, bw, bh, col); if (rs() > 0.6) R(c, x + 2, WH - bh - 2, 2, 2, col); for (let wy = WH - bh + 2; wy < WH - 1; wy += 3) for (let wx = x + 1; wx < x + bw - 1; wx += 3) if (rs() < lit) P(c, wx, wy, litCol); x += bw + (rs() > 0.7 ? 1 : 0); } };
-        bld(C.far, 7, 16, 30, '#0d1324', 0.18, '#b07a24'); for (let y = WH - 12; y < WH; y++) for (let x = 0; x < WW + 16; x++) if ((x + y) & 1) P(C.far, x, y, '#1a2238');
-        bld(C.near, 21, 8, 20, '#06070d', 0.12, '#e0a830'); R(C.near, 34, WH - 22, 1, 14, '#06070d'); R(C.near, 30, WH - 24, 9, 5, '#2a0a12'); R(C.near, 31, WH - 23, 7, 3, '#ff3b4e');
-
-        // неон с ником игрока: пиксели берём из шрифта по порогу
-        const tc = mkC(70, 12), g = tc.getContext('2d'); g.font = 'bold 8px "Share Tech Mono", monospace'; g.textBaseline = 'top'; g.fillStyle = '#fff';
-        let nick = st.nick; while (g.measureText(nick).width > 58 && nick.length > 3) nick = nick.slice(0, -1);
-        const tw = Math.ceil(g.measureText(nick).width); g.fillText(nick, 0, 1);
-        const id = g.getImageData(0, 0, 70, 12).data, pts = []; for (let y = 0; y < 12; y++) for (let x = 0; x < 70; x++) if (id[(y * 70 + x) * 4 + 3] > 120) pts.push([x, y]);
-        C.neon = { pts, ox: 94 - (tw >> 1), oy: 13, w: tw };
-        return C;
-    }
-
-    function drawRoom(t) {
-        const cv = document.getElementById('room'); if (!cv) return;
-        const st = roomState(), key = [st.r, st.w >= 30 ? 3 : st.w >= 15 ? 2 : st.w >= 5 ? 1 : 0, st.music, st.nick, player.uid].join('|');
-        if (key !== RKEY || !RC) { RC = buildRoom(st); RKEY = key; }
-        const g = cv.getContext('2d'); g.imageSmoothingEnabled = false; g.globalAlpha = 1;
-        const s1 = Math.round(pxC), s2 = Math.round(pxC * 2), s3 = Math.round(pxC * 3), dx4 = Math.round(pxC * 4), dx6 = Math.round(pxC * 6);
-        g.fillStyle = '#07070d'; g.fillRect(0, 0, RW, RH);
-        g.save(); g.beginPath(); g.rect(WX, WY, WW, WH); g.clip();
-        g.drawImage(RC.sky, WX - 8 + s1, WY); g.drawImage(RC.far, WX - 8 + s2, WY); g.drawImage(RC.near, WX - 8 + s3, WY);
-        if (st.w < 5) {
-            g.fillStyle = 'rgba(150,185,235,.55)'; drops.forEach(d => { d.y += d.v; if (d.y > WY + WH) { d.y = WY - 4; d.x = WX + Math.random() * WW; } g.fillRect(Math.round(d.x), Math.round(d.y), 1, 3); });
-            if (flashT > 0) { g.fillStyle = 'rgba(220,235,255,.35)'; g.fillRect(WX, WY, WW, WH); flashT--; } else if (Math.random() < 0.003) flashT = 4;
-        }
-        g.restore();
-        g.drawImage(RC.wall, 0, 0);
-        g.drawImage(RC.furn, dx4, 0);
-        // экран ЭЛТ: янтарный текст «печатается», мигает курсор
-        g.fillStyle = '#06100c'; g.fillRect(9 + dx4, 47, 22, 16);
-        const rr = rng(((t / 700) | 0) + 11); g.fillStyle = '#ffb347'; for (let i = 0; i < 4; i++) g.fillRect(11 + dx4, 49 + i * 3, 4 + ((rr() * 14) | 0), 1);
-        if (((t / 450) | 0) % 2) g.fillRect(11 + dx4, 59, 2, 1);
-        // пар над кружкой
-        g.fillStyle = 'rgba(200,210,230,.5)'; for (let i = 0; i < 3; i++) { const o = ((t / 260) + i * 3) % 9; g.fillRect(37 + dx4 + ((i + (o | 0)) % 2), 61 - o, 1, 1); }
-        g.drawImage(RC.fg, dx6, 0);
-        // свет лампы и экрана, неон
-        if (st.r >= 1) { g.globalAlpha = 0.34 * (0.92 + Math.sin(t / 700) * 0.08); g.drawImage(glow('lamp', 30, '#ffbe5a'), 80 + dx4, 32); }
-        g.globalAlpha = 0.16; g.drawImage(glow('crt', 22, '#ffb347'), -2 + dx4, 32);
-        const N = RC.neon, fl = (Math.sin(t / 90) > 0.985 || ((t / 1300) | 0) % 11 === 0) ? 0.35 : 1;
-        g.globalAlpha = 0.26 * fl; g.drawImage(glow('neon', 26, '#ff3b4e'), N.ox + (N.w >> 1) - 26, N.oy + 5 - 26);
-        g.globalAlpha = fl; g.fillStyle = '#5a0b18'; N.pts.forEach(p => g.fillRect(N.ox + p[0] + 1, N.oy + p[1] + 1, 1, 1)); g.fillStyle = '#ff7a88'; N.pts.forEach(p => g.fillRect(N.ox + p[0], N.oy + p[1], 1, 1));
-        g.globalAlpha = 1;
-        // свет сквозь жалюзи — полосами на пол и мебель
-        g.fillStyle = st.w >= 15 ? 'rgba(255,210,130,.10)' : 'rgba(150,180,230,.08)';
-        for (let k = 0; k < 4; k++) for (let y = 56; y < 106; y++) g.fillRect(14 + k * 11 + Math.round((y - 56) * 0.7), y, 5, 1);
-        // пылинки в луче
-        g.fillStyle = 'rgba(200,210,230,.45)'; for (let i = 0; i < 6; i++) g.fillRect(((20 + i * 17 + t / (40 + i * 9)) % 90) | 0, (58 + i * 7 + Math.sin(t / 900 + i) * 4) | 0, 1, 1);
-    }
-
-    function renderRoom() {
-        if (!document.getElementById('room')) return;
-        const st = roomState(), sp = plantSpec();
-        document.getElementById('warmth-val').innerText = st.w;
-        document.getElementById('room-label').innerText = 'КОМНАТА // ' + ranks[st.r].title;
-        document.getElementById('plant-label').innerText = 'РАСТЕНИЕ: ' + KINDS[sp.kind] + ' // РОСТ ' + (Math.min(5, st.r) + 1) + '/6';
-        document.getElementById('app-radio').style.opacity = musicFound() ? 1 : 0.35;
-    }
-    // Параллакс: слои сдвигаются за пальцем, в покое комната слегка «дышит»
-    let pxT = 0, pxC = 0, pxRAF = null, pxLast = 0;
-    function roomMove(e) { const r = e.currentTarget.getBoundingClientRect(); pxT = Math.max(-1, Math.min(1, ((e.clientX - r.left) / r.width - 0.5) * 2)); }
-    function roomClick(e) {
-        const r = e.currentTarget.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * RW - Math.round(pxC * 4), y = (e.clientY - r.top) / r.height * RH;
-        if (x >= 8 && x <= 32 && y >= 45 && y <= 68) openTrainer(); else if (RC && RC.st.music && x >= 42 && x <= 56 && y >= 56 && y <= 68) openRadio();
-    }
-    function roomLoop(t) {
-        if (document.getElementById('view-profile').classList.contains('hidden')) { pxRAF = null; return; }
-        if (t - pxLast > 33) { pxLast = t; pxC += (pxT + Math.sin(t / 2600) * 0.15 - pxC) * 0.15; drawRoom(t); }
-        pxRAF = requestAnimationFrame(roomLoop);
-    }
     function openRadio() { if (musicFound()) openMusic(); else { SFX.block(); notify('Приёмник молчит. Найдите частоту.'); } }
-    function openWhisper() { SFX.block(); notify('Шёпоты скоро. Тренируйте слушание и копите Тепло.'); }
+    function openWhisper() { SFX.block(); notify('Шёпот пока закрыт. Тепло открывает только атмосферы комнаты.'); }
     let roomPreview = false;
     function showPts() {
         const b = document.createElement('div');
@@ -742,6 +575,7 @@
         try { Telegram.WebApp.disableVerticalSwipes(); } catch (e) {}
         renderTagChips(); initSoundUI();
         if (cfg.ENV === 'pts') showPts();
+        if (new URLSearchParams(location.search).has('room')) switchTab('profile');
         try { player.reactedPosts = JSON.parse(localStorage.getItem('soma_reacted') || '{}'); } catch (e) {}
         const k = SUPABASE_ANON_KEY || '';
         if (!/^https:\/\/[a-z0-9]+\.supabase\.co\/?$/.test(SUPABASE_URL || '')) notify('В config.js неверный SUPABASE_URL. Нужен вид https://abcdefgh.supabase.co (без /dashboard, без пробелов).');
@@ -997,7 +831,7 @@
         document.getElementById(`tab-${tab}`).classList.remove('text-gray-400');
 
         if (tab === 'top') renderLeaderboard();
-        if (tab === 'profile') { updateHeader(); if (!pxRAF) pxRAF = requestAnimationFrame(roomLoop); }
+        if (tab === 'profile') updateHeader();
     }
 
     async function renderLeaderboard() {

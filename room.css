@@ -1,49 +1,617 @@
-.station{--signal:#ff8b96;--light:rgba(156,12,35,.19);background:#100709;border:1px solid #462028;border-radius:20px;overflow:hidden;color:#fff1f2}
-.station[data-phase="1"]{--signal:#ff9a9f;--light:rgba(201,32,56,.26)}
-.station[data-phase="2"]{--signal:#ffaaa1;--light:rgba(239,55,65,.39)}
-.station[data-phase="3"]{--signal:#ffc6b8;--light:rgba(255,95,86,.55)}
-.station-head,.station-log{padding:14px}
-.station-head{display:flex;justify-content:space-between;gap:8px;align-items:center}
-.station-meta{font:11px 'Share Tech Mono',monospace;letter-spacing:.09em;color:var(--signal)}
-.station h2{font-size:clamp(17px,5vw,24px);font-weight:700;line-height:1.1;margin-top:4px}
-.station-heat{white-space:nowrap;border:1px solid #613039;border-radius:999px;padding:5px 8px}
-.station-scene{position:relative;isolation:isolate;aspect-ratio:1586/992;background:#210a11}
-.station-scene img,.station-light,.station-sky{position:absolute;inset:0;width:100%;height:100%}
-.station-light{background:radial-gradient(ellipse at 51% 28%,var(--light),transparent 35%),radial-gradient(ellipse at 51% 76%,var(--light),transparent 29%);mix-blend-mode:screen;pointer-events:none;transition:background-color .4s}
-.station-sky{color:var(--signal);pointer-events:none;filter:drop-shadow(0 0 4px currentColor)}
-.station-point{position:absolute;transform:translate(-50%,-50%);min-width:44px;min-height:44px;padding:0 9px;border-radius:999px;background:#13080bea;color:#fff1f2;border:1px solid var(--signal);font:11px 'Share Tech Mono',monospace;box-shadow:0 0 12px #21050a}
-.station button:focus-visible{outline:2px solid #fff;outline-offset:2px}
-.station-log{display:grid;gap:9px}
-.station-log p{font-size:12px;line-height:1.45;color:#dfbfc3}
-.station-log p strong{color:#fff}
-.station progress{width:100%;height:6px;appearance:none;accent-color:var(--signal);border-radius:10px;overflow:hidden;background:#381921}
-.station progress::-webkit-progress-bar{background:#381921}
-.station progress::-webkit-progress-value{background:var(--signal)}
-.station progress::-moz-progress-bar{background:var(--signal)}
-.station-presets{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
-.station-presets button{min-height:44px;font:11px 'Share Tech Mono',monospace;border:1px solid #532730;border-radius:8px;color:#f5dce0}
-.station-presets button[aria-pressed="true"]{border-color:var(--signal);color:var(--signal);background:#321016}
-.station-presets button:disabled{color:#bb999f;border-style:dashed}
-.station-presets span{display:block;font-size:10px}
-.station[data-phase="0"] .station-scene img{filter:saturate(.78) brightness(.87)}
-.station[data-phase="1"] .station-scene img{filter:saturate(1.14)}
-.station[data-phase="2"] .station-scene img{filter:sepia(.22) saturate(1.25) brightness(1.07)}
-.station[data-phase="3"] .station-scene img{filter:sepia(.32) saturate(1.3) brightness(1.16)}
-.station-light::after{content:'';position:absolute;inset:0;background:linear-gradient(117deg,transparent 38%,#ff9c9350 49%,transparent 65%);opacity:0}
-.station[data-phase="3"] .station-light::after{opacity:1}
-.station-sky circle,.station-sky line{transition:opacity .35s}
-@media(prefers-reduced-motion:reduce){.station *{transition:none!important}}
-.station-scene{border-block:1px solid #642029}
-.station-scene img{object-fit:fill}
-.station[data-phase="0"] .station-scene img{filter:brightness(1.09)}
-.station[data-phase="1"] .station-scene img{filter:brightness(1.18)}
-.station[data-phase="2"] .station-scene img{filter:brightness(1.27) saturate(1.1)}
-.station[data-phase="3"] .station-scene img{filter:brightness(1.35) saturate(.88)}
-.station-point{border-radius:7px;border-color:#ac4653;background:#14070bed;box-shadow:0 0 13px #24070e;font-weight:bold}
-.station-point:hover{border-color:var(--signal);background:#330e16}
-.station-rain{position:absolute;inset:0;pointer-events:none;clip-path:ellipse(20% 31% at 50% 35%);background:repeating-linear-gradient(98deg,transparent 0 17px,#ff758c33 18px,transparent 19px 27px);mask-image:repeating-linear-gradient(0deg,transparent 0 18px,black 20px 27px,transparent 30px 53px);mask-size:100% 106px;animation:station-rain 1.6s infinite linear;opacity:.55}
-.station[data-phase="1"] .station-rain{opacity:.32}
-.station[data-phase="2"] .station-rain{opacity:.16}
-.station[data-phase="3"] .station-rain{opacity:0;animation:none}
-@keyframes station-rain{to{mask-position:0 106px}}
-@media(prefers-reduced-motion:reduce){.station-rain{animation:none}}
+.station {
+    --signal: #ff5c70;
+    --signal-soft: #ff9ba6;
+    --light: rgba(178, 16, 40, 0.2);
+    background: #0d0507;
+    border: 1px solid #481822;
+    border-radius: 20px;
+    overflow: hidden;
+    color: #fff1f2;
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.55);
+}
+
+.station[data-phase="1"] {
+    --signal: #ff6e7e;
+    --signal-soft: #ffaab3;
+    --light: rgba(212, 26, 52, 0.28);
+}
+
+.station[data-phase="2"] {
+    --signal: #ff828e;
+    --signal-soft: #ffbbc2;
+    --light: rgba(242, 42, 66, 0.38);
+}
+
+.station[data-phase="3"] {
+    --signal: #ff9aa3;
+    --signal-soft: #ffd0d5;
+    --light: rgba(255, 68, 86, 0.48);
+}
+
+/* СЦЕНА: чистый point-and-click кадр без надписей и плашек */
+.station-scene {
+    position: relative;
+    isolation: isolate;
+    aspect-ratio: 1586 / 992;
+    background: #140508;
+    border-bottom: 1px solid #591c26;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.station-scene > img,
+.station-light,
+.station-rain,
+.station-sky,
+.station-fx {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.station-scene > img {
+    object-fit: fill;
+    pointer-events: none;
+    transition: filter 0.45s ease;
+}
+
+.station[data-phase="0"] .station-scene > img {
+    filter: brightness(1.06) contrast(1.04) saturate(1.02);
+}
+
+.station[data-phase="1"] .station-scene > img {
+    filter: brightness(1.14) contrast(1.03) saturate(1.08);
+}
+
+.station[data-phase="2"] .station-scene > img {
+    filter: brightness(1.22) contrast(1.02) saturate(1.14);
+}
+
+.station[data-phase="3"] .station-scene > img {
+    filter: brightness(1.3) contrast(1.01) saturate(1.1);
+}
+
+/* Свет окна и рассветный алый луч */
+.station-light {
+    background:
+        radial-gradient(ellipse at 50.9% 35.3%, var(--light), transparent 36%),
+        radial-gradient(ellipse at 50% 82%, var(--light), transparent 31%);
+    mix-blend-mode: screen;
+    pointer-events: none;
+    transition: opacity 0.45s ease, filter 0.3s ease;
+}
+
+.station-light::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(122deg, transparent 34%, rgba(255, 76, 94, 0.28) 50%, transparent 67%);
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+.station[data-phase="3"] .station-light::after {
+    opacity: 1;
+}
+
+.station[data-touch="lamp"] .station-light {
+    filter: brightness(1.35);
+}
+
+/* Дождь по круглому стеклу (фоновый слой + живые капли в canvas) */
+.station-rain {
+    pointer-events: none;
+    -webkit-clip-path: ellipse(20.5% 30% at 50.9% 35.3%);
+    clip-path: ellipse(20.5% 30% at 50.9% 35.3%);
+    background:
+        repeating-linear-gradient(
+            97deg,
+            transparent 0 13px,
+            rgba(255, 78, 100, 0.24) 13.5px 14.5px,
+            transparent 15px 25px,
+            rgba(214, 42, 66, 0.18) 25.5px 26.5px,
+            transparent 27px 39px
+        );
+    -webkit-mask-image: repeating-linear-gradient(0deg, transparent 0 14px, #000 17px 26px, transparent 30px 54px);
+    mask-image: repeating-linear-gradient(0deg, transparent 0 14px, #000 17px 26px, transparent 30px 54px);
+    -webkit-mask-size: 100% 108px;
+    mask-size: 100% 108px;
+    animation: station-rain 1.25s linear infinite;
+    opacity: 0.62;
+    transition: opacity 0.4s ease;
+}
+
+.station[data-phase="1"] .station-rain {
+    opacity: 0.36;
+    animation-duration: 1.65s;
+}
+
+.station[data-phase="2"] .station-rain {
+    opacity: 0.18;
+    animation-duration: 2.1s;
+}
+
+.station[data-phase="3"] .station-rain {
+    opacity: 0;
+    animation: none;
+}
+
+@keyframes station-rain {
+    to {
+        -webkit-mask-position: 0 108px;
+        mask-position: 0 108px;
+    }
+}
+
+/* Созвездие рангов в верхней части ночного неба */
+.station-sky {
+    color: var(--signal-soft);
+    pointer-events: none;
+    filter: drop-shadow(0 0 4px rgba(255, 78, 98, 0.85));
+}
+
+.station-sky circle,
+.station-sky line {
+    transition: opacity 0.35s ease, filter 0.3s ease;
+}
+
+.station[data-touch="window"] .station-sky {
+    filter: drop-shadow(0 0 8px rgba(255, 130, 146, 0.95));
+}
+
+/* Развёртка ЭЛТ на экране терминала (x=18.8%..25.8%, y=43.8%..53.4%) */
+.station-crt {
+    position: absolute;
+    left: 18.8%;
+    top: 43.8%;
+    width: 7%;
+    height: 9.6%;
+    border-radius: 2px;
+    overflow: hidden;
+    pointer-events: none;
+    background:
+        repeating-linear-gradient(
+            180deg,
+            rgba(255, 58, 80, 0.14) 0 1px,
+            rgba(6, 1, 3, 0.42) 1px 2.5px
+        );
+    box-shadow:
+        0 0 12px rgba(255, 38, 64, 0.34),
+        inset 0 0 6px rgba(255, 72, 92, 0.28);
+    animation: station-crt-flicker 4.4s steps(1, end) infinite;
+}
+
+.station-crt-beam {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -45%;
+    height: 45%;
+    background: linear-gradient(
+        180deg,
+        transparent 0%,
+        rgba(255, 58, 82, 0.24) 68%,
+        rgba(255, 168, 180, 0.62) 94%,
+        transparent 100%
+    );
+    mix-blend-mode: screen;
+    animation: station-crt-scan 2.1s linear infinite;
+}
+
+.station[data-touch="terminal"] .station-crt {
+    box-shadow:
+        0 0 22px rgba(255, 62, 86, 0.88),
+        0 0 8px rgba(255, 160, 174, 0.65),
+        inset 0 0 10px rgba(255, 128, 146, 0.65);
+}
+
+.station[data-touch="terminal"] .station-crt-beam {
+    animation-duration: 0.42s;
+}
+
+@keyframes station-crt-scan {
+    from { transform: translateY(0); }
+    to { transform: translateY(330%); }
+}
+
+@keyframes station-crt-flicker {
+    0%, 91%, 94%, 100% { opacity: 0.94; }
+    92% { opacity: 0.68; }
+    93% { opacity: 1; }
+}
+
+/* Шкала приёмника (x=81.1%..88.2%, y=43.6%..46.9%) */
+.station-dial {
+    position: absolute;
+    left: 81.1%;
+    top: 43.6%;
+    width: 7.1%;
+    height: 3.3%;
+    border-radius: 1px;
+    overflow: hidden;
+    pointer-events: none;
+    background: linear-gradient(90deg, transparent, rgba(255, 52, 74, 0.16), transparent);
+    box-shadow: 0 0 7px rgba(255, 42, 64, 0.24);
+    transition: box-shadow 0.25s ease, background-color 0.25s ease;
+}
+
+.station[data-radio="on"] .station-dial {
+    background: linear-gradient(90deg, rgba(255, 48, 72, 0.12), rgba(255, 84, 102, 0.34), rgba(255, 48, 72, 0.12));
+    box-shadow: 0 0 12px rgba(255, 58, 80, 0.55);
+}
+
+.station-dial-needle {
+    position: absolute;
+    top: 8%;
+    bottom: 8%;
+    left: 22%;
+    width: 2px;
+    background: #ff9ba6;
+    box-shadow: 0 0 5px #ff475e;
+    opacity: 0.58;
+    animation: station-dial-drift 5.2s ease-in-out infinite;
+}
+
+.station[data-radio="on"] .station-dial-needle {
+    opacity: 0.95;
+    animation-duration: 3.2s;
+}
+
+.station[data-touch="radio"] .station-dial {
+    background: rgba(255, 68, 90, 0.36);
+    box-shadow: 0 0 18px rgba(255, 72, 94, 0.9);
+}
+
+.station[data-touch="radio"] .station-dial-needle {
+    opacity: 1;
+    animation: station-dial-sweep 0.45s ease-in-out;
+}
+
+@keyframes station-dial-drift {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(7px); }
+}
+
+@keyframes station-dial-sweep {
+    0% { left: 10%; }
+    55% { left: 82%; }
+    100% { left: 48%; }
+}
+
+/* Пиксельные слои анимаций и уникального растения */
+.station-fx {
+    pointer-events: none;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+}
+
+.station-plant {
+    position: absolute;
+    left: 38%;
+    top: 57.5%;
+    width: 24%;
+    height: 38.4%;
+    pointer-events: none;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.65));
+    transform-origin: 50% 92%;
+    transition: filter 0.25s ease;
+}
+
+.station[data-touch="plant"] .station-plant {
+    filter: drop-shadow(0 0 9px rgba(255, 64, 86, 0.62)) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.7));
+    animation: station-plant-touch 0.52s ease-out;
+}
+
+@keyframes station-plant-touch {
+    0% { transform: rotate(0deg) scale(1); }
+    25% { transform: rotate(-2.8deg) scale(1.03); }
+    55% { transform: rotate(2.2deg) scale(1.02); }
+    80% { transform: rotate(-1deg) scale(1.01); }
+    100% { transform: rotate(0deg) scale(1); }
+}
+
+/* Невидимые интерактивные области предметов в духе старых квестов */
+.station-hit {
+    position: absolute;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: transparent;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.station-hit--terminal {
+    left: 16%;
+    top: 40%;
+    width: 15.5%;
+    height: 24.5%;
+}
+
+.station-hit--radio {
+    left: 76.5%;
+    top: 34.5%;
+    width: 16%;
+    height: 24.5%;
+}
+
+.station-hit--plant {
+    left: 40.5%;
+    top: 64%;
+    width: 19%;
+    height: 33%;
+    border-radius: 44% 44% 36% 36%;
+}
+
+.station-hit--window {
+    left: 34%;
+    top: 7%;
+    width: 33.4%;
+    height: 55%;
+    border-radius: 50%;
+}
+
+.station-hit--lamp {
+    left: 17.5%;
+    top: 15.5%;
+    width: 13.5%;
+    height: 22.5%;
+    border-radius: 50%;
+}
+
+.station-hit--shelf {
+    left: 1.2%;
+    top: 34%;
+    width: 13.8%;
+    height: 30%;
+}
+
+.station-hit--bed {
+    left: 68%;
+    top: 60.5%;
+    width: 29.5%;
+    height: 24.5%;
+}
+
+@media (hover: hover) {
+    .station-hit:hover {
+        background: radial-gradient(ellipse at center, rgba(255, 62, 86, 0.16), transparent 72%);
+    }
+    .station-hit--terminal:hover,
+    .station-hit--radio:hover {
+        background: radial-gradient(ellipse at center, rgba(255, 74, 96, 0.24), transparent 72%);
+        box-shadow: inset 0 0 14px rgba(255, 62, 86, 0.18);
+    }
+}
+
+.station-hit:focus-visible {
+    outline: 1.5px solid var(--signal-soft);
+    outline-offset: -1px;
+    background: radial-gradient(ellipse at center, rgba(255, 68, 90, 0.2), transparent 75%);
+}
+
+.station-hit.is-hit {
+    animation: station-hit-pulse 0.48s ease-out;
+}
+
+@keyframes station-hit-pulse {
+    0% {
+        background: radial-gradient(ellipse at center, rgba(255, 92, 112, 0.36), rgba(255, 38, 64, 0.1) 52%, transparent 74%);
+    }
+    100% {
+        background: radial-gradient(ellipse at center, rgba(255, 92, 112, 0), transparent 74%);
+    }
+}
+
+/* НИЖНЯЯ ПАНЕЛЬ СТАНЦИИ */
+.station-log {
+    padding: 13px 14px 14px;
+    display: grid;
+    gap: 8px;
+    background: linear-gradient(180deg, #130609 0%, #0d0507 100%);
+}
+
+.station-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.station-meta {
+    font: 11px 'Share Tech Mono', monospace;
+    letter-spacing: 0.08em;
+    color: var(--signal-soft);
+}
+
+.station-heat {
+    white-space: nowrap;
+    border: 1px solid #5d222d;
+    background: #1a070b;
+    border-radius: 999px;
+    padding: 3px 9px;
+    color: #ffd8dd;
+}
+
+.station-heat b {
+    color: var(--signal);
+}
+
+.station-log p {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.45;
+    color: #d8b4b9;
+}
+
+.station-line {
+    min-height: 2.8em;
+    display: flex;
+    align-items: center;
+}
+
+.station-log p strong {
+    color: #fff2f4;
+    font-weight: 600;
+}
+
+#station-entry.is-fresh {
+    animation: station-entry-flash 0.42s ease-out;
+}
+
+@keyframes station-entry-flash {
+    0% { color: #ff7b8b; text-shadow: 0 0 10px rgba(255, 68, 90, 0.55); }
+    100% { color: #fff2f4; text-shadow: none; }
+}
+
+.station-plant-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 9px;
+    background: #17070a;
+    border: 1px solid #451821;
+    border-radius: 9px;
+}
+
+.station-plant-row .station-meta {
+    min-width: 0;
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    color: #f4ccd2;
+}
+
+.station-pips {
+    display: inline-flex;
+    gap: 3px;
+    flex-shrink: 0;
+}
+
+.station-pips i {
+    display: block;
+    width: 6px;
+    height: 8px;
+    border-radius: 1.5px;
+    background: #2b0e14;
+    border: 1px solid #531d27;
+    transition: background-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.station-pips i.is-on {
+    background: var(--signal);
+    border-color: var(--signal-soft);
+    box-shadow: 0 0 5px rgba(255, 72, 92, 0.55);
+}
+
+.station progress {
+    width: 100%;
+    height: 5px;
+    appearance: none;
+    accent-color: var(--signal);
+    border-radius: 10px;
+    overflow: hidden;
+    background: #2f1118;
+}
+
+.station progress::-webkit-progress-bar {
+    background: #2f1118;
+}
+
+.station progress::-webkit-progress-value {
+    background: linear-gradient(90deg, #991b2c, var(--signal));
+}
+
+.station progress::-moz-progress-bar {
+    background: linear-gradient(90deg, #991b2c, var(--signal));
+}
+
+.station-presets {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 5px;
+}
+
+.station-presets button {
+    min-height: 44px;
+    padding: 4px 2px;
+    font: 11px 'Share Tech Mono', monospace;
+    background: #150609;
+    border: 1px solid #4d1d26;
+    border-radius: 8px;
+    color: #f3d7dc;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+
+.station-presets button:hover:not(:disabled) {
+    border-color: var(--signal);
+    background: #240a10;
+}
+
+.station-presets button[aria-pressed="true"] {
+    border-color: var(--signal);
+    color: var(--signal-soft);
+    background: #2c0b12;
+    box-shadow: inset 0 0 10px rgba(255, 58, 82, 0.16);
+}
+
+.station-presets button:disabled {
+    color: #9e777e;
+    background: #100507;
+    border-style: dashed;
+    cursor: default;
+}
+
+.station-presets button:focus-visible,
+.station-pts:focus-visible {
+    outline: 2px solid #fff1f2;
+    outline-offset: 2px;
+}
+
+.station-presets span {
+    display: block;
+    font-size: 9.5px;
+    margin-top: 1px;
+    opacity: 0.85;
+}
+
+.station-note {
+    font-size: 11px !important;
+    color: #ad858c !important;
+}
+
+.station-pts {
+    width: 100%;
+    min-height: 36px;
+    padding: 6px 10px;
+    border: 1px solid rgba(239, 68, 68, 0.45);
+    background: #1a070b;
+    color: #fca5a5;
+    font: 10px 'Share Tech Mono', monospace;
+    letter-spacing: 0.06em;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.station-pts:hover {
+    background: #2a0b12;
+    border-color: var(--signal);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .station *,
+    .station *::before,
+    .station *::after {
+        animation: none !important;
+        transition: none !important;
+    }
+}

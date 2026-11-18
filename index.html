@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="room.css">
+    <link rel="stylesheet" href="room.css?v=2">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@300;400;500;600;700&display=swap');
         .font-mono-tech { font-family: 'Share Tech Mono', monospace; }
@@ -147,7 +147,7 @@
     </div>
 
     <!-- ПАСХАЛКА: ПЕРЕХВАЧЕННЫЙ СИГНАЛ (МУЗЫКА) -->
-    <div id="music-modal" class="hidden fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-6">
+    <div id="music-modal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-[2px] flex items-center justify-center p-6">
         <div class="w-full max-w-sm bg-[#0b0708] border border-red-500/70 p-6 rounded-2xl space-y-4 shadow-2xl text-center">
             <div class="text-red-400 font-mono-tech text-xs tracking-widest">// ПЕРЕХВАЧЕН СИГНАЛ</div>
             <div id="music-eq" class="flex items-end justify-center gap-1 h-14"></div>
@@ -161,7 +161,7 @@
     </div>
 
     <!-- ТРЕНАЖЁР «СЛУШАТЕЛЬ» -->
-    <div id="trainer-modal" class="hidden fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4">
+    <div id="trainer-modal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-[2px] flex items-center justify-center p-4">
         <div class="w-full max-w-md max-h-[88vh] overflow-y-auto bg-[#0b0708] border border-red-500/40 p-5 rounded-2xl space-y-3 shadow-2xl">
             <div class="flex justify-between items-center">
                 <span class="text-xs font-mono-tech text-red-400 uppercase">// ТРЕНАЖЁР «СЛУШАТЕЛЬ»</span>
@@ -223,35 +223,47 @@
         </div>
 
         <!-- ЭКРАН 3: ПРОФИЛЬ -->
-        <div id="view-profile" class="hidden flex-1 overflow-y-auto p-4 pb-24 space-y-4">
-            <section id="station" class="station" aria-labelledby="station-title">
-                <header class="station-head">
-                    <div><div id="station-mode" class="station-meta">ЛИЧНАЯ СТАНЦИЯ // 01</div><h2 id="station-title">Между сигналами</h2></div>
-                    <div class="station-meta station-heat">ТЕПЛО <b id="warmth-val">0</b></div>
-                </header>
-                <div class="station-scene">
-                    <img src="assets/quiet-station.jpg" width="1586" height="992" alt="Комната над ночным городом с круглым окном и маленьким ростком">
+        <div id="view-profile" class="hidden flex-1 overflow-y-auto p-3.5 sm:p-4 pb-24 space-y-4">
+            <section id="station" class="station" aria-label="Моя комната">
+                <div id="station-scene" class="station-scene">
+                    <img src="assets/quiet-station.jpg?v=2" width="1586" height="992" alt="Тёмная комната над ночным городом: слева ЭЛТ-терминал, по центру круглое окно под дождём и растение на ковре, справа приёмник и кушетка">
                     <div class="station-light" aria-hidden="true"></div>
                     <div class="station-rain" aria-hidden="true"></div>
                     <svg class="station-sky" viewBox="0 0 1000 625" aria-hidden="true">
-                        <line data-star="2" x1="441" y1="274" x2="465" y2="236" stroke="currentColor" stroke-width="1.4"/>
-                        <line data-star="3" x1="465" y1="236" x2="498" y2="249" stroke="currentColor" stroke-width="1.4"/>
-                        <line data-star="4" x1="498" y1="249" x2="524" y2="195" stroke="currentColor" stroke-width="1.4"/>
-                        <line data-star="5" x1="524" y1="195" x2="562" y2="219" stroke="currentColor" stroke-width="1.4"/>
-                        <line data-star="6" x1="562" y1="219" x2="584" y2="175" stroke="currentColor" stroke-width="1.4"/>
-                        <circle data-star="1" cx="441" cy="274" r="4" fill="currentColor"/>
-                        <circle data-star="2" cx="465" cy="236" r="4" fill="currentColor"/>
-                        <circle data-star="3" cx="498" cy="249" r="4" fill="currentColor"/>
-                        <circle data-star="4" cx="524" cy="195" r="4" fill="currentColor"/>
-                        <circle data-star="5" cx="562" cy="219" r="4" fill="currentColor"/>
-                        <circle data-star="6" cx="584" cy="175" r="4" fill="currentColor"/>
+                        <line data-star="2" x1="454" y1="118" x2="480" y2="86" stroke="currentColor" stroke-width="1.3"/>
+                        <line data-star="3" x1="480" y1="86" x2="510" y2="104" stroke="currentColor" stroke-width="1.3"/>
+                        <line data-star="4" x1="510" y1="104" x2="538" y2="74" stroke="currentColor" stroke-width="1.3"/>
+                        <line data-star="5" x1="538" y1="74" x2="568" y2="98" stroke="currentColor" stroke-width="1.3"/>
+                        <line data-star="6" x1="568" y1="98" x2="596" y2="82" stroke="currentColor" stroke-width="1.3"/>
+                        <circle data-star="1" cx="454" cy="118" r="3.4" fill="currentColor"/>
+                        <circle data-star="2" cx="480" cy="86" r="3.2" fill="currentColor"/>
+                        <circle data-star="3" cx="510" cy="104" r="3.6" fill="currentColor"/>
+                        <circle data-star="4" cx="538" cy="74" r="3.2" fill="currentColor"/>
+                        <circle data-star="5" cx="568" cy="98" r="3.4" fill="currentColor"/>
+                        <circle data-star="6" cx="596" cy="82" r="3.8" fill="currentColor"/>
                     </svg>
-                    <button type="button" class="station-point" style="left:23%;top:65%" onclick="openTrainer()">Тренажёр</button>
-                    <button type="button" class="station-point" style="left:84%;top:58%" onclick="openRadio()">Радио</button>
+                    <div class="station-crt" aria-hidden="true"><span class="station-crt-beam"></span></div>
+                    <div class="station-dial" aria-hidden="true"><span class="station-dial-needle"></span></div>
+                    <canvas id="station-fx" class="station-fx" width="396" height="248" aria-hidden="true"></canvas>
+                    <canvas id="station-plant" class="station-plant" width="96" height="96" aria-hidden="true"></canvas>
+                    <button type="button" class="station-hit station-hit--terminal" data-obj="terminal" aria-label="Терминал — открыть тренажёр «Слушатель»" onpointerdown="touchRoomObject('terminal', event)" onclick="activateRoomObject('terminal', event)"></button>
+                    <button type="button" class="station-hit station-hit--radio" data-obj="radio" aria-label="Приёмник — открыть радио" onpointerdown="touchRoomObject('radio', event)" onclick="activateRoomObject('radio', event)"></button>
+                    <button type="button" class="station-hit station-hit--plant" data-obj="plant" aria-label="Растение — осмотреть" onpointerdown="touchRoomObject('plant', event)" onclick="activateRoomObject('plant', event)"></button>
+                    <button type="button" class="station-hit station-hit--window" data-obj="window" aria-label="Окно — осмотреть ночной город" onpointerdown="touchRoomObject('window', event)" onclick="activateRoomObject('window', event)"></button>
+                    <button type="button" class="station-hit station-hit--lamp" data-obj="lamp" aria-label="Подвесная лампа — коснуться" onpointerdown="touchRoomObject('lamp', event)" onclick="activateRoomObject('lamp', event)"></button>
+                    <button type="button" class="station-hit station-hit--shelf" data-obj="shelf" aria-label="Архив записей — осмотреть" onpointerdown="touchRoomObject('shelf', event)" onclick="activateRoomObject('shelf', event)"></button>
+                    <button type="button" class="station-hit station-hit--bed" data-obj="bed" aria-label="Кушетка — осмотреть" onpointerdown="touchRoomObject('bed', event)" onclick="activateRoomObject('bed', event)"></button>
                 </div>
                 <div class="station-log">
-                    <div class="station-meta">ЖУРНАЛ СТАНЦИИ</div>
-                    <p><strong id="station-entry"></strong></p>
+                    <div class="station-bar">
+                        <span id="station-mode" class="station-meta">ЖУРНАЛ СТАНЦИИ</span>
+                        <span class="station-meta station-heat">ТЕПЛО <b id="warmth-val">0</b></span>
+                    </div>
+                    <p class="station-line" aria-live="polite"><strong id="station-entry"></strong></p>
+                    <div class="station-plant-row">
+                        <span id="station-plant-info" class="station-meta"></span>
+                        <span id="station-plant-pips" class="station-pips" aria-hidden="true"></span>
+                    </div>
                     <p id="station-next"></p>
                     <progress id="station-meter" aria-label="Прогресс до следующей атмосферы"></progress>
                     <div class="station-presets" role="group" aria-label="Атмосфера комнаты">
@@ -261,8 +273,8 @@
                         <button type="button" data-preset onclick="equipStationPhase(3)">Рассвет<span></span></button>
                     </div>
                     <p id="station-stars"></p>
-                    <p>Тепло не тратится. Его можно получить за внимательное чтение и удачные ответы в тренажёре.</p>
-                    <button id="pts-preview" onclick="togglePreview()" class="hidden w-full py-1.5 border border-amber-400/40 text-amber-300 text-[10px] font-mono-tech rounded-lg">PTS: ПОКАЗАТЬ / СКРЫТЬ МАКС. УРОВЕНЬ</button>
+                    <p class="station-note">Тепло не тратится. Его можно получить за внимательное чтение и удачные ответы в тренажёре.</p>
+                    <button id="pts-preview" type="button" onclick="togglePreview()" class="hidden station-pts">PTS: ПОКАЗАТЬ / СКРЫТЬ МАКС. УРОВЕНЬ</button>
                 </div>
             </section>
             <div class="mx-auto w-60 bg-black border-2 border-red-900/60 rounded-3xl p-3 space-y-2 shadow-lg">
@@ -310,7 +322,7 @@
     </div>
 
 <script src="config.js"></script>
-<script src="room.js"></script>
+<script src="room.js?v=2"></script>
 <script src="music.js"></script>
 <script>
     const cfg = window.SOMA_CONFIG || {};
@@ -409,9 +421,9 @@
         const app = document.querySelector('.app-h'); if (app) app.prepend(b);
         document.title = 'PTS ' + document.title;
         document.getElementById('pts-preview').classList.remove('hidden');
-        if (/[?&]room=max/.test(location.search)) { roomPreview = true; renderRoom(); }
+        if (/[?&]room=max/.test(location.search)) { roomPreview = true; resetStationPreview(); renderRoom(); }
     }
-    function togglePreview() { roomPreview = !roomPreview; renderRoom(); }
+    function togglePreview() { roomPreview = !roomPreview; resetStationPreview(); renderRoom(); }
 
     // Удержание взгляда: 3 секунды внимания к чужой боли
     let held = {}, holding = false, holdT = null, holdRAF = null;
@@ -575,7 +587,9 @@
         try { Telegram.WebApp.disableVerticalSwipes(); } catch (e) {}
         renderTagChips(); initSoundUI();
         if (cfg.ENV === 'pts') showPts();
-        if (new URLSearchParams(location.search).has('room')) switchTab('profile');
+        const wantsRoom = () => new URLSearchParams(location.search).has('room') || /^#room\b/i.test(location.hash);
+        if (wantsRoom()) switchTab('profile', true);
+        window.addEventListener('hashchange', () => { if (wantsRoom()) switchTab('profile'); });
         try { player.reactedPosts = JSON.parse(localStorage.getItem('soma_reacted') || '{}'); } catch (e) {}
         const k = SUPABASE_ANON_KEY || '';
         if (!/^https:\/\/[a-z0-9]+\.supabase\.co\/?$/.test(SUPABASE_URL || '')) notify('В config.js неверный SUPABASE_URL. Нужен вид https://abcdefgh.supabase.co (без /dashboard, без пробелов).');
@@ -595,6 +609,7 @@
             player.name = savedName;
             player.uid = await makeUid(savedName);
         }
+        renderRoom();
 
         try {
             let { data } = await supabaseClient.from('soma_users').select('*').eq('username', player.uid).single();
@@ -819,8 +834,8 @@
         switchTab('feed');
     }
 
-    function switchTab(tab) {
-        SFX.tab();
+    function switchTab(tab, silent) {
+        if (!silent) SFX.tab();
         ['feed', 'top', 'profile'].forEach(t => {
             document.getElementById(`view-${t}`).classList.add('hidden');
             document.getElementById(`tab-${t}`).classList.remove('bg-red-950/60', 'text-red-400', 'font-bold', 'border', 'border-red-500/40');

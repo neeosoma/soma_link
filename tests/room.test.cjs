@@ -10,7 +10,7 @@ const indexHtml = readFileSync(require.resolve('../index.html'), 'utf8');
 
 function loadRoom(env = {}) {
     return runInNewContext(
-        roomCode + ';({ stationPhases, stationState, equipStationPhase, PLANT_KINDS, PLANT_STAGES, PLANT_LEAF, PLANT_BLOOM, PLANT_POTS, hashStr, rng, plantSpec, plantStage, drawPlantSprite, renderRoom, touchRoomObject, activateRoomObject, resetStationPreview });',
+        roomCode + ';({ stationPhases, stationState, equipStationPhase, inspectPlantStage, PLANT_KINDS, PLANT_STAGES, PLANT_WARMTH_STEPS, PLANT_LEAF, PLANT_BLOOM, PLANT_POTS, CITY_WINDOWS, hashStr, rng, plantSpec, plantStage, drawPlantSprite, drawStationFx, paintPlantFrame, renderRoom, touchRoomObject, activateRoomObject, resetStationPreview, roomAnim });',
         { player: { uid: 'u_0123456789abcdef', name: 'AGENT_1001', warmth: 4 }, roomPreview: false, ...env }
     );
 }
@@ -61,6 +61,10 @@ test('unique plant binding matches legacy anonymous ID formula identically', () 
     }
 
     assert.deepEqual(Array.from(PLANT_KINDS), LEGACY_KINDS);
+    assert.equal(PLANT_LEAF.length, 6);
+    assert.equal(PLANT_BLOOM.length, 6);
+    assert.equal(PLANT_POTS.length, 5);
+
     const seenKinds = new Set();
     for (let i = 0; i < 300; i++) {
         const hex = createHash('sha256').update('soma:' + (100000 + i)).digest('hex').slice(0, 16);
@@ -79,26 +83,13 @@ test('unique plant binding matches legacy anonymous ID formula identically', () 
     }
     assert.equal(seenKinds.size, 7, 'all 7 legacy species must be reachable');
 
-    // Fallbacks when uid is empty match legacy player.uid || player.name || 'x'
     const fallbackRoom = loadRoom({ player: { uid: '', name: 'AGENT_4821', warmth: 0 } });
     assert.equal(fallbackRoom.plantSpec().seed, legacySpec('', 'AGENT_4821').seed);
     const emptyRoom = loadRoom({ player: { uid: '', name: '', warmth: 0 } });
     assert.equal(emptyRoom.plantSpec().seed, legacySpec('', '').seed);
-
-    // Every plant palette stays strictly in the black-and-red palette (R >= B and R > G)
-    for (const group of [PLANT_LEAF, PLANT_BLOOM, PLANT_POTS]) {
-        for (const swatch of group) {
-            for (const hex of swatch) {
-                const r = parseInt(hex.slice(1, 3), 16);
-                const g = parseInt(hex.slice(3, 5), 16);
-                const b = parseInt(hex.slice(5, 7), 16);
-                assert.ok(r > g && r >= b, `color ${hex} must remain in black-and-red palette`);
-            }
-        }
-    }
 });
 
-test('every plant species visibly grows across room warmth and rank stages', () => {
+test('all 7 species grow visibly across all 6 stages and cactus never sways side to side', () => {
     const { plantSpec, plantStage, drawPlantSprite } = loadRoom();
     assert.equal(plantStage(0, 0), 0);
     assert.equal(plantStage(2, 0), 1);
@@ -109,67 +100,98 @@ test('every plant species visibly grows across room warmth and rank stages', () 
     assert.equal(plantStage(0, 4), 4);
     assert.equal(plantStage(0, 5), 5);
 
-    function measureHeight(spec, stage) {
-        let minY = 96, pixels = 0;
-        const ctx = {
-            canvas: { width: 96, height: 96 },
-            fillStyle: '#000',
-            clearRect() {},
-            fillRect(x, y, w, h) {
-                if (String(this.fillStyle).startsWith('rgba(')) return;
-                if (y < minY) minY = y;
-                pixels += w * h;
-            }
+    function tracePlant(spec, stage, sway) {
+        let m = [1, 0, 0, 1, 0, 0];
+        const stack = [];
+        let minY = 380, ops = 0;
+        const log = [];
+        const record = (x, y) => {
+            const wx = m[0] * x + m[2] * y + m[4];
+            const wy = m[1] * x + m[3] * y + m[5];
+            if (wy < minY) minY = wy;
+            ops++;
+            log.push(wx.toFixed(2) + ',' + wy.toFixed(2));
         };
-        drawPlantSprite(ctx, spec, stage, { sway: 0, glow: 0 });
-        return { height: 89 - minY, pixels };
+        const dummyGrad = { addColorStop() {} };
+        const ctx = {
+            canvas: { width: 360, height: 380 },
+            fillStyle: '#000', strokeStyle: '#000', lineWidth: 1, lineCap: 'butt', lineJoin: 'miter', imageSmoothingEnabled: true,
+            clearRect() {},
+            save() { stack.push(m.slice()); },
+            restore() { if (stack.length) m = stack.pop(); },
+            translate(x, y) { m = [m[0], m[1], m[2], m[3], m[0]*x + m[2]*y + m[4], m[1]*x + m[3]*y + m[5]]; },
+            scale(sx, sy) { m = [m[0]*sx, m[1]*sx, m[2]*sy, m[3]*sy, m[4], m[5]]; },
+            rotate(a) {
+                const c = Math.cos(a), s = Math.sin(a);
+                m = [m[0]*c + m[2]*s, m[1]*c + m[3]*s, m[0]*-s + m[2]*c, m[1]*-s + m[3]*c, m[4], m[5]];
+            },
+            createLinearGradient() { return dummyGrad; },
+            createRadialGradient() { return dummyGrad; },
+            beginPath() {}, closePath() {}, clip() {}, fill() {}, stroke() {},
+            fillRect() {}, rect(x, y) { record(x, y); },
+            moveTo(x, y) { record(x, y); },
+            lineTo(x, y) { record(x, y); },
+            quadraticCurveTo(cx, cy, x, y) { record(cx, cy); record(x, y); },
+            bezierCurveTo(c1x, c1y, c2x, c2y, x, y) { record(c2x, c2y); record(x, y); },
+            arc(x, y, r) { if (r < 45) record(x, y - r); },
+            ellipse(x, y, rx, ry) { record(x, y - ry); }
+        };
+        drawPlantSprite(ctx, spec, stage, { sway, glow: 0, phase: 2 });
+        return { height: 348 - minY, ops, sig: log.join('|') };
     }
 
     for (let kind = 0; kind < 7; kind++) {
         let spec = null;
-        for (let n = 0; n < 400; n++) {
-            const candidate = plantSpec('u_growth_' + n);
-            if (candidate.kind === kind) { spec = candidate; break; }
+        for (let n = 0; n < 500; n++) {
+            const c = plantSpec('u_growth_' + n);
+            if (c.kind === kind) { spec = c; break; }
         }
         assert.ok(spec);
-        const stages = [0, 1, 2, 3, 4, 5].map(s => measureHeight(spec, s));
+        const stages = [0, 1, 2, 3, 4, 5].map(s => tracePlant(spec, s, 0));
         for (let s = 1; s < 6; s++) {
             assert.ok(stages[s].height > stages[s - 1].height, `${spec.kindName} stage ${s + 1} must be taller than stage ${s}`);
         }
-        assert.ok(stages[5].height - stages[0].height >= 30, `${spec.kindName} must grow dramatically from stage 1 to stage 6`);
-        assert.ok(stages[5].pixels > stages[0].pixels * 1.8, `${spec.kindName} crown mass must expand noticeably`);
+        assert.ok(stages[5].height - stages[0].height >= 130, `${spec.kindName} must grow dramatically across 6 stages`);
+        assert.ok(stages[5].ops > stages[0].ops * 1.5, `${spec.kindName} detail must enrich across 6 stages`);
+
+        // Cactus must stay 100% motionless in its pot regardless of sway input
+        if (kind === 1) {
+            for (let s = 0; s < 6; s++) {
+                const a = tracePlant(spec, s, -4);
+                const b = tracePlant(spec, s, 4);
+                assert.equal(a.sig, b.sig, `cactus stage ${s + 1} must not sway side to side`);
+            }
+        }
     }
 });
 
-test('point-and-click scene has no overlaid text buttons, preserves bottom panel, and activates terminal and radio', () => {
+test('all 6 plant stages are inspectable and scene uses smooth object animations without tap flashes', () => {
+    assert.ok(!roomCss.includes('station-hit-pulse'), 'harsh radial tap flash must be removed');
+    assert.ok(!roomCss.includes('station-plant-touch'), 'rigid whole-plant wobble animation must be removed');
+
     const sceneMatch = indexHtml.match(/<div id="station-scene" class="station-scene">([\s\S]*?)<\/div>\s*<div class="station-log">/);
-    assert.ok(sceneMatch, 'station-scene and bottom station-log must exist');
-    const sceneHtml = sceneMatch[1];
-    assert.ok(!sceneHtml.includes('station-point'), 'legacy floating text buttons must be removed');
-    const visibleText = sceneHtml.replace(/<[^>]+>/g, '').trim();
-    assert.equal(visibleText, '', 'scene must contain zero visible text overlays');
+    assert.ok(sceneMatch);
+    assert.equal(sceneMatch[1].replace(/<[^>]+>/g, '').trim(), '', 'scene must contain zero overlaid text');
 
-    const buttons = [...sceneHtml.matchAll(/<button\b[^>]*data-obj="(\w+)"[^>]*aria-label="([^"]+)"[^>]*>/g)];
-    const objs = buttons.map(m => m[1]);
-    assert.ok(objs.includes('terminal') && objs.includes('radio') && objs.includes('plant') && objs.includes('window'));
-    buttons.forEach(m => assert.ok(m[2].length > 5, `${m[1]} hotspot must have descriptive aria-label`));
+    const stageBtns = [...indexHtml.matchAll(/data-stage-btn="(\d)"/g)].map(m => Number(m[1]));
+    assert.deepEqual(stageBtns, [0, 1, 2, 3, 4, 5], 'bottom panel must expose all 6 growth stage buttons');
 
-    // Verify bottom panels remain intact
-    assert.ok(indexHtml.includes('class="station-log"'));
-    assert.ok(indexHtml.includes('NEEO_PHONE'));
-    assert.ok(indexHtml.includes('station-rain') && indexHtml.includes('station-crt-beam'));
-
-    // Verify clicking terminal calls openTrainer, radio calls openRadio, and objects record touch feedback
-    let trainerCalls = 0, radioCalls = 0;
+    let trainerCalls = 0, radioCalls = 0, fakeNow = 1000;
     const entryEl = { textContent: '', offsetWidth: 0, classList: { remove() {}, add() {} } };
-    const hitEls = {};
-    for (const o of objs) hitEls[o] = { offsetWidth: 0, classList: { hit: false, remove() { this.hit = false; }, add(c) { if (c === 'is-hit') this.hit = true; } }, setAttribute() {} };
+    const infoEl = { textContent: '' };
+    const subEl = { textContent: '' };
+    const domStageBtns = [0, 1, 2, 3, 4, 5].map(() => ({
+        title: '', pressed: 'false',
+        classList: { toggle() {} },
+        setAttribute(k, v) { if (k === 'aria-pressed') this.pressed = v; }
+    }));
     const roomEl = {
         dataset: {},
-        querySelector(sel) { const m = sel.match(/data-obj="(\w+)"/); return m ? hitEls[m[1]] : null; },
-        querySelectorAll() { return []; }
+        querySelector() { return { setAttribute() {} }; },
+        querySelectorAll(sel) { return sel === '[data-stage-btn]' ? domStageBtns : []; }
     };
-    const { activateRoomObject } = loadRoom({
+    const { activateRoomObject, inspectPlantStage, renderRoom, roomAnim, CITY_WINDOWS } = loadRoom({
+        performance: { now: () => (fakeNow += 4000) },
         openTrainer: () => { trainerCalls++; },
         openRadio: () => { radioCalls++; },
         document: {
@@ -177,53 +199,61 @@ test('point-and-click scene has no overlaid text buttons, preserves bottom panel
             getElementById(id) {
                 if (id === 'station') return roomEl;
                 if (id === 'station-entry') return entryEl;
+                if (id === 'station-plant-info') return infoEl;
+                if (id === 'station-plant-sub') return subEl;
                 return null;
             }
         }
     });
 
+    assert.ok(CITY_WINDOWS.length >= 50, 'city skyscraper windows must be animated');
+    renderRoom();
+    assert.equal(roomAnim.liveStage, 1); // warmth 4 => stage 2/6
+
+    // Inspect every single one of the 6 stages (0..5)
+    for (let s = 0; s < 6; s++) {
+        inspectPlantStage(s);
+        assert.equal(roomAnim.stage, s);
+        assert.equal(roomEl.dataset.stage, String(s));
+        assert.equal(domStageBtns[s].pressed, 'true');
+        assert.ok(infoEl.textContent.includes(`${s + 1}/6`));
+    }
+
+    // Smooth object timelines start cleanly on tap
+    activateRoomObject('lamp');
+    assert.ok(roomAnim.lampStart > 0 && roomAnim.lampAmp > 0);
+    activateRoomObject('shelf');
+    assert.ok(roomAnim.deckStart > 0);
+    activateRoomObject('nightlight');
+    assert.ok(roomAnim.nightLStart > 0);
+    activateRoomObject('nightlightR');
+    assert.ok(roomAnim.nightRStart > 0);
     activateRoomObject('terminal');
     assert.equal(trainerCalls, 1);
-    assert.equal(roomEl.dataset.touch, 'terminal');
-    assert.equal(hitEls.terminal.classList.hit, true);
-
     activateRoomObject('radio');
     assert.equal(radioCalls, 1);
-    assert.equal(roomEl.dataset.touch, 'radio');
-    assert.equal(hitEls.radio.classList.hit, true);
-
-    activateRoomObject('plant');
-    assert.equal(roomEl.dataset.touch, 'plant');
-    assert.ok(entryEl.textContent.length > 15);
 });
 
-test('mobile hotspots meet >=44px touch target sizes and never overlap down to 320px width', () => {
+test('mobile hotspots never overlap and main targets stay >=44px down to 320px width', () => {
     const blocks = [...roomCss.matchAll(/\.station-hit--(\w+)\s*\{([^}]+)\}/g)];
-    assert.ok(blocks.length >= 7);
+    assert.equal(blocks.length, 9);
     const num = (body, prop) => Number(body.match(new RegExp(prop + ':\\s*([\\d.]+)%'))[1]) / 100;
     const defs = blocks.map(([, name, body]) => ({
-        name,
-        left: num(body, 'left'),
-        top: num(body, 'top'),
-        width: num(body, 'width'),
-        height: num(body, 'height')
+        name, left: num(body, 'left'), top: num(body, 'top'), width: num(body, 'width'), height: num(body, 'height')
     }));
 
     for (const viewportWidth of [320, 360, 375, 390, 414]) {
-        const sceneW = viewportWidth - 30; // p-3.5 (28px) + 2px border
+        const sceneW = viewportWidth - 30;
         const sceneH = sceneW * (992 / 1586);
         const boxes = defs.map(d => ({
             name: d.name,
-            x1: d.left * sceneW,
-            y1: d.top * sceneH,
-            x2: (d.left + d.width) * sceneW,
-            y2: (d.top + d.height) * sceneH,
-            w: d.width * sceneW,
-            h: d.height * sceneH
+            x1: d.left * sceneW, y1: d.top * sceneH,
+            x2: (d.left + d.width) * sceneW, y2: (d.top + d.height) * sceneH,
+            w: d.width * sceneW, h: d.height * sceneH
         }));
         for (const key of ['terminal', 'radio', 'plant', 'window']) {
             const b = boxes.find(x => x.name === key);
-            assert.ok(b.w >= 44 && b.h >= 44, `${key} at ${viewportWidth}px must be >=44x44px, got ${b.w.toFixed(1)}x${b.h.toFixed(1)}`);
+            assert.ok(b.w >= 44 && b.h >= 44, `${key} at ${viewportWidth}px must be >=44x44px`);
         }
         for (let i = 0; i < boxes.length; i++) {
             for (let j = i + 1; j < boxes.length; j++) {

@@ -1,7 +1,7 @@
 .station {
     --signal: #ff5c70;
     --signal-soft: #ff9ba6;
-    --light: rgba(178, 16, 40, 0.2);
+    --win-aura: rgba(168, 18, 38, 0.14);
     background: #0d0507;
     border: 1px solid #481822;
     border-radius: 20px;
@@ -13,27 +13,27 @@
 .station[data-phase="1"] {
     --signal: #ff6e7e;
     --signal-soft: #ffaab3;
-    --light: rgba(212, 26, 52, 0.28);
+    --win-aura: rgba(198, 26, 48, 0.19);
 }
 
 .station[data-phase="2"] {
     --signal: #ff828e;
     --signal-soft: #ffbbc2;
-    --light: rgba(242, 42, 66, 0.38);
+    --win-aura: rgba(228, 38, 60, 0.24);
 }
 
 .station[data-phase="3"] {
-    --signal: #ff9aa3;
-    --signal-soft: #ffd0d5;
-    --light: rgba(255, 68, 86, 0.48);
+    --signal: #ff9ea6;
+    --signal-soft: #ffd4d8;
+    --win-aura: rgba(255, 74, 88, 0.3);
 }
 
-/* СЦЕНА: чистый point-and-click кадр без надписей и плашек */
+/* СЦЕНА: чистый point-and-click кадр без надписей, плашек и резких вспышек */
 .station-scene {
     position: relative;
     isolation: isolate;
     aspect-ratio: 1586 / 992;
-    background: #140508;
+    background: #120407;
     border-bottom: 1px solid #591c26;
     overflow: hidden;
     user-select: none;
@@ -54,114 +54,112 @@
 .station-scene > img {
     object-fit: fill;
     pointer-events: none;
-    transition: filter 0.45s ease;
+    transition: filter 1.1s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .station[data-phase="0"] .station-scene > img {
-    filter: brightness(1.06) contrast(1.04) saturate(1.02);
+    filter: brightness(1.04) contrast(1.04) saturate(1.02);
 }
 
 .station[data-phase="1"] .station-scene > img {
-    filter: brightness(1.14) contrast(1.03) saturate(1.08);
+    filter: brightness(1.08) contrast(1.03) saturate(1.05);
 }
 
 .station[data-phase="2"] .station-scene > img {
-    filter: brightness(1.22) contrast(1.02) saturate(1.14);
+    filter: brightness(1.12) contrast(1.03) saturate(1.08);
 }
 
+/* На максимуме стены и углы остаются в уютном полумраке, чтобы свет шёл именно ИЗ окна */
 .station[data-phase="3"] .station-scene > img {
-    filter: brightness(1.3) contrast(1.01) saturate(1.1);
+    filter: brightness(1.1) contrast(1.05) saturate(1.08);
 }
 
-/* Свет окна и рассветный алый луч */
+/* Мягкое наружное свечение проёма окна + живой конус света из окна на пол */
 .station-light {
     background:
-        radial-gradient(ellipse at 50.9% 35.3%, var(--light), transparent 36%),
-        radial-gradient(ellipse at 50% 82%, var(--light), transparent 31%);
+        radial-gradient(ellipse 24% 33% at 50.9% 35.4%, var(--win-aura), transparent 78%);
     mix-blend-mode: screen;
     pointer-events: none;
-    transition: opacity 0.45s ease, filter 0.3s ease;
+    transition: opacity 1.1s ease;
 }
 
-.station-light::after {
+.station-light::before {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(122deg, transparent 34%, rgba(255, 76, 94, 0.28) 50%, transparent 67%);
-    opacity: 0;
-    transition: opacity 0.5s ease;
-}
-
-.station[data-phase="3"] .station-light::after {
-    opacity: 1;
-}
-
-.station[data-touch="lamp"] .station-light {
-    filter: brightness(1.35);
-}
-
-/* Дождь по круглому стеклу (фоновый слой + живые капли в canvas) */
-.station-rain {
-    pointer-events: none;
-    -webkit-clip-path: ellipse(20.5% 30% at 50.9% 35.3%);
-    clip-path: ellipse(20.5% 30% at 50.9% 35.3%);
+    /* Конус рассветного света, льющийся строго из круглого окна вниз на растение и ковёр */
     background:
-        repeating-linear-gradient(
-            97deg,
-            transparent 0 13px,
-            rgba(255, 78, 100, 0.24) 13.5px 14.5px,
-            transparent 15px 25px,
-            rgba(214, 42, 66, 0.18) 25.5px 26.5px,
-            transparent 27px 39px
+        radial-gradient(ellipse 21% 29% at 50.9% 37%, rgba(255, 92, 98, 0.26) 0%, rgba(214, 34, 54, 0.11) 62%, transparent 100%),
+        conic-gradient(
+            from 154deg at 50.9% 21%,
+            transparent 0deg,
+            rgba(255, 76, 88, 0.04) 8deg,
+            rgba(255, 112, 114, 0.17) 21deg,
+            rgba(255, 86, 96, 0.1) 29deg,
+            rgba(255, 118, 116, 0.18) 38deg,
+            rgba(255, 72, 86, 0.05) 48deg,
+            transparent 56deg
         );
-    -webkit-mask-image: repeating-linear-gradient(0deg, transparent 0 14px, #000 17px 26px, transparent 30px 54px);
-    mask-image: repeating-linear-gradient(0deg, transparent 0 14px, #000 17px 26px, transparent 30px 54px);
-    -webkit-mask-size: 100% 108px;
-    mask-size: 100% 108px;
-    animation: station-rain 1.25s linear infinite;
-    opacity: 0.62;
-    transition: opacity 0.4s ease;
-}
-
-.station[data-phase="1"] .station-rain {
-    opacity: 0.36;
-    animation-duration: 1.65s;
-}
-
-.station[data-phase="2"] .station-rain {
-    opacity: 0.18;
-    animation-duration: 2.1s;
-}
-
-.station[data-phase="3"] .station-rain {
+    -webkit-mask-image: radial-gradient(ellipse 46% 68% at 50.9% 57%, #000 18%, rgba(0, 0, 0, 0.72) 56%, transparent 92%);
+    mask-image: radial-gradient(ellipse 46% 68% at 50.9% 57%, #000 18%, rgba(0, 0, 0, 0.72) 56%, transparent 92%);
     opacity: 0;
-    animation: none;
+    transform-origin: 50.9% 32%;
+    transition: opacity 1.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-@keyframes station-rain {
-    to {
-        -webkit-mask-position: 0 108px;
-        mask-position: 0 108px;
+.station[data-phase="2"] .station-light::before {
+    opacity: 0.34;
+    animation: station-window-breathe 9.5s ease-in-out infinite;
+}
+
+.station[data-phase="3"] .station-light::before {
+    opacity: 1;
+    animation: station-window-breathe 8.4s ease-in-out infinite;
+}
+
+@keyframes station-window-breathe {
+    0%, 100% {
+        filter: brightness(0.94);
+        transform: scaleX(0.985) rotate(-0.45deg);
+    }
+    50% {
+        filter: brightness(1.09);
+        transform: scaleX(1.02) rotate(0.45deg);
     }
 }
+
+/* Тонкая туманная пелена дождя в окне (основные капли рисуются плавно на canvas; на Рассвете = 0) */
+.station-rain {
+    pointer-events: none;
+    -webkit-clip-path: ellipse(19.8% 29.8% at 50.85% 35.4%);
+    clip-path: ellipse(19.8% 29.8% at 50.85% 35.4%);
+    background: radial-gradient(ellipse at 50% 42%, rgba(160, 24, 44, 0.11), rgba(20, 3, 7, 0.16) 80%);
+    opacity: 0.55;
+    transition: opacity 1.1s ease;
+}
+
+.station[data-phase="1"] .station-rain { opacity: 0.32; }
+.station[data-phase="2"] .station-rain { opacity: 0.14; }
+.station[data-phase="3"] .station-rain { opacity: 0; }
 
 /* Созвездие рангов в верхней части ночного неба */
 .station-sky {
     color: var(--signal-soft);
     pointer-events: none;
-    filter: drop-shadow(0 0 4px rgba(255, 78, 98, 0.85));
+    filter: drop-shadow(0 0 4px rgba(255, 84, 102, 0.72));
+    transition: filter 0.9s ease, opacity 0.9s ease;
 }
 
 .station-sky circle,
 .station-sky line {
-    transition: opacity 0.35s ease, filter 0.3s ease;
+    transition: opacity 0.8s ease;
 }
 
 .station[data-touch="window"] .station-sky {
-    filter: drop-shadow(0 0 8px rgba(255, 130, 146, 0.95));
+    filter: drop-shadow(0 0 7px rgba(255, 146, 158, 0.88));
 }
 
-/* Развёртка ЭЛТ на экране терминала (x=18.8%..25.8%, y=43.8%..53.4%) */
+/* Плавная развёртка ЭЛТ на экране терминала */
 .station-crt {
     position: absolute;
     left: 18.8%;
@@ -174,55 +172,44 @@
     background:
         repeating-linear-gradient(
             180deg,
-            rgba(255, 58, 80, 0.14) 0 1px,
-            rgba(6, 1, 3, 0.42) 1px 2.5px
+            rgba(255, 58, 80, 0.1) 0 1px,
+            rgba(6, 1, 3, 0.34) 1px 2.5px
         );
     box-shadow:
-        0 0 12px rgba(255, 38, 64, 0.34),
-        inset 0 0 6px rgba(255, 72, 92, 0.28);
-    animation: station-crt-flicker 4.4s steps(1, end) infinite;
+        0 0 11px rgba(255, 38, 64, 0.28),
+        inset 0 0 6px rgba(255, 72, 92, 0.22);
+    transition: box-shadow 0.75s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .station-crt-beam {
     position: absolute;
     left: 0;
     right: 0;
-    top: -45%;
-    height: 45%;
+    top: -48%;
+    height: 48%;
     background: linear-gradient(
         180deg,
         transparent 0%,
-        rgba(255, 58, 82, 0.24) 68%,
-        rgba(255, 168, 180, 0.62) 94%,
+        rgba(255, 58, 82, 0.18) 68%,
+        rgba(255, 168, 180, 0.44) 94%,
         transparent 100%
     );
     mix-blend-mode: screen;
-    animation: station-crt-scan 2.1s linear infinite;
+    animation: station-crt-scan 2.9s linear infinite;
 }
 
 .station[data-touch="terminal"] .station-crt {
     box-shadow:
-        0 0 22px rgba(255, 62, 86, 0.88),
-        0 0 8px rgba(255, 160, 174, 0.65),
-        inset 0 0 10px rgba(255, 128, 146, 0.65);
-}
-
-.station[data-touch="terminal"] .station-crt-beam {
-    animation-duration: 0.42s;
+        0 0 16px rgba(255, 68, 90, 0.52),
+        inset 0 0 8px rgba(255, 128, 146, 0.38);
 }
 
 @keyframes station-crt-scan {
     from { transform: translateY(0); }
-    to { transform: translateY(330%); }
+    to { transform: translateY(320%); }
 }
 
-@keyframes station-crt-flicker {
-    0%, 91%, 94%, 100% { opacity: 0.94; }
-    92% { opacity: 0.68; }
-    93% { opacity: 1; }
-}
-
-/* Шкала приёмника (x=81.1%..88.2%, y=43.6%..46.9%) */
+/* Шкала приёмника */
 .station-dial {
     position: absolute;
     left: 81.1%;
@@ -232,41 +219,36 @@
     border-radius: 1px;
     overflow: hidden;
     pointer-events: none;
-    background: linear-gradient(90deg, transparent, rgba(255, 52, 74, 0.16), transparent);
-    box-shadow: 0 0 7px rgba(255, 42, 64, 0.24);
-    transition: box-shadow 0.25s ease, background-color 0.25s ease;
+    background: linear-gradient(90deg, transparent, rgba(255, 52, 74, 0.14), transparent);
+    box-shadow: 0 0 6px rgba(255, 42, 64, 0.2);
+    transition: box-shadow 0.75s ease, background-color 0.75s ease;
 }
 
 .station[data-radio="on"] .station-dial {
-    background: linear-gradient(90deg, rgba(255, 48, 72, 0.12), rgba(255, 84, 102, 0.34), rgba(255, 48, 72, 0.12));
-    box-shadow: 0 0 12px rgba(255, 58, 80, 0.55);
+    background: linear-gradient(90deg, rgba(255, 48, 72, 0.1), rgba(255, 84, 102, 0.3), rgba(255, 48, 72, 0.1));
+    box-shadow: 0 0 11px rgba(255, 58, 80, 0.45);
 }
 
 .station-dial-needle {
     position: absolute;
-    top: 8%;
-    bottom: 8%;
-    left: 22%;
-    width: 2px;
-    background: #ff9ba6;
-    box-shadow: 0 0 5px #ff475e;
-    opacity: 0.58;
-    animation: station-dial-drift 5.2s ease-in-out infinite;
+    top: 10%;
+    bottom: 10%;
+    left: 24%;
+    width: 1.5px;
+    background: #ffa4ae;
+    box-shadow: 0 0 4px #ff475e;
+    opacity: 0.55;
+    animation: station-dial-drift 6.4s ease-in-out infinite;
+    transition: opacity 0.6s ease;
 }
 
 .station[data-radio="on"] .station-dial-needle {
-    opacity: 0.95;
-    animation-duration: 3.2s;
+    opacity: 0.9;
+    animation-duration: 4.2s;
 }
 
 .station[data-touch="radio"] .station-dial {
-    background: rgba(255, 68, 90, 0.36);
-    box-shadow: 0 0 18px rgba(255, 72, 94, 0.9);
-}
-
-.station[data-touch="radio"] .station-dial-needle {
-    opacity: 1;
-    animation: station-dial-sweep 0.45s ease-in-out;
+    box-shadow: 0 0 14px rgba(255, 76, 96, 0.55);
 }
 
 @keyframes station-dial-drift {
@@ -274,47 +256,33 @@
     50% { transform: translateX(7px); }
 }
 
-@keyframes station-dial-sweep {
-    0% { left: 10%; }
-    55% { left: 82%; }
-    100% { left: 48%; }
-}
-
-/* Пиксельные слои анимаций и уникального растения */
+/* Слои живых анимаций сцены и ботанического растения высокого разрешения */
 .station-fx {
     pointer-events: none;
-    image-rendering: crisp-edges;
-    image-rendering: pixelated;
 }
 
 .station-plant {
     position: absolute;
     left: 38%;
-    top: 57.5%;
+    top: 55.2%;
     width: 24%;
-    height: 38.4%;
+    height: 40.8%;
     pointer-events: none;
-    image-rendering: crisp-edges;
-    image-rendering: pixelated;
-    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.65));
-    transform-origin: 50% 92%;
-    transition: filter 0.25s ease;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.62));
+    transform-origin: 50% 91%;
+    transition: filter 0.85s cubic-bezier(0.22, 1, 0.36, 1), transform 0.65s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.45s ease;
 }
 
-.station[data-touch="plant"] .station-plant {
-    filter: drop-shadow(0 0 9px rgba(255, 64, 86, 0.62)) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.7));
-    animation: station-plant-touch 0.52s ease-out;
+.station-plant.is-stage-shift {
+    animation: station-plant-grow 0.52s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-@keyframes station-plant-touch {
-    0% { transform: rotate(0deg) scale(1); }
-    25% { transform: rotate(-2.8deg) scale(1.03); }
-    55% { transform: rotate(2.2deg) scale(1.02); }
-    80% { transform: rotate(-1deg) scale(1.01); }
-    100% { transform: rotate(0deg) scale(1); }
+@keyframes station-plant-grow {
+    0% { opacity: 0.72; transform: scale(0.955); }
+    100% { opacity: 1; transform: scale(1); }
 }
 
-/* Невидимые интерактивные области предметов в духе старых квестов */
+/* Невидимые интерактивные области предметов — БЕЗ вспышек при нажатии */
 .station-hit {
     position: absolute;
     padding: 0;
@@ -326,14 +294,53 @@
     cursor: pointer;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
-    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    outline: none;
+}
+
+.station-hit--shelf {
+    left: 1%;
+    top: 44%;
+    width: 10.2%;
+    height: 24%;
+}
+
+.station-hit--nightlight {
+    left: 11.5%;
+    top: 51%;
+    width: 5.2%;
+    height: 16%;
+    border-radius: 10px;
 }
 
 .station-hit--terminal {
-    left: 16%;
+    left: 17%;
     top: 40%;
-    width: 15.5%;
+    width: 15.4%;
     height: 24.5%;
+}
+
+.station-hit--lamp {
+    left: 18%;
+    top: 14%;
+    width: 13%;
+    height: 23%;
+    border-radius: 50%;
+}
+
+.station-hit--window {
+    left: 33.5%;
+    top: 6.5%;
+    width: 34%;
+    height: 55.5%;
+    border-radius: 50%;
+}
+
+.station-hit--plant {
+    left: 40%;
+    top: 63.5%;
+    width: 20%;
+    height: 33.5%;
+    border-radius: 44% 44% 36% 36%;
 }
 
 .station-hit--radio {
@@ -343,72 +350,24 @@
     height: 24.5%;
 }
 
-.station-hit--plant {
-    left: 40.5%;
-    top: 64%;
-    width: 19%;
-    height: 33%;
-    border-radius: 44% 44% 36% 36%;
-}
-
-.station-hit--window {
-    left: 34%;
-    top: 7%;
-    width: 33.4%;
-    height: 55%;
-    border-radius: 50%;
-}
-
-.station-hit--lamp {
-    left: 17.5%;
-    top: 15.5%;
-    width: 13.5%;
-    height: 22.5%;
-    border-radius: 50%;
-}
-
-.station-hit--shelf {
-    left: 1.2%;
-    top: 34%;
-    width: 13.8%;
-    height: 30%;
-}
-
 .station-hit--bed {
     left: 68%;
     top: 60.5%;
-    width: 29.5%;
-    height: 24.5%;
+    width: 21%;
+    height: 25%;
 }
 
-@media (hover: hover) {
-    .station-hit:hover {
-        background: radial-gradient(ellipse at center, rgba(255, 62, 86, 0.16), transparent 72%);
-    }
-    .station-hit--terminal:hover,
-    .station-hit--radio:hover {
-        background: radial-gradient(ellipse at center, rgba(255, 74, 96, 0.24), transparent 72%);
-        box-shadow: inset 0 0 14px rgba(255, 62, 86, 0.18);
-    }
+.station-hit--nightlightR {
+    left: 89.5%;
+    top: 59.5%;
+    width: 9.5%;
+    height: 15%;
+    border-radius: 10px;
 }
 
 .station-hit:focus-visible {
-    outline: 1.5px solid var(--signal-soft);
+    outline: 1.5px solid rgba(255, 155, 166, 0.72);
     outline-offset: -1px;
-    background: radial-gradient(ellipse at center, rgba(255, 68, 90, 0.2), transparent 75%);
-}
-
-.station-hit.is-hit {
-    animation: station-hit-pulse 0.48s ease-out;
-}
-
-@keyframes station-hit-pulse {
-    0% {
-        background: radial-gradient(ellipse at center, rgba(255, 92, 112, 0.36), rgba(255, 38, 64, 0.1) 52%, transparent 74%);
-    }
-    100% {
-        background: radial-gradient(ellipse at center, rgba(255, 92, 112, 0), transparent 74%);
-    }
 }
 
 /* НИЖНЯЯ ПАНЕЛЬ СТАНЦИИ */
@@ -428,7 +387,7 @@
 
 .station-meta {
     font: 11px 'Share Tech Mono', monospace;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.07em;
     color: var(--signal-soft);
 }
 
@@ -461,55 +420,125 @@
 .station-log p strong {
     color: #fff2f4;
     font-weight: 600;
+    transition: opacity 0.45s ease, color 0.45s ease;
 }
 
 #station-entry.is-fresh {
-    animation: station-entry-flash 0.42s ease-out;
+    animation: station-entry-soft 0.65s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-@keyframes station-entry-flash {
-    0% { color: #ff7b8b; text-shadow: 0 0 10px rgba(255, 68, 90, 0.55); }
-    100% { color: #fff2f4; text-shadow: none; }
+@keyframes station-entry-soft {
+    0% { opacity: 0.42; color: #ffbfc8; }
+    100% { opacity: 1; color: #fff2f4; }
+}
+
+/* БЛОК РАСТЕНИЯ И НАГЛЯДНАЯ ШКАЛА ВСЕХ 6 СТАДИЙ РОСТА */
+.station-plant-box {
+    display: grid;
+    gap: 6px;
+    padding: 8px 9px;
+    background: #16070a;
+    border: 1px solid #471821;
+    border-radius: 10px;
 }
 
 .station-plant-row {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 9px;
-    background: #17070a;
-    border: 1px solid #451821;
-    border-radius: 9px;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px 8px;
 }
 
 .station-plant-row .station-meta {
     min-width: 0;
     font-size: 10.5px;
-    letter-spacing: 0.06em;
-    color: #f4ccd2;
+    letter-spacing: 0.05em;
+    color: #f7d4d9;
 }
 
-.station-pips {
-    display: inline-flex;
-    gap: 3px;
-    flex-shrink: 0;
+.station-plant-sub {
+    font: 9.5px 'Share Tech Mono', monospace;
+    letter-spacing: 0.03em;
+    color: #b78991;
 }
 
-.station-pips i {
-    display: block;
-    width: 6px;
-    height: 8px;
-    border-radius: 1.5px;
-    background: #2b0e14;
-    border: 1px solid #531d27;
-    transition: background-color 0.25s ease, box-shadow 0.25s ease;
+.station-stages {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 4px;
 }
 
-.station-pips i.is-on {
+.station-stages button {
+    position: relative;
+    min-height: 36px;
+    padding: 4px 1px 3px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    font-family: 'Share Tech Mono', monospace;
+    background: #110508;
+    border: 1px solid #3c151d;
+    border-radius: 7px;
+    color: #8f6870;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color 0.35s ease, border-color 0.35s ease, color 0.35s ease, box-shadow 0.35s ease;
+}
+
+.station-stages button b {
+    font-size: 11px;
+    line-height: 1.05;
+    font-weight: 700;
+}
+
+.station-stages button span {
+    font-size: 8px;
+    line-height: 1.05;
+    letter-spacing: 0;
+    opacity: 0.88;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.station-stages button.is-reached {
+    background: #1e080d;
+    border-color: #692330;
+    color: #f2ccd2;
+}
+
+.station-stages button.is-live::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
     background: var(--signal);
+}
+
+.station-stages button[aria-pressed="true"] {
+    background: #2f0c14;
+    border-color: var(--signal);
+    color: #fff0f2;
+    box-shadow: inset 0 0 10px rgba(255, 68, 88, 0.2), 0 0 8px rgba(255, 58, 80, 0.16);
+}
+
+.station-stages button.is-peek[aria-pressed="true"] {
+    background: #260b12;
+    border-style: dashed;
     border-color: var(--signal-soft);
-    box-shadow: 0 0 5px rgba(255, 72, 92, 0.55);
+}
+
+.station-stages button:hover {
+    border-color: #8d3041;
+    color: #ffe2e6;
 }
 
 .station progress {
@@ -528,6 +557,7 @@
 
 .station progress::-webkit-progress-value {
     background: linear-gradient(90deg, #991b2c, var(--signal));
+    transition: width 0.5s ease;
 }
 
 .station progress::-moz-progress-bar {
@@ -549,7 +579,7 @@
     border-radius: 8px;
     color: #f3d7dc;
     cursor: pointer;
-    transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+    transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease;
 }
 
 .station-presets button:hover:not(:disabled) {
@@ -572,6 +602,7 @@
 }
 
 .station-presets button:focus-visible,
+.station-stages button:focus-visible,
 .station-pts:focus-visible {
     outline: 2px solid #fff1f2;
     outline-offset: 2px;
@@ -600,6 +631,7 @@
     letter-spacing: 0.06em;
     border-radius: 8px;
     cursor: pointer;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .station-pts:hover {

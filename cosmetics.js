@@ -1,5 +1,5 @@
-// ===== ПАНТЕОН ЦИНИКОВ, КОЛЛЕКЦИОННЫЙ БУТИК И TELEGRAM STARS (SOMA_LINK v9) =====
-// Принцип SOMA_LINK: продаётся СТРОГО эстетика. Внутри каждой категории — единая равная цена,
+// ===== ПАНТЕОН ЦИНИКОВ, КОЛЛЕКЦИОННЫЙ БУТИК И TELEGRAM STARS (SOMA~LINK) =====
+// Принцип SOMA~LINK: продаётся СТРОГО эстетика. Внутри каждой категории — единая равная цена,
 // чтобы каждый атрибут был самодостаточным произведением искусства со своей уникальной анимацией.
 // Живое Тепло и рост цветка не продаются никогда.
 
@@ -25,10 +25,10 @@ const SOMA_CATALOG = [
     // 1. КОЛЛЕКЦИОННЫЕ РАМКИ ТОПА, ДОСЬЕ И КАРТОЧКИ СВИДЕТЕЛЯ (ЕДИНЫЙ ТИР 150 ⭐ · 6 УНИКАЛЬНЫХ АНИМАЦИЙ)
     { id: 'frame_ember',   tab: 'frames', group: 'frames', slot: 'frame', css: 'soma-frame--ember',   motion: 'ИСКРЫ ГОРНА',    stars: 150, name: 'Тлеющий уголь',   desc: 'Вулканический обсидиан с переливчатой кромкой жара, дыханием горна и всплывающими искрами пепла.' },
     { id: 'frame_glitch',  tab: 'frames', group: 'frames', slot: 'frame', css: 'soma-frame--glitch',  motion: 'RGB-РАЗВЁРТКА',  stars: 150, name: 'Сбой протокола',  desc: 'Хроматический RGB-раскол, прицельные уголки телеметрии и живой бегущий луч ЭЛТ-развёртки.' },
-    { id: 'frame_neon',    tab: 'frames', group: 'frames', slot: 'frame', css: 'soma-frame--neon',    motion: 'ПЛАЗМА НЕОНА',   stars: 150, name: 'Багровый неон',   desc: 'Стеклянная неоновая трубка верхнего NEEO_CITY с бегущей по контуру рубиновой плазменной дугой.' },
+    { id: 'frame_neon',    tab: 'frames', group: 'frames', slot: 'frame', css: 'soma-frame--neon',    motion: 'ПЛАЗМА НЕОНА',   stars: 150, name: 'Багровый неон',   desc: 'Стеклянная неоновая трубка верхнего NEEO~CITY с бегущей по контуру рубиновой плазменной дугой.' },
     { id: 'frame_gold',    tab: 'frames', group: 'frames', slot: 'frame', css: 'soma-frame--gold',    motion: 'ШЁЛК 24K',       stars: 150, name: 'Чёрное золото',   desc: 'Чёрный оникс Ар-Деко с двойной золотой филигранью, заклёпками и скользящим музейным бликом 24k.' },
     { id: 'frame_phantom', tab: 'frames', group: 'frames', slot: 'frame', css: 'soma-frame--phantom', motion: 'ОРБИТА АВРОРЫ',  stars: 150, name: 'Призрак эфира',   desc: 'Спектральная призма лунного серебра, аметиста и опала с двойной орбитой северного сияния.' },
-    { id: 'frame_pulse',   tab: 'frames', group: 'frames', slot: 'frame', css: 'soma-frame--pulse',   motion: 'КАРДИО-ЛУЧ',     stars: 150, name: 'Пульс Станции',   desc: 'Живой осциллограф SOMA_LINK с двойным ритмом сердцебиения и скользящим лазерным импульсом.' },
+    { id: 'frame_pulse',   tab: 'frames', group: 'frames', slot: 'frame', css: 'soma-frame--pulse',   motion: 'КАРДИО-ЛУЧ',     stars: 150, name: 'Пульс Станции',   desc: 'Живой осциллограф SOMA~LINK с двойным ритмом сердцебиения и скользящим лазерным импульсом.' },
 
     // 2. ЮВЕЛИРНЫЕ ПЕЧАТИ (100 ⭐), ЖИВЫЕ ТИТУЛЫ (110 ⭐) И ЛИЧНАЯ ЭПИТАФИЯ (150 ⭐)
     { id: 'seal_eye',        tab: 'status', group: 'seals',  slot: 'seal',  motion: 'ЖИВОЙ ВЗГЛЯД',   stars: 100, name: 'Печать «Око»',          desc: 'Рубиновое око наблюдателя: зрачок неспешно сканирует зал и изредка гипнотически моргает.' },
@@ -39,11 +39,11 @@ const SOMA_CATALOG = [
     { id: 'title_architect', tab: 'status', group: 'titles', slot: 'title', label: 'АРХИТЕКТОР ТИШИНЫ',   glyph: '◈', titleCss: 'soma-title--architect', stars: 110, name: 'Титул «Архитектор тишины»',   desc: 'Холодный платиново-стальной перелив букв в Топе, Досье и карточке Свидетеля.' },
     { id: 'title_collector', tab: 'status', group: 'titles', slot: 'title', label: 'КОЛЛЕКЦИОНЕР ДРАМ',   glyph: '❖', titleCss: 'soma-title--collector', stars: 110, name: 'Титул «Коллекционер драм»',   desc: 'Бархатный рубиново-розовый перелив для ценителей ночных исповедей.' },
     { id: 'title_patrician', tab: 'status', group: 'titles', slot: 'title', label: 'ПАТРИЦИЙ ЭФИРА',      glyph: '♛', titleCss: 'soma-title--patrician', stars: 110, name: 'Титул «Патриций эфира»',      desc: 'Тёплое шампанское золото закрытой ложи Паноптикума с мягким сиянием.' },
-    { id: 'title_ghost',     tab: 'status', group: 'titles', slot: 'title', label: 'ПРИЗРАК NEEO_CITY',   glyph: '◌', titleCss: 'soma-title--ghost',     stars: 110, name: 'Титул «Призрак NEEO_CITY»',   desc: 'Спектральный опалово-серебряный перелив — повсюду в эфире и неуловим.' },
+    { id: 'title_ghost',     tab: 'status', group: 'titles', slot: 'title', label: 'ПРИЗРАК NEEO~CITY',   glyph: '◌', titleCss: 'soma-title--ghost',     stars: 110, name: 'Титул «Призрак NEEO~CITY»',   desc: 'Спектральный опалово-серебряный перелив — повсюду в эфире и неуловим.' },
     { id: 'title_oracle',    tab: 'status', group: 'titles', slot: 'title', label: 'ПОСЛЕДНИЙ СВИДЕТЕЛЬ', glyph: '✦', titleCss: 'soma-title--oracle',    stars: 110, name: 'Титул «Последний свидетель»', desc: 'Рассветно-янтарный огненный градиент хранителя ночной станции.' },
     { id: 'perk_epitaph',    tab: 'status', group: 'epitaph', slot: 'epitaph_unlock', stars: 150, name: 'Право на эпитафию', desc: 'Ваша личная фраза (до 42 символов) на Троне #1, в строке Топа, в Досье и в профиле.' },
 
-    // 3. ЖИВЫЕ КОРПУСА ПЕЙДЖЕРА SOMA // PGR-04 (ЕДИНЫЙ ТИР 140 ⭐)
+    // 3. ЖИВЫЕ КОРПУСА ПЕЙДЖЕРА NEEOSOMA // NMAV-04 (ЕДИНЫЙ ТИР 140 ⭐)
     { id: 'pager_amber', tab: 'pager', group: 'pagers', slot: 'pager', motion: 'ЛУЧ ЛЮМИНОФОРА', sample: 'CH·04 // 1986 AMBER', stars: 140, name: 'Янтарный фосфор',     desc: 'Тёплый катодный дисплей 1986 года с живой янтарной развёрткой, пульсом диода и бронзовым крепежом.' },
     { id: 'pager_clear', tab: 'pager', group: 'pagers', slot: 'pager', motion: 'ИМПУЛЬС ПЛАТЫ',  sample: 'CH·04 // RUBY PCB',   stars: 140, name: 'Дымчатый рубин 90-х', desc: 'Полупрозрачный рубиновый пластик, сквозь который видны дорожки платы и бегущий по ним сигнал.' },
     { id: 'pager_ghost', tab: 'pager', group: 'pagers', slot: 'pager', motion: 'ДЫМКА ЭФИРА',    sample: 'CH·04 // WHITE NOISE', stars: 140, name: 'Белый шум',          desc: 'Анодированный титановый хром с живой опалово-серебряной дымкой на холодной матрице.' },
@@ -58,11 +58,11 @@ const SOMA_CATALOG = [
     { id: 'room_garland', tab: 'room', group: 'ambience', slot: 'garland', stars: 140, name: 'Гирлянда Эдисона у окна',  desc: '13 винтажных лампочек с тёплыми вольфрамовыми нитями и золотым светом по каменной арке окна.' },
     { id: 'room_candles', tab: 'room', group: 'ambience',  slot: 'candles', stars: 140, name: 'Живые свечи станции',      desc: 'Шесть восковых свечей с трепещущим живым пламенем и тёплыми бликами у ковра и на полке радио.' },
     { id: 'room_cat',     tab: 'room', group: 'companion', slot: 'cat',     stars: 220, name: 'Живой кот-хранитель',      desc: 'Крупный тёплый кот с уникальной мастью по вашему ID на кушетке: глубоко дышит, мурчит и дружит с псом.' },
-    { id: 'room_dog',     tab: 'room', group: 'companion', slot: 'dog',     stars: 220, name: 'Живой пёс-хранитель',      desc: 'Крупный пёс одной из 7 пород по вашему ID сладко спит, подогнув лапки на персидском коврике у пледа рядом с котом, и отзывается на ласку.' }
+    { id: 'room_dog',     tab: 'room', group: 'companion', slot: 'dog',     stars: 220, name: 'Живой пёс-хранитель',      desc: 'Крупный пёс одной из 7 пород по вашему ID спит на персидском коврике рядом с котом (шанс 0.1% — уникальная белая мальтийская болонка с фиолетовыми ушами и хвостом!).' }
 ];
 
 const SOMA_ITEM_MAP = Object.fromEntries(SOMA_CATALOG.map(it => [it.id, it]));
-// Коллекционные пластинки 7" лампового приёмника SOMA // RX-88 (хранятся в том же защищённом owned_cosmetics, 0% pay-to-win)
+// Коллекционные пластинки 7" лампового приёмника NEEOSOMA // AV-88 (хранятся в том же защищённом owned_cosmetics, 0% pay-to-win)
 const SOMA_DEFAULT_TRACK_IDS = ['track_velvet', 'track_aurora', 'track_solstice', 'track_rainline'];
 function isCollectibleTrackId(id) {
     if (!id || typeof id !== 'string') return false;
@@ -81,7 +81,7 @@ const SHOP_GROUP_META = {
     seals:     { title: '// ЖИВЫЕ ПЕЧАТИ СВИДЕТЕЛЯ',   pill: 'ЕДИНЫЙ ТИР · 100 ⭐' },
     titles:    { title: '// АВТОРСКИЕ ТИТУЛЫ',         pill: 'ЕДИНЫЙ ТИР · 110 ⭐' },
     epitaph:   { title: '// ЛИЧНЫЙ ГОЛОС В ТОПЕ',      pill: 'ПРИВИЛЕГИЯ · 150 ⭐' },
-    pagers:    { title: '// КОРПУСА SOMA // PGR-04',   pill: 'ЕДИНЫЙ ТИР · 140 ⭐' },
+    pagers:    { title: '// КОРПУСА NEEOSOMA // NMAV-04', pill: 'ЕДИНЫЙ ТИР · 140 ⭐' },
     pots:      { title: '// СОСУДЫ МАСТЕРА',           pill: 'ЕДИНЫЙ ТИР · 160 ⭐' },
     ambience:  { title: '// ЖИВАЯ АТМОСФЕРА СТАНЦИИ',  pill: 'ЕДИНЫЙ ТИР · 140 ⭐' },
     companion: { title: '// ЖИВЫЕ СПУТНИКИ ПО ID (МОЖНО ОБОИХ)', pill: 'ЕДИНЫЙ ТИР · 220 ⭐' }
@@ -131,7 +131,7 @@ function sanitizeEpitaph(raw) {
         return { ok: false, error: 'Протокол блокирует номера телефонов и карт.' };
     }
     if (/(пиш[иу]\s*в\s*лс|личк[ауе]|ватсап|whatsapp|viber|discord|инст[ауе]?)/i.test(str)) {
-        return { ok: false, error: 'Прямые контакты запрещены протоколом SOMA_LINK.' };
+        return { ok: false, error: 'Прямые контакты запрещены протоколом SOMA~LINK.' };
     }
     return { ok: true, value: str };
 }
@@ -708,7 +708,7 @@ function renderShop() {
             liveSwatch = `
             <div class="soma-pager shop-swatch-pager" data-skin="${it.id}">
                 <div class="pager-lcd">
-                    <span class="pager-lcd-main flex items-center gap-1.5"><i class="pager-led" aria-hidden="true"></i>${esc(it.sample || 'SOMA // PGR-04')}</span>
+                    <span class="pager-lcd-main flex items-center gap-1.5"><i class="pager-led" aria-hidden="true"></i>${esc(it.sample || 'NEEOSOMA // NMAV-04')}</span>
                     <span class="pager-carrier text-[8.5px]">${esc(it.motion || '')}</span>
                 </div>
             </div>`;
@@ -798,7 +798,7 @@ async function renderLeaderboard() {
     if (subnote) {
         subnote.textContent = isWeek
             ? `ОХОТА НЕДЕЛИ · СБРОС ТРОНА ЧЕРЕЗ ${weekResetCountdown()} · НАЖМИТЕ НА ИГРОКА ДЛЯ ДОСЬЕ`
-            : 'ВЕЧНЫЙ ПАНТЕОН NEEO_CITY · НАЖМИТЕ НА ЛЮБОГО СВИДЕТЕЛЯ ДЛЯ ДОСЬЕ';
+            : 'ВЕЧНЫЙ ПАНТЕОН NEEO~CITY · НАЖМИТЕ НА ЛЮБОГО СВИДЕТЕЛЯ ДЛЯ ДОСЬЕ';
     }
 
     let data = null, myRank = null, weekSupported = isWeek;
@@ -846,7 +846,7 @@ async function renderLeaderboard() {
         username: player.uid || 'local_me',
         xp: player.xp || 0,
         score: myScore,
-        help_attempts: player.helpAttempts || 0,
+        help_attempts: typeof getWhisperBreachCount === 'function' ? getWhisperBreachCount() : (player.whispersSent || 0),
         reacts: player.reacts || 0,
         seen: player.seen || 0,
         cosmetics: getActiveCosmetics()
@@ -1011,7 +1011,7 @@ function openDossierByUid(uid, place) {
         place: place || shopState.myRank || 1,
         xp: player.xp || 0,
         score: player.xp || 0,
-        help_attempts: player.helpAttempts || 0,
+        help_attempts: typeof getWhisperBreachCount === 'function' ? getWhisperBreachCount() : (player.whispersSent || 0),
         reacts: player.reacts || 0,
         seen: player.seen || 0,
         cosmetics: getActiveCosmetics()
@@ -1110,7 +1110,7 @@ function shareTopFlex(place, xpVal) {
     const c = getActiveCosmetics();
     const tl = titleLabelOf(c);
     const ep = c.epitaph ? `\n«${c.epitaph}»` : '';
-    const text = `SOMA_LINK // ПАНТЕОН ЦИНИКОВ\nМесто: #${place} (${xpVal} XP)${tl ? ` · ${tl}` : ''}${ep}\n\nПопробуй сдвинуть меня с места:`;
+    const text = `SOMA~LINK // ПАНТЕОН NEEO~CITY\nМесто: #${place} (${xpVal} XP)${tl ? ` · ${tl}` : ''}${ep}\n\nПопробуй сдвинуть меня с места:`;
     if (typeof window !== 'undefined' && window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) {
         Telegram.WebApp.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(BOT_LINK) + '&text=' + encodeURIComponent(text));
         return;

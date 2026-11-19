@@ -1,5 +1,5 @@
 // =========================================================================
-// SOMA // RX-88 — ЛАМПОВЫЙ HI-FI ПРИЁМНИК И КОЛЛЕКЦИОННАЯ ФОНОТЕКА ВИНИЛА 7"
+// NEEOSOMA // AV-88 — ЛАМПОВЫЙ HI-FI ПРИЁМНИК И КОЛЛЕКЦИОННАЯ ФОНОТЕКА ВИНИЛА 7"
 // 0% рекламы · 0% pay-to-win · 100% сохранение Fullscreen (включая поворот ±90°)
 // Поддержка прямого <audio>, встроенного аналогового синтеза, Spotify,
 // Яндекс Музыки и коллекционных пластинок 7" ($1 · 50 ⭐ Telegram Stars).
@@ -714,13 +714,13 @@
             playTuningChime();
             const svc = src === 'spotify' ? 'Spotify' : 'Яндекс Музыке';
             if (tr && tr.collectible) {
-                showNotice(`«${tr.title}» — закрытый виниловый тираж 7": звучит напрямую с мастера приёмника RX-88 (вне ${svc}).`, 5200);
+                showNotice(`«${tr.title}» — закрытый виниловый тираж 7": звучит напрямую с мастера NEEOSOMA // AV-88 (вне ${svc}).`, 5200);
             } else {
-                showNotice(`Поток в ${svc} скоро подключится — сейчас пластинка играет напрямую с лампового мастера RX-88.`, 4800);
+                showNotice(`Поток в ${svc} скоро подключится — сейчас пластинка играет напрямую с лампового мастера NEEOSOMA // AV-88.`, 4800);
             }
             return;
         }
-        // Переключаемся на встроенный плеер стриминга прямо внутри RX-88 (не выходя из Fullscreen!)
+        // Переключаемся на встроенный плеер стриминга прямо внутри NEEOSOMA // AV-88 (не выходя из Fullscreen!)
         if (state.playing) pausePlayback();
         state.source = src;
         state.notice = '';
@@ -836,8 +836,8 @@
             if (typeof MediaMetadata === 'function') {
                 navigator.mediaSession.metadata = new MediaMetadata({
                     title: tr.title,
-                    artist: tr.subtitle || 'RX-88 Hi-Fi',
-                    album: 'SOMA // RX-88'
+                    artist: tr.subtitle || 'AV-88 Hi-Fi',
+                    album: 'NEEOSOMA // AV-88'
                 });
             }
             navigator.mediaSession.setActionHandler('play', () => startPlayback());
@@ -881,14 +881,14 @@
             ov.className = 'rx-overlay hidden';
             ov.setAttribute('role', 'dialog');
             ov.setAttribute('aria-modal', 'true');
-            ov.setAttribute('aria-label', 'Ламповый приёмник SOMA RX-88');
+            ov.setAttribute('aria-label', 'Ламповый приёмник NEEOSOMA AV-88');
             ov.innerHTML = `
                 <div class="rx-chassis" id="rx-chassis">
                     <div class="rx-head">
                         <div class="rx-head-top">
                             <div class="rx-brand">
                                 <span class="rx-pilot" aria-hidden="true"></span>
-                                <span class="rx-model">SOMA // RX-88</span>
+                                <span class="rx-model">NEEOSOMA // AV-88</span>
                             </div>
                             <div class="rx-head-right">
                                 <span class="rx-stereo-lamp" aria-hidden="true">STEREO</span>
@@ -984,7 +984,7 @@
                                     <button type="button" class="rx-tab" data-rx-tab="owned" aria-pressed="false" id="rx-tab-owned">МОИ</button>
                                 </div>
                                 <div class="rx-sources" aria-label="Источник звука">
-                                    <button type="button" class="rx-src-chip" data-rx-src="vinyl" aria-pressed="true" title="Ламповый проигрыватель RX-88">◉ ВИНИЛ</button>
+                                    <button type="button" class="rx-src-chip" data-rx-src="vinyl" aria-pressed="true" title="Ламповый проигрыватель NEEOSOMA AV-88">◉ ВИНИЛ</button>
                                     <button type="button" class="rx-src-chip rx-src-chip--spotify" data-rx-src="spotify" aria-pressed="false" title="Слушать через Spotify">
                                         <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm4.58 14.42a.62.62 0 0 1-.86.2c-2.35-1.43-5.3-1.76-8.79-.96a.62.62 0 0 1-.27-1.21c3.82-.88 7.09-.5 9.72 1.11.3.18.39.57.2.86zm1.22-2.72a.78.78 0 0 1-1.07.26c-2.69-1.65-6.79-2.13-9.97-1.17a.78.78 0 1 1-.45-1.49c3.64-1.1 8.15-.57 11.23 1.33.37.22.49.7.26 1.07zm.1-2.83C14.68 8.96 9.36 8.78 6.28 9.72a.93.93 0 1 1-.54-1.78c3.54-1.08 9.42-.87 13.13 1.33a.93.93 0 0 1-.96 1.6z"/></svg>
                                         <span>SPOTIFY</span>
@@ -1012,7 +1012,7 @@
             pill.className = 'rx-fs-pill';
             pill.innerHTML = `
                 <span class="rx-fs-pill-disc" aria-hidden="true"></span>
-                <button type="button" class="rx-fs-pill-open" id="rx-fs-pill-open" title="Открыть приёмник RX-88">RX-88</button>
+                <button type="button" class="rx-fs-pill-open" id="rx-fs-pill-open" title="Открыть приёмник NEEOSOMA AV-88">AV-88</button>
                 <button type="button" class="rx-fs-pill-toggle" id="rx-fs-pill-toggle" aria-label="Пауза или воспроизведение">❚❚</button>
             `;
             pill.addEventListener('click', e => e.stopPropagation());
@@ -1036,7 +1036,7 @@
             bar.innerHTML = `
                 <button type="button" class="rx-inline-open" id="rx-inline-open">
                     <span class="rx-eq" aria-hidden="true"><i></i><i></i><i></i></span>
-                    <span class="rx-inline-title" id="rx-inline-title">RX-88</span>
+                    <span class="rx-inline-title" id="rx-inline-title">AV-88</span>
                 </button>
                 <div class="rx-inline-actions">
                     <button type="button" class="rx-inline-btn" id="rx-inline-toggle">ПАУЗА</button>

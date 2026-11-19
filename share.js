@@ -1,5 +1,5 @@
 /* ==========================================================================
-   SOMA_LINK // АТМОСФЕРНЫЕ ИЛЛЮСТРИРОВАННЫЕ ОТКРЫТКИ ДОСТИЖЕНИЙ (share.js)
+   SOMA~LINK // АТМОСФЕРНЫЕ ИЛЛЮСТРИРОВАННЫЕ ОТКРЫТКИ ДОСТИЖЕНИЙ (share.js)
    Рендерит живые художественные карточки 1200×675 прямо на <canvas> вместо
    сухого текста:
      1. shareWitness()       — Личная станция (реальная комната, кот, пёс, цветок, небо, отчёт)
@@ -26,7 +26,7 @@
         dataUrl: '',
         filename: 'soma-link.png',
         caption: '',
-        title: 'SOMA_LINK',
+        title: 'SOMA~LINK',
         jobId: 0
     };
 
@@ -110,7 +110,9 @@
             rank,
             seen: Math.max(0, Number(p.seen) || 0),
             reacts: Math.max(0, Number(p.reacts) || 0),
-            attempts: Math.max(0, Number(p.attempts) || 0),
+            attempts: typeof getWhisperBreachCount === 'function'
+                ? getWhisperBreachCount()
+                : Math.max(0, Number(p.whispersSent || 0)),
             warmth: Math.max(0, Number(p.warmth) || 0),
             trained: Math.max(0, Number(p.trained) || 0),
             phaseIdx,
@@ -387,7 +389,7 @@
         g.textBaseline = 'middle';
         g.fillText(leftText, 54, y);
 
-        const right = `${dateStr}  ·  SOMA_LINK`;
+        const right = `${dateStr}  ·  SOMA~LINK`;
         const rw = g.measureText(right).width;
         g.fillStyle = accent || 'rgba(255, 214, 168, 0.82)';
         g.fillText(right, CARD_W - 54 - rw, y);
@@ -496,7 +498,7 @@
             { k: 'УСЛЫШАНО СУДЕБ', v: String(snap.seen), col: '#fff2f4' },
             { k: 'ТЕПЛО СТАНЦИИ',  v: String(snap.warmth), col: '#ffd58e' },
             { k: 'ПУСТЫХ РЕАКЦИЙ', v: String(snap.reacts), col: '#ff8597' },
-            { k: 'ПОПЫТОК ПОМОЧЬ', v: String(snap.attempts), col: '#ff5c74' }
+            { k: 'СРЫВОВ ПРОТОКОЛА', v: String(snap.attempts), col: '#ff5c74' }
         ];
         const boxW = 196, boxH = 74, gap = 12;
         stats.forEach((st, i) => {
@@ -548,7 +550,7 @@
         g.fillText(roomTag, CARD_W - 37 - rtw, 64);
 
         drawSubtleScanlinesAndGrain(g, CARD_W, CARD_H, 0.65);
-        drawFooterBar(g, 'SILENCE_PROTOCOL // NEEO_CITY', dateStr, fp.edge);
+        drawFooterBar(g, 'NEEOSOMA // SOMA~LINK · NEEO~CITY', dateStr, fp.edge);
     }
 
     // =========================================================================
@@ -939,7 +941,7 @@
         g.fillText('КАК ОТКРЫТЬ — ЗАСЕКРЕЧЕНО. ПОПРОБУЙ САМ.', 54, 536);
 
         drawSubtleScanlinesAndGrain(g, CARD_W, CARD_H, 0.85);
-        drawFooterBar(g, 'СБОЙ ПРОТОКОЛА // SOMA_LINK', dateStr, '#ffca68');
+        drawFooterBar(g, 'СБОЙ ПРОТОКОЛА // SOMA~LINK', dateStr, '#ffca68');
     }
 
     // =========================================================================
@@ -1049,7 +1051,7 @@
 
         g.font = `400 18px ${SANS}`;
         g.fillStyle = 'rgba(246, 218, 224, 0.86)';
-        const desc = wrapLines(g, 'Сквозь ночной шум NEEO_CITY поймана тайная волна — там, где нет ленты, масок и пустых реакций.', 520, 3);
+        const desc = wrapLines(g, 'Сквозь ночной шум NEEO~CITY поймана тайная волна — там, где нет ленты, масок и пустых реакций.', 520, 3);
         desc.forEach((ln, idx) => g.fillText(ln, 54, 286 + idx * 27));
 
         rr(g, 54, 404, 500, 82, 13);
@@ -1069,7 +1071,7 @@
         g.fillText('КООРДИНАТЫ ВОЛНЫ ЗАСЕКРЕЧЕНЫ · НАЙДИ САМ', 54, 536);
 
         drawSubtleScanlinesAndGrain(g, CARD_W, CARD_H, 0.85);
-        drawFooterBar(g, 'ТАЙНЫЙ ЭФИР // NEEO_CITY', dateStr, '#ff98aa');
+        drawFooterBar(g, 'ТАЙНЫЙ ЭФИР // NEEO~CITY', dateStr, '#ff98aa');
     }
 
     // =========================================================================
@@ -1151,7 +1153,7 @@
         g.font = `700 12.5px ${MONO}`;
         g.fillStyle = 'rgba(255, 206, 194, 0.55)';
         g.fillText('КАНАЛ «ШЁПОТ» // АНОНИМНЫЕ ТЁПЛЫЕ СЛОВА', sx + 30, sy + sh - 22);
-        const sp = 'SOMA // VTR-90 · SP HI-FI';
+        const sp = 'NEEOSOMA // VTR-90 · SP HI-FI';
         g.fillText(sp, sx + sw - 30 - g.measureText(sp).width, sy + sh - 22);
 
         // ИЛЛЮСТРИРОВАННАЯ ФИЗИЧЕСКАЯ VHS-КАССЕТА ПОД ЭКРАНОМ С НАКЛЕЙКОЙ #НОМЕР + ДД.ММ.ГГГГ!
@@ -1230,15 +1232,24 @@
         const g = cv.getContext('2d');
         const snap = getPlayerSnapshot();
         const dateStr = todayStamp();
+        const isAlienCard = kindOverride === 'alien';
         const spec = (typeof plantSpec === 'function') ? plantSpec() : { kind: 0, kindName: 'Растение станции' };
-        const useSpec = Number.isInteger(kindOverride) && typeof gallerySpecForKind === 'function'
-            ? gallerySpecForKind(kindOverride, spec)
-            : spec;
-        const roomCv = await renderLiveRoomSurface(snap.phaseIdx, useSpec.kind);
+        const useSpec = isAlienCard && typeof alienSpec === 'function'
+            ? alienSpec()
+            : (Number.isInteger(kindOverride) && typeof gallerySpecForKind === 'function'
+                ? gallerySpecForKind(kindOverride, spec)
+                : spec);
+        const roomCv = await renderLiveRoomSurface(snap.phaseIdx, isAlienCard ? undefined : useSpec.kind);
 
         g.fillStyle = '#070204';
         g.fillRect(0, 0, CARD_W, CARD_H);
         g.drawImage(roomCv, 0, 0, roomCv.width, roomCv.height, 210, 22, 972, 608);
+
+        if (isAlienCard && typeof drawPlantSprite === 'function') {
+            const spCv = makeCanvas(360, 380);
+            drawPlantSprite(spCv.getContext('2d'), useSpec, 5, { phase: snap.phaseIdx, glow: 0.72, now: 2400, potSkin: 'pot_kintsugi' });
+            g.drawImage(spCv, 680, 148, 360, 380);
+        }
 
         const fade = g.createLinearGradient(0, 0, 620, 0);
         fade.addColorStop(0, 'rgba(8, 2, 5, 0.99)');
@@ -1247,15 +1258,16 @@
         g.fillStyle = fade;
         g.fillRect(0, 0, 620, CARD_H);
 
-        g.strokeStyle = 'rgba(255, 204, 152, 0.38)';
+        const frameAccent = isAlienCard ? '#d8b4fe' : '#ffd496';
+        g.strokeStyle = isAlienCard ? 'rgba(216, 180, 254, 0.45)' : 'rgba(255, 204, 152, 0.38)';
         g.lineWidth = 1.6;
         rr(g, 20, 20, CARD_W - 40, CARD_H - 40, 18);
         g.stroke();
-        drawCornerBrackets(g, 32, 32, CARD_W - 64, CARD_H - 64, 20, '#ffd496', 0.8);
+        drawCornerBrackets(g, 32, 32, CARD_W - 64, CARD_H - 64, 20, frameAccent, 0.8);
 
         g.font = `700 13px ${MONO}`;
-        g.fillStyle = '#ffd592';
-        g.fillText('// ОРАНЖЕРЕЯ ТИХОЙ СТАНЦИИ', 54, 88);
+        g.fillStyle = frameAccent;
+        g.fillText(isAlienCard ? '// ✦ СЕКРЕТНЫЙ ВИД (1 ИЗ 7) · ОРАНЖЕРЕЯ' : '// NEEOSOMA · ОРАНЖЕРЕЯ ТИХОЙ СТАНЦИИ', 54, 88);
 
         g.font = `700 42px ${SANS}`;
         g.fillStyle = '#fff6f2';
@@ -1265,23 +1277,94 @@
         const baseY = 158 + nLines.length * 50 + 24;
         g.font = `400 17px ${SANS}`;
         g.fillStyle = 'rgba(244, 216, 220, 0.84)';
-        const sub = wrapLines(g, 'Выращено не кликами, а тихим человеческим вниманием в ночной комнате SOMA_LINK.', 420, 3);
+        const descTxt = isAlienCard && useSpec.alien
+            ? useSpec.alien.note
+            : 'Выращено не кликами, а тихим человеческим вниманием в ночной комнате SOMA~LINK.';
+        const sub = wrapLines(g, descTxt, 420, 4);
         sub.forEach((ln, idx) => g.fillText(ln, 54, baseY + idx * 25));
 
         rr(g, 54, 418, 410, 78, 12);
         g.fillStyle = 'rgba(20, 6, 10, 0.86)';
         g.fill();
-        g.strokeStyle = 'rgba(255, 196, 146, 0.34)';
+        g.strokeStyle = isAlienCard ? 'rgba(216, 180, 254, 0.4)' : 'rgba(255, 196, 146, 0.34)';
         g.stroke();
         g.font = `700 11px ${MONO}`;
         g.fillStyle = 'rgba(255, 212, 186, 0.66)';
         g.fillText('ХРАНИТЕЛЬ ОРАНЖЕРЕИ', 72, 444);
         g.font = `700 21px ${MONO}`;
-        g.fillStyle = '#ffe4b4';
+        g.fillStyle = frameAccent;
         g.fillText(`${snap.callsign} · ${snap.phaseName}`, 72, 476);
 
         drawSubtleScanlinesAndGrain(g, CARD_W, CARD_H, 0.65);
-        drawFooterBar(g, 'ГЕРБАРИЙ SOMA_LINK // СЕЗОН ТИШИНЫ', dateStr, '#ffd592');
+        drawFooterBar(g, 'NEEOSOMA // ОРАНЖЕРЕЯ SOMA~LINK · NEEO~CITY', dateStr, frameAccent);
+    }
+
+    // =========================================================================
+    // 7. ПАНОРАМНАЯ ОТКРЫТКА СТЕКЛЯННОГО КУПОЛА ОРАНЖЕРЕИ (shareConservatory)
+    // =========================================================================
+    async function paintConservatoryCard(cv, opts) {
+        const g = cv.getContext('2d');
+        const snap = getPlayerSnapshot();
+        const dateStr = todayStamp();
+        const o = opts || {};
+
+        g.fillStyle = '#06030f';
+        g.fillRect(0, 0, CARD_W, CARD_H);
+
+        // Рисуем живой стеклянный купол Оранжереи на весь панорамный холст 1200×675!
+        if (typeof window !== 'undefined' && window.SOMA_GREENHOUSE && typeof window.SOMA_GREENHOUSE.paintScene === 'function') {
+            window.SOMA_GREENHOUSE.paintScene(g, CARD_W, CARD_H, 4200, {
+                moodIdx: o.moodIdx,
+                snapshot: o.snapshot || null,
+                hideSelection: true
+            });
+        }
+
+        // Деликатная нижняя кинематографическая вуаль под типографику
+        const botFade = g.createLinearGradient(0, CARD_H - 190, 0, CARD_H);
+        botFade.addColorStop(0, 'rgba(6, 3, 14, 0)');
+        botFade.addColorStop(0.62, 'rgba(6, 3, 14, 0.78)');
+        botFade.addColorStop(1, 'rgba(5, 2, 12, 0.96)');
+        g.fillStyle = botFade;
+        g.fillRect(0, CARD_H - 190, CARD_W, 190);
+
+        const ghData = (o.snapshot && o.snapshot.gh)
+            ? o.snapshot.gh
+            : (typeof loadGreenhouse === 'function' ? loadGreenhouse() : { bloomed: [] });
+        const hasAlien = !!(ghData.alienSeed && ghData.alienSeed.bloomed);
+        const accent = hasAlien ? '#e9d5ff' : '#fde68a';
+
+        g.strokeStyle = hasAlien ? 'rgba(216, 180, 254, 0.44)' : 'rgba(253, 230, 138, 0.36)';
+        g.lineWidth = 1.6;
+        rr(g, 18, 18, CARD_W - 36, CARD_H - 36, 18);
+        g.stroke();
+        drawCornerBrackets(g, 30, 30, CARD_W - 60, CARD_H - 60, 20, accent, 0.85);
+
+        // Верхний шильдик купола
+        rr(g, 46, 42, hasAlien ? 420 : 340, 34, 17);
+        g.fillStyle = 'rgba(10, 5, 22, 0.76)';
+        g.fill();
+        g.strokeStyle = hasAlien ? 'rgba(216, 180, 254, 0.45)' : 'rgba(110, 231, 183, 0.4)';
+        g.stroke();
+        g.font = `700 12px ${MONO}`;
+        g.fillStyle = accent;
+        g.fillText(
+            hasAlien
+                ? `NEEOSOMA // ОРАНЖЕРЕЯ · 7/7 + ✦ ПРИШЕЛЕЦ`
+                : `NEEOSOMA // ОРАНЖЕРЕЯ · ${ghData.bloomed.length}/7 ВИДОВ`,
+            64,
+            63
+        );
+
+        // Имя хранителя внизу слева
+        g.font = `700 11px ${MONO}`;
+        g.fillStyle = 'rgba(226, 232, 240, 0.72)';
+        g.fillText('ХРАНИТЕЛЬ КУПОЛА НАД NEEO~CITY', 48, CARD_H - 96);
+        g.font = `700 28px ${SANS}`;
+        g.fillStyle = '#ffffff';
+        g.fillText(`@${String(snap.callsign).replace(/^@/, '')}`, 48, CARD_H - 64);
+
+        drawFooterBar(g, 'NEEOSOMA // SOMA~LINK · NEEO~CITY', dateStr, accent);
     }
 
     // ---- ЭКСПОРТ CANVAS -> BLOB & DATA URL ----
@@ -1393,7 +1476,7 @@
                 const file = new File([state.blob], state.filename, { type: 'image/png' });
                 await navigator.share({
                     files: [file],
-                    title: state.title || 'SOMA_LINK',
+                    title: state.title || 'SOMA~LINK',
                     text: fullText
                 });
                 setStatus('✓ Снимок отправлен!', true);
@@ -1426,7 +1509,7 @@
         ov.className = 'soma-share-overlay hidden';
         ov.setAttribute('role', 'dialog');
         ov.setAttribute('aria-modal', 'true');
-        ov.setAttribute('aria-label', 'Атмосферный снимок достижения SOMA_LINK');
+        ov.setAttribute('aria-label', 'Атмосферный снимок достижения SOMA~LINK');
         ov.innerHTML = `
             <div class="soma-share-card">
                 <div class="soma-share-head">
@@ -1438,7 +1521,7 @@
                 </div>
 
                 <div class="soma-share-frame">
-                    <img class="soma-share-img" id="soma-share-img" alt="Атмосферная открытка SOMA_LINK">
+                    <img class="soma-share-img" id="soma-share-img" alt="Атмосферная открытка SOMA~LINK">
                     <div class="soma-share-loading" id="soma-share-loading">ПРОЯВКА СНИМКА…</div>
                 </div>
 
@@ -1499,7 +1582,7 @@
         state.dataUrl = '';
         state.filename = meta.filename || 'soma-link.png';
         state.caption = meta.caption || '';
-        state.title = meta.title || 'SOMA_LINK';
+        state.title = meta.title || 'SOMA~LINK';
 
         syncMount();
         ov.classList.remove('hidden');
@@ -1564,9 +1647,9 @@
         const snap = getPlayerSnapshot();
         return openWithPainter({
             heading: 'СНИМОК СТАНЦИИ И ОТЧЁТА',
-            title: 'SOMA_LINK // Личная станция',
+            title: 'SOMA~LINK // Личная станция',
             filename: `soma-station-${snap.phaseIdx}.png`,
-            caption: `Моя тихая станция в SOMA_LINK · ${snap.rank} (${snap.xp} XP)`
+            caption: `Моя тихая станция в SOMA~LINK · NEEO~CITY · ${snap.rank} (${snap.xp} XP)`
         }, paintWitnessCard);
     }
 
@@ -1576,27 +1659,27 @@
         const xp = Math.max(0, Number(xpVal) || snap.xp);
         return openWithPainter({
             heading: `ДОСЬЕ ТРИБУНАЛА · #${rk}`,
-            title: `SOMA_LINK // Топ #${rk}`,
+            title: `SOMA~LINK // Топ #${rk}`,
             filename: `soma-top-${rk}.png`,
-            caption: `Место #${rk} в Пантеоне SOMA_LINK (${xp} XP). Попробуй сдвинуть меня:`
+            caption: `Место #${rk} в Пантеоне SOMA~LINK (${xp} XP). Попробуй сдвинуть меня:`
         }, cv => paintRankCard(cv, rk, xp));
     }
 
     function shareEggCard() {
         return openWithPainter({
             heading: 'ДОСТИЖЕНИЕ // СБОЙ ПРОТОКОЛА',
-            title: 'SOMA_LINK // Нарушитель Протокола',
+            title: 'SOMA~LINK // Нарушитель Протокола',
             filename: 'soma-protocol-breaker.png',
-            caption: 'Я нарушил протокол SOMA_LINK. Не скажу как — попробуй сам:'
+            caption: 'Я нарушил протокол SOMA~LINK в NEEO~CITY. Не скажу как — попробуй сам:'
         }, paintEggCard);
     }
 
     function shareSignal() {
         return openWithPainter({
             heading: 'ДОСТИЖЕНИЕ // ТАЙНАЯ ЧАСТОТА',
-            title: 'SOMA_LINK // Перехвачен сигнал',
+            title: 'SOMA~LINK // Перехвачен сигнал',
             filename: 'soma-secret-signal.png',
-            caption: 'Я перехватил скрытую частоту в SOMA_LINK. Попробуй найти сам:'
+            caption: 'Я перехватил скрытую частоту NEEO~CITY в SOMA~LINK. Попробуй найти сам:'
         }, paintSignalCard);
     }
 
@@ -1606,20 +1689,32 @@
             : '001';
         const dt = (tape && tape.date) ? tape.date : todayStamp();
         return openWithPainter({
-            heading: `СНИМОК VHS #${num} · ${dt}`,
-            title: `SOMA_LINK // VHS #${num}`,
+            heading: `NEEOSOMA // VTR-90 · VHS #${num}`,
+            title: `SOMA~LINK // VHS #${num}`,
             filename: `soma-vhs-${num}.png`,
-            caption: `VHS #${num} · ${dt} — анонимная тёплая кассета из архива SOMA_LINK`
+            caption: `VHS #${num} · ${dt} — анонимная тёплая кассета NEEOSOMA // VTR-90 в SOMA~LINK`
         }, cv => paintVhsCard(cv, tape));
     }
 
     function sharePlant(kindOverride) {
+        const isAl = kindOverride === 'alien';
         return openWithPainter({
-            heading: 'СНИМОК ОРАНЖЕРЕИ',
-            title: 'SOMA_LINK // Оранжерея станции',
-            filename: 'soma-greenhouse.png',
-            caption: 'Моё растение в тихой комнате SOMA_LINK:'
+            heading: isAl ? '✦ СЕКРЕТНЫЙ ВИД ОРАНЖЕРЕИ' : 'СНИМОК ОРАНЖЕРЕИ',
+            title: 'SOMA~LINK // Оранжерея станции',
+            filename: isAl ? 'soma-alien-plant.png' : 'soma-greenhouse-plant.png',
+            caption: isAl
+                ? 'Мой единственный внеземной цветок (1 из 7) в SOMA~LINK · NEEO~CITY:'
+                : 'Моё растение в тихой комнате SOMA~LINK · NEEO~CITY:'
         }, cv => paintPlantCard(cv, kindOverride));
+    }
+
+    function shareConservatory(opts) {
+        return openWithPainter({
+            heading: 'NEEOSOMA // КУПОЛ ОРАНЖЕРЕИ',
+            title: 'SOMA~LINK // Оранжерея над NEEO~CITY',
+            filename: 'soma-conservatory.png',
+            caption: 'Моя живая Оранжерея под стеклянным куполом NEEO~CITY в SOMA~LINK:'
+        }, cv => paintConservatoryCard(cv, opts));
     }
 
     const api = {
@@ -1629,6 +1724,7 @@
         shareSignal,
         shareVhs,
         sharePlant,
+        shareConservatory,
         close: closeModal,
         syncMount,
         isOpen: () => !!state.open,
@@ -1641,6 +1737,7 @@
             else if (kind === 'signal') await paintSignalCard(cv);
             else if (kind === 'vhs') await paintVhsCard(cv, payload);
             else if (kind === 'plant') await paintPlantCard(cv, payload && payload.kind);
+            else if (kind === 'conservatory') await paintConservatoryCard(cv, payload);
             return cv;
         }
     };

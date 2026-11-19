@@ -1,5 +1,5 @@
 /* ==========================================================================
-   SOMA // RX-88 — ЛАМПОВЫЙ HI-FI ПРИЁМНИК И КОЛЛЕКЦИЯ ВИНИЛА 7"
+   NEEOSOMA // AV-88 — ЛАМПОВЫЙ HI-FI ПРИЁМНИК И КОЛЛЕКЦИЯ ВИНИЛА 7"
    Безупречно работает и в карточке профиля, и ВНУТРИ нативного / повёрнутого
    Fullscreen (#station-scene), ни на секунду не выбивая из атмосферы комнаты.
    ========================================================================== */
@@ -1175,25 +1175,28 @@
 }
 
 /* ==========================================================================
-   МИНИ-ПЛЕЕР В ЭФИРЕ (в Fullscreen HUD и под карточкой комнаты при свёрнутом RX-88!)
+   МИНИ-ПЛЕЕР В ЭФИРЕ (в верхнем левом углу Fullscreen HUD — не перекрывает подписи внизу!)
    ========================================================================== */
 .rx-fs-pill {
     position: absolute;
-    bottom: max(12px, env(safe-area-inset-bottom));
-    left: max(14px, env(safe-area-inset-left));
-    z-index: 30;
+    top: max(10px, env(safe-area-inset-top, 0px));
+    left: max(12px, env(safe-area-inset-left, 0px));
+    bottom: auto;
+    right: auto;
+    z-index: 31;
     display: none;
     align-items: center;
     gap: 6px;
-    max-width: min(58%, 290px);
+    max-width: min(56%, 272px);
     padding: 5px 8px 5px 6px;
     border-radius: 999px;
-    background: rgba(12, 4, 7, 0.78);
+    background: rgba(12, 4, 7, 0.8);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 176, 138, 0.32);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65), 0 0 18px rgba(212, 46, 72, 0.16);
     color: #fff2f4;
+    pointer-events: auto;
     transition: opacity 0.4s ease, border-color 0.2s ease;
 }
 

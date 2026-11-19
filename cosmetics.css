@@ -1,0 +1,728 @@
+/* ===== ПАНТЕОН ЦИНИКОВ, ПРЕМИАЛЬНАЯ КОСМЕТИКА И БУТИК ПРИВИЛЕГИЙ (SOMA_LINK v6) ===== */
+
+/* --- ШАПКА ТОПА, ПЕРЕКЛЮЧАТЕЛЬ РЕЖИМОВ И ПЛАШКА ПОГОНИ --- */
+.top-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.top-title-wrap {
+    min-width: 0;
+}
+
+.top-kicker {
+    font: 9px 'Share Tech Mono', monospace;
+    letter-spacing: 0.14em;
+    color: #9e6770;
+    text-transform: uppercase;
+}
+
+.top-heading {
+    font: 700 13px 'Share Tech Mono', monospace;
+    letter-spacing: 0.08em;
+    color: #ffe8ec;
+    text-transform: uppercase;
+}
+
+.top-shop-btn {
+    flex-shrink: 0;
+    min-height: 34px;
+    padding: 5px 11px;
+    border-radius: 999px;
+    font: 700 10px 'Share Tech Mono', monospace;
+    letter-spacing: 0.07em;
+    color: #ffe7b8;
+    background: linear-gradient(135deg, #2a0d14 0%, #1c090d 55%, #2f1710 100%);
+    border: 1px solid rgba(235, 179, 92, 0.52);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 224, 166, 0.18);
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: transform 0.15s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.top-shop-btn:hover {
+    border-color: rgba(255, 206, 120, 0.85);
+    box-shadow: 0 0 14px rgba(235, 179, 92, 0.22);
+}
+
+.top-shop-btn:active {
+    transform: translateY(1px);
+}
+
+.top-modes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px;
+    padding: 3px;
+    background: #090305;
+    border: 1px solid #3c141d;
+    border-radius: 11px;
+}
+
+.top-mode-btn {
+    min-height: 32px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: transparent;
+    font: 10px 'Share Tech Mono', monospace;
+    letter-spacing: 0.06em;
+    color: #9e757c;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.top-mode-btn[aria-pressed="true"] {
+    background: linear-gradient(180deg, #2b0b13 0%, #1a060b 100%);
+    border-color: rgba(255, 84, 104, 0.5);
+    color: #fff0f2;
+    font-weight: 700;
+}
+
+.top-subnote {
+    font: 9.5px 'Share Tech Mono', monospace;
+    letter-spacing: 0.04em;
+    color: #8f666e;
+    text-align: center;
+}
+
+/* Плашка азарта / погони за следующим местом */
+.top-chase {
+    display: grid;
+    gap: 6px;
+    padding: 10px 12px;
+    border-radius: 13px;
+    background: linear-gradient(135deg, #19070b 0%, #100407 100%);
+    border: 1px solid #591d29;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+    cursor: pointer;
+}
+
+.top-chase-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    font: 10.5px 'Share Tech Mono', monospace;
+}
+
+.top-chase-me {
+    color: #fff0f2;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+}
+
+.top-chase-gap {
+    color: #ff9ba6;
+    font-size: 9.8px;
+}
+
+.top-chase-bar {
+    height: 5px;
+    border-radius: 999px;
+    background: #080204;
+    border: 1px solid #3a121b;
+    overflow: hidden;
+}
+
+.top-chase-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #8f182a, #ff586e, #f4c16d);
+    transition: width 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* --- ПЬЕДЕСТАЛ ТОП-3 (ТРОН #1 + ТРИАДА #2–#3) --- */
+.top-podium {
+    display: grid;
+    gap: 8px;
+}
+
+.top-throne {
+    position: relative;
+    overflow: hidden;
+    border-radius: 16px;
+    padding: 14px 14px 13px;
+    background:
+        radial-gradient(ellipse 85% 75% at 50% 0%, rgba(235, 168, 72, 0.16), transparent 68%),
+        radial-gradient(ellipse 80% 70% at 50% 100%, rgba(190, 24, 48, 0.2), transparent 72%),
+        linear-gradient(180deg, #1f080d 0%, #110407 65%, #0c0305 100%);
+    border: 1px solid rgba(238, 182, 92, 0.62);
+    box-shadow:
+        0 14px 32px rgba(0, 0, 0, 0.62),
+        0 0 22px rgba(214, 142, 54, 0.12),
+        inset 0 1px 0 rgba(255, 232, 184, 0.25);
+    display: grid;
+    gap: 7px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.2s ease, border-color 0.25s ease;
+}
+
+.top-throne::after {
+    content: '';
+    position: absolute;
+    inset: -40% -80%;
+    background: linear-gradient(115deg, transparent 44%, rgba(255, 224, 158, 0.11) 50%, transparent 56%);
+    pointer-events: none;
+    animation: soma-sheen 6.5s ease-in-out infinite;
+}
+
+@keyframes soma-sheen {
+    0%, 25% { transform: translateX(-38%); }
+    75%, 100% { transform: translateX(38%); }
+}
+
+.top-throne:hover,
+.top-runner:hover,
+.top-row:hover {
+    transform: translateY(-1px);
+}
+
+.top-throne-crown {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin: 0 auto;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: rgba(34, 16, 10, 0.85);
+    border: 1px solid rgba(242, 188, 98, 0.45);
+    font: 700 9.5px 'Share Tech Mono', monospace;
+    letter-spacing: 0.12em;
+    color: #f9d58b;
+}
+
+.top-throne-name {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    font: 700 16px 'Share Tech Mono', monospace;
+    letter-spacing: 0.05em;
+    color: #fff8f0;
+    text-shadow: 0 0 14px rgba(255, 190, 110, 0.26);
+}
+
+.top-custom-title {
+    font: 9.5px 'Share Tech Mono', monospace;
+    letter-spacing: 0.11em;
+    color: #f3b5be;
+    text-transform: uppercase;
+}
+
+.top-throne .top-custom-title {
+    color: #f5cd84;
+}
+
+.top-epitaph {
+    margin: 0;
+    font: italic 11px 'Share Tech Mono', monospace;
+    color: #d8b4bc;
+    line-height: 1.35;
+    word-break: break-word;
+}
+
+.top-throne-stats {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    padding-top: 5px;
+    border-top: 1px solid rgba(238, 182, 92, 0.18);
+    font: 10.5px 'Share Tech Mono', monospace;
+    color: #c8a2a9;
+}
+
+.top-throne-xp {
+    font-size: 13px;
+    font-weight: 700;
+    color: #ffd98e;
+}
+
+.top-podium-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.top-runner {
+    position: relative;
+    overflow: hidden;
+    border-radius: 14px;
+    padding: 11px 10px;
+    display: grid;
+    gap: 4px;
+    background: linear-gradient(180deg, #18070b 0%, #0e0406 100%);
+    border: 1px solid #5a222f;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+    transition: transform 0.2s ease, border-color 0.25s ease;
+}
+
+.top-runner--2 {
+    border-color: rgba(206, 214, 228, 0.44);
+    background:
+        radial-gradient(ellipse 90% 70% at 50% 0%, rgba(206, 216, 235, 0.11), transparent 70%),
+        linear-gradient(180deg, #19080d 0%, #0e0407 100%);
+}
+
+.top-runner--3 {
+    border-color: rgba(209, 122, 92, 0.48);
+    background:
+        radial-gradient(ellipse 90% 70% at 50% 0%, rgba(214, 112, 82, 0.13), transparent 70%),
+        linear-gradient(180deg, #1b080b 0%, #0e0406 100%);
+}
+
+.top-runner-place {
+    font: 700 9.5px 'Share Tech Mono', monospace;
+    letter-spacing: 0.1em;
+    color: #d6dde8;
+}
+
+.top-runner--3 .top-runner-place {
+    color: #e8a489;
+}
+
+.top-runner-name {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    font: 700 12px 'Share Tech Mono', monospace;
+    color: #fff2f4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.top-runner-xp {
+    font: 700 11.5px 'Share Tech Mono', monospace;
+    color: #ff7c8d;
+    padding-top: 2px;
+}
+
+/* Строки #4–#50 */
+.top-section-label {
+    font: 9px 'Share Tech Mono', monospace;
+    letter-spacing: 0.14em;
+    color: #875a63;
+    padding: 4px 2px 0;
+    text-transform: uppercase;
+}
+
+.top-row {
+    position: relative;
+    overflow: hidden;
+    padding: 10px 11px;
+    border-radius: 12px;
+    background: #120709;
+    border: 1px solid rgba(185, 42, 62, 0.24);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Share Tech Mono', monospace;
+    cursor: pointer;
+    transition: transform 0.15s ease, border-color 0.25s ease, background-color 0.25s ease;
+}
+
+.top-row--lodge {
+    background: linear-gradient(90deg, #18070b 0%, #110508 100%);
+    border-color: rgba(224, 68, 88, 0.36);
+}
+
+.top-row--me {
+    border-color: rgba(255, 110, 124, 0.72);
+    box-shadow: 0 0 14px rgba(239, 68, 68, 0.14);
+}
+
+.top-row-left {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+}
+
+.top-rank-num {
+    flex-shrink: 0;
+    min-width: 26px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #8f636b;
+}
+
+.top-row--lodge .top-rank-num {
+    color: #e58e9b;
+}
+
+.top-row-info {
+    min-width: 0;
+    display: grid;
+    gap: 1px;
+}
+
+.top-row-name {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 5px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff2f4;
+}
+
+.top-you-tag {
+    padding: 0 5px;
+    border-radius: 4px;
+    font-size: 9px;
+    color: #fde68a;
+    background: rgba(180, 115, 24, 0.24);
+    border: 1px solid rgba(251, 191, 36, 0.38);
+}
+
+.top-row-sub {
+    font-size: 9.5px;
+    color: #987078;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.top-row-xp {
+    flex-shrink: 0;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #ff6e80;
+}
+
+/* Векторные печати Свидетеля */
+.soma-seal {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+    color: #ff8c9a;
+    filter: drop-shadow(0 0 4px currentColor);
+}
+
+.top-throne .soma-seal,
+.soma-frame--gold .soma-seal {
+    color: #f8d282;
+}
+
+.soma-frame--phantom .soma-seal {
+    color: #e4d4ff;
+}
+
+.soma-frame--ember .soma-seal {
+    color: #ff9966;
+}
+
+/* --- 5 АНИМИРОВАННЫХ ПРЕМИУМ-РАМОК (ТОП + ДОСЬЕ + КАРТОЧКА ПРОФИЛЯ) --- */
+.soma-frame--ember {
+    border-color: rgba(255, 112, 67, 0.68) !important;
+    background:
+        radial-gradient(ellipse 80% 90% at 15% 100%, rgba(235, 76, 36, 0.2), transparent 68%),
+        linear-gradient(135deg, #1d0807 0%, #110507 100%) !important;
+    animation: soma-ember-pulse 4.2s ease-in-out infinite;
+}
+
+@keyframes soma-ember-pulse {
+    0%, 100% { box-shadow: 0 0 12px rgba(235, 76, 36, 0.14), inset 0 0 10px rgba(235, 76, 36, 0.08); }
+    50% { box-shadow: 0 0 20px rgba(255, 104, 56, 0.3), inset 0 0 14px rgba(255, 96, 48, 0.15); }
+}
+
+.soma-frame--glitch {
+    border-color: rgba(255, 62, 92, 0.78) !important;
+    background:
+        repeating-linear-gradient(180deg, rgba(255, 52, 82, 0.06) 0 1px, transparent 1px 3px),
+        linear-gradient(135deg, #1b060d 0%, #0d0409 100%) !important;
+    box-shadow: -1.5px 0 0 rgba(255, 48, 82, 0.55), 1.5px 0 0 rgba(120, 210, 255, 0.32), 0 8px 20px rgba(0, 0, 0, 0.5) !important;
+}
+
+.soma-frame--gold {
+    border-color: rgba(238, 186, 96, 0.78) !important;
+    background:
+        radial-gradient(ellipse 85% 75% at 85% 0%, rgba(242, 188, 94, 0.18), transparent 65%),
+        linear-gradient(135deg, #1c0c09 0%, #100607 60%, #19100a 100%) !important;
+    box-shadow: 0 0 18px rgba(234, 174, 78, 0.2), inset 0 1px 0 rgba(255, 232, 178, 0.28) !important;
+}
+
+.soma-frame--gold .top-row-xp,
+.soma-frame--gold .top-custom-title {
+    color: #f7d184 !important;
+}
+
+.soma-frame--neon {
+    border-color: rgba(255, 58, 92, 0.92) !important;
+    background:
+        radial-gradient(ellipse 90% 80% at 50% 0%, rgba(255, 42, 84, 0.22), transparent 68%),
+        linear-gradient(180deg, #21060f 0%, #0f0308 100%) !important;
+    box-shadow: 0 0 18px rgba(255, 42, 84, 0.32), inset 0 0 14px rgba(255, 42, 84, 0.16) !important;
+}
+
+.soma-frame--phantom {
+    border-color: rgba(222, 198, 255, 0.62) !important;
+    background:
+        radial-gradient(ellipse 85% 80% at 20% 0%, rgba(196, 164, 255, 0.16), transparent 65%),
+        radial-gradient(ellipse 75% 75% at 85% 100%, rgba(255, 96, 128, 0.15), transparent 65%),
+        linear-gradient(135deg, #160914 0%, #0d050a 100%) !important;
+    box-shadow: 0 0 20px rgba(202, 170, 255, 0.2), inset 0 1px 0 rgba(242, 232, 255, 0.25) !important;
+}
+
+.soma-frame--phantom .top-row-xp,
+.soma-frame--phantom .top-custom-title {
+    color: #e4cffc !important;
+}
+
+/* --- 4 КОЛЛЕКЦИОННЫХ КОРПУСА ПЕЙДЖЕРА SOMA // PGR-04 --- */
+/* 1) Янтарный фосфор 1986 */
+.soma-pager[data-skin="pager_amber"] {
+    border-color: #6b4219;
+    border-top-color: #996228;
+    background:
+        radial-gradient(circle at 10px 10px, #472b12 0 1.6px, #0a0502 1.8px 3px, transparent 3.2px),
+        radial-gradient(circle at calc(100% - 10px) 10px, #472b12 0 1.6px, #0a0502 1.8px 3px, transparent 3.2px),
+        radial-gradient(circle at 10px calc(100% - 10px), #472b12 0 1.6px, #0a0502 1.8px 3px, transparent 3.2px),
+        radial-gradient(circle at calc(100% - 10px) calc(100% - 10px), #472b12 0 1.6px, #0a0502 1.8px 3px, transparent 3.2px),
+        linear-gradient(180deg, #1c1007 0%, #110904 55%, #090502 100%);
+}
+.soma-pager[data-skin="pager_amber"] .pager-brand { color: #e2b87e; }
+.soma-pager[data-skin="pager_amber"] .pager-top { color: #a88250; }
+.soma-pager[data-skin="pager_amber"] .pager-lcd {
+    border-color: #5e3914;
+    background:
+        repeating-linear-gradient(180deg, rgba(255, 176, 58, 0.05) 0 1px, rgba(6, 3, 1, 0.3) 1px 2.5px),
+        radial-gradient(ellipse 90% 100% at 50% 0%, #241304 0%, #0e0702 70%, #080401 100%);
+}
+.soma-pager[data-skin="pager_amber"] .pager-lcd-meta { color: #a87b3e; border-bottom-color: rgba(180, 118, 42, 0.25); }
+.soma-pager[data-skin="pager_amber"] .pager-carrier { color: #e69d3e; }
+.soma-pager[data-skin="pager_amber"] .pager-lcd-main { color: #ffc168; text-shadow: 0 0 9px rgba(255, 168, 48, 0.38); }
+.soma-pager[data-skin="pager_amber"] .pager-lcd-sub { color: #c49860; }
+.soma-pager[data-skin="pager_amber"] .pager-key {
+    color: #f5dbb2;
+    border-color: #6e451b;
+    background: linear-gradient(180deg, #261508 0%, #140b04 100%);
+}
+.soma-pager[data-skin="pager_amber"].is-ping .pager-led { background: #ffae38; box-shadow: 0 0 8px rgba(255, 174, 56, 0.85); }
+
+/* 2) Полупрозрачный дымчатый рубин 90-х (сквозь пластик видны дорожки платы!) */
+.soma-pager[data-skin="pager_clear"] {
+    border-color: rgba(255, 78, 104, 0.58);
+    border-top-color: rgba(255, 132, 152, 0.72);
+    background:
+        repeating-linear-gradient(90deg, transparent 0 18px, rgba(255, 72, 98, 0.055) 18px 19px, transparent 19px 34px),
+        repeating-linear-gradient(0deg, transparent 0 14px, rgba(255, 72, 98, 0.045) 14px 15px),
+        radial-gradient(ellipse 75% 65% at 25% 20%, rgba(210, 26, 58, 0.34), transparent 70%),
+        linear-gradient(160deg, rgba(68, 10, 22, 0.92) 0%, rgba(28, 5, 11, 0.94) 60%, rgba(18, 3, 7, 0.96) 100%);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.62), inset 0 1px 1px rgba(255, 164, 178, 0.32), inset 0 0 22px rgba(190, 24, 52, 0.22);
+}
+.soma-pager[data-skin="pager_clear"] .pager-brand { color: #ffc2cc; }
+.soma-pager[data-skin="pager_clear"] .pager-key {
+    background: linear-gradient(180deg, rgba(92, 16, 32, 0.78) 0%, rgba(42, 7, 15, 0.88) 100%);
+    border-color: rgba(255, 96, 120, 0.52);
+}
+
+/* 3) Воронёная сталь и латунь */
+.soma-pager[data-skin="pager_brass"] {
+    border-color: rgba(214, 168, 92, 0.55);
+    border-top-color: rgba(242, 202, 128, 0.72);
+    background:
+        radial-gradient(circle at 10px 10px, #a88244 0 1.6px, #0c0908 1.8px 3px, transparent 3.2px),
+        radial-gradient(circle at calc(100% - 10px) 10px, #a88244 0 1.6px, #0c0908 1.8px 3px, transparent 3.2px),
+        radial-gradient(circle at 10px calc(100% - 10px), #a88244 0 1.6px, #0c0908 1.8px 3px, transparent 3.2px),
+        radial-gradient(circle at calc(100% - 10px) calc(100% - 10px), #a88244 0 1.6px, #0c0908 1.8px 3px, transparent 3.2px),
+        linear-gradient(180deg, #1d191b 0%, #120e10 52%, #0a0709 100%);
+}
+.soma-pager[data-skin="pager_brass"] .pager-brand { color: #f0cf92; }
+.soma-pager[data-skin="pager_brass"] .pager-top { color: #b89c6b; }
+.soma-pager[data-skin="pager_brass"] .pager-bezel { border-color: rgba(206, 162, 88, 0.4); }
+.soma-pager[data-skin="pager_brass"] .pager-lcd-main { color: #ffe0b8; text-shadow: 0 0 8px rgba(255, 118, 96, 0.35); }
+.soma-pager[data-skin="pager_brass"] .pager-key {
+    color: #f7e2bc;
+    border-color: rgba(206, 162, 88, 0.48);
+    background: linear-gradient(180deg, #241c18 0%, #140f0d 100%);
+}
+
+/* 4) Призрачный хром «Белый шум» */
+.soma-pager[data-skin="pager_ghost"] {
+    border-color: rgba(202, 192, 224, 0.48);
+    border-top-color: rgba(235, 228, 252, 0.68);
+    background: linear-gradient(180deg, #1b1620 0%, #100c14 55%, #09060c 100%);
+}
+.soma-pager[data-skin="pager_ghost"] .pager-brand { color: #e6def7; }
+.soma-pager[data-skin="pager_ghost"] .pager-top { color: #9e93b5; }
+.soma-pager[data-skin="pager_ghost"] .pager-lcd {
+    border-color: rgba(186, 172, 218, 0.38);
+    background:
+        repeating-linear-gradient(180deg, rgba(224, 214, 255, 0.045) 0 1px, rgba(5, 3, 8, 0.3) 1px 2.5px),
+        radial-gradient(ellipse 90% 100% at 50% 0%, #1c1426 0%, #0b0710 72%, #07040a 100%);
+}
+.soma-pager[data-skin="pager_ghost"] .pager-lcd-meta { color: #988ab5; border-bottom-color: rgba(186, 172, 218, 0.22); }
+.soma-pager[data-skin="pager_ghost"] .pager-carrier { color: #d5c4fa; }
+.soma-pager[data-skin="pager_ghost"] .pager-lcd-main { color: #f1e9ff; text-shadow: 0 0 9px rgba(206, 186, 255, 0.38); }
+.soma-pager[data-skin="pager_ghost"] .pager-lcd-sub { color: #b4a7cc; }
+.soma-pager[data-skin="pager_ghost"] .pager-key {
+    color: #ebe3fc;
+    border-color: rgba(192, 178, 224, 0.42);
+    background: linear-gradient(180deg, #211a2b 0%, #120d18 100%);
+}
+
+/* --- БУТИК ПРИВИЛЕГИЙ SOMA И ДОСЬЕ СВИДЕТЕЛЯ --- */
+.shop-tabs {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+}
+
+.shop-tab {
+    min-height: 34px;
+    padding: 4px 3px;
+    border-radius: 8px;
+    border: 1px solid #3f161f;
+    background: #120609;
+    font: 9.5px 'Share Tech Mono', monospace;
+    letter-spacing: 0.04em;
+    color: #a87d85;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.shop-tab[aria-pressed="true"] {
+    background: #2b0b13;
+    border-color: #ff6478;
+    color: #fff2f4;
+    font-weight: 700;
+}
+
+.shop-preview-card {
+    padding: 11px 12px;
+    border-radius: 13px;
+    border: 1px solid rgba(205, 58, 78, 0.36);
+    background: #120709;
+    display: grid;
+    gap: 4px;
+    font-family: 'Share Tech Mono', monospace;
+}
+
+.shop-item {
+    padding: 10px 11px;
+    border-radius: 12px;
+    background: #13070a;
+    border: 1px solid #421720;
+    display: grid;
+    gap: 7px;
+}
+
+.shop-item.is-equipped {
+    border-color: rgba(255, 98, 116, 0.72);
+    background: #1b080d;
+}
+
+.shop-item-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.shop-item-name {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font: 700 11.5px 'Share Tech Mono', monospace;
+    color: #fff1f3;
+}
+
+.shop-item-desc {
+    font-size: 11px;
+    line-height: 1.38;
+    color: #b79198;
+    margin-top: 2px;
+}
+
+.shop-price {
+    flex-shrink: 0;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font: 700 10px 'Share Tech Mono', monospace;
+    color: #ffe3a3;
+    background: rgba(180, 125, 32, 0.2);
+    border: 1px solid rgba(242, 188, 92, 0.42);
+    white-space: nowrap;
+}
+
+.shop-price.is-owned {
+    color: #ffb8c2;
+    background: rgba(160, 28, 48, 0.24);
+    border-color: rgba(255, 92, 112, 0.4);
+}
+
+.shop-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.shop-btn {
+    flex: 1 1 auto;
+    min-height: 34px;
+    padding: 5px 9px;
+    border-radius: 8px;
+    font: 700 10px 'Share Tech Mono', monospace;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.shop-btn--buy {
+    color: #ffe8b5;
+    background: linear-gradient(180deg, #331c0d 0%, #1f1007 100%);
+    border: 1px solid rgba(242, 188, 92, 0.55);
+}
+
+.shop-btn--equip {
+    color: #fff0f2;
+    background: #2b0b13;
+    border: 1px solid rgba(255, 88, 108, 0.55);
+}
+
+.shop-btn--try {
+    flex: 0 0 auto;
+    color: #c99ca4;
+    background: #100507;
+    border: 1px solid #471822;
+}
+
+.dossier-gear {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.dossier-chip {
+    padding: 3px 8px;
+    border-radius: 7px;
+    background: #0a0305;
+    border: 1px solid #441720;
+    font: 9.5px 'Share Tech Mono', monospace;
+    color: #d6aeb5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .top-throne::after,
+    .soma-frame--ember {
+        animation: none !important;
+    }
+}

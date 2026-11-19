@@ -103,6 +103,9 @@ begin
         if coalesce((new.cosmetics ->> 'cat')::boolean, false) and not ('room_cat' = any(v_owned)) then
             new.cosmetics := jsonb_set(new.cosmetics, '{cat}', 'false'::jsonb);
         end if;
+        if coalesce((new.cosmetics ->> 'dog')::boolean, false) and not ('room_dog' = any(v_owned)) then
+            new.cosmetics := jsonb_set(new.cosmetics, '{dog}', 'false'::jsonb);
+        end if;
         if coalesce((new.cosmetics ->> 'steam')::boolean, false) and not ('room_steam' = any(v_owned)) then
             new.cosmetics := jsonb_set(new.cosmetics, '{steam}', 'false'::jsonb);
         end if;

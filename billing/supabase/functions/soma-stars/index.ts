@@ -1,5 +1,5 @@
 // =====================================================================
-// SOMA_LINK v8 // Supabase Edge Function: soma-stars (БЕЗ СВОЕГО СЕРВЕРА)
+// SOMA_LINK v9 // Supabase Edge Function: soma-stars (БЕЗ СВОЕГО СЕРВЕРА)
 // Работает на бесплатном тарифе Supabase Edge Functions + Telegram Stars (XTR).
 //
 // Маршруты:
@@ -40,7 +40,7 @@ const CATALOG: Record<string, { title: string; description: string; stars: numbe
     pager_clear:     { title: 'Пейджер: Дымчатый рубин 90-х', description: 'Полупрозрачный рубиновый корпус с живым импульсом по плате.', stars: 140 },
     pager_ghost:     { title: 'Пейджер: Белый шум',         description: 'Титановый хром с живой опалово-серебряной дымкой матрицы.', stars: 140 },
     pager_brass:     { title: 'Пейджер: Воронёная сталь',   description: 'Оружейный корпус с латунными винтами и золотым бликом.', stars: 140 },
-    // 4. Сосуды мастера (160 ⭐), живая атмосфера комнаты (140 ⭐) и кот-хранитель (220 ⭐)
+    // 4. Сосуды мастера (160 ⭐), живая атмосфера комнаты (140 ⭐) и живые спутники — кот и пёс (единый тир 220 ⭐)
     pot_cinnabar:    { title: 'Киноварный лак',             description: 'Императорская киноварь с золотой печатью и лаковым переливом.', stars: 160 },
     pot_moon:        { title: 'Лунный селадон',             description: 'Фарфор с лунным серпом в ореоле и мерцающими созвездиями.', stars: 160 },
     pot_kintsugi:    { title: 'Керамика Кинцуги',           description: 'Чёрная глина раку, исцелённая дышащими швами 24k золота.', stars: 160 },
@@ -48,7 +48,8 @@ const CATALOG: Record<string, { title: string; description: string; stars: numbe
     room_tape:       { title: 'Винил «Ночной экспресс»',    description: 'Вращающийся винил, светящийся поезд за окном и лоу-фай саундтрек.', stars: 140 },
     room_garland:    { title: 'Гирлянда Эдисона у окна',    description: '13 тёплых винтажных лампочек по каменной арке круглого окна.', stars: 140 },
     room_candles:    { title: 'Живые свечи станции',        description: 'Шесть восковых свечей с живым пламенем у ковра и на полке радио.', stars: 140 },
-    room_cat:        { title: 'Живой кот-хранитель',        description: 'Крупный тёплый кот с уникальной мастью по вашему ID на кушетке.', stars: 220 },
+    room_cat:        { title: 'Живой кот-хранитель',        description: 'Крупный тёплый кот одной из 7 мастей по вашему ID на кушетке.', stars: 220 },
+    room_dog:        { title: 'Живой пёс-хранитель',        description: 'Верный пёс одной из 7 пород по вашему ID на своём лежаке у ковра.', stars: 220 },
 };
 
 const CORS = {

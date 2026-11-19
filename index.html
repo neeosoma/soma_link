@@ -8,8 +8,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="room.css?v=8">
-    <link rel="stylesheet" href="cosmetics.css?v=8">
+    <link rel="stylesheet" href="room.css?v=9">
+    <link rel="stylesheet" href="cosmetics.css?v=9">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@300;400;500;600;700&display=swap');
         .font-mono-tech { font-family: 'Share Tech Mono', monospace; }
@@ -416,8 +416,14 @@
                     <button type="button" class="station-hit station-hit--lamp" data-obj="lamp" aria-label="Висячая лампа — качнуть" onclick="activateRoomObject('lamp', event)"></button>
                     <button type="button" class="station-hit station-hit--shelf" data-obj="shelf" aria-label="Старый магнитофон — проверить кассету" onclick="activateRoomObject('shelf', event)"></button>
                     <button type="button" class="station-hit station-hit--nightlight" data-obj="nightlight" aria-label="Ночник у терминала — подсветить" onclick="activateRoomObject('nightlight', event)"></button>
-                    <button type="button" class="station-hit station-hit--bed" data-obj="bed" aria-label="Кушетка — осмотреть" onclick="activateRoomObject('bed', event)"></button>
+                    <button type="button" id="station-hit-bed" class="station-hit station-hit--bed" data-obj="bed" aria-label="Кушетка — осмотреть" onclick="activateRoomObject('bed', event)"></button>
+                    <button type="button" id="station-hit-dog" class="station-hit station-hit--dog hidden" data-obj="dog" aria-label="Погладить пса" onclick="activateRoomObject('dog', event)"></button>
                     <button type="button" class="station-hit station-hit--nightlightR" data-obj="nightlightR" aria-label="Ночник у кушетки — подсветить" onclick="activateRoomObject('nightlightR', event)"></button>
+
+                    <!-- Неподвижная угловая кнопка полного экрана (строго 34×34px в правом верхнем своде — никогда не прыгает!) -->
+                    <button type="button" id="station-fs-open" class="station-fs-btn" onclick="toggleRoomFullscreen()" aria-label="Развернуть комнату на весь экран" title="Развернуть на весь экран">
+                        <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg>
+                    </button>
 
                     <!-- Ненавязчивый оверлей полноэкранного горизонтального режима -->
                     <div class="station-fs-hud" aria-label="Управление полноэкранным режимом">
@@ -433,10 +439,6 @@
                     <div class="station-bar">
                         <span id="station-mode" class="station-meta">ЖУРНАЛ СТАНЦИИ</span>
                         <div class="station-bar-right">
-                            <button type="button" id="station-fs-open" class="station-fs-btn" onclick="toggleRoomFullscreen()" title="Развернуть комнату горизонтально на весь экран">
-                                <svg viewBox="0 0 14 14" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 5V1.5H5M9 1.5h3.5V5M12.5 9v3.5H9M5 12.5H1.5V9"/></svg>
-                                <span>НА ВЕСЬ ЭКРАН</span>
-                            </button>
                             <span class="station-meta station-heat">ТЕПЛО <b id="warmth-val">0</b></span>
                         </div>
                     </div>
@@ -503,6 +505,7 @@
                                 <button type="button" id="station-kinds-toggle" class="station-pts-mini" aria-expanded="false" onclick="togglePlantGallery()">ВСЕ 7 ВИДОВ</button>
                                 <button type="button" id="pts-dew-btn" class="station-pts-mini" aria-pressed="false" onclick="togglePtsDew()">СВЕТЛЯЧКИ 7/7</button>
                                 <button type="button" id="pts-cat-btn" class="station-pts-mini" aria-pressed="false" onclick="cyclePtsCatCoat()">МАСТИ КОТА</button>
+                                <button type="button" id="pts-dog-btn" class="station-pts-mini" aria-pressed="false" onclick="cyclePtsDogBreed()">ПОРОДЫ ПСА</button>
                                 <button type="button" class="station-pts-mini" onclick="togglePtsDemoCassette()">ДЕМО-КАССЕТА</button>
                             </div>
                             <div id="station-plant-pips" class="station-stages" role="group" aria-label="PTS: пустой горшок и 6 стадий роста">
@@ -596,9 +599,9 @@
     </div>
 
 <script src="config.js"></script>
-<script src="scenarios.js?v=8"></script>
-<script src="room.js?v=8"></script>
-<script src="cosmetics.js?v=8"></script>
+<script src="scenarios.js?v=9"></script>
+<script src="room.js?v=9"></script>
+<script src="cosmetics.js?v=9"></script>
 <script src="music.js"></script>
 <script>
     const cfg = window.SOMA_CONFIG || {};

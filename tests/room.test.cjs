@@ -21,7 +21,7 @@ function makeStorage(initial = {}) {
 function loadRoom(env = {}) {
     const localStorage = env.localStorage || makeStorage();
     return runInNewContext(
-        roomCode + ';({ stationPhases, PROGRESSION_RULES, GREENHOUSE_WARMTH_STEPS, stationState, indifferenceIndex, equipStationPhase, inspectPlantStage, togglePlantGallery, inspectPlantKind, togglePtsDrawer, togglePtsDew, cyclePtsCatCoat, togglePtsDemoCassette, loadWarmthLedger, claimDailyWarmth, fireflyState, recordWhisperEcho, daysSinceLastWarmth, whisperAdmission, loadGreenhouse, plantNewGreenhouseSeed, selectGreenhouseSlot, loadCassettes, saveWhisperCassette, playCassette, pressPagerScan, pressPagerInfo, renderPager, PLANT_KINDS, PLANT_STAGES, PLANT_WARMTH_STEPS, PLANT_LEAF, PLANT_BLOOM, PLANT_POTS, CAT_COATS, catSpec, CITY_WINDOWS, hashStr, rng, plantSpec, plantStage, drawPlantSprite, drawCrtMonitor, drawRoomCosmetics, drawWindowWorld, drawWindowLightBeams, drawStationFx, drawCassetteDeck, paintPlantFrame, getFullscreenViewport, computeFullscreenSceneBox, toggleRoomFullscreen, enterRoomFullscreen, exitRoomFullscreen, flipRoomFullscreen, renderRoom, touchRoomObject, activateRoomObject, resetStationPreview, roomAnim });',
+        roomCode + ';({ stationPhases, PROGRESSION_RULES, GREENHOUSE_WARMTH_STEPS, stationState, indifferenceIndex, equipStationPhase, inspectPlantStage, togglePlantGallery, inspectPlantKind, togglePtsDrawer, togglePtsDew, cyclePtsCatCoat, cyclePtsDogBreed, togglePtsDemoCassette, loadWarmthLedger, claimDailyWarmth, fireflyState, recordWhisperEcho, daysSinceLastWarmth, whisperAdmission, loadGreenhouse, plantNewGreenhouseSeed, selectGreenhouseSlot, loadCassettes, saveWhisperCassette, playCassette, pressPagerScan, pressPagerInfo, renderPager, PLANT_KINDS, PLANT_STAGES, PLANT_WARMTH_STEPS, PLANT_LEAF, PLANT_BLOOM, PLANT_POTS, CAT_COATS, catSpec, DOG_BREEDS, dogSpec, drawCompanionCat, drawCompanionDog, CITY_WINDOWS, hashStr, rng, plantSpec, plantStage, drawPlantSprite, drawCrtMonitor, drawRoomCosmetics, drawWindowWorld, drawWindowLightBeams, drawStationFx, drawCassetteDeck, paintPlantFrame, isRealTelegramMiniApp, getNativeFullscreenElement, requestNativeRoomFullscreen, getFullscreenViewport, computeFullscreenSceneBox, toggleRoomFullscreen, enterRoomFullscreen, exitRoomFullscreen, flipRoomFullscreen, renderRoom, touchRoomObject, activateRoomObject, resetStationPreview, roomAnim });',
         { player: { uid: 'u_0123456789abcdef', name: 'AGENT_1001', warmth: 0 }, roomPreview: false, localStorage, ...env }
     );
 }
@@ -452,7 +452,7 @@ test('release UI hides spoilers, pager replaces NEEO_PHONE, window picks unlocke
 
 test('mobile hotspots never overlap and main targets stay >=44px down to 320px width', () => {
     const blocks = [...roomCss.matchAll(/\.station-hit--(\w+)\s*\{([^}]+)\}/g)];
-    assert.equal(blocks.length, 9);
+    assert.equal(blocks.length, 10);
     const num = (body, prop) => Number(body.match(new RegExp(prop + ':\\s*([\\d.]+)%'))[1]) / 100;
     const defs = blocks.map(([, name, body]) => ({
         name, left: num(body, 'left'), top: num(body, 'top'), width: num(body, 'width'), height: num(body, 'height')
@@ -659,38 +659,46 @@ test('v8: body-portal FLIP fullscreen + 180 flip + rotated pointer mapping, Dawn
         assert.ok(Math.abs(visW - w) < 1 || Math.abs(visH - h) < 1, `scene must fill full long or short axis on ${w}x${h}`);
     }
 
-    // Enter fullscreen on portrait iOS Chrome: portaled to body, UI hidden, starts from card FLIP transform, then animates to 90deg landscape
+    // Enter fullscreen on portrait phone: portaled to body, UI hidden, WAAPI smoothly flies card -> 90deg landscape
+    const waapiCalls = [];
+    sceneEl.animate = (kf, opts) => { const a = { kf, opts, cancelled: false, cancel() { this.cancelled = true; } }; waapiCalls.push({ el: 'scene', a }); return a; };
+    roomEl.animate = (kf, opts) => { const a = { kf, opts, cancelled: false, cancel() { this.cancelled = true; } }; waapiCalls.push({ el: 'room', a }); return a; };
     r.enterRoomFullscreen();
     assert.equal(roomEl.parentNode, bodyEl, '#station must portal directly into document.body to cover all app chrome');
     assert.equal(profileEl.children[1].id, 'station-fs-placeholder', 'placeholder must hold exact slot inside #view-profile');
     assert.equal(docEl.classList.contains('is-soma-fs'), true, 'app UI must fade out in fullscreen');
     assert.equal(metaTheme.content, '#040102');
-    assert.ok(sceneEl.style.transform.includes('rotate(0deg) scale('), 'initial FLIP frame must start from unrotated card scale');
-    while (rafQueue.length) rafQueue.shift()();
     assert.equal(roomEl.classList.contains('is-fs-animating'), true);
     assert.equal(roomEl.classList.contains('is-fs-active'), true);
     assert.equal(roomEl.classList.contains('is-rotated'), true);
-    assert.equal(sceneEl.style.transform, 'translate(-50%, -50%) rotate(90deg) scale(1)');
+    assert.equal(sceneEl.style.transform, 'translate(-50%, -50%) translate3d(0px, 0px, 0px) rotate(90deg) scale(1)');
+    const enterSceneAnim = waapiCalls.find(c => c.el === 'scene');
+    assert.ok(enterSceneAnim && enterSceneAnim.a.kf[0].transform.includes('rotate(0deg) scale('), 'WAAPI opening frame starts from unrotated card scale');
+    assert.ok(enterSceneAnim.a.kf[enterSceneAnim.a.kf.length - 1].transform.includes('rotate(90deg) scale(1)'), 'WAAPI final frame lands at 90deg scale(1)');
+    assert.ok(enterSceneAnim.a.opts.duration >= 600, 'smooth visible opening animation duration');
 
     // Pointer un-rotation in +90deg and -90deg (180° flip button) hits the exact window ripple coordinate!
-    // In +90deg portrait: rotated bounding box has width = sceneH, height = sceneW; center of window (fxX=396.5, fxY=180) maps to nx = 1 - 180/496, ny = 396.5/793
     cardRect = { left: 0, top: 0, width: 390, height: 623.5 };
     r.roomAnim.ripples.length = 0;
     r.touchRoomObject('window', { clientX: (1 - 180 / 496) * 390, clientY: (410 / 793) * 623.5 });
     assert.equal(r.roomAnim.ripples.length, 1);
     assert.ok(Math.abs(r.roomAnim.ripples[0].x - 410) < 1 && Math.abs(r.roomAnim.ripples[0].y - 180) < 1, '+90deg touch must map to exact FX coordinate');
 
+    waapiCalls.length = 0;
     r.flipRoomFullscreen();
     assert.equal(roomEl.classList.contains('is-flipped'), true);
-    assert.equal(sceneEl.style.transform, 'translate(-50%, -50%) rotate(-90deg) scale(1)');
+    assert.equal(sceneEl.style.transform, 'translate(-50%, -50%) translate3d(0px, 0px, 0px) rotate(-90deg) scale(1)');
+    assert.ok(waapiCalls.some(c => c.el === 'scene' && c.a.kf.length === 3), '180deg flip runs smooth 3-keyframe WAAPI animation');
     r.roomAnim.ripples.length = 0;
     r.touchRoomObject('window', { clientX: (180 / 496) * 390, clientY: (1 - 410 / 793) * 623.5 });
     assert.ok(Math.abs(r.roomAnim.ripples[0].x - 410) < 1 && Math.abs(r.roomAnim.ripples[0].y - 180) < 1, '-90deg flipped touch must map to exact FX coordinate');
 
-    // Animated reverse FLIP exit flies back to card rect, then restores #station between beforeSibling and afterSibling
+    // Animated reverse WAAPI exit flies back to card rect, then restores #station between beforeSibling and afterSibling
+    waapiCalls.length = 0;
     r.exitRoomFullscreen();
     assert.equal(roomEl.classList.contains('is-fs-closing'), true);
-    assert.ok(sceneEl.style.transform.includes('rotate(0deg) scale('), 'closing FLIP must smoothly un-rotate back to card');
+    assert.ok(sceneEl.style.transform.includes('rotate(0deg) scale('), 'closing transform smoothly un-rotates back to card');
+    assert.ok(waapiCalls.some(c => c.el === 'scene') && waapiCalls.some(c => c.el === 'room'), 'exit animates both scene and backdrop via WAAPI');
     timers.pop().fn();
     assert.equal(roomEl.parentNode, profileEl, '#station must return cleanly to #view-profile after exit');
     assert.deepEqual(profileEl.children.map(c => c.name), ['tryon-bar', 'station', 'soma-pager'], 'exact sibling order preserved');
@@ -719,9 +727,9 @@ test('v8: body-portal FLIP fullscreen + 180 flip + rotated pointer mapping, Dawn
         assert.doesNotThrow(() => r.drawPlantSprite(g, r.plantSpec('u_pot'), 5, { phase: 3, now: 2500, potSkin, fireflies: 5 }));
     }
 
-    // 3. Pain Feed CTA visibility hooks present and cache-busted to v8
+    // 3. Pain Feed CTA visibility hooks present and cache-busted to v9
     assert.ok(indexHtml.includes('soma-post-cta') && indexHtml.includes('soma-post-beacon') && indexHtml.includes('soma-post-arrow'));
-    assert.ok(indexHtml.includes('id="station-fs-flip"') && indexHtml.includes('room.js?v=8') && indexHtml.includes('cosmetics.css?v=8'));
+    assert.ok(indexHtml.includes('id="station-fs-flip"') && indexHtml.includes('room.js?v=9') && indexHtml.includes('cosmetics.css?v=9'));
 
     // 4. Flagship cosmetics: equalized peer pricing within every category + 1:1 Edge Function parity + every frame/seal/title/pager styled in CSS
     const cEnv = { localStorage: makeStorage(), player: { uid: 'u_01', warmth: 12, xp: 500 }, esc: s => String(s) };
@@ -758,4 +766,161 @@ test('v8: body-portal FLIP fullscreen + 180 flip + rotated pointer mapping, Dawn
         }
         if (it.slot === 'pager') assert.ok(cosmCss.includes(`data-skin="${it.id}"`), `CSS must style pager ${it.id}`);
     }
+});
+
+test('v9: true native browser fullscreen (even with Telegram SDK loaded), fixed-size non-jumping FS button, ribbon-free cats, and 7 living guardian dogs coexisting with cats', () => {
+    const p = require('path'), fs = require('fs'), vm = require('vm');
+    const sqlCode = fs.readFileSync(p.join(__dirname, '..', 'billing', 'setup_stars.sql'), 'utf8');
+    const cosmCode = fs.readFileSync(p.join(__dirname, '..', 'cosmetics.js'), 'utf8');
+
+    // 1. Browser with telegram-web-app.js loaded (initData === '') MUST invoke native el.requestFullscreen, NEVER no-op Telegram.WebApp.requestFullscreen!
+    let tgFsCalls = 0, nativeFsCalls = 0, nativeExitCalls = 0, orientLocks = 0;
+    let activeFsEl = null;
+    const docListeners = {};
+    const makeEl = name => ({
+        name, parentNode: null, children: [], style: {},
+        classList: (() => {
+            const s = new Set();
+            return { add: (...c) => c.forEach(x => s.add(x)), remove: (...c) => c.forEach(x => s.delete(x)), toggle: (c, f) => (f === undefined ? (s.has(c) ? s.delete(c) : s.add(c)) : (f ? s.add(c) : s.delete(c))), contains: c => s.has(c) };
+        })(),
+        setAttribute() {},
+        getBoundingClientRect: () => ({ left: 100, top: 80, width: 420, height: 262.7 }),
+        animate: () => ({ cancel() {}, onfinish: null })
+    });
+    const roomEl = makeEl('station');
+    let seenNavUi = '';
+    roomEl.requestFullscreen = opts => {
+        seenNavUi = opts && opts.navigationUI;
+        nativeFsCalls++;
+        activeFsEl = roomEl;
+        return Promise.resolve();
+    };
+    const sceneEl = makeEl('station-scene');
+    const docStub = {
+        hidden: false,
+        get fullscreenElement() { return activeFsEl; },
+        documentElement: makeEl('html'),
+        body: { appendChild(n) { n.parentNode = this; } },
+        createElement: () => makeEl('placeholder'),
+        getElementById: id => (id === 'station' ? roomEl : id === 'station-scene' ? sceneEl : null),
+        exitFullscreen: () => { nativeExitCalls++; activeFsEl = null; return Promise.resolve(); },
+        addEventListener: (ev, fn) => { docListeners[ev] = fn; }
+    };
+    const tgStub = {
+        initData: '', // Regular browser with telegram-web-app.js loaded in <head>
+        isVersionAtLeast: () => true,
+        requestFullscreen: () => { tgFsCalls++; },
+        exitFullscreen: () => { tgFsCalls++; },
+        expand: () => {}
+    };
+    const browserRoom = loadRoom({
+        window: { innerWidth: 1440, innerHeight: 900, Telegram: { WebApp: tgStub }, matchMedia: () => ({ matches: false }), addEventListener: () => {} },
+        screen: { orientation: { lock: () => { orientLocks++; return Promise.resolve(); }, unlock: () => {} } },
+        document: docStub,
+        setTimeout: () => 1,
+        clearTimeout: () => {}
+    });
+
+    assert.equal(browserRoom.isRealTelegramMiniApp(), false, 'empty initData must NOT be treated as Telegram Mini App');
+    browserRoom.enterRoomFullscreen();
+    assert.equal(nativeFsCalls, 1, 'browser MUST invoke real native requestFullscreen()');
+    assert.equal(seenNavUi, 'hide', 'requests hidden OS navigation UI in fullscreen');
+    assert.equal(tgFsCalls, 0, 'browser must NOT hijack fullscreen with silent Telegram no-op');
+    assert.equal(activeFsEl, roomEl, '#station becomes real native fullscreenElement');
+
+    // Hardware Esc exits native fullscreen -> fullscreenchange listener smoothly exits room fullscreen too
+    browserRoom.roomAnim.fsNativeActive = true;
+    activeFsEl = null;
+    docListeners.fullscreenchange();
+    assert.equal(browserRoom.roomAnim.isFullscreen, false, 'hardware Esc must cleanly exit room fullscreen');
+
+    // Real Telegram Mini App (initData populated) DOES call Telegram.WebApp.requestFullscreen()
+    tgStub.initData = 'query_id=AAHdF6IQAAAAAN0XohDhrOrc&user=%7B%22id%22%3A777%7D&hash=abc';
+    assert.equal(browserRoom.isRealTelegramMiniApp(), true);
+    browserRoom.enterRoomFullscreen();
+    assert.equal(tgFsCalls, 1, 'real Telegram Mini App calls Telegram.WebApp.requestFullscreen()');
+    assert.ok(orientLocks >= 1, 'attempts landscape orientation lock');
+    browserRoom.exitRoomFullscreen(true);
+    assert.ok(nativeExitCalls >= 0);
+
+    // 2. Fixed-size fullscreen button lives in #station-scene (not in .station-bar), never shifts, and zero hotspots overlap!
+    const barMatch = indexHtml.match(/<div class="station-bar">([\s\S]*?)<\/div>\s*<p class="station-line"/);
+    assert.ok(barMatch && !barMatch[1].includes('station-fs-open'), '#station-fs-open must NOT live inside .station-bar where text shifts it');
+    assert.ok(/\.station-fs-btn\s*\{[^}]*position:\s*absolute[^}]*width:\s*34px[^}]*height:\s*34px/s.test(roomCss), 'FS button must have fixed 34x34px absolute dimensions');
+    const hitBoxes = {};
+    for (const m of roomCss.matchAll(/\.station-hit--(\w+)\s*\{([^}]+)\}/g)) {
+        const b = m[2];
+        const num = k => Number((b.match(new RegExp(k + ':\\s*([\\d.]+)%')) || [])[1]);
+        if (!Number.isNaN(num('left'))) {
+            hitBoxes[m[1]] = { l: num('left'), t: num('top'), r: num('left') + num('width'), b: num('top') + num('height') };
+        }
+    }
+    assert.equal(Object.keys(hitBoxes).length, 10, 'all 10 interactive hotspots including dog must be styled');
+    assert.ok(hitBoxes.dog, '.station-hit--dog must exist');
+    const names = Object.keys(hitBoxes);
+    for (let i = 0; i < names.length; i++) {
+        for (let j = i + 1; j < names.length; j++) {
+            const A = hitBoxes[names[i]], B = hitBoxes[names[j]];
+            const overlap = A.l < B.r && A.r > B.l && A.t < B.b && A.b > B.t;
+            assert.equal(overlap, false, `hotspots ${names[i]} and ${names[j]} must never overlap`);
+        }
+    }
+
+    // 3. Cat ribbons/collars are 100% gone across every single UID (including browser 'guest'), and all 7 dog breeds shine!
+    assert.ok(!roomCode.includes('CAT_COLLARS'), 'CAT_COLLARS must be completely removed');
+    assert.equal(browserRoom.DOG_BREEDS.length, 7, '7 bespoke ID-bound dog breeds');
+    const seenDogBreeds = new Set();
+    const seenCatCoats = new Set();
+    let diffPetPairs = 0;
+    for (const id of ['guest', ...Array.from({ length: 400 }, (_, i) => 'u_pet_' + i)]) {
+        const cs = browserRoom.catSpec(id);
+        const ds = browserRoom.dogSpec(id);
+        assert.equal(cs.collar, undefined, 'cat must have no collar property');
+        assert.ok(!/лент|бубенчик|медальон|ошейник/i.test(cs.summary), `cat summary must never mention ribbon/collar: ${cs.summary}`);
+        seenCatCoats.add(cs.coatIdx);
+        seenDogBreeds.add(ds.breedIdx);
+        if (cs.coatIdx !== ds.breedIdx) diffPetPairs++;
+    }
+    assert.equal(seenCatCoats.size, 7, 'all 7 cat coats reachable');
+    assert.equal(seenDogBreeds.size, 7, 'all 7 dog breeds reachable');
+    assert.ok(diffPetPairs > 250, 'dog breed hash is statistically independent from cat coat hash');
+
+    // 4. Simultaneous cat + dog ownership, equipping, petting, duet journal line, PTS dog cycler, and SQL trigger protection!
+    const cEnv = { localStorage: makeStorage(), player: { uid: 'u_duet_77', warmth: 42, xp: 300 }, esc: s => String(s) };
+    vm.runInNewContext(cosmCode + ';globalThis.C = { SOMA_CATALOG, grantOwnedItem, getActiveCosmetics, toggleEquipCosmetic };', cEnv);
+    assert.equal(cEnv.C.SOMA_CATALOG.length, 30, '30 flagship cosmetic items including room_dog');
+    const dogItem = cEnv.C.SOMA_CATALOG.find(i => i.id === 'room_dog');
+    const catItem = cEnv.C.SOMA_CATALOG.find(i => i.id === 'room_cat');
+    assert.ok(dogItem && dogItem.stars === 220 && catItem.stars === 220, 'cat and dog share equal 220 Stars companion tier');
+    cEnv.C.grantOwnedItem('room_cat');
+    cEnv.C.grantOwnedItem('room_dog');
+    const both = cEnv.C.getActiveCosmetics();
+    assert.equal(both.cat, true, 'cat stays equipped when dog is granted');
+    assert.equal(both.dog, true, 'dog is equipped simultaneously with cat');
+    assert.equal(cEnv.player.warmth, 42, 'owning both companions never alters gameplay warmth');
+    assert.ok(sqlCode.includes("'room_dog'") && sqlCode.includes("'{dog}'"), 'Supabase SQL trigger guards room_dog ownership');
+
+    let nowClock = 5000;
+    const duetRoomEl = { dataset: {}, querySelector: () => null, querySelectorAll: () => [] };
+    const duetDogHit = { title: '', attrs: {}, classList: makeEl('dog-hit').classList, setAttribute(k, v) { this.attrs[k] = v; } };
+    const duetRoom = loadRoom({
+        window: { SOMA_CONFIG: { ENV: 'pts' }, matchMedia: () => ({ matches: false }), addEventListener: () => {} },
+        document: { hidden: false, getElementById: id => (id === 'station' ? duetRoomEl : id === 'station-hit-dog' ? duetDogHit : null) },
+        performance: { now: () => (nowClock += 1200) },
+        getActiveCosmetics: () => both
+    });
+    duetRoom.renderRoom();
+    assert.equal(duetDogHit.classList.contains('hidden'), false, 'dog hotspot activates when room_dog is equipped');
+    assert.ok(duetDogHit.title.includes('Погладить пса'), 'dog hotspot has accessible breed label');
+    const dogLines = [0, 1, 2].map(() => { duetRoom.touchRoomObject('dog'); return duetRoom.roomAnim.customEntry; });
+    const catLines = [0, 1, 2].map(() => { duetRoom.touchRoomObject('bed'); return duetRoom.roomAnim.customEntry; });
+    assert.ok(dogLines[0].includes('хвостом') && dogLines[2].includes('вдвоём'), 'petting dog triggers happy tail wag & cat+dog duet line');
+    assert.ok(catLines[0].includes('замурчал') && catLines[2].includes('двойное живое тепло'), 'petting cat independently works alongside dog & triggers cat+dog duet line');
+    const cycledBreeds = new Set();
+    for (let i = 0; i < 7; i++) {
+        duetRoom.cyclePtsDogBreed();
+        cycledBreeds.add(duetRoom.dogSpec(undefined, duetRoom.roomAnim.inspectDogBreed).breedIdx);
+    }
+    assert.equal(cycledBreeds.size, 7, 'PTS dog cycler tours all 7 dog breeds and returns to own breed');
+    assert.equal(duetRoom.roomAnim.inspectDogBreed, null, 'full 7-step cycle lands cleanly back on player ID breed');
 });

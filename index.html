@@ -4,15 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta id="soma-theme-color" name="theme-color" content="#0b0708">
-    <title>SILENCE_PROTOCOL // SOMA_LINK</title>
+    <title>NEEOSOMA // SOMA~LINK · NEEO~CITY</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="room.css?v=11">
-    <link rel="stylesheet" href="cosmetics.css?v=11">
-    <link rel="stylesheet" href="receiver.css?v=11">
-    <link rel="stylesheet" href="vhs.css?v=11">
-    <link rel="stylesheet" href="share.css?v=11">
+    <link rel="stylesheet" href="room.css?v=12">
+    <link rel="stylesheet" href="cosmetics.css?v=12">
+    <link rel="stylesheet" href="receiver.css?v=12">
+    <link rel="stylesheet" href="vhs.css?v=12">
+    <link rel="stylesheet" href="greenhouse.css?v=12">
+    <link rel="stylesheet" href="blimp.css?v=12">
+    <link rel="stylesheet" href="share.css?v=12">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@300;400;500;600;700&display=swap');
         .font-mono-tech { font-family: 'Share Tech Mono', monospace; }
@@ -153,10 +155,10 @@
     <!-- БЛОКИРОВКА ПОМОЩИ ("ЧЕСОТКА БЕССИЛИЯ") -->
     <div id="block-modal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-6">
         <div id="block-card" class="w-full max-w-sm bg-[#14080a] border border-red-500/80 p-6 rounded-2xl space-y-4 shadow-2xl text-center">
-            <div class="text-red-500 font-mono-tech text-xs tracking-widest uppercase">// ПРОТОКОЛ БЕЗОПАСНОСТИ SOMA_LINK</div>
+            <div class="text-red-500 font-mono-tech text-xs tracking-widest uppercase">// ПРОТОКОЛ БЕЗОПАСНОСТИ SOMA~LINK</div>
             <h3 class="text-base font-bold text-white">Прямой контакт заблокирован</h3>
             <p class="text-xs text-gray-300 leading-relaxed">
-                Система запрещает перевод средств, передачу контактов и спасательство. Ваша единственная задача в NEEO_CITY — наблюдать.
+                Система запрещает перевод средств, передачу контактов и спасательство. Ваша единственная задача в NEEO~CITY — наблюдать.
             </p>
             <div class="bg-black/50 p-3 rounded-xl text-[11px] font-mono-tech text-red-400 border border-red-500/20">
                 Доступны только реакции для прокачки ранга.
@@ -199,7 +201,7 @@
         <div class="w-full max-w-sm bg-[#0b0708] border border-amber-400/70 p-6 rounded-2xl space-y-4 shadow-2xl text-center">
             <div class="text-amber-400 font-mono-tech text-xs tracking-widest">// СБОЙ ПРОТОКОЛА</div>
             <h3 class="text-base font-bold text-white">Вы нарушитель</h3>
-            <p class="text-xs text-gray-300 leading-relaxed">Десять попыток помочь. Система не рассчитана на тех, кто не готов просто смотреть. Настоящая помощь существует только за пределами SOMA_LINK: напишите живому человеку, который молчит.</p>
+            <p class="text-xs text-gray-300 leading-relaxed">Десять попыток помочь. Система не рассчитана на тех, кто не готов просто смотреть. Настоящая помощь существует только за пределами SOMA~LINK: напишите живому человеку, который молчит.</p>
             <div class="bg-black/50 p-3 rounded-xl text-[11px] font-mono-tech text-amber-300 border border-amber-400/30">Статус: НАРУШИТЕЛЬ ПРОТОКОЛА // +100 XP</div>
             <button onclick="shareEgg()" class="w-full py-2.5 bg-amber-950/50 hover:bg-amber-900/60 border border-amber-400/50 text-amber-200 text-xs font-mono-tech rounded-xl transition">ПОДЕЛИТЬСЯ ОТКРЫТКОЙ</button>
             <button onclick="closeEgg()" class="w-full py-2 text-gray-500 text-xs font-mono-tech">ЗАКРЫТЬ</button>
@@ -214,7 +216,7 @@
                 <button onclick="closeSafety()" class="text-gray-500 hover:text-white text-sm">✕</button>
             </div>
             <div id="safety-auto" class="hidden text-[11px] text-amber-300 font-mono-tech border border-amber-400/30 rounded-xl p-2.5">В вашем сообщении звучит очень тяжёлая боль. Пожалуйста, прочитайте это до конца.</div>
-            <p class="text-xs text-gray-300 leading-relaxed">SOMA LINK — художественный проект и игра, а не служба помощи. Он не заменяет живого человека и специалиста. Если боль настоящая, не оставайтесь с ней один на один.</p>
+            <p class="text-xs text-gray-300 leading-relaxed">SOMA~LINK — художественный проект и игра, а не служба помощи. Он не заменяет живого человека и специалиста. Если боль настоящая, не оставайтесь с ней один на один.</p>
             <div class="text-[11px] font-mono-tech text-red-400 pt-1">ПРЯМО СЕЙЧАС (2–3 МИНУТЫ)</div>
             <ul class="text-xs text-gray-300 leading-relaxed space-y-1.5 list-disc pl-4">
                 <li>Дыхание: вдох на 4 счёта, выдох на 6. Повторите 5–6 раз.</li>
@@ -243,7 +245,7 @@
             <div class="text-red-400 font-mono-tech text-xs tracking-widest">// ПЕРЕХВАЧЕН СИГНАЛ</div>
             <div id="music-eq" class="flex items-end justify-center gap-1 h-14"></div>
             <h3 id="music-name" class="text-lg font-bold text-white tracking-widest font-mono-tech">NEEOSOMA</h3>
-            <p class="text-xs text-gray-300 leading-relaxed">Весь этот шум не случаен. У NEEO_CITY есть голос, и он звучит там, где нет ленты и реакций. Включи звук и просто послушай.</p>
+            <p class="text-xs text-gray-300 leading-relaxed">Весь этот шум не случаен. У NEEO~CITY есть голос, и он звучит там, где нет ленты и реакций. Включи звук и просто послушай.</p>
             <div id="music-bonus" class="hidden bg-black/50 p-2 rounded-xl text-[11px] font-mono-tech text-amber-300 border border-amber-400/30">Частота найдена // +50 XP</div>
             <div id="music-links" class="space-y-2"></div>
             <button onclick="shareMusic()" class="w-full py-2 bg-red-950/50 border border-red-500/40 text-red-200 text-[11px] font-mono-tech rounded-xl">ПОДЕЛИТЬСЯ ОТКРЫТКОЙ</button>
@@ -255,7 +257,7 @@
     <div id="trainer-modal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-[2px] flex items-center justify-center p-4">
         <div class="w-full max-w-md max-h-[88vh] overflow-y-auto bg-[#0b0708] border border-red-500/40 p-5 rounded-2xl space-y-3 shadow-2xl">
             <div class="flex justify-between items-center">
-                <span class="text-xs font-mono-tech text-red-400 uppercase">// ТЕРМИНАЛ «СЛУШАТЕЛЬ»</span>
+                <span class="text-xs font-mono-tech text-red-400 uppercase">NEEOSOMA // TRM-01 · СЛУШАТЕЛЬ</span>
                 <button onclick="closeTrainer()" class="text-gray-500 hover:text-white text-sm">✕</button>
             </div>
             <div id="trainer-meta" class="flex justify-between items-center text-[10px] font-mono-tech text-gray-500 border-b border-red-500/15 pb-2"></div>
@@ -289,7 +291,7 @@
                 <div id="shop-body" class="space-y-2"></div>
             </div>
             <div class="px-4 py-2 bg-[#080305] border-t border-red-500/15 text-[9.5px] font-mono-tech text-gray-500 text-center">
-                ⚖ Кодекс SOMA: атрибуты меняют только облик. Тепло и рост растения не продаются.
+                ⚖ Кодекс SOMA~LINK: атрибуты меняют только облик. Тепло и рост растения не продаются.
             </div>
         </div>
     </div>
@@ -351,7 +353,7 @@
             </div>
             <div id="feed-filter-bar" class="flex gap-1.5 overflow-x-auto pb-0.5 text-[10px] font-mono-tech" role="tablist" aria-label="Фильтр историй по теме"></div>
             <div id="posts-container" class="space-y-3">
-                <div class="text-center text-xs text-gray-500 py-10 font-mono-tech">Загрузка данных NEEO_CITY...</div>
+                <div class="text-center text-xs text-gray-500 py-10 font-mono-tech">Загрузка данных NEEO~CITY...</div>
             </div>
         </div>
 
@@ -359,7 +361,7 @@
         <div id="view-top" class="hidden flex-1 overflow-y-auto p-3.5 sm:p-4 pb-24 space-y-3">
             <div class="top-head">
                 <div class="top-title-wrap">
-                    <span class="top-kicker">NEEO_CITY // ПАНОПТИКУМ</span>
+                    <span class="top-kicker">NEEO~CITY // ПАНОПТИКУМ</span>
                     <h2 class="top-heading">ТОП ЦИНИКОВ</h2>
                 </div>
                 <button type="button" onclick="openShop('frames')" class="top-shop-btn">✦ АТРИБУТЫ</button>
@@ -368,7 +370,7 @@
                 <button type="button" class="top-mode-btn" data-top-mode="all" aria-pressed="true" onclick="switchTopMode('all')">♛ ПАНТЕОН ВСЕХ ВРЕМЁН</button>
                 <button type="button" class="top-mode-btn" data-top-mode="week" aria-pressed="false" onclick="switchTopMode('week')">🔥 ОХОТА НЕДЕЛИ</button>
             </div>
-            <div id="top-subnote" class="top-subnote">Главный зал наблюдателей NEEO_CITY · нажмите на любого для досье</div>
+            <div id="top-subnote" class="top-subnote">Главный зал наблюдателей NEEO~CITY · нажмите на любого для досье</div>
             <div id="top-chase" class="top-chase"></div>
             <div id="top-podium" class="top-podium"></div>
             <div id="leaderboard-list" class="space-y-2"></div>
@@ -411,12 +413,13 @@
                     <canvas id="station-fx" class="station-fx" width="793" height="496" aria-hidden="true"></canvas>
                     <canvas id="station-deck" class="station-deck" width="110" height="72" aria-hidden="true"></canvas>
                     <canvas id="station-plant" class="station-plant" width="360" height="380" aria-hidden="true"></canvas>
-                    <button type="button" class="station-hit station-hit--terminal" data-obj="terminal" aria-label="Терминал — открыть тренажёр «Слушатель»" onclick="activateRoomObject('terminal', event)"></button>
-                    <button type="button" class="station-hit station-hit--radio" data-obj="radio" aria-label="Ламповый приёмник RX-88 — открыть фонотеку" onclick="activateRoomObject('radio', event)"></button>
+                    <button type="button" class="station-hit station-hit--terminal" data-obj="terminal" aria-label="Терминал NEEOSOMA — открыть тренажёр «Слушатель»" onclick="activateRoomObject('terminal', event)"></button>
+                    <button type="button" class="station-hit station-hit--radio" data-obj="radio" aria-label="Приёмник NEEOSOMA // AV-88 — открыть фонотеку" onclick="activateRoomObject('radio', event)"></button>
                     <button type="button" class="station-hit station-hit--plant" data-obj="plant" aria-label="Растение — осмотреть" onclick="activateRoomObject('plant', event)"></button>
-                    <button type="button" class="station-hit station-hit--window" data-obj="window" aria-label="Окно — осмотреть ночной город" onclick="activateRoomObject('window', event)"></button>
+                    <button type="button" class="station-hit station-hit--window" data-obj="window" aria-label="Окно — осмотреть NEEO~CITY" onclick="activateRoomObject('window', event)"></button>
+                    <button type="button" id="station-hit-blimp" class="station-hit--blimp hidden" aria-label="Дирижабль над NEEO~CITY" onclick="window.SOMA_BLIMP && window.SOMA_BLIMP.catchActive(event)"></button>
                     <button type="button" class="station-hit station-hit--lamp" data-obj="lamp" aria-label="Висячая лампа — качнуть" onclick="activateRoomObject('lamp', event)"></button>
-                    <button type="button" class="station-hit station-hit--shelf" data-obj="shelf" aria-label="Видеомагнитофон SOMA VTR-90 — открыть VHS-архив тёплых слов" onclick="activateRoomObject('shelf', event)"></button>
+                    <button type="button" class="station-hit station-hit--shelf" data-obj="shelf" aria-label="Видеомагнитофон NEEOSOMA // VTR-90 — открыть VHS-архив тёплых слов" onclick="activateRoomObject('shelf', event)"></button>
                     <button type="button" class="station-hit station-hit--nightlight" data-obj="nightlight" aria-label="Ночник у терминала — подсветить" onclick="activateRoomObject('nightlight', event)"></button>
                     <button type="button" id="station-hit-bed" class="station-hit station-hit--bed" data-obj="bed" aria-label="Кушетка — осмотреть" onclick="activateRoomObject('bed', event)"></button>
                     <button type="button" id="station-hit-dog" class="station-hit station-hit--dog hidden" data-obj="dog" aria-label="Погладить пса на коврике у пледа" onclick="activateRoomObject('dog', event)"></button>
@@ -430,6 +433,7 @@
                     <!-- Ненавязчивый оверлей полноэкранного горизонтального режима -->
                     <div class="station-fs-hud" aria-label="Управление полноэкранным режимом">
                         <div class="station-fs-controls">
+                            <button type="button" id="station-fs-gh" class="station-fs-pill hidden" onclick="openGreenhouse(); bumpFullscreenHud()" aria-label="Открыть Оранжерею" title="Оранжерея">✿</button>
                             <button type="button" id="station-fs-flip" class="station-fs-pill station-fs-flip" onclick="flipRoomFullscreen()" aria-label="Перевернуть экран на 180 градусов" title="Перевернуть на 180°">↻</button>
                             <button type="button" id="station-fs-snd" class="station-fs-pill" onclick="toggleSound(); bumpFullscreenHud()" aria-label="Звук станции">🔊</button>
                             <button type="button" class="station-fs-pill" onclick="exitRoomFullscreen()" aria-label="Выйти из полноэкранного режима">✕ ВЫЙТИ</button>
@@ -462,7 +466,7 @@
                     <!-- Диегетический VHS-видеоархив входящих анонимных «Шёпотов» (номер + ДД.ММ.ГГГГ) -->
                     <div id="station-deck-bar" class="station-ctx hidden" aria-label="Видеоархив VHS">
                         <div class="station-ctx-head">
-                            <span>SOMA // VTR-90 · АРХИВ VHS-КАССЕТ</span>
+                            <span>NEEOSOMA // VTR-90 · АРХИВ VHS-КАССЕТ</span>
                             <span id="station-deck-count">ЛОТОК ПУСТ</span>
                         </div>
                         <p id="station-deck-empty" class="station-ctx-empty">Плёнка чиста. Каждое анонимное тёплое послание для вас запишется на номерную VHS-кассету с полной датой ДД.ММ.ГГГГ.</p>
@@ -508,6 +512,9 @@
                                 <button type="button" id="pts-dew-btn" class="station-pts-mini" aria-pressed="false" onclick="togglePtsDew()">СВЕТЛЯЧКИ 7/7</button>
                                 <button type="button" id="pts-cat-btn" class="station-pts-mini" aria-pressed="false" onclick="cyclePtsCatCoat()">МАСТИ КОТА</button>
                                 <button type="button" id="pts-dog-btn" class="station-pts-mini" aria-pressed="false" onclick="cyclePtsDogBreed()">ПОРОДЫ ПСА</button>
+                                <button type="button" id="pts-alien-btn" class="station-pts-mini" aria-pressed="false" onclick="cyclePtsAlienKind()">✦ ПРИШЕЛЕЦ</button>
+                                <button type="button" class="station-pts-mini" onclick="openGreenhouse({ ptsDemo: true })">✿ ОРАНЖЕРЕЯ</button>
+                                <button type="button" class="station-pts-mini" onclick="window.SOMA_BLIMP && window.SOMA_BLIMP.triggerPtsFlight()">◈ ДИРИЖАБЛЬ</button>
                                 <button type="button" class="station-pts-mini" onclick="togglePtsDemoCassette()">ДЕМО VHS</button>
                             </div>
                             <div id="station-plant-pips" class="station-stages" role="group" aria-label="PTS: пустой горшок и 6 стадий роста">
@@ -542,7 +549,7 @@
             <!-- РЕТРО-ПЕЙДЖЕР «ШЁПОТА» (ВРЕМЕННО ВНЕ ЭФИРА) -->
             <section id="soma-pager" class="soma-pager" data-state="offline" data-admitted="0" aria-label="Пейджер частоты «Шёпот»">
                 <div class="pager-top">
-                    <span class="pager-brand"><i id="pager-led" class="pager-led" aria-hidden="true"></i>SOMA // PGR-04</span>
+                    <span class="pager-brand"><i id="pager-led" class="pager-led" aria-hidden="true"></i>NEEOSOMA // NMAV-04</span>
                     <span class="pager-sig">CH·04 ШЁПОТ<span class="pager-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span></span>
                 </div>
                 <div class="pager-bezel">
@@ -562,7 +569,7 @@
             </section>
             <div id="witness-card" class="bg-[#12080a] border border-red-500/40 p-5 rounded-2xl space-y-4 relative overflow-hidden">
                 <div class="flex justify-between items-center gap-2 text-[10px] font-mono-tech text-gray-500">
-                    <span>NEEOSOMA // SOMA_LINK</span>
+                    <span>NEEOSOMA // SOMA~LINK</span>
                     <button type="button" onclick="openShop('room')" class="top-shop-btn">✦ АТРИБУТЫ</button>
                 </div>
                 <div>
@@ -585,7 +592,7 @@
                         <div id="stat-reacts" class="text-lg font-bold text-red-400">0</div>
                     </div>
                     <div class="bg-[#080405] p-2.5 rounded-xl border border-red-950">
-                        <div class="text-[10px] text-gray-500">ПОПЫТОК ПОМОЧЬ</div>
+                        <div class="text-[10px] text-gray-500">СРЫВОВ ПРОТОКОЛА</div>
                         <div id="stat-attempts" class="text-lg font-bold text-red-600">0</div>
                     </div>
                     <div class="bg-[#080405] p-2.5 rounded-xl border border-red-950">
@@ -601,13 +608,15 @@
     </div>
 
 <script src="config.js"></script>
-<script src="scenarios.js?v=11"></script>
-<script src="music.js?v=11"></script>
-<script src="room.js?v=11"></script>
-<script src="cosmetics.js?v=11"></script>
-<script src="receiver.js?v=11"></script>
-<script src="vhs.js?v=11"></script>
-<script src="share.js?v=11"></script>
+<script src="scenarios.js?v=12"></script>
+<script src="music.js?v=12"></script>
+<script src="room.js?v=12"></script>
+<script src="cosmetics.js?v=12"></script>
+<script src="receiver.js?v=12"></script>
+<script src="vhs.js?v=12"></script>
+<script src="greenhouse.js?v=12"></script>
+<script src="blimp.js?v=12"></script>
+<script src="share.js?v=12"></script>
 <script>
     const cfg = window.SOMA_CONFIG || {};
     const SUPABASE_URL = cfg.SUPABASE_URL;
@@ -701,9 +710,11 @@
     function addWarmth(n) {
         player.warmth = (player.warmth || 0) + n;
         try { localStorage.setItem('soma_warmth', String(player.warmth)); } catch (e) {}
+        // Растение растёт СТРОГО только пока стоит в комнате!
+        if (typeof feedActiveRoomPlant === 'function') feedActiveRoomPlant(n, player.warmth);
         try { supabaseClient.from('soma_users').update({ warmth: player.warmth }).eq('username', player.uid).then(() => {}, () => {}); } catch (e) {}
     }
-    // Ламповый приёмник SOMA // RX-88 — личная фонотека и коллекционный винил 7" (БЕЗ выхода из Fullscreen и БЕЗ промо)
+    // Ламповый приёмник NEEOSOMA // AV-88 — личная фонотека и коллекционный винил 7" (БЕЗ выхода из Fullscreen и БЕЗ промо)
     function openRadio() {
         if (window.SOMA_RECEIVER && typeof window.SOMA_RECEIVER.open === 'function') {
             window.SOMA_RECEIVER.open();
@@ -882,7 +893,7 @@
             window.SOMA_SHARE.shareSignal();
             return;
         }
-        const text = 'Я перехватил скрытую частоту в SOMA LINK. Не скажу как. Попробуй найти сам:';
+        const text = 'Я перехватил скрытую частоту NEEO~CITY в SOMA~LINK. Не скажу как. Попробуй найти сам:';
         if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) {
             Telegram.WebApp.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(BOT_LINK) + '&text=' + encodeURIComponent(text));
         } else { notify(text + ' ' + BOT_LINK); }
@@ -951,10 +962,24 @@
         try {
             let { data } = await supabaseClient.from('soma_users').select('*').eq('username', player.uid).single();
             if (data) {
-                player = { ...player, xp: data.xp || 0, seen: data.seen || 0, reacts: data.reacts || 0, helpAttempts: data.help_attempts || 0, warmth: Math.max(player.warmth || 0, data.warmth || 0) };
+                const whispers = typeof getWhisperBreachCount === 'function' ? getWhisperBreachCount() : 0;
+                const cloudWhispers = Number.isFinite(Number(data.whispers_sent)) ? Math.max(0, Number(data.whispers_sent)) : 0;
+                const breaches = Math.max(whispers, cloudWhispers);
+                player = {
+                    ...player,
+                    xp: data.xp || 0,
+                    seen: data.seen || 0,
+                    reacts: data.reacts || 0,
+                    whispersSent: breaches,
+                    helpAttempts: breaches,
+                    warmth: Math.max(player.warmth || 0, data.warmth || 0)
+                };
                 if (typeof hydrateCosmeticsFromCloud === 'function') hydrateCosmeticsFromCloud(data);
             } else {
-                await supabaseClient.from('soma_users').insert([{ username: player.uid, xp: 0, seen: 0, reacts: 0, help_attempts: 0 }]);
+                const breaches = typeof getWhisperBreachCount === 'function' ? getWhisperBreachCount() : 0;
+                player.whispersSent = breaches;
+                player.helpAttempts = breaches;
+                await supabaseClient.from('soma_users').insert([{ username: player.uid, xp: 0, seen: 0, reacts: 0, help_attempts: breaches }]);
             }
         } catch(e) {}
 
@@ -994,12 +1019,17 @@
     }
 
     async function updateCloudProfile() {
+        const breaches = typeof getWhisperBreachCount === 'function'
+            ? getWhisperBreachCount()
+            : Math.max(0, Number(player.whispersSent) || 0);
+        player.whispersSent = breaches;
+        player.helpAttempts = breaches;
         try {
             await supabaseClient.from('soma_users').update({
                 xp: player.xp,
                 seen: player.seen,
                 reacts: player.reacts,
-                help_attempts: player.helpAttempts
+                help_attempts: breaches
             }).eq('username', player.uid);
         } catch(e) {}
     }
@@ -1021,9 +1051,14 @@
 
         document.getElementById('card-name').innerText = `@${player.name}`;
         document.getElementById('card-rank').innerText = currentRank.title;
+        const breaches = typeof getWhisperBreachCount === 'function'
+            ? getWhisperBreachCount()
+            : Math.max(0, Number(player.whispersSent) || 0);
+        player.whispersSent = breaches;
+        player.helpAttempts = breaches;
         document.getElementById('stat-seen').innerText = player.seen;
         document.getElementById('stat-reacts').innerText = player.reacts;
-        document.getElementById('stat-attempts').innerText = player.helpAttempts;
+        document.getElementById('stat-attempts').innerText = breaches;
         if (typeof indifferenceIndex === 'function') {
             document.getElementById('indiff-val').innerText = `${indifferenceIndex(player.warmth || 0)}%`;
         }
@@ -1243,7 +1278,7 @@
                 <p class="text-xs sm:text-sm text-gray-200 leading-relaxed font-mono-tech whitespace-pre-line break-words">${esc(post.text)}</p>
                 ${isMine
                     ? `<div class="py-1.5 px-3 rounded-xl bg-black/40 border border-amber-400/20 text-[10.5px] font-mono-tech text-amber-200/80 flex justify-between items-center">
-                        <span>◌ Ваш голос звучит в сети NEEO_CITY</span>
+                        <span>◌ Ваш голос звучит в сети SOMA~LINK · NEEO~CITY</span>
                         <span class="text-amber-300">Откликов: ${post.likes || 0}</span>
                        </div>`
                     : `<button onclick="triggerHelpBlock()" class="w-full py-2 bg-red-950/40 hover:bg-red-900/50 border border-red-500/40 rounded-xl text-[11px] font-mono-tech text-red-400 flex items-center justify-center space-x-2 transition">
@@ -1303,21 +1338,27 @@
         renderFeed();
     }
 
+    // Кнопка «Помочь» в ленте боли НЕ считает срывы протокола (их считает только реальный «Шёпот»!) —
+    // она лишь подтверждает блокировку прямого контакта системой и открывает пасхалку на 10-е нажатие.
     function triggerHelpBlock() {
-        player.helpAttempts++;
+        let helpClicks = 0;
+        try {
+            helpClicks = Math.max(0, parseInt(localStorage.getItem('soma_help_clicks') || '0', 10) || 0) + 1;
+            localStorage.setItem('soma_help_clicks', String(helpClicks));
+        } catch (e) { helpClicks = 1; }
         try { Telegram.WebApp.HapticFeedback.notificationOccurred('error'); } catch (e) {}
         const bc = document.getElementById('block-card');
         bc.classList.remove('animate-shake'); void bc.offsetWidth; bc.classList.add('animate-shake');
         let egg = false;
-        try { egg = player.helpAttempts >= 10 && !localStorage.getItem('soma_egg'); } catch (e) {}
+        try { egg = helpClicks >= 10 && !localStorage.getItem('soma_egg'); } catch (e) {}
         if (egg) {
             try { localStorage.setItem('soma_egg', '1'); } catch (e) {}
             player.xp += 100;
             if (typeof addWeeklyXp === 'function') addWeeklyXp(100);
             try { Telegram.WebApp.HapticFeedback.notificationOccurred('success'); } catch (e) {}
+            updateCloudProfile();
+            updateHeader();
         }
-        updateCloudProfile();
-        updateHeader();
         egg ? SFX.egg() : SFX.block();
         document.getElementById(egg ? 'egg-modal' : 'block-modal').classList.remove('hidden');
     }
@@ -1327,7 +1368,7 @@
             window.SOMA_SHARE.shareEgg();
             return;
         }
-        const text = 'Я нарушил протокол SOMA LINK. Не скажу как. Попробуй сам:';
+        const text = 'Я нарушил протокол SOMA~LINK в NEEO~CITY. Не скажу как. Попробуй сам:';
         if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) {
             Telegram.WebApp.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(BOT_LINK) + '&text=' + encodeURIComponent(text));
         } else { notify(text + ' ' + BOT_LINK); }
@@ -1480,7 +1521,7 @@
             return;
         }
         const rank = document.getElementById('rank-title').innerText;
-        const text = `SOMA_LINK // SILENCE PROTOCOL\nСвидетель: @${player.name}\nРанг: ${rank}\nПросмотрено драм: ${player.seen} | Пустых реакций: ${player.reacts} | Реальной помощи: 0.\n\nПопробуй не вмешаться:`;
+        const text = `SOMA~LINK // NEEO~CITY\nСвидетель: @${player.name}\nРанг: ${rank}\nПросмотрено драм: ${player.seen} | Пустых реакций: ${player.reacts} | Срывов протокола: ${player.whispersSent || 0}.\n\nПопробуй не вмешаться:`;
         if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) {
             Telegram.WebApp.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(BOT_LINK) + '&text=' + encodeURIComponent(text));
             return;

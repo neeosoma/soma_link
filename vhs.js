@@ -1,5 +1,5 @@
 /* ==========================================================================
-   SOMA // VTR-90 — ЛАМПОВЫЙ ВИДЕОАРХИВ АНОНИМНЫХ ТЁПЛЫХ СЛОВ (VHS)
+   NEEOSOMA // VTR-90 — ЛАМПОВЫЙ ВИДЕОАРХИВ АНОНИМНЫХ ТЁПЛЫХ СЛОВ (VHS)
    - Каждая запись хранится на номерной VHS-кассете с полной датой ДД.ММ.ГГГГ
    - Анимация и тёплый механический щелчок вставки VHS в деку -> ЭЛТ-экран
    - Мгновенный поиск по словам, #номеру и дате + фильтр «★ Избранные» + года + сортировка
@@ -125,13 +125,13 @@
         ov.className = 'vhs-overlay hidden';
         ov.setAttribute('role', 'dialog');
         ov.setAttribute('aria-modal', 'true');
-        ov.setAttribute('aria-label', 'Видеоархив тёплых слов SOMA VTR-90');
+        ov.setAttribute('aria-label', 'Видеоархив тёплых слов NEEOSOMA VTR-90');
         ov.innerHTML = `
             <div class="vhs-chassis" id="vhs-chassis">
                 <div class="vhs-head">
                     <div class="vhs-brand">
                         <span class="vhs-pilot" aria-hidden="true"></span>
-                        <span class="vhs-model">SOMA // VTR-90</span>
+                        <span class="vhs-model">NEEOSOMA // VTR-90</span>
                     </div>
                     <div class="vhs-head-right">
                         <span class="vhs-mode-lamp" id="vhs-mode-lamp" aria-hidden="true">SP · VHS</span>

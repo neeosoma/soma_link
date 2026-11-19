@@ -1,0 +1,246 @@
+/* ==========================================================================
+   NEEOSOMA // SKY-01 — НЕНАВЯЗЧИВЫЙ ДИРИЖАБЛЬ ПРОДАКТ-ПЛЕЙСМЕНТА ЗА ОКНОМ
+   Появляется в небе NEEO~CITY. Открывается ТОЛЬКО если успеть нажать на борт!
+   ========================================================================== */
+
+.station-hit--blimp {
+    position: absolute;
+    z-index: 9;
+    background: transparent;
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+    padding: 0;
+    pointer-events: auto;
+    -webkit-tap-highlight-color: transparent;
+    transition: box-shadow 0.18s ease;
+}
+
+.station-hit--blimp:hover {
+    box-shadow: 0 0 0 1px rgba(255, 210, 168, 0.38), 0 0 18px rgba(255, 107, 125, 0.25);
+}
+
+.station-hit--blimp.hidden {
+    display: none !important;
+    pointer-events: none !important;
+}
+
+/* Оверлей перехваченного сигнала дирижабля (работает и в Fullscreen!) */
+.blimp-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 95;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: max(14px, env(safe-area-inset-top, 0px))
+             max(14px, env(safe-area-inset-right, 0px))
+             max(14px, env(safe-area-inset-bottom, 0px))
+             max(14px, env(safe-area-inset-left, 0px));
+    background: rgba(6, 2, 5, 0.82);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.22s ease;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+.blimp-overlay.is-open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.blimp-overlay.is-in-fs {
+    position: absolute;
+    z-index: 70;
+}
+
+.blimp-card {
+    --blimp-accent: #ff6b7d;
+    width: min(100%, 400px);
+    max-height: 100%;
+    overflow-y: auto;
+    border-radius: 18px;
+    padding: 16px;
+    background: linear-gradient(180deg, rgba(22, 8, 13, 0.97), rgba(10, 4, 7, 0.99));
+    border: 1px solid color-mix(in srgb, var(--blimp-accent) 48%, rgba(255, 255, 255, 0.14));
+    box-shadow: 0 22px 58px rgba(0, 0, 0, 0.88),
+                0 0 36px color-mix(in srgb, var(--blimp-accent) 22%, transparent),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    color: #fff1f2;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.blimp-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.blimp-model {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.13em;
+    color: #fecdd3;
+}
+
+.blimp-led {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: var(--blimp-accent);
+    box-shadow: 0 0 10px var(--blimp-accent);
+}
+
+.blimp-close {
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.05);
+    color: #fecdd3;
+    border-radius: 8px;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.blimp-close:hover {
+    border-color: rgba(255, 255, 255, 0.42);
+    color: #ffffff;
+}
+
+/* Светящееся цифровое табло борта дирижабля */
+.blimp-marquee {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 16px 14px;
+    border-radius: 13px;
+    background:
+        repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.28) 0 1px, transparent 1px 3px),
+        radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--blimp-accent) 24%, #1a0710), #090306 85%);
+    border: 1px solid color-mix(in srgb, var(--blimp-accent) 55%, rgba(255, 255, 255, 0.12));
+    box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.72);
+    overflow: hidden;
+}
+
+.blimp-logo {
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
+    border-radius: 9px;
+    flex-shrink: 0;
+    filter: drop-shadow(0 0 10px color-mix(in srgb, var(--blimp-accent) 45%, transparent));
+}
+
+.blimp-brand-wrap {
+    text-align: center;
+    min-width: 0;
+}
+
+.blimp-brand {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    color: #ffffff;
+    text-shadow: 0 0 16px var(--blimp-accent);
+    word-break: break-word;
+}
+
+.blimp-tagline {
+    margin-top: 4px;
+    font-size: 10.5px;
+    color: rgba(254, 226, 226, 0.86);
+    letter-spacing: 0.05em;
+}
+
+.blimp-desc {
+    margin: 0;
+    font-size: 11.5px;
+    line-height: 1.55;
+    color: rgba(241, 245, 249, 0.88);
+    font-family: Inter, system-ui, -apple-system, sans-serif;
+}
+
+/* Промокод в 1 клик */
+.blimp-promo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 9px 12px;
+    border-radius: 11px;
+    border: 1px dashed color-mix(in srgb, var(--blimp-accent) 58%, rgba(255, 255, 255, 0.2));
+    background: rgba(255, 255, 255, 0.04);
+    color: #fff7ed;
+    font-family: inherit;
+    font-size: 11px;
+    cursor: pointer;
+    transition: background 0.16s ease, border-color 0.16s ease;
+}
+
+.blimp-promo:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: #ffffff;
+}
+
+.blimp-promo-code {
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: #fde68a;
+}
+
+.blimp-promo-hint {
+    font-size: 9.5px;
+    color: rgba(254, 205, 211, 0.82);
+    letter-spacing: 0.06em;
+}
+
+.blimp-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.blimp-cta {
+    flex: 1;
+    padding: 11px 14px;
+    border-radius: 11px;
+    border: 1px solid color-mix(in srgb, var(--blimp-accent) 72%, #ffffff);
+    background: linear-gradient(135deg,
+        color-mix(in srgb, var(--blimp-accent) 44%, #2a0912),
+        color-mix(in srgb, var(--blimp-accent) 24%, #140509));
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: filter 0.16s ease, transform 0.14s ease;
+}
+
+.blimp-cta:hover {
+    filter: brightness(1.12);
+}
+
+.blimp-cta:active {
+    transform: scale(0.985);
+}
+
+.blimp-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 9px;
+    color: rgba(148, 163, 184, 0.68);
+    letter-spacing: 0.06em;
+}

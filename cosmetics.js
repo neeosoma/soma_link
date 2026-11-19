@@ -58,10 +58,21 @@ const SOMA_CATALOG = [
     { id: 'room_garland', tab: 'room', group: 'ambience', slot: 'garland', stars: 140, name: 'Гирлянда Эдисона у окна',  desc: '13 винтажных лампочек с тёплыми вольфрамовыми нитями и золотым светом по каменной арке окна.' },
     { id: 'room_candles', tab: 'room', group: 'ambience',  slot: 'candles', stars: 140, name: 'Живые свечи станции',      desc: 'Шесть восковых свечей с трепещущим живым пламенем и тёплыми бликами у ковра и на полке радио.' },
     { id: 'room_cat',     tab: 'room', group: 'companion', slot: 'cat',     stars: 220, name: 'Живой кот-хранитель',      desc: 'Крупный тёплый кот с уникальной мастью по вашему ID на кушетке: глубоко дышит, мурчит и дружит с псом.' },
-    { id: 'room_dog',     tab: 'room', group: 'companion', slot: 'dog',     stars: 220, name: 'Живой пёс-хранитель',      desc: 'Верный пёс одной из 7 пород по вашему ID на собственном лежаке у ковра: дышит, виляет хвостом и живёт вместе с котом.' }
+    { id: 'room_dog',     tab: 'room', group: 'companion', slot: 'dog',     stars: 220, name: 'Живой пёс-хранитель',      desc: 'Настоящий пёс одной из 7 пород по вашему ID на персидском коврике у пледа рядом с котом: дышит, виляет хвостом и бережёт уют.' }
 ];
 
 const SOMA_ITEM_MAP = Object.fromEntries(SOMA_CATALOG.map(it => [it.id, it]));
+// Коллекционные пластинки 7" лампового приёмника SOMA // RX-88 (хранятся в том же защищённом owned_cosmetics, 0% pay-to-win)
+const SOMA_DEFAULT_TRACK_IDS = ['track_velvet', 'track_aurora', 'track_solstice', 'track_rainline'];
+function isCollectibleTrackId(id) {
+    if (!id || typeof id !== 'string') return false;
+    if (SOMA_DEFAULT_TRACK_IDS.includes(id)) return true;
+    const list = (typeof window !== 'undefined' && Array.isArray(window.SOMA_TRACKS)) ? window.SOMA_TRACKS : [];
+    return list.some(t => t && t.collectible && t.id === id);
+}
+function isOwnableSomaId(id) {
+    return !!(SOMA_ITEM_MAP[id] || isCollectibleTrackId(id));
+}
 const SOMA_FRAME_CLASSES = SOMA_CATALOG.filter(it => it.slot === 'frame' && it.css).map(it => it.css);
 const ROOM_FLAG_SLOTS = ['cat', 'dog', 'steam', 'tape', 'garland', 'candles'];
 const ROOM_FLAG_ITEM = { cat: 'room_cat', dog: 'room_dog', steam: 'room_steam', tape: 'room_tape', garland: 'room_garland', candles: 'room_candles' };
@@ -94,7 +105,7 @@ let tapeTimer = null;
 function loadCosmeticsLocal() {
     try {
         const ow = JSON.parse(localStorage.getItem('soma_owned') || '[]');
-        if (Array.isArray(ow)) shopState.owned = [...new Set(ow.filter(id => SOMA_ITEM_MAP[id]))];
+        if (Array.isArray(ow)) shopState.owned = [...new Set(ow.filter(id => isOwnableSomaId(id)))];
     } catch (_) {}
     try {
         const eq = JSON.parse(localStorage.getItem('soma_cosmetics') || '{}') || {};
@@ -258,7 +269,7 @@ function getMyWeeklyXp() {
 function hydrateCosmeticsFromCloud(row) {
     if (!row || typeof row !== 'object') return;
     if (Array.isArray(row.owned_cosmetics)) {
-        const merged = new Set([...shopState.owned, ...row.owned_cosmetics.filter(id => SOMA_ITEM_MAP[id])]);
+        const merged = new Set([...shopState.owned, ...row.owned_cosmetics.filter(id => isOwnableSomaId(id))]);
         shopState.owned = [...merged];
     }
     if (row.cosmetics && typeof row.cosmetics === 'object') {
@@ -271,6 +282,9 @@ function hydrateCosmeticsFromCloud(row) {
     }
     saveCosmeticsLocal();
     applyCosmeticsToUI();
+    if (typeof window !== 'undefined' && window.SOMA_RECEIVER && typeof window.SOMA_RECEIVER.refresh === 'function') {
+        window.SOMA_RECEIVER.refresh();
+    }
 }
 
 function syncCosmeticsCloud() {
@@ -301,6 +315,9 @@ function syncAmbientTape(enabled) {
     const playBar = () => {
         if (typeof document !== 'undefined' && document.hidden) return;
         if (typeof soundOn !== 'undefined' && !soundOn) return;
+        // Уступаем сцену ламповому приёмнику RX-88, пока играет пластинка или поток
+        if (typeof window !== 'undefined' && window.SOMA_RECEIVER
+            && typeof window.SOMA_RECEIVER.isAudioActive === 'function' && window.SOMA_RECEIVER.isAudioActive()) return;
         const prof = typeof document !== 'undefined' && document.getElementById('view-profile');
         if (!prof || prof.classList.contains('hidden')) return;
         const chord = TAPE_CHORDS[tapeChordIdx % TAPE_CHORDS.length];
@@ -337,6 +354,8 @@ function renderRoomTryOnBar() {
     let label = `ПРИМЕРКА: «${it.name}»`;
     if (it.id === 'room_cat' && typeof catSpec === 'function') {
         label = `ПРИМЕРКА: ВАШ КОТ · ${catSpec().coat.name.toUpperCase()}`;
+    } else if (it.id === 'room_dog' && typeof dogSpec === 'function') {
+        label = `ПРИМЕРКА: ВАШ ПЁС · ${dogSpec().breed.name.toUpperCase()}`;
     }
     if (txt) txt.textContent = label;
     if (buyBtn) {
@@ -506,6 +525,17 @@ function saveMyEpitaph() {
     shopState.notice = check.value ? '✓ Эпитафия сохранена и видна в Топе Циников.' : 'Эпитафия скрыта.';
     if (typeof SFX !== 'undefined' && SFX.react) SFX.react();
     renderShop();
+}
+
+function grantOwnedTrack(id) {
+    if (!isCollectibleTrackId(id)) return false;
+    if (!shopState.owned.includes(id)) shopState.owned.push(id);
+    saveCosmeticsLocal();
+    syncCosmeticsCloud();
+    if (typeof window !== 'undefined' && window.SOMA_RECEIVER && typeof window.SOMA_RECEIVER.refresh === 'function') {
+        window.SOMA_RECEIVER.refresh();
+    }
+    return true;
 }
 
 function grantOwnedItem(id) {

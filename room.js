@@ -2096,6 +2096,15 @@ const roomAnim = {
     radioStart: -1e9,
     plantStart: -1e9,
     winStart: -1e9,
+    catPetStart: -1e9,
+    dogPetStart: -1e9,
+    inspectCatCoat: null,
+    inspectDogBreed: null,
+    fsWaapi: null,
+    fsBgWaapi: null,
+    fsNativeActive: false,
+    fsExitingNative: false,
+    fsLastDeg: 0,
     ripples: [],
     spores: []
 };
@@ -3285,13 +3294,6 @@ const CAT_COATS = [
     }
 ];
 
-const CAT_COLLARS = [
-    { name: 'с золотым бубенчиком', band: '#a8182e', charm: 'bell' },
-    { name: 'с алой лентой', band: '#d92e48', charm: 'ribbon' },
-    { name: 'с лунным медальоном', band: '#3c1e2e', charm: 'moon' },
-    { name: 'без ошейника', band: '', charm: 'none' }
-];
-
 const CAT_EARS = ['чуткие ушки', 'рысьи кисточки', 'мягкие ушки'];
 
 function catSpec(rawId, overrideCoat) {
@@ -3306,17 +3308,89 @@ function catSpec(rawId, overrideCoat) {
     const coatIdx = Number.isInteger(overrideCoat) && overrideCoat >= 0 && overrideCoat < CAT_COATS.length
         ? overrideCoat
         : (mix % CAT_COATS.length);
-    const collarIdx = (mix >>> 4) % CAT_COLLARS.length;
     const earStyle = (mix >>> 7) % 3; // 0: классика, 1: рысьи кисточки, 2: плюшевые
     const socks = ((mix >>> 10) % 3) === 0;
     const starMark = ((mix >>> 12) % 3) === 0;
     const purrHz = 46 + ((mix >>> 14) % 14);
     const coat = CAT_COATS[coatIdx];
-    const collar = CAT_COLLARS[collarIdx];
-    const summary = `${coat.name}${earStyle === 1 ? ' · кисточки' : ''}${collar.band ? ' · ' + collar.name : ''}`;
+    const summary = `${coat.name}${earStyle === 1 ? ' · рысьи кисточки' : ''}`;
     return {
-        coatIdx, coat, collarIdx, collar, earStyle, earName: CAT_EARS[earStyle],
+        coatIdx, coat, earStyle, earName: CAT_EARS[earStyle],
         socks, starMark, purrHz, seed: mix, summary
+    };
+}
+
+// ===== УНИКАЛЬНЫЙ ПЁС-ХРАНИТЕЛЬ ИГРОКА (7 ЖИВЫХ ПОРОД ПО ID · СВОЁ МЕСТО НА КОВРЕ РЯДОМ С КОТОМ!) =====
+const DOG_BREEDS = [
+    {
+        name: 'Рыжий сиба-ину', short: 'рыжий сиба-ину',
+        dark: '#57200b', mid: '#b84c18', light: '#eb8338', rim: '#ffc478',
+        cream: '#fae3c2', earIn: '#c9625a', nose: '#160708',
+        eyeL: '#ffcf75', eyeR: '#ffcf75',
+        ears: 'pointed', tail: 'curled', pattern: 'shiba'
+    },
+    {
+        name: 'Золотистый ретривер', short: 'золотистый ретривер',
+        dark: '#59300e', mid: '#b56c24', light: '#ebb05a', rim: '#ffe098',
+        cream: '#fce8be', earIn: '#8c4918', nose: '#1c0b09',
+        eyeL: '#ffca68', eyeR: '#ffca68',
+        ears: 'floppy', tail: 'plume', pattern: 'golden'
+    },
+    {
+        name: 'Северный хаски', short: 'северный хаски',
+        dark: '#14111c', mid: '#3b364a', light: '#736c87', rim: '#dcd6f2',
+        cream: '#f5eef7', earIn: '#9e5c6e', nose: '#12080c',
+        eyeL: '#8ce2ff', eyeR: '#8ce2ff',
+        ears: 'pointed', tail: 'plume', pattern: 'husky'
+    },
+    {
+        name: 'Вельш-корги', short: 'рыжий вельш-корги',
+        dark: '#59220c', mid: '#bd551e', light: '#f08e46', rim: '#ffca82',
+        cream: '#fcf0de', earIn: '#d46c68', nose: '#170809',
+        eyeL: '#ffd070', eyeR: '#ffd070',
+        ears: 'corgi', tail: 'bob', pattern: 'corgi'
+    },
+    {
+        name: 'Шоколадный спаниель', short: 'шоколадный спаниель',
+        dark: '#1c0907', mid: '#4d1f16', light: '#823b28', rim: '#e89868',
+        cream: '#e39a5c', earIn: '#36130d', nose: '#260d0a',
+        eyeL: '#ffc45c', eyeR: '#ffc45c',
+        ears: 'longfloppy', tail: 'plume', pattern: 'spaniel'
+    },
+    {
+        name: 'Лунный самоед', short: 'белоснежный самоед',
+        dark: '#75505a', mid: '#c7a4ac', light: '#f5e4e6', rim: '#fff7f5',
+        cream: '#fcf2f2', earIn: '#de8592', nose: '#17080b',
+        eyeL: '#ffd480', eyeR: '#ffd480',
+        ears: 'pointed', tail: 'curled', pattern: 'samoyed'
+    },
+    {
+        name: 'Чёрно-белый колли', short: 'чёрно-белый бордер-колли',
+        dark: '#080306', mid: '#1d0d16', light: '#3f2030', rim: '#e87890',
+        cream: '#f7ecee', earIn: '#8f3b4e', nose: '#120508',
+        eyeL: '#ffd06b', eyeR: '#8ad8ff',
+        ears: 'tipped', tail: 'plume', pattern: 'collie'
+    }
+];
+
+function dogSpec(rawId, overrideBreed) {
+    const src = String(rawId || (typeof player !== 'undefined' && (player.uid || player.name)) || 'guest');
+    let h = 2166136261 >>> 0;
+    for (let i = 0; i < src.length; i++) {
+        h ^= src.charCodeAt(i);
+        h = Math.imul(h, 16777619) >>> 0;
+    }
+    // Собственная независимая соль Murmur3 — порода пса не зависит ни от вида цветка, ни от масти кота!
+    let mix = Math.imul((h ^ 0x9e3779b9) >>> 0, 0x85ebca6b) >>> 0;
+    mix = Math.imul(mix ^ (mix >>> 13), 0xc2b2ae35) >>> 0;
+    const breedIdx = Number.isInteger(overrideBreed) && overrideBreed >= 0 && overrideBreed < DOG_BREEDS.length
+        ? overrideBreed
+        : (mix % DOG_BREEDS.length);
+    const browSpot = ((mix >>> 8) % 2) === 0;
+    const woofHz = 118 + ((mix >>> 11) % 34);
+    const breed = DOG_BREEDS[breedIdx];
+    return {
+        breedIdx, breed, browSpot, woofHz, seed: mix, summary: breed.name
     };
 }
 
@@ -3650,32 +3724,12 @@ function drawCompanionCat(g, now, phase, still) {
     g.beginPath(); g.ellipse(cx - 21, cy + 5.8, 4.4, 2.5, 0.12, 0, Math.PI * 2); g.fill();
     g.beginPath(); g.ellipse(cx - 13.5, cy + 6.6, 4.6, 2.6, -0.08, 0, Math.PI * 2); g.fill();
 
-    // 5. Ошейник / лента / золотой бубенчик (индивидуальная деталь по ID)
+    // 5. Мягкая естественная пушистая грудка (без ошейников и ленточек — чистый живой силуэт!)
     const hx = cx - 15.5, hy = cy - 2.2 - rise * 0.42 - headLift;
-    if (cat.collar.band) {
-        g.strokeStyle = cat.collar.band;
-        g.lineWidth = 2.1;
-        g.beginPath();
-        g.arc(hx + 3, hy + 4.5, 7.6, Math.PI * 0.1, Math.PI * 0.75);
-        g.stroke();
-        if (cat.collar.charm === 'bell') {
-            g.fillStyle = '#ffd25a';
-            g.beginPath(); g.arc(hx - 0.5, hy + 7.6, 2.0, 0, Math.PI * 2); g.fill();
-            g.fillStyle = '#fff5c2';
-            g.fillRect(hx - 1.2, hy + 6.6, 0.9, 0.9);
-        } else if (cat.collar.charm === 'moon') {
-            g.fillStyle = '#ffe28a';
-            g.beginPath(); g.arc(hx - 0.4, hy + 7.6, 1.9, 0, Math.PI * 2); g.fill();
-            g.fillStyle = '#180508';
-            g.beginPath(); g.arc(hx + 0.4, hy + 7.2, 1.5, 0, Math.PI * 2); g.fill();
-        } else if (cat.collar.charm === 'ribbon') {
-            g.fillStyle = '#ff5470';
-            g.beginPath();
-            g.moveTo(hx - 0.5, hy + 7.2); g.lineTo(hx - 3.6, hy + 5.8); g.lineTo(hx - 3.2, hy + 8.8);
-            g.moveTo(hx - 0.5, hy + 7.2); g.lineTo(hx + 2.6, hy + 6.0); g.lineTo(hx + 2.2, hy + 9.0);
-            g.fill();
-        }
-    }
+    g.fillStyle = mixHex(c.belly, c.light, 0.35, 0.62);
+    g.beginPath();
+    g.ellipse(hx + 2.2, hy + 6.4, 5.4, 3.2, 0.15, 0, Math.PI * 2);
+    g.fill();
 
     // 6. Выразительная круглая головка с щёчками
     if (g.createRadialGradient) {
@@ -3836,6 +3890,537 @@ function drawCompanionCat(g, now, phase, still) {
                 radialAura(g, kx, ky, 6, '#ffe694', '#ff6474', ka * 0.55);
                 g.fillStyle = `rgba(255, 240, 184, ${ka.toFixed(3)})`;
                 g.beginPath(); g.arc(kx, ky, 1.4, 0, Math.PI * 2); g.fill();
+            }
+        }
+    }
+
+    g.restore();
+}
+
+// ===== ЖИВОЙ ПЁС-ХРАНИТЕЛЬ НА СВОЁМ ТЁПЛОМ ЛЕЖАКЕ У КОВРА (7 ПОРОД ПО ID · ДРУЖИТ С КОТОМ!) =====
+function drawCompanionDog(g, now, phase, still) {
+    const uid = (typeof player !== 'undefined' && (player.uid || player.name)) || 'guest';
+    const override = Number.isInteger(roomAnim.inspectDogBreed) ? roomAnim.inspectDogBreed : null;
+    const dog = dogSpec(uid, override);
+    const b = dog.breed;
+    const t = still ? 1.4 : now * 0.001;
+
+    // Уютное собственное место пса слева на персидском ковре у рабочего стола (x=226, y=424) —
+    // смотрит вправо-вперёд на цветок и кота на кушетке, не задевая ни свечи (x=256, y=372), ни растение!
+    const cx = 226, cy = 424;
+
+    // Глубокое тёплое собачье дыхание (мягкий подъём грудной клетки и спины)
+    const breathRaw = still ? 0.45 : (0.5 + 0.5 * Math.sin(t * 2.05 + 0.7));
+    const breath = breathRaw * breathRaw * (3 - 2 * breathRaw);
+    const rise = breath * 4.0;
+    const rib = breath * 1.75;
+
+    const petElapsed = now - (roomAnim.dogPetStart || -1e9);
+    const isPetted = !still && petElapsed > 0 && petElapsed < 3200;
+    const petK = isPetted ? softBell(petElapsed, 220, 1850, 950) : 0;
+    const headLift = petK * 4.4;
+    const headTilt = petK * -0.075;
+
+    // Живой хвост: в покое умиротворённо покачивается, а от поглаживания радостно виляет!
+    const wag = still
+        ? 0
+        : isPetted
+            ? Math.sin(t * 15.5) * (6.2 * petK + 1.5)
+            : (Math.sin(t * 1.45) * 2.4 + (Math.sin(t * 0.42) > 0.86 ? Math.sin(t * 9.5) * 2.6 : 0));
+
+    // Чуткое ушко ловит ночные звуки города, а во сне изредка чуть подрагивает лапка
+    const earPerk = petK * 2.4 + ((!still && Math.sin(t * 0.72 + 2.1) > 0.93) ? Math.sin(t * 18) * 1.6 : 0);
+    const pawTwitch = (!still && !isPetted && Math.sin(t * 0.58 + 0.4) > 0.965) ? Math.sin(t * 24) * 0.9 : 0;
+    const lazyPeek = !still && !isPetted && ((t + 4.5) % 13) > 10.4 && ((t + 4.5) % 13) < 12.2;
+    const nlBoost = !still ? softBell(now - roomAnim.nightLStart, 650, 900, 1700) : 0;
+
+    const warmK = phase === 3 ? 0.12 : 0.18;
+    const creamWarm = mixHex(b.cream, '#ffc4ad', warmK);
+    const furLight = mixHex(b.light, '#ffba9e', 0.1);
+    const furMid = mixHex(b.mid, '#5c1420', 0.1);
+
+    g.save();
+
+    // 1. Тёплый живой ореол на ковре (дышит в такт псу и откликается на рассвет и ласку)
+    g.save();
+    g.globalCompositeOperation = 'screen';
+    const auraA = 0.19 + breath * 0.1 + petK * 0.16 + nlBoost * 0.08 + (phase === 3 ? 0.07 : 0);
+    radialAura(g, cx + 2, cy + 1, 56, '#ffbe6e', '#b82238', auraA);
+    g.restore();
+
+    // 2. Собственный плетёный шерстяной лежак винно-орехового оттенка на персидском ковре
+    // Мягкая тень лежака по ворсу ковра
+    g.save();
+    g.translate(cx + 1, cy + 9.2);
+    g.scale(1, 0.31);
+    if (g.createRadialGradient) {
+        const sg = g.createRadialGradient(0, 0, 12, 0, 0, 46);
+        sg.addColorStop(0, 'rgba(4, 1, 2, 0.9)');
+        sg.addColorStop(0.68, 'rgba(6, 1, 2, 0.58)');
+        sg.addColorStop(1, 'rgba(6, 1, 2, 0)');
+        g.fillStyle = sg;
+    } else g.fillStyle = 'rgba(5, 1, 2, 0.7)';
+    g.beginPath(); g.arc(0, 0, 46, 0, Math.PI * 2); g.fill();
+    g.restore();
+
+    // Внешний пухлый бортик лежака (тёплая бордовая шерсть с золотисто-медной прострочкой)
+    if (g.createLinearGradient) {
+        const mg = g.createLinearGradient(cx, cy - 4, cx, cy + 16);
+        mg.addColorStop(0, '#5c1824');
+        mg.addColorStop(0.48, '#3a0d16');
+        mg.addColorStop(1, '#180408');
+        g.fillStyle = mg;
+    } else g.fillStyle = '#3a0d16';
+    g.beginPath();
+    g.ellipse(cx + 1, cy + 6.4, 38.5, 11.4, 0.02, 0, Math.PI * 2);
+    g.fill();
+    // Мягкая внутренняя подушка лежака
+    if (g.createRadialGradient) {
+        const ig = g.createRadialGradient(cx + 2, cy + 4, 4, cx + 1, cy + 5.2, 32);
+        ig.addColorStop(0, '#2a0910');
+        ig.addColorStop(0.7, '#47121c');
+        ig.addColorStop(1, '#24070c');
+        g.fillStyle = ig;
+    } else g.fillStyle = '#330b13';
+    g.beginPath();
+    g.ellipse(cx + 1, cy + 4.9, 32.5, 8.2, 0.02, 0, Math.PI * 2);
+    g.fill();
+    // Тёплый блик и ручной шов по переднему краю лежака
+    g.strokeStyle = phase === 3 ? 'rgba(255, 192, 128, 0.42)' : 'rgba(232, 112, 116, 0.34)';
+    g.lineWidth = 1.05;
+    g.beginPath();
+    g.ellipse(cx + 1, cy + 6.2, 37.6, 10.6, 0.02, Math.PI * 0.08, Math.PI * 0.92);
+    g.stroke();
+
+    // 3. ЖИВОЙ ХВОСТ (слева у бедра — три уникальные формы по породе: колечко, пушистое перо или помпон корги!)
+    g.save();
+    g.lineCap = 'round';
+    g.lineJoin = 'round';
+    if (b.tail === 'curled') {
+        // Пышный закрученный хвост-колечко сиба-ину и самоеда с кремовой изнанкой!
+        const tx = cx - 22 + wag * 0.48, ty = cy - 11.5 - rise * 0.55 + Math.abs(wag) * 0.14;
+        g.strokeStyle = b.dark;
+        g.lineWidth = b.pattern === 'samoyed' ? 8.8 : 7.4;
+        g.beginPath();
+        g.moveTo(cx - 21, cy + 1);
+        g.bezierCurveTo(cx - 31 + wag * 0.35, cy - 6, tx - 6, ty - 7, tx + 3.5, ty - 1.5);
+        g.stroke();
+        g.strokeStyle = b.pattern === 'samoyed' ? creamWarm : furLight;
+        g.lineWidth = b.pattern === 'samoyed' ? 6.8 : 5.4;
+        g.stroke();
+        // Кремовая пушистая внутренняя спираль хвоста
+        g.strokeStyle = b.pattern === 'samoyed' ? '#fff6f4' : creamWarm;
+        g.lineWidth = 2.6;
+        g.beginPath();
+        g.arc(tx, ty - 1.2, 3.8, Math.PI * 0.15, Math.PI * 1.45);
+        g.stroke();
+    } else if (b.tail === 'bob') {
+        // Очаровательный пушистый кремовый хвостик-помпон вельш-корги (очень смешно виляет при ласке!)
+        const bx0 = cx - 25.5 + wag * 0.42, by0 = cy - 3.2 - rise * 0.4 - Math.abs(wag) * 0.25;
+        g.fillStyle = b.dark;
+        g.beginPath(); g.ellipse(bx0, by0, 5.4, 4.4, -0.3 + wag * 0.04, 0, Math.PI * 2); g.fill();
+        g.fillStyle = creamWarm;
+        g.beginPath(); g.ellipse(bx0 + 0.3, by0 - 0.3, 4.4, 3.5, -0.3 + wag * 0.04, 0, Math.PI * 2); g.fill();
+    } else {
+        // Длинный пушистый хвост-перо (ретривер, хаски, спаниель, бордер-колли)
+        const tipX = cx - 37 + wag * 0.45;
+        const tipY = cy - 4.5 - wag * 0.85 - (isPetted ? 4.5 * petK : 0);
+        const ctrlX = cx - 32, ctrlY = cy + 5.2 - wag * 0.35;
+        g.strokeStyle = b.dark;
+        g.lineWidth = 6.8;
+        g.beginPath();
+        g.moveTo(cx - 20, cy + 2.5);
+        g.quadraticCurveTo(ctrlX, ctrlY, tipX, tipY);
+        g.stroke();
+        g.strokeStyle = furMid;
+        g.lineWidth = 5.0;
+        g.stroke();
+        // Шёлковый светлый подвес хвоста и снежно-белый кончик у хаски и колли
+        g.strokeStyle = (b.pattern === 'husky' || b.pattern === 'collie') ? creamWarm : mixHex(b.light, b.cream, 0.5);
+        g.lineWidth = 2.2;
+        g.beginPath();
+        g.moveTo(cx - 23, cy + 3.8);
+        g.quadraticCurveTo(ctrlX, ctrlY + 1.4, tipX, tipY);
+        g.stroke();
+        if (b.pattern === 'collie' || b.pattern === 'husky') {
+            g.fillStyle = creamWarm;
+            g.beginPath(); g.ellipse(tipX, tipY, 3.2, 2.3, -0.3, 0, Math.PI * 2); g.fill();
+        }
+    }
+    g.restore();
+
+    // 4. ОКРУГЛОЕ ТЁПЛОЕ ТЕЛО ПСА С ЖИВЫМ ДЫХАНИЕМ И ПОРОДНЫМ ОКРАСОМ
+    const bodyTop = cy - 15.8 - rise;
+    if (g.createRadialGradient) {
+        const bg = g.createRadialGradient(cx - 1, cy - 8 - rise * 0.7, 3, cx - 2, cy, 30);
+        bg.addColorStop(0, furLight);
+        bg.addColorStop(0.58, furMid);
+        bg.addColorStop(1, b.dark);
+        g.fillStyle = bg;
+    } else g.fillStyle = furMid;
+
+    g.save();
+    g.beginPath();
+    g.moveTo(cx - 24, cy + 4.5);
+    g.bezierCurveTo(cx - 27 - rib * 0.4, cy - 9 - rise * 0.65, cx - 12, bodyTop, cx + 6, bodyTop + 1.2);
+    g.bezierCurveTo(cx + 19 + rib * 0.8, bodyTop + 3.2, cx + 23 + rib, cy - 1, cx + 20, cy + 6.2);
+    g.bezierCurveTo(cx + 8, cy + 9.2, cx - 14, cy + 8.8, cx - 24, cy + 4.5);
+    g.closePath();
+    g.fill();
+    g.clip();
+
+    // Мягкий кремовый подшёрсток животика и породные пятна/воротник
+    g.fillStyle = mixHex(b.cream, b.light, b.pattern === 'spaniel' ? 0.52 : 0.18, 0.72);
+    g.beginPath(); g.ellipse(cx + 2, cy + 6.8, 19, 5.2, 0, 0, Math.PI * 2); g.fill();
+
+    if (b.pattern === 'corgi' || b.pattern === 'collie') {
+        // Белоснежный воротник-манишка на плечах корги и бордер-колли
+        g.fillStyle = creamWarm;
+        g.beginPath(); g.ellipse(cx + 10.5, cy - 1.5, 8.2, 13.5, 0.22, 0, Math.PI * 2); g.fill();
+    } else if (b.pattern === 'husky') {
+        // Серебристо-кремовое плечо и бедро северного хаски
+        g.fillStyle = mixHex(b.cream, b.light, 0.22, 0.8);
+        g.beginPath(); g.ellipse(cx + 11, cy + 2.5, 8.5, 7.5, 0.2, 0, Math.PI * 2); g.fill();
+        g.beginPath(); g.ellipse(cx - 14, cy + 4.5, 9, 5, -0.1, 0, Math.PI * 2); g.fill();
+    } else if (b.pattern === 'golden' || b.pattern === 'samoyed') {
+        // Мягкие пушистые пряди шёлковой шерсти на боку
+        g.strokeStyle = mixHex(b.cream, '#ffffff', 0.25, 0.36);
+        g.lineWidth = 1.4;
+        g.beginPath();
+        g.moveTo(cx - 14, cy - 5 - rise * 0.5); g.quadraticCurveTo(cx - 4, cy - 2, cx + 6, cy - 4 - rise * 0.4);
+        g.moveTo(cx - 16, cy - 0.5); g.quadraticCurveTo(cx - 5, cy + 2.5, cx + 5, cy + 0.5);
+        g.stroke();
+    } else if (b.pattern === 'spaniel') {
+        // Шелковистый каштаново-медный отлив шерсти спаниеля
+        g.strokeStyle = mixHex(b.light, b.cream, 0.38, 0.4);
+        g.lineWidth = 1.3;
+        g.beginPath();
+        g.moveTo(cx - 14, cy - 4 - rise * 0.5); g.quadraticCurveTo(cx - 4, cy - 1, cx + 5, cy - 3 - rise * 0.4);
+        g.stroke();
+    }
+
+    // Уютно поджатое заднее бедро с мягкой естественной светотенью
+    g.strokeStyle = mixHex(b.dark, '#090204', 0.4, 0.55);
+    g.lineWidth = 1.35;
+    g.beginPath();
+    g.arc(cx - 13.5, cy + 1.2 - rise * 0.22, 8.6, Math.PI * 1.18, Math.PI * 1.9);
+    g.stroke();
+    g.restore();
+
+    // Мягкий золотисто-алый контровой свет окна и свечей по спинке пса
+    g.strokeStyle = mixHex(b.rim, phase === 3 ? '#ffe29c' : '#ff9882', phase === 3 ? 0.45 : 0.3, 0.56);
+    g.lineWidth = 1.25;
+    g.lineCap = 'round';
+    g.beginPath();
+    g.moveTo(cx - 20, cy - 4.5 - rise * 0.45);
+    g.bezierCurveTo(cx - 12, bodyTop + 0.2, cx + 3, bodyTop + 0.8, cx + 12, cy - 9 - rise * 0.5);
+    g.stroke();
+
+    // 5. ПЫШНАЯ НАТУРАЛЬНАЯ ГРУДКА И ВЫТЯНУТЫЕ ВПЕРЁД ЛАПКИ НА БОРТИКЕ ЛЕЖАКА (никаких ленточек!)
+    const chestCol = (b.pattern === 'spaniel')
+        ? mixHex(b.mid, b.cream, 0.42)
+        : (b.pattern === 'golden' ? mixHex(b.light, b.cream, 0.65) : creamWarm);
+    g.fillStyle = chestCol;
+    g.beginPath();
+    g.ellipse(cx + 12.5, cy + 1.2 - rise * 0.3, (b.pattern === 'samoyed' || b.pattern === 'collie') ? 8.8 : 7.5, 6.2, -0.15, 0, Math.PI * 2);
+    g.fill();
+
+    // Задняя лапка, выглядывающая у бедра
+    const pawHexA = (b.pattern === 'golden') ? b.light : b.cream;
+    const pawHexB = b.cream;
+    g.fillStyle = mixHex(pawHexA, b.dark, 0.26);
+    g.beginPath(); g.ellipse(cx - 8.5, cy + 6.9, 4.8, 2.5, 0.08, 0, Math.PI * 2); g.fill();
+
+    // Две передние лапки, доверчиво сложенные впереди на бортике лежака
+    // Дальняя правая лапка
+    g.fillStyle = mixHex(pawHexA, b.dark, 0.16);
+    g.beginPath(); g.ellipse(cx + 22.8 + pawTwitch, cy + 6.5, 5.8, 2.7, -0.1, 0, Math.PI * 2); g.fill();
+    // Ближняя левая лапка
+    g.fillStyle = (b.pattern === 'golden') ? mixHex(b.light, pawHexB, 0.58) : creamWarm;
+    g.beginPath(); g.ellipse(cx + 13.6 - pawTwitch * 0.5, cy + 7.6, 6.2, 2.9, 0.08, 0, Math.PI * 2); g.fill();
+    // Аккуратные складочки пальчиков на лапках
+    g.strokeStyle = mixHex(b.dark, '#2b0a10', 0.35, 0.45);
+    g.lineWidth = 0.75;
+    g.beginPath();
+    g.moveTo(cx + 16.5, cy + 6.8); g.lineTo(cx + 18.4, cy + 7.4);
+    g.moveTo(cx + 16.2, cy + 8.1); g.lineTo(cx + 18.2, cy + 8.5);
+    g.moveTo(cx + 25.5, cy + 5.9); g.lineTo(cx + 27.2, cy + 6.3);
+    g.stroke();
+
+    // 6. ВЫРАЗИТЕЛЬНАЯ СОБАЧЬЯ ГОЛОВА, УШИ, МОРДОЧКА, МОКРЫЙ НОС И ЖИВЫЕ ГЛАЗА!
+    const hx = cx + 14.8, hy = cy - 6.2 - rise * 0.42 - headLift;
+    g.save();
+    g.translate(hx, hy);
+    g.rotate(headTilt);
+
+    // 6а. Дальнее (правое) ухо — рисуется ЗА головой для настоящего 3D-объёма
+    const earOuterFar = (b.pattern === 'samoyed') ? mixHex(b.light, b.mid, 0.32) : mixHex(b.mid, b.dark, 0.32);
+    const earOuterNear = (b.pattern === 'samoyed') ? mixHex(b.cream, b.light, 0.35) : mixHex(b.mid, b.dark, 0.18);
+    const drawPointedEar = (ex, ey, w, h, rot, roundTip, outerCol) => {
+        g.save();
+        g.translate(ex, ey);
+        g.rotate(rot);
+        g.fillStyle = outerCol;
+        g.beginPath();
+        g.moveTo(-w, 1);
+        if (roundTip) {
+            g.quadraticCurveTo(-w * 0.9, -h, 0, -h);
+            g.quadraticCurveTo(w * 0.9, -h, w, 1);
+        } else {
+            g.quadraticCurveTo(-w * 0.48, -h * 0.74, 0, -h);
+            g.quadraticCurveTo(w * 0.55, -h * 0.74, w, 1);
+        }
+        g.closePath();
+        g.fill();
+        // Нежная розовато-кремовая серединка ушка и пушок
+        g.fillStyle = mixHex(b.earIn, b.cream, b.pattern === 'samoyed' ? 0.42 : 0.28, 0.88);
+        g.beginPath();
+        g.moveTo(-w * 0.52, 0.2);
+        g.quadraticCurveTo(0, -h * 0.8, w * 0.52, 0.2);
+        g.closePath();
+        g.fill();
+        g.restore();
+    };
+
+    const perkRad = earPerk * 0.035;
+    if (b.ears === 'pointed') {
+        drawPointedEar(4.6, -6.2, 4.1, 7.6, 0.28 - perkRad, b.pattern === 'samoyed', earOuterFar);
+    } else if (b.ears === 'corgi') {
+        drawPointedEar(5.2, -5.8, 4.7, 9.6, 0.34 - perkRad, true, earOuterFar);
+    } else if (b.ears === 'tipped') {
+        // Чуткое полустоячее ухо бордер-колли с загнутым вперёд кончиком!
+        drawPointedEar(4.6, -6.0, 4.0, 7.4, 0.25 - perkRad, false, earOuterFar);
+        g.fillStyle = mixHex(b.dark, b.light, 0.2);
+        g.beginPath(); g.ellipse(6.8, -11.2 - earPerk * 0.2, 2.7, 1.65, 0.42, 0, Math.PI * 2); g.fill();
+    } else if (b.ears === 'floppy' || b.ears === 'longfloppy') {
+        // Дальнее мягкое висячее ушко ретривера / спаниеля (тёплый карамельный / шоколадный оттенок!)
+        const eh = b.ears === 'longfloppy' ? 11.8 : 8.5;
+        g.fillStyle = mixHex(b.mid, b.dark, 0.42);
+        g.beginPath();
+        g.ellipse(7.5, 0.8 - earPerk * 0.2, 3.5, eh * 0.54, -0.16, 0, Math.PI * 2);
+        g.fill();
+    }
+
+    // 6б. Округлый лоб и щёчки пса
+    if (g.createRadialGradient) {
+        const hg = g.createRadialGradient(0, -3.2, 1.5, 0, 0, 12.2);
+        hg.addColorStop(0, furLight);
+        hg.addColorStop(0.64, furMid);
+        hg.addColorStop(1, b.dark);
+        g.fillStyle = hg;
+    } else g.fillStyle = furMid;
+    g.beginPath();
+    g.ellipse(0, 0, 10.6, 8.8, -0.05, 0, Math.PI * 2);
+    g.fill();
+
+    // Породные маски на голове (урадзиро сиба-ину, маска хаски, белая проточина корги и колли, пушистые щёки самоеда!)
+    if (b.pattern === 'shiba') {
+        // Две пухлые кремовые щёчки «урадзиро», между которыми мягко спускается рыжий лобик!
+        g.fillStyle = creamWarm;
+        g.beginPath(); g.ellipse(-1.4, 3.8, 5.8, 4.2, 0.12, 0, Math.PI * 2); g.fill();
+        g.beginPath(); g.ellipse(4.8, 3.6, 5.2, 4.0, -0.1, 0, Math.PI * 2); g.fill();
+    } else if (b.pattern === 'husky') {
+        // Фирменная снежная «маска-трилистник» хаски вокруг глаз и щёк
+        g.fillStyle = creamWarm;
+        g.beginPath(); g.ellipse(1.8, 3.2, 8.6, 5.1, 0, 0, Math.PI * 2); g.fill();
+        g.beginPath(); g.ellipse(-1.4, -1.2, 3.3, 3.6, -0.12, 0, Math.PI * 2); g.fill();
+        g.beginPath(); g.ellipse(5.0, -1.3, 3.0, 3.4, 0.12, 0, Math.PI * 2); g.fill();
+    } else if (b.pattern === 'corgi' || b.pattern === 'collie') {
+        // Изящная белая проточина ото лба к носу
+        g.fillStyle = creamWarm;
+        g.beginPath();
+        g.moveTo(1.8, -7.2);
+        g.quadraticCurveTo(0.2, -1.0, -0.8, 4.5);
+        g.lineTo(6.2, 4.5);
+        g.quadraticCurveTo(4.6, -1.0, 3.2, -7.2);
+        g.closePath();
+        g.fill();
+    } else if (b.pattern === 'samoyed') {
+        // Облачные белоснежные пушистые щёчки самоеда
+        g.fillStyle = creamWarm;
+        g.beginPath(); g.ellipse(-5.5, 2.2, 5.4, 4.4, 0.2, 0, Math.PI * 2); g.fill();
+        g.beginPath(); g.ellipse(1.2, 2.2, 9.2, 6.2, 0, 0, Math.PI * 2); g.fill();
+    }
+
+    // 6в. Объёмная собачья мордочка (выступает вперёд-вправо — 100% живой пёс с первого взгляда!)
+    const snoutCol = (b.pattern === 'golden')
+        ? mixHex(b.light, b.cream, 0.62)
+        : (b.pattern === 'spaniel' ? mixHex(b.mid, b.cream, 0.52) : creamWarm);
+    // Тёплая спинка носа
+    g.fillStyle = (b.pattern === 'corgi' || b.pattern === 'collie' || b.pattern === 'samoyed' || b.pattern === 'husky')
+        ? creamWarm
+        : mixHex(b.light, b.cream, b.pattern === 'shiba' ? 0.35 : 0.45);
+    g.beginPath();
+    g.ellipse(6.8, 2.2, 6.2, 4.2, 0.08, 0, Math.PI * 2);
+    g.fill();
+    // Мягкие подушечки брылей
+    g.fillStyle = snoutCol;
+    g.beginPath();
+    g.ellipse(6.5, 3.4, 5.8, 3.5, 0.06, 0, Math.PI * 2);
+    g.fill();
+
+    // Маленький розовый язычок счастья, когда пса гладят!
+    if (isPetted && petK > 0.25) {
+        const pant = Math.sin(t * 11) * 0.45;
+        g.fillStyle = '#f26d82';
+        g.beginPath();
+        g.ellipse(8.2, 6.0 + pant * 0.5, 1.85, 2.1 + pant * 0.3, 0.12, 0, Math.PI * 2);
+        g.fill();
+        g.strokeStyle = 'rgba(130, 26, 44, 0.55)';
+        g.lineWidth = 0.55;
+        g.beginPath(); g.moveTo(8.2, 4.8); g.lineTo(8.3, 6.9); g.stroke();
+    }
+
+    // Добрая собачья улыбка (особенно выразительная у самоеда, корги, сибы и при поглаживании!)
+    g.strokeStyle = 'rgba(26, 7, 10, 0.82)';
+    g.lineWidth = 0.9;
+    g.lineCap = 'round';
+    g.beginPath();
+    g.moveTo(10.6, 2.8); g.lineTo(9.8, 4.5);
+    g.moveTo(9.8, 4.5); g.quadraticCurveTo(7.4, 5.8 + petK * 0.7, 4.6, 4.2 - petK * 0.5);
+    g.moveTo(9.8, 4.5); g.quadraticCurveTo(11.3, 5.3, 12.0, 4.2);
+    g.stroke();
+
+    // Блестящий влажный кожаный нос пуговкой с живым бликом!
+    g.fillStyle = b.nose;
+    g.beginPath();
+    g.ellipse(11.2, 1.5, 2.55, 1.95, -0.08, 0, Math.PI * 2);
+    g.fill();
+    g.fillStyle = 'rgba(255, 240, 236, 0.78)';
+    g.beginPath();
+    g.ellipse(10.6, 0.85, 1.05, 0.55, -0.2, 0, Math.PI * 2);
+    g.fill();
+
+    // 6г. Выразительные бровки-пятнышки (у сиба-ину, спаниеля, корги и по ID) и живые душевные глаза!
+    if (b.pattern === 'shiba' || b.pattern === 'spaniel' || b.pattern === 'corgi' || (dog.browSpot && b.pattern === 'collie')) {
+        g.fillStyle = creamWarm;
+        g.beginPath();
+        g.ellipse(-1.1, -3.4 - petK * 0.45, 1.35, 0.85, -0.15, 0, Math.PI * 2);
+        g.ellipse(5.3, -3.5 - petK * 0.45, 1.2, 0.8, 0.15, 0, Math.PI * 2);
+        g.fill();
+    }
+
+    if (lazyPeek) {
+        // Тёплый преданный взгляд живых собачьих глаз с искоркой!
+        const drawDogEye = (ex, ey, rx, col) => {
+            g.fillStyle = '#140507';
+            g.beginPath(); g.ellipse(ex, ey, rx, rx * 0.95, 0, 0, Math.PI * 2); g.fill();
+            g.fillStyle = col;
+            g.beginPath(); g.ellipse(ex + 0.15, ey + 0.1, rx * 0.68, rx * 0.65, 0, 0, Math.PI * 2); g.fill();
+            g.fillStyle = '#120406';
+            g.beginPath(); g.arc(ex + 0.25, ey + 0.05, rx * 0.42, 0, Math.PI * 2); g.fill();
+            g.fillStyle = '#fffaf0';
+            g.beginPath(); g.arc(ex - 0.45, ey - 0.55, 0.68, 0, Math.PI * 2); g.fill();
+        };
+        drawDogEye(-0.8, -0.8, 1.95, b.eyeL);
+        drawDogEye(5.6, -0.9, 1.75, b.eyeR);
+    } else if (isPetted) {
+        // Счастливые прищуренные дуги-улыбки от вашей ладони + тёплый румянец на щёчках!
+        g.strokeStyle = '#160508';
+        g.lineWidth = 1.3;
+        g.beginPath();
+        g.arc(-0.8, 0.2, 2.0, Math.PI * 1.15, Math.PI * 1.85);
+        g.stroke();
+        g.beginPath();
+        g.arc(5.6, 0.0, 1.8, Math.PI * 1.15, Math.PI * 1.85);
+        g.stroke();
+        g.fillStyle = 'rgba(255, 128, 132, 0.28)';
+        g.beginPath(); g.ellipse(-2.6, 2.2, 2.2, 1.2, 0, 0, Math.PI * 2); g.fill();
+    } else {
+        // Умиротворённо сомкнутые сонные веки спящего пса
+        g.strokeStyle = 'rgba(22, 6, 9, 0.86)';
+        g.lineWidth = 1.2;
+        g.beginPath();
+        g.arc(-0.8, -1.2, 1.95, Math.PI * 0.16, Math.PI * 0.84);
+        g.stroke();
+        g.beginPath();
+        g.arc(5.6, -1.3, 1.75, Math.PI * 0.16, Math.PI * 0.84);
+        g.stroke();
+    }
+
+    // 6д. Ближнее (левое) ухо — ПОВЕРХ головы, задаёт неповторимый живой силуэт породы!
+    if (b.ears === 'pointed') {
+        drawPointedEar(-4.8, -5.8, 4.5, 8.2, -0.26 + perkRad, b.pattern === 'samoyed', earOuterNear);
+    } else if (b.ears === 'corgi') {
+        drawPointedEar(-5.4, -5.2, 5.1, 10.4, -0.34 + perkRad, true, earOuterNear);
+    } else if (b.ears === 'tipped') {
+        drawPointedEar(-4.8, -5.6, 4.3, 7.9, -0.22 + perkRad, false, earOuterNear);
+        g.fillStyle = mixHex(b.dark, b.light, 0.28);
+        g.beginPath(); g.ellipse(-5.2, -11.4 - earPerk * 0.2, 3.0, 1.8, 0.28, 0, Math.PI * 2); g.fill();
+    } else if (b.ears === 'floppy') {
+        // Бархатное карамельно-золотое висячее ушко золотистого ретривера!
+        g.save();
+        g.translate(-6.2, -4.5 - earPerk * 0.22);
+        g.rotate(0.12 - perkRad * 0.6);
+        g.fillStyle = mixHex(b.mid, b.dark, 0.22);
+        g.beginPath();
+        g.moveTo(-2.5, 0);
+        g.bezierCurveTo(-5.8, 3.5, -5.2, 10.4, -1.2, 11.0);
+        g.bezierCurveTo(2.4, 11.2, 3.5, 5.2, 2.2, 0.5);
+        g.closePath();
+        g.fill();
+        g.fillStyle = mixHex(b.light, b.mid, 0.55, 0.72);
+        g.beginPath();
+        g.ellipse(-1.4, 5.6, 2.4, 4.2, 0.08, 0, Math.PI * 2);
+        g.fill();
+        g.strokeStyle = mixHex(b.rim, '#ffd29a', 0.4, 0.55);
+        g.lineWidth = 0.9;
+        g.beginPath(); g.moveTo(-2.4, 0.6); g.quadraticCurveTo(-4.8, 5.2, -1.6, 9.8); g.stroke();
+        g.restore();
+    } else if (b.ears === 'longfloppy') {
+        // Длинное шелковистое шоколадно-каштановое волнистое ухо спаниеля, ниспадающее к плечу!
+        g.save();
+        g.translate(-6.0, -4.2 - earPerk * 0.2);
+        g.rotate(0.08 - perkRad * 0.5);
+        g.fillStyle = mixHex(b.mid, b.dark, 0.28);
+        g.beginPath();
+        g.moveTo(-2.2, 0);
+        g.bezierCurveTo(-6.4, 4.5, -7.0, 12.8, -2.6, 14.5);
+        g.bezierCurveTo(1.4, 15.2, 3.5, 11.2, 2.0, 1.0);
+        g.closePath();
+        g.fill();
+        // Шёлковые шоколадно-медные локоны на ушке
+        g.strokeStyle = mixHex(b.light, b.rim, 0.42, 0.65);
+        g.lineWidth = 1.0;
+        g.beginPath();
+        g.moveTo(-2.2, 2.0); g.quadraticCurveTo(-4.9, 7.6, -2.5, 13.0);
+        g.moveTo(0.2, 3.2);  g.quadraticCurveTo(-1.4, 8.2, 0.0, 12.4);
+        g.stroke();
+        g.restore();
+    }
+
+    // Тёплый блик света по макушке лба
+    g.strokeStyle = mixHex(b.rim, '#ffe2b8', 0.4, 0.45);
+    g.lineWidth = 0.95;
+    g.beginPath();
+    g.arc(0.4, -0.5, 8.2, Math.PI * 1.28, Math.PI * 1.7);
+    g.stroke();
+
+    g.restore(); // конец трансформации головы
+
+    // 7. Тёплое сонное дыхание у мокрого носа и живые золотые огоньки радости при поглаживании!
+    if (!still) {
+        const exhale = ((t + 0.9) * 0.34) % 1;
+        const exA = Math.sin(exhale * Math.PI) * 0.25;
+        if (exA > 0.04 && !isPetted) {
+            g.fillStyle = `rgba(255, 218, 174, ${exA.toFixed(3)})`;
+            g.beginPath();
+            g.arc(hx + 13 + exhale * 5, hy - 1 - exhale * 11, 1.0 + exhale * 1.05, 0, Math.PI * 2);
+            g.fill();
+        }
+        if (isPetted) {
+            const p01 = clamp01(petElapsed / 2600);
+            const sparkX = [-12, -2, 9];
+            const sparkRise = [22, 28, 19];
+            for (let k = 0; k < 3; k++) {
+                const kp = clamp01((p01 * 1.45) - k * 0.18);
+                if (kp <= 0 || kp >= 1) continue;
+                const ka = Math.sin(kp * Math.PI) * 0.88;
+                const kx = hx + sparkX[k] + Math.sin(kp * 5.4 + k * 2.1) * 3.5;
+                const ky = hy - 13 - kp * sparkRise[k];
+                radialAura(g, kx, ky, 6.2, '#ffe89c', '#ff6b78', ka * 0.55);
+                g.fillStyle = `rgba(255, 244, 192, ${ka.toFixed(3)})`;
+                g.beginPath(); g.arc(kx, ky, 1.35, 0, Math.PI * 2); g.fill();
             }
         }
     }
@@ -4094,6 +4679,11 @@ function drawRoomCosmetics(g, now, phase) {
     if (cosm.cat) {
         drawCompanionCat(g, now, phase, still);
     }
+
+    // 6) Уникальный живой пёс-хранитель на своём шерстяном лежаке у ковра (room_dog — можно завести вместе с котом!)
+    if (cosm.dog) {
+        drawCompanionDog(g, now, phase, still);
+    }
 }
 
 function drawStationFx(now, step) {
@@ -4283,9 +4873,144 @@ function setStationEntry(text, pulse) {
     if (pulse && roomAnim.isFullscreen) showFullscreenCaption(text);
 }
 
-// ===== НАСТОЯЩИЙ ПОЛНОЭКРАННЫЙ ГОРИЗОНТАЛЬНЫЙ РЕЖИМ (ПОРТАЛ В BODY + ПЛАВНАЯ FLIP-АНИМАЦИЯ) =====
+// ===== НАСТОЯЩИЙ СИСТЕМНЫЙ ПОЛНОЭКРАННЫЙ РЕЖИМ (NATIVE FULLSCREEN API + TELEGRAM + ПЛАВНАЯ WAAPI-АНИМАЦИЯ) =====
+function isRealTelegramMiniApp() {
+    if (typeof window === 'undefined' || !window.Telegram || !window.Telegram.WebApp) return false;
+    const tg = window.Telegram.WebApp;
+    return typeof tg.initData === 'string' && tg.initData.length > 0;
+}
+
+function getNativeFullscreenElement() {
+    if (typeof document === 'undefined') return null;
+    return document.fullscreenElement
+        || document.webkitFullscreenElement
+        || document.msFullscreenElement
+        || null;
+}
+
+function lockLandscapeSafe() {
+    try {
+        if (typeof screen !== 'undefined' && screen && screen.orientation && typeof screen.orientation.lock === 'function') {
+            const lp = screen.orientation.lock('landscape');
+            if (lp && typeof lp.catch === 'function') lp.catch(() => {});
+        }
+    } catch (_) {}
+}
+
+function requestNativeRoomFullscreen(room) {
+    // 1. В настоящем Telegram Mini App (где передан initData) вызываем системный полноэкранный режим Telegram 8.0+
+    if (isRealTelegramMiniApp()) {
+        const tg = window.Telegram.WebApp;
+        try { if (typeof tg.expand === 'function') tg.expand(); } catch (_) {}
+        try {
+            const canTgFs = typeof tg.requestFullscreen === 'function'
+                && (typeof tg.isVersionAtLeast !== 'function' || tg.isVersionAtLeast('8.0'));
+            if (canTgFs) {
+                tg.requestFullscreen();
+                lockLandscapeSafe();
+                return 'telegram';
+            }
+        } catch (_) {}
+    }
+
+    // 2. Во всех обычных браузерах (Desktop Chrome/Safari/Firefox/Edge, Android, iPad) — НАСТОЯЩИЙ нативный Fullscreen API!
+    if (typeof document === 'undefined') return '';
+    if (getNativeFullscreenElement()) {
+        roomAnim.fsNativeActive = true;
+        lockLandscapeSafe();
+        return 'native';
+    }
+    const candidates = [room, document.documentElement].filter(Boolean);
+    for (const el of candidates) {
+        try {
+            if (typeof el.requestFullscreen === 'function') {
+                const p = el.requestFullscreen({ navigationUI: 'hide' });
+                if (p && typeof p.then === 'function') {
+                    p.then(() => {
+                        roomAnim.fsNativeActive = true;
+                        lockLandscapeSafe();
+                        if (roomAnim.isFullscreen && !roomAnim.fsClosing) syncFullscreenOrientation(true);
+                    }).catch(() => {});
+                } else {
+                    roomAnim.fsNativeActive = !!getNativeFullscreenElement();
+                    lockLandscapeSafe();
+                }
+                return 'native';
+            }
+            if (typeof el.webkitRequestFullscreen === 'function') {
+                el.webkitRequestFullscreen();
+                roomAnim.fsNativeActive = true;
+                lockLandscapeSafe();
+                return 'webkit';
+            }
+            if (typeof el.msRequestFullscreen === 'function') {
+                el.msRequestFullscreen();
+                roomAnim.fsNativeActive = true;
+                return 'ms';
+            }
+        } catch (_) {}
+    }
+    // 3. iPhone Safari (где WebKit не даёт requestFullscreen для div/html) — портал в body на 100% visualViewport + поворот 90°
+    lockLandscapeSafe();
+    return 'portal';
+}
+
+function exitNativeRoomFullscreen() {
+    if (isRealTelegramMiniApp()) {
+        try {
+            const tg = window.Telegram.WebApp;
+            if (tg.isFullscreen && typeof tg.exitFullscreen === 'function') tg.exitFullscreen();
+        } catch (_) {}
+    }
+    if (typeof document !== 'undefined') {
+        const fsEl = getNativeFullscreenElement();
+        if (fsEl) {
+            roomAnim.fsExitingNative = true;
+            const clearFlag = () => { roomAnim.fsExitingNative = false; roomAnim.fsNativeActive = false; };
+            try {
+                if (typeof document.exitFullscreen === 'function') {
+                    const ep = document.exitFullscreen();
+                    if (ep && typeof ep.then === 'function') ep.then(clearFlag, clearFlag);
+                    else clearFlag();
+                } else if (typeof document.webkitExitFullscreen === 'function') {
+                    document.webkitExitFullscreen();
+                    clearFlag();
+                } else if (typeof document.msExitFullscreen === 'function') {
+                    document.msExitFullscreen();
+                    clearFlag();
+                } else clearFlag();
+            } catch (_) { clearFlag(); }
+        } else {
+            roomAnim.fsNativeActive = false;
+            roomAnim.fsExitingNative = false;
+        }
+    }
+    try {
+        if (typeof screen !== 'undefined' && screen && screen.orientation && typeof screen.orientation.unlock === 'function') {
+            screen.orientation.unlock();
+        }
+    } catch (_) {}
+}
+
+function cancelFullscreenWaapi() {
+    if (roomAnim.fsWaapi) {
+        try { roomAnim.fsWaapi.cancel(); } catch (_) {}
+        roomAnim.fsWaapi = null;
+    }
+    if (roomAnim.fsBgWaapi) {
+        try { roomAnim.fsBgWaapi.cancel(); } catch (_) {}
+        roomAnim.fsBgWaapi = null;
+    }
+}
+
 function getFullscreenViewport() {
     if (typeof window === 'undefined') return { left: 0, top: 0, width: 800, height: 500 };
+    // В нативном системном Fullscreen элемент занимает весь монитор от (0, 0) без смещения visualViewport
+    if (getNativeFullscreenElement()) {
+        const w = Math.max(1, Number(window.innerWidth || (typeof screen !== 'undefined' && screen.width)) || 800);
+        const h = Math.max(1, Number(window.innerHeight || (typeof screen !== 'undefined' && screen.height)) || 500);
+        return { left: 0, top: 0, width: w, height: h };
+    }
     const vv = window.visualViewport;
     const width = Math.max(1, Number((vv && vv.width) || window.innerWidth) || 800);
     const height = Math.max(1, Number((vv && vv.height) || window.innerHeight) || 500);
@@ -4306,6 +5031,7 @@ function computeFullscreenSceneBox(vp) {
 }
 
 function clearFullscreenInlineStyles(room, scene) {
+    cancelFullscreenWaapi();
     if (room && room.style) {
         room.style.top = '';
         room.style.left = '';
@@ -4313,12 +5039,14 @@ function clearFullscreenInlineStyles(room, scene) {
         room.style.bottom = '';
         room.style.width = '';
         room.style.height = '';
+        room.style.backgroundColor = '';
     }
     if (scene && scene.style) {
         scene.style.width = '';
         scene.style.height = '';
         scene.style.transform = '';
         scene.style.borderRadius = '';
+        scene.style.opacity = '';
     }
 }
 
@@ -4353,6 +5081,7 @@ function syncFullscreenOrientation(applyTransform) {
     }
     const vp = getFullscreenViewport();
     const box = computeFullscreenSceneBox(vp);
+    const prevDeg = Number(roomAnim.fsLastDeg) || 0;
     room.classList.add('is-fullscreen');
     room.classList.toggle('is-rotated', box.rotated);
     room.classList.toggle('is-flipped', box.rotated && !!roomAnim.fsFlip);
@@ -4364,26 +5093,52 @@ function syncFullscreenOrientation(applyTransform) {
         room.style.width = `${vp.width}px`;
         room.style.height = `${vp.height}px`;
     }
+    const finalRadius = box.sceneW >= (box.rotated ? vp.height : vp.width) - 2 ? '0px' : '6px';
     if (scene && scene.style) {
         scene.style.width = `${box.sceneW.toFixed(2)}px`;
         scene.style.height = `${box.sceneH.toFixed(2)}px`;
         if (applyTransform !== false && !roomAnim.fsClosing) {
-            scene.style.transform = `translate(-50%, -50%) rotate(${box.deg}deg) scale(1)`;
-            scene.style.borderRadius = box.sceneW >= (box.rotated ? vp.height : vp.width) - 2 ? '0px' : '6px';
+            scene.style.transform = `translate(-50%, -50%) translate3d(0px, 0px, 0px) rotate(${box.deg}deg) scale(1)`;
+            scene.style.borderRadius = finalRadius;
+            // Если во время входной анимации Android физически повернул экран (90° → 0°), мягко доводим до нового угла!
+            if (roomAnim.fsWaapi && prevDeg !== box.deg && typeof scene.animate === 'function') {
+                cancelFullscreenWaapi();
+                roomAnim.fsWaapi = scene.animate([
+                    { transform: 'translate(-50%, -50%) translate3d(0px, 0px, 0px) rotate(0deg) scale(0.84)', borderRadius: '16px' },
+                    { transform: `translate(-50%, -50%) translate3d(0px, 0px, 0px) rotate(${box.deg}deg) scale(1)`, borderRadius: finalRadius }
+                ], { duration: 480, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' });
+                roomAnim.fsWaapi.onfinish = () => { roomAnim.fsWaapi = null; };
+            }
         }
     }
+    roomAnim.fsLastDeg = box.deg;
     const sndPill = document.getElementById('station-fs-snd');
     if (sndPill && typeof soundOn !== 'undefined') sndPill.textContent = soundOn ? '🔊' : '🔇';
-    return { vp, box };
+    return { vp, box, finalRadius };
 }
 
 function flipRoomFullscreen() {
     if (!roomAnim.isFullscreen || roomAnim.fsClosing) return;
+    const prevDeg = Number(roomAnim.fsLastDeg) || (roomAnim.fsFlip ? -90 : 90);
     roomAnim.fsFlip = !roomAnim.fsFlip;
     if (typeof SFX !== 'undefined' && SFX.tap) SFX.tap();
     const room = typeof document !== 'undefined' && document.getElementById('station');
+    const scene = typeof document !== 'undefined' && document.getElementById('station-scene');
     if (room && room.classList) room.classList.add('is-fs-animating');
-    syncFullscreenOrientation(true);
+    cancelFullscreenWaapi();
+    const geom = syncFullscreenOrientation(true);
+    // Плавный кинематографичный разворот на 180° через GPU Web Animations API с мягким отлётом камеры!
+    if (geom && geom.box.rotated && !prefersStillRoom() && scene && typeof scene.animate === 'function') {
+        const midDeg = (prevDeg + geom.box.deg) * 0.5;
+        try {
+            roomAnim.fsWaapi = scene.animate([
+                { transform: `translate(-50%, -50%) translate3d(0px, 0px, 0px) rotate(${prevDeg}deg) scale(1)`, borderRadius: geom.finalRadius },
+                { transform: `translate(-50%, -50%) translate3d(0px, 0px, 0px) rotate(${midDeg}deg) scale(0.82)`, borderRadius: '16px', offset: 0.46 },
+                { transform: `translate(-50%, -50%) translate3d(0px, 0px, 0px) rotate(${geom.box.deg}deg) scale(1)`, borderRadius: geom.finalRadius }
+            ], { duration: 540, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' });
+            roomAnim.fsWaapi.onfinish = () => { roomAnim.fsWaapi = null; };
+        } catch (_) {}
+    }
     bumpFullscreenHud();
 }
 
@@ -4427,7 +5182,9 @@ function enterRoomFullscreen() {
 
     // Если шло закрытие — мгновенно отменяем и подхватываем с места
     if (typeof clearTimeout === 'function') clearTimeout(roomAnim.fsAnimTimer);
+    cancelFullscreenWaapi();
     roomAnim.fsClosing = false;
+    roomAnim.fsExitingNative = false;
     roomAnim.isFullscreen = true;
 
     // 1. Замеряем точное положение карточки комнаты в интерфейсе ДО переноса (для бесшовной FLIP-анимации!)
@@ -4470,62 +5227,75 @@ function enterRoomFullscreen() {
     const metaTheme = document.getElementById('soma-theme-color');
     if (metaTheme && metaTheme.setAttribute) metaTheme.setAttribute('content', '#040102');
 
-    // 3. Системный Fullscreen + горизонтальная ориентация (где поддерживается браузером / Telegram WebApp)
-    try {
-        if (typeof window !== 'undefined' && window.Telegram && Telegram.WebApp && typeof Telegram.WebApp.requestFullscreen === 'function') {
-            Telegram.WebApp.requestFullscreen();
-        } else if (document.documentElement && typeof document.documentElement.requestFullscreen === 'function' && !document.fullscreenElement) {
-            const p = document.documentElement.requestFullscreen({ navigationUI: 'hide' });
-            if (p && typeof p.catch === 'function') p.catch(() => {});
-        }
-    } catch (_) {}
-    try {
-        if (typeof screen !== 'undefined' && screen && screen.orientation && typeof screen.orientation.lock === 'function') {
-            const lp = screen.orientation.lock('landscape');
-            if (lp && typeof lp.catch === 'function') lp.catch(() => {});
-        }
-    } catch (_) {}
+    // 3. НАСТОЯЩИЙ нативный Fullscreen API в браузере ИЛИ Telegram.WebApp.requestFullscreen() внутри Telegram Mini App!
+    // Вызывается строго синхронно в жесте пользователя, чтобы Chrome, Safari, Firefox, Edge и Android приняли его на 100%.
+    requestNativeRoomFullscreen(room);
 
-    // 4. Кинематографичная 60/120fps FLIP-анимация: комната плавно «взлетает» из карточки, разворачивается и заполняет весь экран!
-    const canAnimate = !prefersStillRoom()
-        && fromRect
-        && scene
-        && scene.style
-        && typeof requestAnimationFrame === 'function';
+    // 4. Выставляем финальную геометрию и запускаем плавную 700мс GPU-анимацию раскрытия (Web Animations API —
+    // не сбрасывается ни при переносе в body, ни при входе браузера в системный Fullscreen!).
+    room.classList.remove('is-fs-closing');
+    room.classList.add('is-fs-animating', 'is-fs-active');
+    const geom = syncFullscreenOrientation(true);
+    const still = prefersStillRoom();
 
-    if (canAnimate) {
-        room.classList.remove('is-fs-active', 'is-fs-animating', 'is-fs-closing');
-        const geom = syncFullscreenOrientation(false);
-        if (geom) {
-            const { vp, box } = geom;
-            const fromCx = fromRect.left + fromRect.width * 0.5;
-            const fromCy = fromRect.top + fromRect.height * 0.5;
-            const toCx = vp.left + vp.width * 0.5;
-            const toCy = vp.top + vp.height * 0.5;
-            const dx = fromCx - toCx;
-            const dy = fromCy - toCy;
-            const s0 = Math.max(0.18, Math.min(1.5, fromRect.width / box.sceneW));
-            scene.style.transform = `translate(calc(-50% + ${dx.toFixed(1)}px), calc(-50% + ${dy.toFixed(1)}px)) rotate(0deg) scale(${s0.toFixed(4)})`;
-            scene.style.borderRadius = `${Math.round(18 / s0)}px`;
-            void scene.offsetWidth;
-            const launchFlip = () => {
+    if (!still && geom && scene && typeof scene.animate === 'function') {
+        const { vp, box, finalRadius } = geom;
+        let dx = 0, dy = 0, s0 = 0.72;
+        if (fromRect) {
+            dx = (fromRect.left + fromRect.width * 0.5) - (vp.left + vp.width * 0.5);
+            dy = (fromRect.top + fromRect.height * 0.5) - (vp.top + vp.height * 0.5);
+            // Гарантируем заметный благородный зум (<= 0.78) даже если окно браузера уже было узким до Fullscreen!
+            s0 = Math.max(0.24, Math.min(0.78, fromRect.width / box.sceneW));
+        }
+        const midDx = dx * 0.16;
+        const midDy = dy * 0.16;
+        const midDeg = box.deg * 0.72;
+        const midScale = Math.min(0.96, s0 + (1 - s0) * 0.74);
+        const startRadius = `${Math.min(34, Math.round(18 / s0))}px`;
+        try {
+            roomAnim.fsWaapi = scene.animate([
+                {
+                    transform: `translate(-50%, -50%) translate3d(${dx.toFixed(1)}px, ${dy.toFixed(1)}px, 0px) rotate(0deg) scale(${s0.toFixed(4)})`,
+                    borderRadius: startRadius,
+                    boxShadow: '0 24px 72px rgba(0, 0, 0, 0.85), 0 0 42px rgba(217, 46, 72, 0.28)',
+                    filter: 'brightness(0.92)'
+                },
+                {
+                    transform: `translate(-50%, -50%) translate3d(${midDx.toFixed(1)}px, ${midDy.toFixed(1)}px, 0px) rotate(${midDeg.toFixed(1)}deg) scale(${midScale.toFixed(4)})`,
+                    borderRadius: '12px',
+                    boxShadow: '0 32px 110px rgba(0, 0, 0, 0.94), 0 0 56px rgba(255, 148, 112, 0.22)',
+                    filter: 'brightness(1.05)',
+                    offset: 0.54
+                },
+                {
+                    transform: `translate(-50%, -50%) translate3d(0px, 0px, 0px) rotate(${box.deg}deg) scale(1)`,
+                    borderRadius: finalRadius,
+                    boxShadow: '0 28px 90px rgba(0, 0, 0, 0.92), 0 0 0 rgba(255, 148, 112, 0)',
+                    filter: 'brightness(1)'
+                }
+            ], { duration: 700, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' });
+            roomAnim.fsWaapi.onfinish = () => { roomAnim.fsWaapi = null; };
+        } catch (_) {}
+
+        if (typeof room.animate === 'function') {
+            try {
+                roomAnim.fsBgWaapi = room.animate([
+                    { backgroundColor: 'rgba(4, 1, 2, 0)' },
+                    { backgroundColor: 'rgba(4, 1, 2, 0.92)', offset: 0.45 },
+                    { backgroundColor: 'rgba(4, 1, 2, 1)' }
+                ], { duration: 580, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' });
+                roomAnim.fsBgWaapi.onfinish = () => { roomAnim.fsBgWaapi = null; };
+            } catch (_) {}
+        }
+
+        if (typeof setTimeout === 'function') {
+            roomAnim.fsAnimTimer = setTimeout(() => {
                 if (!roomAnim.isFullscreen || roomAnim.fsClosing) return;
-                room.classList.add('is-fs-animating', 'is-fs-active');
                 syncFullscreenOrientation(true);
-            };
-            // Двойной rAF гарантирует на iOS Safari/Chrome/Telegram, что стартовый кадр зафиксирован до старта перехода
-            requestAnimationFrame(() => requestAnimationFrame(launchFlip));
-            if (typeof setTimeout === 'function') {
-                roomAnim.fsAnimTimer = setTimeout(() => {
-                    if (!roomAnim.isFullscreen || roomAnim.fsClosing) return;
-                    syncFullscreenOrientation(true);
-                    showFullscreenCaption('Касайтесь предметов, чтобы оживить станцию');
-                }, 580);
-            }
+                showFullscreenCaption('Касайтесь предметов, чтобы оживить станцию');
+            }, 680);
         }
     } else {
-        if (room.classList) room.classList.add('is-fs-active');
-        syncFullscreenOrientation(true);
         showFullscreenCaption('Касайтесь предметов, чтобы оживить станцию');
     }
 
@@ -4541,9 +5311,11 @@ function exitRoomFullscreen(silent) {
         clearTimeout(roomAnim.fsCapTimer);
         clearTimeout(roomAnim.fsAnimTimer);
     }
+    cancelFullscreenWaapi();
 
     const room = typeof document !== 'undefined' && document.getElementById('station');
     const scene = typeof document !== 'undefined' && document.getElementById('station-scene');
+    const fromDeg = Number(roomAnim.fsLastDeg) || 0;
 
     if (!silent) {
         if (typeof tone === 'function') {
@@ -4556,59 +5328,95 @@ function exitRoomFullscreen(silent) {
     if (typeof document !== 'undefined') {
         const cap = document.getElementById('station-fs-caption');
         if (cap && cap.classList) cap.classList.remove('is-visible');
-        try {
-            if (typeof window !== 'undefined' && window.Telegram && Telegram.WebApp && Telegram.WebApp.isFullscreen && typeof Telegram.WebApp.exitFullscreen === 'function') {
-                Telegram.WebApp.exitFullscreen();
-            } else if (document.fullscreenElement && typeof document.exitFullscreen === 'function') {
-                const ep = document.exitFullscreen();
-                if (ep && typeof ep.catch === 'function') ep.catch(() => {});
-            }
-        } catch (_) {}
     }
-    try {
-        if (typeof screen !== 'undefined' && screen && screen.orientation && typeof screen.orientation.unlock === 'function') {
-            screen.orientation.unlock();
-        }
-    } catch (_) {}
 
-    // Обратная плавная FLIP-посадка комнаты ровно обратно в свою карточку в профиле!
+    // Освобождаем нативный Fullscreen, чтобы под полупрозрачным занавесом плавно проявилась карточка профиля
+    exitNativeRoomFullscreen();
+
+    // Плавная 540мс WAAPI-посадка комнаты из полного экрана ровно обратно в свою карточку в профиле!
     const ph = roomAnim.fsPlaceholder || (typeof document !== 'undefined' && document.getElementById('station-fs-placeholder'));
-    let toRect = null;
-    if (!silent && !prefersStillRoom() && ph && typeof ph.getBoundingClientRect === 'function' && scene && scene.style && typeof setTimeout === 'function') {
-        const pr = ph.getBoundingClientRect();
-        if (pr && pr.width > 20) {
-            toRect = {
-                left: pr.left,
-                top: pr.top,
-                width: pr.width,
-                height: pr.width * (992 / 1586)
-            };
-        }
-    }
+    const canAnimate = !silent
+        && !prefersStillRoom()
+        && room && room.classList
+        && scene && scene.style
+        && typeof setTimeout === 'function';
 
-    if (toRect && room && room.classList) {
+    if (canAnimate) {
+        let toRect = null;
+        if (ph && typeof ph.getBoundingClientRect === 'function') {
+            const pr = ph.getBoundingClientRect();
+            if (pr && pr.width > 20) {
+                toRect = {
+                    left: pr.left,
+                    top: pr.top,
+                    width: pr.width,
+                    height: pr.width * (992 / 1586)
+                };
+            }
+        }
         roomAnim.fsClosing = true;
-        if (document.documentElement && document.documentElement.classList) {
+        if (typeof document !== 'undefined' && document.documentElement && document.documentElement.classList) {
             document.documentElement.classList.add('is-soma-fs-closing');
         }
         const vp = getFullscreenViewport();
-        const sw = parseFloat(scene.style.width) || computeFullscreenSceneBox(vp).sceneW;
-        const dx = (toRect.left + toRect.width * 0.5) - (vp.left + vp.width * 0.5);
-        const dy = (toRect.top + toRect.height * 0.5) - (vp.top + vp.height * 0.5);
-        const s1 = Math.max(0.18, Math.min(1.5, toRect.width / sw));
+        const box = computeFullscreenSceneBox(vp);
+        if (room.style) {
+            room.style.left = `${vp.left}px`;
+            room.style.top = `${vp.top}px`;
+            room.style.width = `${vp.width}px`;
+            room.style.height = `${vp.height}px`;
+        }
+        scene.style.width = `${box.sceneW.toFixed(2)}px`;
+        scene.style.height = `${box.sceneH.toFixed(2)}px`;
+        const dx = toRect ? ((toRect.left + toRect.width * 0.5) - (vp.left + vp.width * 0.5)) : 0;
+        const dy = toRect ? ((toRect.top + toRect.height * 0.5) - (vp.top + vp.height * 0.5)) : 14;
+        const s1 = toRect ? Math.max(0.2, Math.min(0.86, toRect.width / box.sceneW)) : 0.78;
+        const endRadius = `${Math.min(34, Math.round(18 / s1))}px`;
+        const endTransform = `translate(-50%, -50%) translate3d(${dx.toFixed(1)}px, ${dy.toFixed(1)}px, 0px) rotate(0deg) scale(${s1.toFixed(4)})`;
+
         room.classList.remove('is-fs-active', 'is-fs-animating');
         room.classList.add('is-fs-closing');
-        scene.style.transform = `translate(calc(-50% + ${dx.toFixed(1)}px), calc(-50% + ${dy.toFixed(1)}px)) rotate(0deg) scale(${s1.toFixed(4)})`;
-        scene.style.borderRadius = `${Math.round(18 / s1)}px`;
-        roomAnim.fsAnimTimer = setTimeout(() => {
+        scene.style.transform = endTransform;
+        scene.style.borderRadius = endRadius;
+
+        if (typeof scene.animate === 'function') {
+            try {
+                roomAnim.fsWaapi = scene.animate([
+                    {
+                        transform: `translate(-50%, -50%) translate3d(0px, 0px, 0px) rotate(${fromDeg}deg) scale(1)`,
+                        borderRadius: '0px',
+                        opacity: 1
+                    },
+                    {
+                        transform: endTransform,
+                        borderRadius: endRadius,
+                        opacity: toRect ? 1 : 0.92
+                    }
+                ], { duration: 520, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'forwards' });
+            } catch (_) {}
+        }
+        if (typeof room.animate === 'function') {
+            try {
+                roomAnim.fsBgWaapi = room.animate([
+                    { backgroundColor: 'rgba(4, 1, 2, 1)' },
+                    { backgroundColor: 'rgba(4, 1, 2, 0)' }
+                ], { duration: 480, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'forwards' });
+            } catch (_) {}
+        }
+
+        const finishClose = () => {
+            if (!roomAnim.fsClosing) return;
             roomAnim.fsClosing = false;
+            roomAnim.fsLastDeg = 0;
             restoreRoomFromPortal(room, scene);
             ensureStationLoop();
-        }, 490);
+        };
+        roomAnim.fsAnimTimer = setTimeout(finishClose, 530);
         return;
     }
 
     roomAnim.fsClosing = false;
+    roomAnim.fsLastDeg = 0;
     restoreRoomFromPortal(room, scene);
     ensureStationLoop();
 }
@@ -4627,9 +5435,21 @@ if (typeof window !== 'undefined' && typeof window.addEventListener === 'functio
         window.visualViewport.addEventListener('scroll', onFsViewportChange);
     }
     if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
-        document.addEventListener('fullscreenchange', () => {
-            if (roomAnim.isFullscreen && !roomAnim.fsClosing) onFsViewportChange();
-        });
+        const onNativeFsChange = () => {
+            const fsEl = getNativeFullscreenElement();
+            if (fsEl) {
+                roomAnim.fsNativeActive = true;
+                if (roomAnim.isFullscreen && !roomAnim.fsClosing) onFsViewportChange();
+            } else if (roomAnim.fsNativeActive) {
+                roomAnim.fsNativeActive = false;
+                // Пользователь вышел системной клавишей Esc или жестом «Назад» — мягко возвращаем комнату в профиль!
+                if (roomAnim.isFullscreen && !roomAnim.fsClosing && !roomAnim.fsExitingNative) {
+                    exitRoomFullscreen(false);
+                }
+            }
+        };
+        document.addEventListener('fullscreenchange', onNativeFsChange);
+        document.addEventListener('webkitfullscreenchange', onNativeFsChange);
     }
 }
 
@@ -4661,6 +5481,15 @@ function playObjectTone(obj) {
             tone(hz * 2.02, 0.18, 'sine', 0.012, p * 0.13 + 0.03);
         }
         tone(330, 0.55, 'sine', 0.016, 0.12, 392);
+    } else if (obj === 'dog') {
+        // Тёплый радостный отклик пса: мягкий грудной «уф-вздох» + ритмичное постукивание хвоста по шерстяному лежаку!
+        const hz = dogSpec().woofHz || 132;
+        tone(hz, 0.16, 'triangle', 0.026, 0, hz * 1.24);
+        tone(hz * 1.22, 0.22, 'sine', 0.02, 0.09, hz * 0.94);
+        for (let w = 0; w < 4; w++) {
+            tone(84 + (w % 2) * 8, 0.09, 'sine', 0.024, 0.16 + w * 0.14, 58);
+        }
+        tone(392, 0.42, 'sine', 0.015, 0.14, 494);
     } else if (obj === 'pager') {
         if (typeof noise === 'function') noise(0.028, 0.025, 0, 2200);
         tone(920, 0.055, 'square', 0.014, 0.02, 640);
@@ -4822,16 +5651,38 @@ function touchRoomObject(obj, event) {
             roomAnim.catPetStart = now;
             const myCat = catSpec(undefined, Number.isInteger(roomAnim.inspectCatCoat) ? roomAnim.inspectCatCoat : null);
             modeLabel = `ЖУРНАЛ // ${myCat.coat.name.toUpperCase()}`;
-            line = nextRoomLine('cat', [
+            const catLines = [
                 `Ваш ${myCat.coat.short} кот приподнял голову, блеснул глазами и тепло замурчал под ладонью.`,
                 `Тёплый клубок (${myCat.summary.toLowerCase()}) сладко зажмурился, повёл хвостом и согрел край пледа.`
-            ]);
+            ];
+            if (cosm.dog) {
+                const myDog = dogSpec(undefined, Number.isInteger(roomAnim.inspectDogBreed) ? roomAnim.inspectDogBreed : null);
+                catLines.push(`Ваш ${myCat.coat.short} кот лениво переглянулся с другом на ковре (${myDog.breed.short}) — в комнате двойное живое тепло.`);
+            }
+            line = nextRoomLine('cat', catLines);
             playObjectTone('cat');
         } else {
             modeLabel = 'ЖУРНАЛ // КУШЕТКА';
             line = nextRoomLine('bed', ROOM_LINES.bed);
             playObjectTone('bed');
         }
+    } else if (obj === 'dog') {
+        roomAnim.contextPanel = '';
+        const cosm = getRoomCosmeticsSafe();
+        if (!cosm.dog) return;
+        roomAnim.dogPetStart = now;
+        const myDog = dogSpec(undefined, Number.isInteger(roomAnim.inspectDogBreed) ? roomAnim.inspectDogBreed : null);
+        modeLabel = `ЖУРНАЛ // ${myDog.breed.name.toUpperCase()}`;
+        const dogLines = [
+            `Ваш ${myDog.breed.short} радостно вскинул уши, ткнулся тёплым носом в ладонь и счастливо завилял хвостом!`,
+            `Верный хранитель (${myDog.breed.name.toLowerCase()}) сладко улыбнулся, прищурился от ласки и уютнее устроился на лежаке.`
+        ];
+        if (cosm.cat) {
+            const myCat = catSpec(undefined, Number.isInteger(roomAnim.inspectCatCoat) ? roomAnim.inspectCatCoat : null);
+            dogLines.push(`Ваш ${myDog.breed.short} тихо стучит хвостом по ковру, а ${myCat.coat.short} кот мурчит на кушетке — они берегут ваш вечер вдвоём.`);
+        }
+        line = nextRoomLine('dog', dogLines);
+        playObjectTone('dog');
     }
 
     // В полноэкранном режиме касание круглого окна сразу переключает открытые атмосферы на лету!
@@ -5033,6 +5884,7 @@ function togglePtsDrawer() {
         roomAnim.inspectStage = null;
         roomAnim.inspectKind = null;
         roomAnim.inspectCatCoat = null;
+        roomAnim.inspectDogBreed = null;
         roomAnim.galleryOpen = false;
         roomAnim.ptsDew = false;
         roomAnim.customEntry = '';
@@ -5070,6 +5922,26 @@ function cyclePtsCatCoat() {
         ? `Ваш родной кот по ID: ${shown.summary}.`
         : `Осмотр масти «${shown.coat.name}» (ваш родной по ID: ${own.coat.name}).`;
     playObjectTone('cat');
+    renderRoom();
+}
+
+// PTS: посмотреть все 7 уникальных пород пса-хранителя (своё место на ковре — живёт дружно вместе с котом!)
+function cyclePtsDogBreed() {
+    if (!isPtsMode()) return;
+    const own = dogSpec();
+    const cur = Number.isInteger(roomAnim.inspectDogBreed) ? roomAnim.inspectDogBreed : own.breedIdx;
+    const next = (cur + 1) % DOG_BREEDS.length;
+    roomAnim.inspectDogBreed = next === own.breedIdx ? null : next;
+    if (typeof grantOwnedItem === 'function' && typeof getActiveCosmetics === 'function' && !getActiveCosmetics().dog) {
+        grantOwnedItem('room_dog');
+    }
+    const shown = dogSpec(undefined, roomAnim.inspectDogBreed);
+    roomAnim.dogPetStart = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    roomAnim.customMode = `PTS // ПЁС ${next + 1}/7 · ${shown.breed.name.toUpperCase()}`;
+    roomAnim.customEntry = next === own.breedIdx
+        ? `Ваш родной пёс по ID: ${shown.summary}.`
+        : `Осмотр породы «${shown.breed.name}» (ваш родной по ID: ${own.breed.name}).`;
+    playObjectTone('dog');
     renderRoom();
 }
 
@@ -5551,9 +6423,44 @@ function renderRoom() {
         ptsCatBtn.setAttribute('aria-pressed', String(Number.isInteger(roomAnim.inspectCatCoat)));
         ptsCatBtn.textContent = `КОТ: ${sc.coat.name.toUpperCase()}`;
     }
+    const ptsDogBtn = document.getElementById('pts-dog-btn');
+    if (ptsDogBtn) {
+        const sd = dogSpec(undefined, Number.isInteger(roomAnim.inspectDogBreed) ? roomAnim.inspectDogBreed : null);
+        ptsDogBtn.setAttribute('aria-pressed', String(Number.isInteger(roomAnim.inspectDogBreed)));
+        ptsDogBtn.textContent = `ПЁС: ${sd.breed.name.toUpperCase()}`;
+    }
+    syncCompanionHotspots();
 
     renderPager(warmth, ledger, gh.bloomed.includes(ownSpec.kind));
     ensureStationLoop();
+}
+
+function syncCompanionHotspots() {
+    if (typeof document === 'undefined') return;
+    const activeCosm = getRoomCosmeticsSafe();
+    const dogHit = document.getElementById('station-hit-dog');
+    if (dogHit && dogHit.classList) {
+        const hasDog = !!activeCosm.dog;
+        dogHit.classList.toggle('hidden', !hasDog);
+        if (hasDog) {
+            const sd = dogSpec(undefined, Number.isInteger(roomAnim.inspectDogBreed) ? roomAnim.inspectDogBreed : null);
+            const label = `Погладить пса (${sd.breed.name})`;
+            dogHit.setAttribute('aria-label', label);
+            dogHit.title = label;
+        }
+    }
+    const bedHit = document.getElementById('station-hit-bed');
+    if (bedHit) {
+        if (activeCosm.cat) {
+            const sc = catSpec(undefined, Number.isInteger(roomAnim.inspectCatCoat) ? roomAnim.inspectCatCoat : null);
+            const label = `Погладить кота (${sc.coat.name})`;
+            bedHit.setAttribute('aria-label', label);
+            bedHit.title = label;
+        } else {
+            bedHit.setAttribute('aria-label', 'Осмотреть кушетку');
+            bedHit.title = 'Осмотреть кушетку';
+        }
+    }
 }
 
 function resetStationPreview() {
@@ -5562,6 +6469,8 @@ function resetStationPreview() {
     roomAnim.previewStage = null;
     roomAnim.inspectStage = null;
     roomAnim.inspectKind = null;
+    roomAnim.inspectCatCoat = null;
+    roomAnim.inspectDogBreed = null;
     roomAnim.ptsOpen = previewing ? true : roomAnim.ptsOpen;
     roomAnim.customEntry = '';
     roomAnim.customMode = '';

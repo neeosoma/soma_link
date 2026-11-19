@@ -421,6 +421,19 @@
     border-radius: 10px;
 }
 
+/* Уютное собственное место пса-хранителя на персидском ковре слева (активно, когда надет room_dog; не пересекается ни с цветком, ни с котом!) */
+.station-hit--dog {
+    left: 20%;
+    top: 74%;
+    width: 17%;
+    height: 21%;
+    border-radius: 50%;
+}
+
+.station-hit--dog.hidden {
+    display: none;
+}
+
 .station-hit:focus-visible {
     outline: 1.5px solid rgba(255, 155, 166, 0.72);
     outline-offset: -1px;
@@ -1135,33 +1148,101 @@
 .station-bar-right {
     display: inline-flex;
     align-items: center;
+    flex-shrink: 0;
     gap: 8px;
 }
 
+#station-mode {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Неподвижная кнопка полного экрана фиксированного размера 34×34px в тихом правом верхнем углу свода комнаты (никогда не прыгает и не меняет размер!) */
 .station-fs-btn {
+    position: absolute;
+    top: 9px;
+    right: 9px;
+    z-index: 12;
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    min-height: 34px;
+    padding: 0;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    padding: 3px 8px;
-    border-radius: 7px;
-    border: 1px solid rgba(255, 92, 112, 0.36);
-    background: rgba(34, 8, 13, 0.85);
-    color: #ffc2ca;
-    font: 9.5px 'Share Tech Mono', monospace;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    justify-content: center;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 102, 120, 0.34);
+    background: rgba(14, 3, 6, 0.68);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    color: rgba(255, 206, 214, 0.88);
     cursor: pointer;
     touch-action: manipulation;
-    transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 168, 180, 0.12);
+    transition: border-color 0.22s ease, background-color 0.22s ease, color 0.22s ease, box-shadow 0.22s ease, transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Невидимая подушка касания 46×46px для удобного нажатия большим пальцем на телефоне */
+.station-fs-btn::before {
+    content: '';
+    position: absolute;
+    inset: -6px;
+}
+
+.station-fs-btn svg {
+    width: 15px;
+    height: 15px;
+    display: block;
+    pointer-events: none;
+    transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .station-fs-btn:hover {
-    border-color: rgba(255, 132, 148, 0.7);
-    background: rgba(62, 13, 22, 0.92);
-    color: #fff1f3;
+    border-color: rgba(255, 152, 166, 0.78);
+    background: rgba(44, 9, 16, 0.88);
+    color: #ffffff;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.7), 0 0 16px rgba(217, 46, 72, 0.32);
 }
 
-/* ===== НАСТОЯЩИЙ ПОЛНОЭКРАННЫЙ ГОРИЗОНТАЛЬНЫЙ РЕЖИМ С ПЛАВНОЙ КИНЕМАТОГРАФИЧНОЙ FLIP-АНИМАЦИЕЙ ===== */
+.station-fs-btn:hover svg {
+    transform: scale(1.1);
+}
+
+.station-fs-btn:active {
+    transform: scale(0.92);
+}
+
+.station-fs-btn:focus-visible {
+    outline: 1.5px solid rgba(255, 168, 180, 0.85);
+    outline-offset: 2px;
+}
+
+.station.is-fullscreen .station-fs-btn {
+    display: none !important;
+}
+
+/* ===== НАСТОЯЩИЙ СИСТЕМНЫЙ ПОЛНОЭКРАННЫЙ РЕЖИМ С ПЛАВНОЙ КИНЕМАТОГРАФИЧНОЙ WAAPI-АНИМАЦИЕЙ ===== */
+.station:fullscreen,
+.station:-webkit-full-screen {
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: none !important;
+    max-height: none !important;
+    background-color: #040102 !important;
+    overflow: hidden !important;
+}
+
+.station::backdrop,
+.station::-webkit-backdrop {
+    background-color: #040102;
+}
+
+html:fullscreen,
+html:-webkit-full-screen,
 html.is-soma-fs,
 html.is-soma-fs body {
     overflow: hidden !important;
@@ -1172,12 +1253,6 @@ html.is-soma-fs body {
 /* Мягкое затухание основного интерфейса игры при уходе комнаты в полный экран */
 .app-h {
     transition: opacity 0.42s cubic-bezier(0.22, 1, 0.36, 1), filter 0.42s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-html.is-soma-fs,
-html.is-soma-fs body {
-    overflow: hidden !important;
-    background-color: #040102 !important;
 }
 
 html.is-soma-fs .app-h {
@@ -1255,14 +1330,14 @@ html.is-soma-fs-closing .app-h {
     max-height: none;
     aspect-ratio: 1586 / 992;
     transform-origin: 50% 50%;
-    transform: translate(-50%, -50%) rotate(0deg) scale(1);
+    transform: translate(-50%, -50%) translate3d(0px, 0px, 0px) rotate(0deg) scale(1);
     border-bottom: none;
     border-radius: 4px;
     box-shadow:
         0 24px 80px rgba(0, 0, 0, 0.95),
         0 0 0 1px rgba(255, 92, 112, 0.16),
         0 0 48px rgba(175, 22, 42, 0.14);
-    will-change: transform, border-radius;
+    will-change: transform, border-radius, filter;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
 }
@@ -1270,25 +1345,18 @@ html.is-soma-fs-closing .app-h {
 .station.is-fullscreen.is-rotated .station-scene {
     width: min(100dvh, calc(100vw * 1586 / 992));
     height: min(100vw, calc(100dvh * 992 / 1586));
-    transform: translate(-50%, -50%) rotate(90deg) scale(1);
+    transform: translate(-50%, -50%) translate3d(0px, 0px, 0px) rotate(90deg) scale(1);
 }
 
 .station.is-fullscreen.is-rotated.is-flipped .station-scene {
-    transform: translate(-50%, -50%) rotate(-90deg) scale(1);
+    transform: translate(-50%, -50%) translate3d(0px, 0px, 0px) rotate(-90deg) scale(1);
 }
 
-.station.is-fullscreen.is-fs-animating .station-scene {
-    transition:
-        transform 0.58s cubic-bezier(0.22, 1, 0.36, 1),
-        border-radius 0.58s cubic-bezier(0.22, 1, 0.36, 1),
-        box-shadow 0.58s ease;
-}
-
+/* Основная кинематографичная анимация входа/выхода/поворота исполняется через GPU Web Animations API (element.animate),
+   чтобы никогда не обрываться при переносе в body и нативном requestFullscreen! */
+.station.is-fullscreen.is-fs-animating .station-scene,
 .station.is-fullscreen.is-fs-closing .station-scene {
-    transition:
-        transform 0.48s cubic-bezier(0.32, 0.02, 0.2, 1),
-        border-radius 0.48s cubic-bezier(0.32, 0.02, 0.2, 1),
-        box-shadow 0.42s ease;
+    will-change: transform, border-radius, opacity, filter;
 }
 
 .station.is-fullscreen .station-log {

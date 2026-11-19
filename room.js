@@ -694,34 +694,37 @@ function drawCeramicPot(g, bx, baseY, sp, stage, lit, soilOpts) {
     // Тонкая рельефная бороздка ручной работы (или золотые швы Кинцуги / двойной кант Киновари)
     const bandY = topY + sh.h * 0.44;
     const bandW = tw * 0.92;
+    const potT = ((typeof so.now === 'number' ? so.now : 0) || 0) * 0.001;
+    const potPulse = prefersStillRoom() ? 0.65 : (0.5 + 0.5 * Math.sin(potT * 1.45));
     if (potSkin === 'pot_kintsugi') {
         g.save();
         g.lineCap = 'round';
         g.lineJoin = 'round';
+        const goldGlow = 0.24 + potPulse * 0.22;
         const drawGoldSeam = pts => {
-            g.strokeStyle = 'rgba(255, 196, 72, 0.28)';
-            g.lineWidth = 5.2;
+            g.strokeStyle = `rgba(255, 200, 76, ${goldGlow.toFixed(3)})`;
+            g.lineWidth = 5.4 + potPulse * 1.4;
             g.beginPath();
             pts.forEach(([x, y], i) => { if (i === 0) g.moveTo(x, y); else g.lineTo(x, y); });
             g.stroke();
             g.strokeStyle = 'rgba(138, 82, 14, 0.92)';
             g.lineWidth = 2.8;
             g.stroke();
-            g.strokeStyle = '#ffcf5c';
-            g.lineWidth = 1.65;
+            g.strokeStyle = '#ffd262';
+            g.lineWidth = 1.7;
             g.stroke();
-            g.strokeStyle = 'rgba(255, 250, 214, 0.92)';
-            g.lineWidth = 0.7;
+            g.strokeStyle = `rgba(255, 252, 220, ${(0.78 + potPulse * 0.22).toFixed(3)})`;
+            g.lineWidth = 0.78;
             g.stroke();
         };
-        // Главный золотой шов исцеления с богатыми живыми развилками по керамике
-        drawGoldSeam([
+        const mainSeam = [
             [bx - tw * 0.46, topY + 6],
             [bx - tw * 0.26, topY + sh.h * 0.34],
             [bx - tw * 0.04, topY + sh.h * 0.52],
             [bx + bw * 0.22, topY + sh.h * 0.78],
             [bx + bw * 0.46, baseY - 2]
-        ]);
+        ];
+        drawGoldSeam(mainSeam);
         drawGoldSeam([
             [bx - tw * 0.04, topY + sh.h * 0.52],
             [bx + tw * 0.24, topY + sh.h * 0.38],
@@ -732,47 +735,75 @@ function drawCeramicPot(g, bx, baseY, sp, stage, lit, soilOpts) {
             [bx - bw * 0.56, topY + sh.h * 0.68],
             [bx - bw * 0.36, baseY - 3]
         ]);
+        // Живая золотая искра-блик, мягко скользящая по главному шву 24k золота
+        const segPos = (prefersStillRoom() ? 0.48 : ((potT * 0.28) % 1)) * (mainSeam.length - 1);
+        const si = Math.min(mainSeam.length - 2, Math.floor(segPos));
+        const sf = segPos - si;
+        const gx = mainSeam[si][0] + (mainSeam[si + 1][0] - mainSeam[si][0]) * sf;
+        const gy = mainSeam[si][1] + (mainSeam[si + 1][1] - mainSeam[si][1]) * sf;
+        radialAura(g, gx, gy, 7.5, '#fff8d6', '#ffb838', 0.65);
         g.restore();
     } else if (potSkin === 'pot_cinnabar') {
-        // Императорский двойной золотой пояс с лаковым бликом и печатью мастера
-        g.strokeStyle = 'rgba(255, 212, 122, 0.78)';
-        g.lineWidth = 1.55;
+        // Императорский киноварный лак: двойной золотой пояс, сияющая печать мастера и бегущий лаковый блик
+        const sealGlow = 0.72 + potPulse * 0.24;
+        g.strokeStyle = `rgba(255, 218, 128, ${sealGlow.toFixed(3)})`;
+        g.lineWidth = 1.65;
         g.beginPath();
-        g.moveTo(bx - bandW, bandY - 2);
-        g.quadraticCurveTo(bx, bandY + 7, bx + bandW, bandY - 2);
+        g.moveTo(bx - bandW, bandY - 2.5);
+        g.quadraticCurveTo(bx, bandY + 6.5, bx + bandW, bandY - 2.5);
         g.stroke();
-        g.lineWidth = 1.1;
+        g.lineWidth = 1.15;
         g.beginPath();
-        g.moveTo(bx - bandW * 0.95, bandY + 5);
-        g.quadraticCurveTo(bx, bandY + 14, bx + bandW * 0.95, bandY + 5);
+        g.moveTo(bx - bandW * 0.95, bandY + 5.5);
+        g.quadraticCurveTo(bx, bandY + 14.5, bx + bandW * 0.95, bandY + 5.5);
         g.stroke();
-        // Золотой медальон по центру сосуда
-        g.fillStyle = 'rgba(255, 214, 120, 0.85)';
-        g.beginPath(); g.arc(bx, bandY + 6, 3.6, 0, Math.PI * 2); g.fill();
-        g.fillStyle = '#7a0c1a';
-        g.fillRect(bx - 1.5, bandY + 4.5, 3, 3);
-        // Вертикальный глянцевый блик настоящего лака
-        g.strokeStyle = 'rgba(255, 218, 220, 0.34)';
-        g.lineWidth = 3.2;
+        // Тёплый золотой медальон мастера с живым дыханием по центру сосуда
+        radialAura(g, bx, bandY + 6, 11, '#ffd978', '#d8243c', 0.34 + potPulse * 0.2);
+        g.fillStyle = `rgba(255, 224, 134, ${sealGlow.toFixed(3)})`;
+        g.beginPath(); g.arc(bx, bandY + 6, 4.4, 0, Math.PI * 2); g.fill();
+        g.fillStyle = '#6e0815';
+        g.fillRect(bx - 1.9, bandY + 4.1, 3.8, 3.8);
+        g.fillStyle = '#ffe9a6';
+        g.fillRect(bx - 0.7, bandY + 5.3, 1.4, 1.4);
+        // Две боковые золотые заклёпки пояса
+        for (const sgn of [-1, 1]) {
+            g.fillStyle = 'rgba(255, 220, 132, 0.82)';
+            g.beginPath(); g.arc(bx + sgn * bandW * 0.46, bandY + 3.8, 1.5, 0, Math.PI * 2); g.fill();
+        }
+        // Глянцевый зеркальный блик многослойного киноварного лака с плавным переливом
+        const sheenShift = prefersStillRoom() ? 0 : Math.sin(potT * 0.85) * (tw * 0.14);
+        g.strokeStyle = `rgba(255, 226, 220, ${(0.34 + potPulse * 0.14).toFixed(3)})`;
+        g.lineWidth = 3.4;
         g.lineCap = 'round';
         g.beginPath();
-        g.moveTo(bx - tw * 0.56, topY + 14);
-        g.quadraticCurveTo(bx - bw * 0.54, topY + sh.h * 0.55, bx - bw * 0.46, baseY - 8);
+        g.moveTo(bx - tw * 0.54 + sheenShift, topY + 13);
+        g.quadraticCurveTo(bx - bw * 0.50 + sheenShift, topY + sh.h * 0.55, bx - bw * 0.42 + sheenShift, baseY - 7);
         g.stroke();
     } else if (potSkin === 'pot_moon') {
-        // Тонкий серебристый кракелюр и лунный серп на селадоновой глазури
-        g.strokeStyle = 'rgba(238, 236, 255, 0.58)';
-        g.lineWidth = 1.35;
+        // Лунный селадон: серебряный пояс, светящийся полумесяц в живом ореоле и мерцающие звёздные искры
+        const moonGlow = 0.52 + potPulse * 0.28;
+        g.strokeStyle = `rgba(236, 234, 255, ${(0.55 + potPulse * 0.2).toFixed(3)})`;
+        g.lineWidth = 1.4;
         g.beginPath();
-        g.moveTo(bx - bandW, bandY);
-        g.quadraticCurveTo(bx, bandY + 9, bx + bandW, bandY);
+        g.moveTo(bx - bandW, bandY - 1);
+        g.quadraticCurveTo(bx, bandY + 8, bx + bandW, bandY - 1);
         g.stroke();
-        g.fillStyle = 'rgba(244, 242, 255, 0.82)';
-        g.beginPath(); g.arc(bx, bandY + 14, 4.4, 0, Math.PI * 2); g.fill();
+        // Мягкий перламутрово-лунный ореол вокруг серебряного серпа
+        radialAura(g, bx, bandY + 13.5, 14, '#eef0ff', '#8b82d6', 0.34 + potPulse * 0.22);
+        g.fillStyle = `rgba(248, 246, 255, ${(0.84 + potPulse * 0.15).toFixed(3)})`;
+        g.beginPath(); g.arc(bx, bandY + 13.5, 5.1, 0, Math.PI * 2); g.fill();
         g.fillStyle = pMid;
-        g.beginPath(); g.arc(bx + 1.9, bandY + 13.2, 3.8, 0, Math.PI * 2); g.fill();
-        g.strokeStyle = 'rgba(246, 244, 255, 0.32)';
-        g.lineWidth = 3.0;
+        g.beginPath(); g.arc(bx + 2.2, bandY + 12.6, 4.3, 0, Math.PI * 2); g.fill();
+        // Мерцающие серебряные созвездия по бокам лунного серпа
+        const stars = [[-0.36, 10.5, 0], [0.34, 11.2, 1.8], [-0.20, 17.5, 3.1], [0.22, 17.0, 4.5]];
+        for (let si = 0; si < stars.length; si++) {
+            const [sx, sy, ph] = stars[si];
+            const twk = prefersStillRoom() ? 0.75 : (0.35 + 0.65 * (0.5 + 0.5 * Math.sin(potT * 2.1 + ph)));
+            g.fillStyle = `rgba(244, 242, 255, ${twk.toFixed(3)})`;
+            g.beginPath(); g.arc(bx + bandW * sx, bandY + sy, 0.9 + twk * 0.65, 0, Math.PI * 2); g.fill();
+        }
+        g.strokeStyle = `rgba(246, 244, 255, ${(0.32 + moonGlow * 0.18).toFixed(3)})`;
+        g.lineWidth = 3.1;
         g.lineCap = 'round';
         g.beginPath();
         g.moveTo(bx - tw * 0.55, topY + 14);
@@ -2400,31 +2431,295 @@ function drawWindowWorld(g, now, phase, winGlow) {
     g.ellipse(WIN_CX, WIN_CY, WIN_RX - 2, WIN_RY - 2, 0, 0, Math.PI * 2);
     g.clip();
 
-    // На макс. фазе («Рассвет») за домами дышит живая ало-янтарная заря (без дождя и без ночного созвездия!)
-    if (phase >= 2) {
-        const isDawn = phase === 3;
+    // На «Очаге» (phase=2) — тихое предрассветное тепло за горизонтом; на «Рассвете» (phase=3) — настоящий живой восход солнца!
+    if (phase === 2) {
         const breathe = 0.5 + 0.5 * Math.sin(now * 0.00052);
-        const shiftX = Math.sin(now * 0.00028) * 12;
-        const intensity = isDawn ? (0.34 + breathe * 0.09 + winGlow * 0.06) : (0.09 + breathe * 0.025);
-
         g.save();
         g.globalCompositeOperation = 'screen';
-        const dg = g.createRadialGradient(WIN_CX + shiftX, 206, 8, WIN_CX + shiftX * 0.4, 190, 166);
-        dg.addColorStop(0, `rgba(255,134,114,${intensity.toFixed(3)})`);
-        dg.addColorStop(0.4, `rgba(236,54,70,${(intensity * 0.65).toFixed(3)})`);
-        dg.addColorStop(0.76, `rgba(146,18,36,${(intensity * 0.28).toFixed(3)})`);
+        const dg = g.createRadialGradient(419, 182, 6, 412, 178, 128);
+        const a = 0.1 + breathe * 0.03;
+        dg.addColorStop(0, `rgba(255,152,112,${a.toFixed(3)})`);
+        dg.addColorStop(0.45, `rgba(224,52,68,${(a * 0.58).toFixed(3)})`);
         dg.addColorStop(1, 'rgba(90,8,20,0)');
         g.fillStyle = dg;
-        g.fillRect(WIN_CX - WIN_RX, WIN_CY - WIN_RY, WIN_RX * 2, WIN_RY * 2);
+        g.fillRect(WIN_CX - WIN_RX, WIN_CY - WIN_RY, WIN_RX * 2, 200);
+        g.restore();
+    } else if (phase === 3) {
+        const still = prefersStillRoom();
+        const t = still ? 4.0 : now * 0.001;
+        const breathe = still ? 0.5 : (0.5 + 0.5 * Math.sin(t * 0.55));
+        const sunX = 419.5;
+        const sunY = 176.5 + (still ? 0 : Math.sin(t * 0.35) * 1.1);
 
-        if (isDawn) {
-            const bandY = 180 + Math.sin(now * 0.00036) * 4.5;
-            const hg = g.createLinearGradient(0, bandY - 56, 0, bandY + 58);
-            hg.addColorStop(0, 'rgba(255,92,96,0)');
-            hg.addColorStop(0.5, `rgba(255,122,108,${(0.14 + breathe * 0.055).toFixed(3)})`);
-            hg.addColorStop(1, 'rgba(200,32,52,0)');
-            g.fillStyle = hg;
-            g.fillRect(WIN_CX - WIN_RX, bandY - 56, WIN_RX * 2, 114);
+        // Точный попиксельный контур неба НАД крышами высоток NEEO_CITY (силуэты зданий остаются 100% чёткими!)
+        const skyPoly = [
+            [242, 126], [262, 126], [262, 118], [284, 118], [284, 128], [293, 128], [293, 182],
+            [298, 182], [298, 143], [304, 134], [306, 120], [308, 134], [314, 143], [314, 174],
+            [325, 174], [325, 165], [328, 165], [328, 145], [333, 145], [333, 121], [337, 114],
+            [339, 98],  [341, 114], [345, 121], [346, 144], [351, 144], [351, 165], [356, 165],
+            [356, 184], [360, 172], [364, 165], [368, 172], [373, 172], [373, 165], [379, 159],
+            [381, 150], [383, 159], [389, 165], [389, 176], [394, 176], [394, 169], [399, 162],
+            [401, 152], [403, 162], [411, 168], [411, 189],
+            // Центральный каньон горизонта — прямо здесь встаёт живое утреннее солнце!
+            [428, 189],
+            [428, 173], [436, 170], [438, 162], [440, 170], [448, 173], [448, 188],
+            [459, 188], [459, 161], [465, 161], [465, 150], [485, 150], [485, 159], [491, 159],
+            // Просвет со строительным краном справа
+            [491, 181], [517, 181],
+            [517, 128], [522, 128], [522, 102], [530, 92], [530, 82], [566, 82]
+        ];
+
+        // 1) ЖИВОЕ РАССВЕТНОЕ НЕБО строго ЗА силуэтами небоскрёбов (ни грамма мыла поверх домов!)
+        g.save();
+        g.beginPath();
+        g.moveTo(242, 22);
+        g.lineTo(566, 22);
+        for (let i = skyPoly.length - 1; i >= 0; i--) g.lineTo(skyPoly[i][0], skyPoly[i][1]);
+        g.closePath();
+        g.clip();
+
+        // Многослойный живописный градиент настоящего рассвета: от бархатного винного зенита к расплавленному золоту у горизонта
+        if (g.createLinearGradient) {
+            const sk = g.createLinearGradient(0, 26, 0, 191);
+            sk.addColorStop(0.00, 'rgba(42, 8, 22, 0.88)');
+            sk.addColorStop(0.26, 'rgba(98, 20, 42, 0.88)');
+            sk.addColorStop(0.50, 'rgba(176, 44, 62, 0.90)');
+            sk.addColorStop(0.70, 'rgba(232, 92, 72, 0.92)');
+            sk.addColorStop(0.86, 'rgba(255, 162, 88, 0.94)');
+            sk.addColorStop(1.00, 'rgba(255, 228, 148, 0.96)');
+            g.fillStyle = sk;
+        } else g.fillStyle = '#d85c4c';
+        g.fillRect(242, 22, 324, 172);
+
+        // Широкий золотисто-персиковый купол солнечной короны за центральными башнями
+        if (g.createRadialGradient) {
+            const halo = g.createRadialGradient(sunX, sunY + 4, 4, sunX, sunY - 6, 132);
+            halo.addColorStop(0.00, `rgba(255, 248, 206, ${(0.88 + breathe * 0.08 + winGlow * 0.04).toFixed(3)})`);
+            halo.addColorStop(0.18, `rgba(255, 204, 118, ${(0.62 + breathe * 0.08).toFixed(3)})`);
+            halo.addColorStop(0.48, 'rgba(255, 118, 82, 0.28)');
+            halo.addColorStop(1.00, 'rgba(160, 28, 52, 0)');
+            g.fillStyle = halo;
+            g.fillRect(242, 22, 324, 172);
+        }
+
+        // Веер мягких растушёванных небесных лучей, расходящихся ВВЕРХ от восходящего солнца
+        g.save();
+        g.globalCompositeOperation = 'screen';
+        const skyRays = [-1.15, -0.76, -0.40, -0.06, 0.28, 0.64, 1.04];
+        for (let r = 0; r < skyRays.length; r++) {
+            const ang = -Math.PI * 0.5 + skyRays[r] + (still ? 0 : Math.sin(t * 0.24 + r * 1.3) * 0.024);
+            const ra = (0.09 + 0.05 * (0.5 + 0.5 * Math.sin(t * 0.48 + r * 1.7))) * (1 + winGlow * 0.25);
+            g.save();
+            g.translate(sunX, sunY);
+            g.rotate(ang);
+            g.scale(1, 0.13);
+            if (g.createRadialGradient) {
+                const rg = g.createRadialGradient(52, 0, 4, 68, 0, 108);
+                rg.addColorStop(0, `rgba(255, 232, 162, ${ra.toFixed(3)})`);
+                rg.addColorStop(0.55, `rgba(255, 152, 102, ${(ra * 0.42).toFixed(3)})`);
+                rg.addColorStop(1, 'rgba(255, 110, 90, 0)');
+                g.fillStyle = rg;
+                g.beginPath(); g.arc(68, 0, 108, 0, Math.PI * 2); g.fill();
+            }
+            g.restore();
+        }
+        g.restore();
+
+        // Живописные перистые облака рассвета (мягкие многослойные мазки с тёплым золотым подсветом снизу — без жёстких краёв!)
+        const drawDawnCloud = (cx, cy, w, h, topCol, glowCol, puffs) => {
+            if (!g.createRadialGradient) return;
+            // 1. Тёплое золотисто-коралловое свечение по нижней кромке облачной гряды
+            g.save();
+            g.translate(cx, cy + h * 0.48);
+            g.scale(1, h / w);
+            const ug = g.createRadialGradient(0, 0, w * 0.08, 0, 0, w * 1.05);
+            ug.addColorStop(0, glowCol);
+            ug.addColorStop(0.58, glowCol.replace(/[\d.]+\)$/, m => (parseFloat(m) * 0.48).toFixed(3) + ')'));
+            ug.addColorStop(1, 'rgba(255, 160, 110, 0)');
+            g.fillStyle = ug;
+            g.beginPath(); g.arc(0, 0, w * 1.05, 0, Math.PI * 2); g.fill();
+            g.restore();
+            // 2. Мягкие клубящиеся винно-лиловые пряди облака сверху
+            for (let p = 0; p < puffs.length; p++) {
+                const [ox, oy, rw, rh] = puffs[p];
+                g.save();
+                g.translate(cx + ox * w, cy + oy * h);
+                g.scale(1, (h * rh) / (w * rw));
+                const pg = g.createRadialGradient(0, 0, 0, 0, 0, w * rw);
+                pg.addColorStop(0, topCol);
+                pg.addColorStop(0.55, topCol.replace(/[\d.]+\)$/, m => (parseFloat(m) * 0.55).toFixed(3) + ')'));
+                pg.addColorStop(1, 'rgba(60, 12, 28, 0)');
+                g.fillStyle = pg;
+                g.beginPath(); g.arc(0, 0, w * rw, 0, Math.PI * 2); g.fill();
+                g.restore();
+            }
+        };
+        const d1 = still ? 0 : Math.sin(t * 0.045) * 11;
+        const d2 = still ? 0 : Math.cos(t * 0.038 + 1.1) * 9;
+        const d3 = still ? 0 : Math.sin(t * 0.032 + 2.4) * 8;
+        drawDawnCloud(374 + d1, 68, 62, 7.5, 'rgba(58, 11, 28, 0.52)', 'rgba(255, 152, 118, 0.36)',
+            [[-0.38, 0.1, 0.52, 0.85], [0.02, -0.18, 0.64, 1.1], [0.42, 0.14, 0.46, 0.78]]);
+        drawDawnCloud(458 - d2, 95, 52, 6.2, 'rgba(84, 16, 36, 0.46)', 'rgba(255, 186, 126, 0.44)',
+            [[-0.32, 0.08, 0.55, 0.9], [0.15, -0.16, 0.58, 1.05], [0.48, 0.18, 0.38, 0.7]]);
+        drawDawnCloud(308 + d3, 92, 44, 5.5, 'rgba(78, 15, 34, 0.44)', 'rgba(255, 172, 122, 0.38)',
+            [[-0.25, 0.05, 0.55, 0.9], [0.22, -0.12, 0.52, 0.95]]);
+        drawDawnCloud(416 + d2 * 0.7, 126, 68, 5.2, 'rgba(124, 28, 44, 0.36)', 'rgba(255, 218, 142, 0.52)',
+            [[-0.42, 0.1, 0.48, 0.8], [-0.04, -0.14, 0.58, 0.95], [0.38, 0.08, 0.46, 0.78]]);
+        drawDawnCloud(472 - d1 * 0.6, 143, 38, 3.8, 'rgba(148, 42, 50, 0.28)', 'rgba(255, 232, 158, 0.55)',
+            [[-0.22, 0, 0.56, 0.85], [0.26, -0.1, 0.48, 0.8]]);
+
+        // НАСТОЯЩИЙ ДИСК ВОСХОДЯЩЕГО СОЛНЦА в каньоне между центральными башнями (419.5, 176.5)
+        if (g.createRadialGradient) {
+            const corona = g.createRadialGradient(sunX, sunY, 4, sunX, sunY, 30);
+            corona.addColorStop(0, 'rgba(255, 252, 226, 0.96)');
+            corona.addColorStop(0.36, `rgba(255, 216, 126, ${(0.72 + breathe * 0.12).toFixed(3)})`);
+            corona.addColorStop(0.72, 'rgba(255, 156, 86, 0.28)');
+            corona.addColorStop(1, 'rgba(255, 130, 74, 0)');
+            g.fillStyle = corona;
+            g.beginPath(); g.arc(sunX, sunY, 30, 0, Math.PI * 2); g.fill();
+
+            const disc = g.createRadialGradient(sunX, sunY - 1.2, 1, sunX, sunY, 8.2);
+            disc.addColorStop(0, '#fffef6');
+            disc.addColorStop(0.68, '#fff1c2');
+            disc.addColorStop(1, 'rgba(255, 208, 114, 0.72)');
+            g.fillStyle = disc;
+        } else g.fillStyle = '#fff6d4';
+        g.beginPath(); g.arc(sunX, sunY, 8.0, 0, Math.PI * 2); g.fill();
+
+        // Тонкий реалистичный силуэт башенного крана и шпилей небоскрёбов на фоне золотого неба
+        g.strokeStyle = 'rgba(46, 9, 18, 0.82)';
+        g.lineWidth = 0.95;
+        g.beginPath();
+        // Вертикальная мачта башенного крана и горизонтальная стрела (как в оригинальном арте x=502, y=162)
+        g.moveTo(502.5, 181); g.lineTo(502.5, 152);
+        g.moveTo(494.5, 161.5); g.lineTo(515.5, 161.5);
+        // Пологие ванты стрелы
+        g.lineWidth = 0.55;
+        g.moveTo(502.5, 153); g.lineTo(512.5, 161.5);
+        g.moveTo(502.5, 153); g.lineTo(496.5, 161.5);
+        g.moveTo(512.5, 161.5); g.lineTo(512.5, 170);
+        // Изящные громоотводы на вершинах шпилей
+        g.lineWidth = 0.85;
+        g.moveTo(339, 99);  g.lineTo(339, 89);
+        g.moveTo(306, 121); g.lineTo(306, 113);
+        g.moveTo(381, 151); g.lineTo(381, 144);
+        g.moveTo(401, 153); g.lineTo(401, 145);
+        g.stroke();
+        // Противовес и кабина крана
+        g.fillStyle = 'rgba(46, 9, 18, 0.85)';
+        g.fillRect(495, 161.5, 2.8, 1.8);
+        g.fillRect(501.3, 161.5, 2.4, 2.4);
+
+        // Три крошечные утренние птицы, неспешно парящие в золотом небе рассвета
+        const birdPeriod = 18;
+        const bt = still ? 0.42 : ((t % birdPeriod) / birdPeriod);
+        if (bt < 0.85) {
+            const bp = bt / 0.85;
+            const bx0 = 335 + bp * 155;
+            const by0 = 104 - Math.sin(bp * Math.PI) * 18;
+            g.strokeStyle = 'rgba(54, 10, 20, 0.72)';
+            g.lineWidth = 0.85;
+            g.lineCap = 'round';
+            for (let b = 0; b < 3; b++) {
+                const bx = bx0 - b * 8.5, by = by0 + (b === 1 ? -4.2 : b * 2.6);
+                const flap = still ? 1.0 : Math.sin(t * 5.8 + b * 1.7) * 1.3;
+                g.beginPath();
+                g.moveTo(bx - 2.2, by - flap);
+                g.quadraticCurveTo(bx - 0.7, by - 0.7, bx, by);
+                g.quadraticCurveTo(bx + 0.7, by - 0.7, bx + 2.2, by - flap);
+                g.stroke();
+            }
+        }
+        g.restore();
+
+        // 2) ЗОЛОТОЙ КОНТРОВОЙ СВЕТ ПО ГРАНЯМ НЕБОСКРЁБОВ (яркое золото возле солнца, мягкая медь к краям окна!)
+        g.save();
+        g.lineCap = 'round';
+        g.lineJoin = 'round';
+        if (g.createRadialGradient) {
+            const rimGrad = g.createRadialGradient(sunX, sunY, 6, sunX, sunY, 155);
+            rimGrad.addColorStop(0.00, `rgba(255, 244, 192, ${(0.92 + breathe * 0.08).toFixed(3)})`);
+            rimGrad.addColorStop(0.38, `rgba(255, 202, 122, ${(0.68 + breathe * 0.1).toFixed(3)})`);
+            rimGrad.addColorStop(0.75, 'rgba(238, 118, 92, 0.36)');
+            rimGrad.addColorStop(1.00, 'rgba(180, 58, 66, 0.14)');
+            g.strokeStyle = rimGrad;
+        } else {
+            g.strokeStyle = 'rgba(255, 202, 124, 0.55)';
+        }
+        g.lineWidth = 1.05;
+        g.beginPath();
+        for (let i = 0; i < skyPoly.length; i++) {
+            const [px, py] = skyPoly[i];
+            if (i === 0) g.moveTo(px, py); else g.lineTo(px, py);
+        }
+        g.stroke();
+
+        // Мягкий солнечный ореол, переливающийся через край каньона (даёт живой оптический «bloom» настоящего солнца!)
+        g.save();
+        g.globalCompositeOperation = 'screen';
+        radialAura(g, sunX, sunY + 3, 38, '#ffe29c', '#e05848', 0.24 + breathe * 0.06);
+        g.restore();
+
+        // Яркие солнечные блики на внутренних вертикальных стенах башен, обращённых прямо к солнцу!
+        const litEdges = [
+            // Правые грани левых башен (смотрят вправо на солнце)
+            [293, 129, 293, 212, 0.42],
+            [314, 143, 314, 198, 0.46],
+            [345.5, 121, 345.5, 144, 0.62],
+            [351, 144, 351, 165, 0.64],
+            [356, 165, 356, 220, 0.68],
+            [389, 165, 389, 214, 0.62],
+            [411, 168, 411, 218, 0.88], // левая стена солнечного каньона!
+            // Левые грани правых башен (смотрят влево на солнце)
+            [428, 173, 428, 218, 0.88], // правая стена солнечного каньона!
+            [459, 161, 459, 224, 0.72],
+            [465, 150, 465, 161, 0.65],
+            [517, 128, 517, 232, 0.56],
+            [522, 102, 522, 128, 0.50],
+            // Коньки ближних крыш внизу окна
+            [342, 250, 382, 250, 0.42],
+            [412, 252, 462, 250, 0.45]
+        ];
+        for (let e = 0; e < litEdges.length; e++) {
+            const [x1, y1, x2, y2, al] = litEdges[e];
+            g.strokeStyle = `rgba(255, 212, 132, ${al.toFixed(3)})`;
+            g.lineWidth = (x1 === 411 || x1 === 428) ? 1.35 : 1.0;
+            g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke();
+        }
+
+        // 3) ЧЁТКИЙ АРХИТЕКТУРНЫЙ КАМЕННЫЙ ВИАДУК И БЛЕСТЯЩИЕ НА СОЛНЦЕ РЕЛЬСЫ (x=355..459, y=221.5..246)
+        // Лёгкая золотистая утренняя дымка ТОЛЬКО в проёмах трёх арок под мостом
+        const arches = [[374, 9.0], [404, 13.5], [436, 11.5]];
+        for (let a = 0; a < arches.length; a++) {
+            const [ax, arw] = arches[a];
+            radialAura(g, ax, 235, arw * 1.25, '#ffc478', '#b83244', 0.22);
+            // Тёплый золотой блик по внутреннему своду каменной арки
+            g.strokeStyle = 'rgba(255, 192, 122, 0.52)';
+            g.lineWidth = 0.95;
+            g.beginPath();
+            g.ellipse(ax, 236, arw, 7.2, 0, Math.PI * 1.08, Math.PI * 1.92);
+            g.stroke();
+        }
+        // Тёмная чёткая стальная балка полотна моста и каменные опоры (чтобы поезд ВСЕГДА шёл по реальному мосту!)
+        g.fillStyle = 'rgba(28, 5, 10, 0.88)';
+        g.fillRect(355, 222.2, 104, 3.4);
+        const piers = [360, 385, 419, 449];
+        for (let p = 0; p < piers.length; p++) {
+            g.fillRect(piers[p], 225.4, 4.4, 19);
+            // Солнечная кромка на грани каждой каменной опоры, обращённой к солнцу
+            const edgeX = piers[p] < sunX ? piers[p] + 4.4 : piers[p];
+            g.fillStyle = 'rgba(255, 196, 124, 0.42)';
+            g.fillRect(edgeX, 225.6, 0.85, 17);
+            g.fillStyle = 'rgba(28, 5, 10, 0.88)';
+        }
+        // Непрерывная сияющая золотом линия стальных рельсов и балюстрады виадука!
+        g.strokeStyle = 'rgba(255, 224, 148, 0.82)';
+        g.lineWidth = 1.05;
+        g.beginPath(); g.moveTo(355, 222.0); g.lineTo(459, 222.0); g.stroke();
+        // Ажурные перила и шпалы виадука
+        g.fillStyle = 'rgba(255, 198, 126, 0.48)';
+        for (let rx = 357; rx < 458; rx += 4) {
+            g.fillRect(rx, 220.9, 0.8, 1.1);
         }
         g.restore();
     }
@@ -2512,16 +2807,24 @@ function drawWindowWorld(g, now, phase, winGlow) {
             g.fill();
             g.restore();
 
+            // Тонкий стальной отблеск рельсов и парапета моста под поездом в ночных фазах
+            if (phase < 3) {
+                g.fillStyle = 'rgba(26, 5, 10, 0.72)';
+                g.fillRect(trackL, railY + 0.5, trackR - trackL, 2.2);
+                g.fillStyle = 'rgba(255, 152, 118, 0.34)';
+                g.fillRect(trackL, railY + 0.2, trackR - trackL, 0.65);
+            }
+
             // Силуэты вагонов с золотисто-янтарными купейными окнами
             for (let c = 0; c < cars; c++) {
                 const front = headX - dir * c * (carW + gap);
                 const cx0 = dir > 0 ? front - carW : front;
                 const cy0 = railY - 3.6;
-                // Тёмно-бордовый корпус вагона с тонким алым бликом крыши
-                g.fillStyle = '#26070d';
+                // Тёмно-бордовый корпус вагона с ярким золотым солнечным бликом крыши на «Рассвете»
+                g.fillStyle = phase === 3 ? '#1e0409' : '#26070d';
                 g.fillRect(cx0, cy0, carW, 3.3);
-                g.fillStyle = 'rgba(255, 146, 122, 0.42)';
-                g.fillRect(cx0 + 0.4, cy0, carW - 0.8, 0.6);
+                g.fillStyle = phase === 3 ? 'rgba(255, 224, 146, 0.85)' : 'rgba(255, 146, 122, 0.42)';
+                g.fillRect(cx0 + 0.3, cy0, carW - 0.6, phase === 3 ? 0.75 : 0.6);
                 // Светящиеся тёплые окна ночных купе (по 3 на вагон)
                 for (let w = 0; w < 3; w++) {
                     const wx = cx0 + 1.0 + w * 2.3;
@@ -2592,72 +2895,107 @@ function drawWindowWorld(g, now, phase, winGlow) {
     g.restore();
 }
 
-// 2) Плавный объёмный свет ИЗ круглого окна вниз на растение и ковёр
+// 2) Кинематографичный объёмный утренний свет ИЗ круглого окна в комнату (не замутняя силуэты города и моста!)
 function drawWindowLightBeams(g, now, phase, winGlow) {
     if (phase < 2) return;
     const isMax = phase === 3;
-    const strength = (isMax ? 1 : 0.26) + winGlow * 0.14;
-    const b1 = 0.5 + 0.5 * Math.sin(now * 0.00058);
-    const b2 = 0.5 + 0.5 * Math.sin(now * 0.00039 + 1.8);
-    const sway = Math.sin(now * 0.00032) * 12;
+    const still = prefersStillRoom();
+    const strength = (isMax ? 1 : 0.24) + winGlow * 0.15;
+    const b1 = still ? 0.55 : (0.5 + 0.5 * Math.sin(now * 0.00058));
+    const b2 = still ? 0.5 : (0.5 + 0.5 * Math.sin(now * 0.00039 + 1.8));
+    const sway = still ? 0 : Math.sin(now * 0.00032) * 8;
+    const sunX = 419.5, sunY = 176.5;
 
     g.save();
     g.globalCompositeOperation = 'screen';
 
-    // Тёплый блик рассвета по нижней внутренней кромке круглого окна
-    const rimA = (0.18 + b1 * 0.07) * strength;
-    g.strokeStyle = `rgba(255,134,132,${rimA.toFixed(3)})`;
-    g.lineWidth = 2.8;
+    // 1. Плавный золотисто-коралловый блик утреннего солнца по нижнему каменному своду окна (мягко сходит на нет к краям!)
+    const rimA = (isMax ? (0.44 + b1 * 0.12) : (0.16 + b1 * 0.06)) * Math.min(1.2, strength);
+    g.lineCap = 'round';
+    if (g.createLinearGradient) {
+        const sg = g.createLinearGradient(WIN_CX - WIN_RX * 0.88, 0, WIN_CX + WIN_RX * 0.88, 0);
+        sg.addColorStop(0.00, 'rgba(255, 160, 110, 0)');
+        sg.addColorStop(0.25, isMax ? `rgba(255, 186, 122, ${(rimA * 0.62).toFixed(3)})` : `rgba(255, 128, 126, ${(rimA * 0.6).toFixed(3)})`);
+        sg.addColorStop(0.52, isMax ? `rgba(255, 228, 164, ${rimA.toFixed(3)})` : `rgba(255, 146, 140, ${rimA.toFixed(3)})`);
+        sg.addColorStop(0.78, isMax ? `rgba(255, 186, 122, ${(rimA * 0.62).toFixed(3)})` : `rgba(255, 128, 126, ${(rimA * 0.6).toFixed(3)})`);
+        sg.addColorStop(1.00, 'rgba(255, 160, 110, 0)');
+        g.strokeStyle = sg;
+    } else g.strokeStyle = `rgba(255, 198, 132, ${rimA.toFixed(3)})`;
+    g.lineWidth = isMax ? 3.0 : 2.2;
     g.beginPath();
-    g.ellipse(WIN_CX, WIN_CY + 1, WIN_RX + 1, WIN_RY + 1, 0, Math.PI * 0.15, Math.PI * 0.85);
+    g.ellipse(WIN_CX, WIN_CY + 1, WIN_RX + 1.5, WIN_RY + 1.5, 0, Math.PI * 0.14, Math.PI * 0.86);
     g.stroke();
 
-    // Бархатные объёмные лучи, льющиеся из проёма круглого окна на пол комнаты
-    const fanAngles = [-0.23, -0.11, 0.0, 0.11, 0.23];
-    fanAngles.forEach((baseAng, idx) => {
-        const drift = Math.sin(now * (0.00036 + idx * 0.00006) + idx * 1.4) * 0.032;
-        const pulseA = 0.5 + 0.5 * Math.sin(now * (0.00052 + idx * 0.00008) + idx * 1.1);
-        const rayA = (0.052 + pulseA * 0.038) * (idx === 2 ? 1.25 : 0.9) * strength;
+    // 2. Бархатные объёмные солнечные лучи (с мягкими растушёванными краями без резких граней!),
+    //    льющиеся из окна на растение, ковёр, край стола и кушетку, НЕ размывая здания и рельсы за окном!
+    const shafts = [
+        { ang: -0.54, spread: 0.14, cy: 232, r: 156, w: 0.92 }, // золотой луч на стол с горячим чаем
+        { ang: -0.30, spread: 0.15, cy: 228, r: 158, w: 1.15 }, // левый луч на свечи и ковёр
+        { ang: -0.09, spread: 0.16, cy: 224, r: 162, w: 1.48 }, // яркий утренний сноп прямо на цветок и сосуд
+        { ang:  0.10, spread: 0.16, cy: 224, r: 162, w: 1.42 }, // центральный золотой сноп на персидский ковёр
+        { ang:  0.31, spread: 0.15, cy: 228, r: 158, w: 1.12 }, // правый луч на ковёр и свечи
+        { ang:  0.54, spread: 0.14, cy: 234, r: 158, w: 0.96 }  // тёплый солнечный луч на кушетку и спящего кота
+    ];
+    for (let idx = 0; idx < shafts.length; idx++) {
+        const sh = shafts[idx];
+        const drift = still ? 0 : Math.sin(now * (0.00034 + idx * 0.00005) + idx * 1.5) * 0.024;
+        const pulse = still ? 0.6 : (0.5 + 0.5 * Math.sin(now * (0.00052 + idx * 0.00007) + idx * 1.2));
+        const roomA = (isMax ? (0.135 + pulse * 0.062) : (0.095 + pulse * 0.048)) * sh.w * strength;
         g.save();
-        g.translate(WIN_CX, WIN_CY - 20);
-        g.rotate(baseAng + drift);
-        g.scale(0.33 + (idx === 2 ? 0.09 : 0), 1);
-        const rg = g.createRadialGradient(0, 118, 10, 0, 155, 222);
-        rg.addColorStop(0, `rgba(255,126,118,${rayA.toFixed(3)})`);
-        rg.addColorStop(0.55, `rgba(230,52,70,${(rayA * 0.56).toFixed(3)})`);
-        rg.addColorStop(1, 'rgba(150,18,34,0)');
-        g.fillStyle = rg;
-        g.beginPath(); g.arc(0, 155, 222, 0, Math.PI * 2); g.fill();
-        g.restore();
-    });
-
-    // Световая проекция окна на ковре (плавно дышит и чуть плывёт вместе с лучами)
-    if (isMax) {
-        g.save();
-        g.translate(WIN_CX + sway * 0.6, 418);
-        g.scale(1, 0.34);
-        const pg = g.createRadialGradient(0, -34, 12, 0, 0, 212);
-        pg.addColorStop(0, `rgba(255,112,110,${(0.2 + b2 * 0.065).toFixed(3)})`);
-        pg.addColorStop(0.52, `rgba(222,42,62,${(0.12 + b1 * 0.04).toFixed(3)})`);
-        pg.addColorStop(1, 'rgba(140,14,30,0)');
-        g.fillStyle = pg;
-        g.beginPath(); g.arc(0, 0, 212, 0, Math.PI * 2); g.fill();
+        g.translate(sunX, sunY);
+        g.rotate(sh.ang + drift);
+        g.scale(sh.spread, 1);
+        if (g.createRadialGradient) {
+            const rg = g.createRadialGradient(0, sh.cy - 22, 6, 0, sh.cy, sh.r);
+            rg.addColorStop(0.00, isMax
+                ? `rgba(255, 214, 142, ${roomA.toFixed(3)})`
+                : `rgba(255, 132, 122, ${roomA.toFixed(3)})`);
+            rg.addColorStop(0.50, isMax
+                ? `rgba(250, 122, 90, ${(roomA * 0.58).toFixed(3)})`
+                : `rgba(222, 48, 66, ${(roomA * 0.5).toFixed(3)})`);
+            rg.addColorStop(1.00, 'rgba(150, 18, 34, 0)');
+            g.fillStyle = rg;
+            g.beginPath(); g.arc(0, sh.cy, sh.r, 0, Math.PI * 2); g.fill();
+        }
         g.restore();
     }
 
-    // Тёплые пылинки внутри конуса света из окна
+    // 3. Живое тёплое пятно утреннего солнца, разливающееся по персидскому ковру, кушетке и краю стола!
+    if (isMax) {
+        g.save();
+        g.translate(WIN_CX - 3 + sway * 0.5, 420);
+        g.scale(1, 0.33);
+        if (g.createRadialGradient) {
+            const pg = g.createRadialGradient(0, -24, 14, 0, 0, 236);
+            pg.addColorStop(0.00, `rgba(255, 206, 132, ${(0.32 + b2 * 0.075).toFixed(3)})`);
+            pg.addColorStop(0.42, `rgba(250, 116, 88, ${(0.19 + b1 * 0.048).toFixed(3)})`);
+            pg.addColorStop(0.76, `rgba(198, 38, 56, ${(0.085 + b1 * 0.02).toFixed(3)})`);
+            pg.addColorStop(1.00, 'rgba(140, 14, 30, 0)');
+            g.fillStyle = pg;
+            g.beginPath(); g.arc(0, 0, 236, 0, Math.PI * 2); g.fill();
+        }
+        g.restore();
+
+        // Тёплый утренний солнечный свет мягко касается кота на кушетке, радиополки и стола с чаем
+        radialAura(g, 608, 336, 86, '#ffbe76', '#b8283e', 0.14 + b1 * 0.035);
+        radialAura(g, 224, 294, 66, '#ffba74', '#b8283e', 0.12 + b2 * 0.03);
+    }
+
+    // 4. Золотистые утренние пылинки, неспешно танцующие в лучах солнца внутри комнаты
     const moteCnt = isMax ? FX_MOTES.length : 8;
     for (let i = 0; i < moteCnt; i++) {
         const m = FX_MOTES[i];
-        const v = (m.v + now * m.speed) % 1;
-        const span = 94 + v * 120;
-        const mx = WIN_CX + (m.u - 0.5) * span * 2 + Math.sin(now * 0.0005 + m.phase) * 8 + sway * v * 0.45;
-        const my = 152 + v * 296;
-        const edgeFade = Math.sin(v * Math.PI) * (1 - Math.abs(m.u - 0.5) * 1.4);
-        const ma = Math.max(0, edgeFade * (0.45 + 0.55 * Math.sin(now * 0.0013 + m.phase)) * (isMax ? 0.48 : 0.22));
+        const v = (m.v + (still ? 0 : now * m.speed)) % 1;
+        const span = 78 + v * 145;
+        const mx = WIN_CX + (m.u - 0.5) * span * 2 + (still ? 0 : Math.sin(now * 0.0005 + m.phase) * 7) + sway * v * 0.4;
+        // Пылинки кружатся преимущественно в нижней половине окна и в самой комнате (y=235..458)
+        const my = 232 + v * 228;
+        const edgeFade = Math.sin(v * Math.PI) * (1 - Math.abs(m.u - 0.5) * 1.35);
+        const tw = still ? 0.75 : (0.45 + 0.55 * Math.sin(now * 0.0014 + m.phase));
+        const ma = Math.max(0, edgeFade * tw * (isMax ? 0.62 : 0.22));
         if (ma < 0.03) continue;
-        g.fillStyle = `rgba(255,198,190,${ma.toFixed(3)})`;
-        g.beginPath(); g.arc(mx, my, m.size, 0, Math.PI * 2); g.fill();
+        g.fillStyle = isMax ? `rgba(255, 232, 174, ${ma.toFixed(3)})` : `rgba(255, 198, 190, ${ma.toFixed(3)})`;
+        g.beginPath(); g.arc(mx, my, m.size * (isMax ? 1.12 : 1), 0, Math.PI * 2); g.fill();
     }
     g.restore();
 }
@@ -3945,22 +4283,108 @@ function setStationEntry(text, pulse) {
     if (pulse && roomAnim.isFullscreen) showFullscreenCaption(text);
 }
 
-// ===== ПОЛНОЭКРАННЫЙ ГОРИЗОНТАЛЬНЫЙ РЕЖИМ КОМНАТЫ (ПК, ANDROID, iOS И TELEGRAM WEBVIEW) =====
-function syncFullscreenOrientation() {
-    if (typeof document === 'undefined' || typeof window === 'undefined') return;
-    const room = document.getElementById('station');
-    if (!room || !room.classList) return;
-    if (!roomAnim.isFullscreen) {
-        room.classList.remove('is-fullscreen', 'is-rotated', 'is-fs-idle');
-        return;
+// ===== НАСТОЯЩИЙ ПОЛНОЭКРАННЫЙ ГОРИЗОНТАЛЬНЫЙ РЕЖИМ (ПОРТАЛ В BODY + ПЛАВНАЯ FLIP-АНИМАЦИЯ) =====
+function getFullscreenViewport() {
+    if (typeof window === 'undefined') return { left: 0, top: 0, width: 800, height: 500 };
+    const vv = window.visualViewport;
+    const width = Math.max(1, Number((vv && vv.width) || window.innerWidth) || 800);
+    const height = Math.max(1, Number((vv && vv.height) || window.innerHeight) || 500);
+    const left = Number((vv && vv.offsetLeft) || 0) || 0;
+    const top = Number((vv && vv.offsetTop) || 0) || 0;
+    return { left, top, width, height };
+}
+
+function computeFullscreenSceneBox(vp) {
+    const aspect = 1586 / 992;
+    const rotated = vp.width < vp.height;
+    const deg = rotated ? (roomAnim.fsFlip ? -90 : 90) : 0;
+    const longAxis = rotated ? vp.height : vp.width;
+    const shortAxis = rotated ? vp.width : vp.height;
+    const sceneW = Math.min(longAxis, shortAxis * aspect);
+    const sceneH = sceneW / aspect;
+    return { rotated, deg, sceneW, sceneH };
+}
+
+function clearFullscreenInlineStyles(room, scene) {
+    if (room && room.style) {
+        room.style.top = '';
+        room.style.left = '';
+        room.style.right = '';
+        room.style.bottom = '';
+        room.style.width = '';
+        room.style.height = '';
     }
+    if (scene && scene.style) {
+        scene.style.width = '';
+        scene.style.height = '';
+        scene.style.transform = '';
+        scene.style.borderRadius = '';
+    }
+}
+
+function restoreRoomFromPortal(room, scene) {
+    if (typeof document !== 'undefined') {
+        const docEl = document.documentElement;
+        if (docEl && docEl.classList) docEl.classList.remove('is-soma-fs', 'is-soma-fs-closing');
+        const ph = roomAnim.fsPlaceholder || document.getElementById('station-fs-placeholder');
+        if (ph && ph.parentNode && room) {
+            ph.parentNode.insertBefore(room, ph);
+            ph.parentNode.removeChild(ph);
+        }
+        roomAnim.fsPlaceholder = null;
+        // Обновляем цвет системной панели браузера обратно в нуарный #0b0708
+        const metaTheme = document.getElementById('soma-theme-color');
+        if (metaTheme && metaTheme.setAttribute) metaTheme.setAttribute('content', '#0b0708');
+    }
+    clearFullscreenInlineStyles(room, scene);
+    if (room && room.classList) {
+        room.classList.remove('is-fullscreen', 'is-fs-active', 'is-fs-animating', 'is-fs-closing', 'is-rotated', 'is-flipped', 'is-fs-idle');
+    }
+}
+
+function syncFullscreenOrientation(applyTransform) {
+    if (typeof document === 'undefined' || typeof window === 'undefined') return null;
+    const room = document.getElementById('station');
+    const scene = document.getElementById('station-scene');
+    if (!room || !room.classList) return null;
+    if (!roomAnim.isFullscreen && !roomAnim.fsClosing) {
+        restoreRoomFromPortal(room, scene);
+        return null;
+    }
+    const vp = getFullscreenViewport();
+    const box = computeFullscreenSceneBox(vp);
     room.classList.add('is-fullscreen');
-    const vw = Number(window.innerWidth) || 800;
-    const vh = Number(window.innerHeight) || 500;
-    // Если телефон вертикальный и ОС не повернула экран — плавно разворачиваем сцену горизонтально на 90°!
-    room.classList.toggle('is-rotated', vw < vh);
+    room.classList.toggle('is-rotated', box.rotated);
+    room.classList.toggle('is-flipped', box.rotated && !!roomAnim.fsFlip);
+    if (room.style) {
+        room.style.left = `${vp.left}px`;
+        room.style.top = `${vp.top}px`;
+        room.style.right = 'auto';
+        room.style.bottom = 'auto';
+        room.style.width = `${vp.width}px`;
+        room.style.height = `${vp.height}px`;
+    }
+    if (scene && scene.style) {
+        scene.style.width = `${box.sceneW.toFixed(2)}px`;
+        scene.style.height = `${box.sceneH.toFixed(2)}px`;
+        if (applyTransform !== false && !roomAnim.fsClosing) {
+            scene.style.transform = `translate(-50%, -50%) rotate(${box.deg}deg) scale(1)`;
+            scene.style.borderRadius = box.sceneW >= (box.rotated ? vp.height : vp.width) - 2 ? '0px' : '6px';
+        }
+    }
     const sndPill = document.getElementById('station-fs-snd');
     if (sndPill && typeof soundOn !== 'undefined') sndPill.textContent = soundOn ? '🔊' : '🔇';
+    return { vp, box };
+}
+
+function flipRoomFullscreen() {
+    if (!roomAnim.isFullscreen || roomAnim.fsClosing) return;
+    roomAnim.fsFlip = !roomAnim.fsFlip;
+    if (typeof SFX !== 'undefined' && SFX.tap) SFX.tap();
+    const room = typeof document !== 'undefined' && document.getElementById('station');
+    if (room && room.classList) room.classList.add('is-fs-animating');
+    syncFullscreenOrientation(true);
+    bumpFullscreenHud();
 }
 
 function bumpFullscreenHud() {
@@ -3998,64 +4422,213 @@ function toggleRoomFullscreen() {
 function enterRoomFullscreen() {
     if (typeof document === 'undefined') return;
     const room = document.getElementById('station');
+    const scene = document.getElementById('station-scene');
     if (!room) return;
+
+    // Если шло закрытие — мгновенно отменяем и подхватываем с места
+    if (typeof clearTimeout === 'function') clearTimeout(roomAnim.fsAnimTimer);
+    roomAnim.fsClosing = false;
     roomAnim.isFullscreen = true;
-    if (typeof SFX !== 'undefined' && SFX.tap) SFX.tap();
-    syncFullscreenOrientation();
-    bumpFullscreenHud();
-    // Пробуем системный Fullscreen + блокировку горизонтальной ориентации (если браузер/Telegram разрешает)
+
+    // 1. Замеряем точное положение карточки комнаты в интерфейсе ДО переноса (для бесшовной FLIP-анимации!)
+    let fromRect = null;
+    if (scene && typeof scene.getBoundingClientRect === 'function') {
+        const r = scene.getBoundingClientRect();
+        if (r && r.width > 20 && r.height > 20) {
+            fromRect = { left: r.left, top: r.top, width: r.width, height: r.height };
+        }
+    }
+    let cardHeight = 0;
+    if (typeof room.getBoundingClientRect === 'function') {
+        const cr = room.getBoundingClientRect();
+        if (cr && cr.height > 20) cardHeight = cr.height;
+    }
+
+    // Мягкий бархатный аккорд раскрытия пространства
+    if (typeof tone === 'function') {
+        tone(196, 0.36, 'sine', 0.022, 0, 294);
+        tone(392, 0.44, 'sine', 0.013, 0.07, 440);
+    } else if (typeof SFX !== 'undefined' && SFX.tap) {
+        SFX.tap();
+    }
+
+    // 2. Выносим #station ПОРТАЛОМ прямо в document.body (исключает обрезку внутри #view-profile на iOS/Android/Telegram!)
+    if (document.body && room.parentNode && room.parentNode !== document.body && typeof document.createElement === 'function') {
+        const ph = document.createElement('div');
+        ph.id = 'station-fs-placeholder';
+        ph.className = 'station-fs-placeholder';
+        if (ph.style && cardHeight > 0) ph.style.height = `${Math.round(cardHeight)}px`;
+        ph.setAttribute('aria-hidden', 'true');
+        room.parentNode.insertBefore(ph, room);
+        document.body.appendChild(room);
+        roomAnim.fsPlaceholder = ph;
+    }
+    if (document.documentElement && document.documentElement.classList) {
+        document.documentElement.classList.remove('is-soma-fs-closing');
+        document.documentElement.classList.add('is-soma-fs');
+    }
+    const metaTheme = document.getElementById('soma-theme-color');
+    if (metaTheme && metaTheme.setAttribute) metaTheme.setAttribute('content', '#040102');
+
+    // 3. Системный Fullscreen + горизонтальная ориентация (где поддерживается браузером / Telegram WebApp)
     try {
-        if (window.Telegram && Telegram.WebApp && typeof Telegram.WebApp.requestFullscreen === 'function') {
+        if (typeof window !== 'undefined' && window.Telegram && Telegram.WebApp && typeof Telegram.WebApp.requestFullscreen === 'function') {
             Telegram.WebApp.requestFullscreen();
         } else if (document.documentElement && typeof document.documentElement.requestFullscreen === 'function' && !document.fullscreenElement) {
-            document.documentElement.requestFullscreen().catch(() => {});
+            const p = document.documentElement.requestFullscreen({ navigationUI: 'hide' });
+            if (p && typeof p.catch === 'function') p.catch(() => {});
         }
     } catch (_) {}
     try {
-        if (screen && screen.orientation && typeof screen.orientation.lock === 'function') {
-            screen.orientation.lock('landscape').catch(() => {});
+        if (typeof screen !== 'undefined' && screen && screen.orientation && typeof screen.orientation.lock === 'function') {
+            const lp = screen.orientation.lock('landscape');
+            if (lp && typeof lp.catch === 'function') lp.catch(() => {});
         }
     } catch (_) {}
-    showFullscreenCaption('Полноэкранный режим станции · касайтесь предметов, чтобы оживить комнату');
+
+    // 4. Кинематографичная 60/120fps FLIP-анимация: комната плавно «взлетает» из карточки, разворачивается и заполняет весь экран!
+    const canAnimate = !prefersStillRoom()
+        && fromRect
+        && scene
+        && scene.style
+        && typeof requestAnimationFrame === 'function';
+
+    if (canAnimate) {
+        room.classList.remove('is-fs-active', 'is-fs-animating', 'is-fs-closing');
+        const geom = syncFullscreenOrientation(false);
+        if (geom) {
+            const { vp, box } = geom;
+            const fromCx = fromRect.left + fromRect.width * 0.5;
+            const fromCy = fromRect.top + fromRect.height * 0.5;
+            const toCx = vp.left + vp.width * 0.5;
+            const toCy = vp.top + vp.height * 0.5;
+            const dx = fromCx - toCx;
+            const dy = fromCy - toCy;
+            const s0 = Math.max(0.18, Math.min(1.5, fromRect.width / box.sceneW));
+            scene.style.transform = `translate(calc(-50% + ${dx.toFixed(1)}px), calc(-50% + ${dy.toFixed(1)}px)) rotate(0deg) scale(${s0.toFixed(4)})`;
+            scene.style.borderRadius = `${Math.round(18 / s0)}px`;
+            void scene.offsetWidth;
+            const launchFlip = () => {
+                if (!roomAnim.isFullscreen || roomAnim.fsClosing) return;
+                room.classList.add('is-fs-animating', 'is-fs-active');
+                syncFullscreenOrientation(true);
+            };
+            // Двойной rAF гарантирует на iOS Safari/Chrome/Telegram, что стартовый кадр зафиксирован до старта перехода
+            requestAnimationFrame(() => requestAnimationFrame(launchFlip));
+            if (typeof setTimeout === 'function') {
+                roomAnim.fsAnimTimer = setTimeout(() => {
+                    if (!roomAnim.isFullscreen || roomAnim.fsClosing) return;
+                    syncFullscreenOrientation(true);
+                    showFullscreenCaption('Касайтесь предметов, чтобы оживить станцию');
+                }, 580);
+            }
+        }
+    } else {
+        if (room.classList) room.classList.add('is-fs-active');
+        syncFullscreenOrientation(true);
+        showFullscreenCaption('Касайтесь предметов, чтобы оживить станцию');
+    }
+
+    bumpFullscreenHud();
     ensureStationLoop();
 }
 
 function exitRoomFullscreen(silent) {
-    if (!roomAnim.isFullscreen) return;
+    if (!roomAnim.isFullscreen && !roomAnim.fsClosing) return;
     roomAnim.isFullscreen = false;
     if (typeof clearTimeout === 'function') {
         clearTimeout(roomAnim.fsIdleTimer);
         clearTimeout(roomAnim.fsCapTimer);
+        clearTimeout(roomAnim.fsAnimTimer);
     }
-    if (!silent && typeof SFX !== 'undefined' && SFX.tap) SFX.tap();
+
+    const room = typeof document !== 'undefined' && document.getElementById('station');
+    const scene = typeof document !== 'undefined' && document.getElementById('station-scene');
+
+    if (!silent) {
+        if (typeof tone === 'function') {
+            tone(294, 0.28, 'sine', 0.018, 0, 196);
+        } else if (typeof SFX !== 'undefined' && SFX.tap) {
+            SFX.tap();
+        }
+    }
+
     if (typeof document !== 'undefined') {
         const cap = document.getElementById('station-fs-caption');
         if (cap && cap.classList) cap.classList.remove('is-visible');
         try {
-            if (window.Telegram && Telegram.WebApp && Telegram.WebApp.isFullscreen && typeof Telegram.WebApp.exitFullscreen === 'function') {
+            if (typeof window !== 'undefined' && window.Telegram && Telegram.WebApp && Telegram.WebApp.isFullscreen && typeof Telegram.WebApp.exitFullscreen === 'function') {
                 Telegram.WebApp.exitFullscreen();
             } else if (document.fullscreenElement && typeof document.exitFullscreen === 'function') {
-                document.exitFullscreen().catch(() => {});
+                const ep = document.exitFullscreen();
+                if (ep && typeof ep.catch === 'function') ep.catch(() => {});
             }
         } catch (_) {}
     }
     try {
-        if (screen && screen.orientation && typeof screen.orientation.unlock === 'function') {
+        if (typeof screen !== 'undefined' && screen && screen.orientation && typeof screen.orientation.unlock === 'function') {
             screen.orientation.unlock();
         }
     } catch (_) {}
-    syncFullscreenOrientation();
+
+    // Обратная плавная FLIP-посадка комнаты ровно обратно в свою карточку в профиле!
+    const ph = roomAnim.fsPlaceholder || (typeof document !== 'undefined' && document.getElementById('station-fs-placeholder'));
+    let toRect = null;
+    if (!silent && !prefersStillRoom() && ph && typeof ph.getBoundingClientRect === 'function' && scene && scene.style && typeof setTimeout === 'function') {
+        const pr = ph.getBoundingClientRect();
+        if (pr && pr.width > 20) {
+            toRect = {
+                left: pr.left,
+                top: pr.top,
+                width: pr.width,
+                height: pr.width * (992 / 1586)
+            };
+        }
+    }
+
+    if (toRect && room && room.classList) {
+        roomAnim.fsClosing = true;
+        if (document.documentElement && document.documentElement.classList) {
+            document.documentElement.classList.add('is-soma-fs-closing');
+        }
+        const vp = getFullscreenViewport();
+        const sw = parseFloat(scene.style.width) || computeFullscreenSceneBox(vp).sceneW;
+        const dx = (toRect.left + toRect.width * 0.5) - (vp.left + vp.width * 0.5);
+        const dy = (toRect.top + toRect.height * 0.5) - (vp.top + vp.height * 0.5);
+        const s1 = Math.max(0.18, Math.min(1.5, toRect.width / sw));
+        room.classList.remove('is-fs-active', 'is-fs-animating');
+        room.classList.add('is-fs-closing');
+        scene.style.transform = `translate(calc(-50% + ${dx.toFixed(1)}px), calc(-50% + ${dy.toFixed(1)}px)) rotate(0deg) scale(${s1.toFixed(4)})`;
+        scene.style.borderRadius = `${Math.round(18 / s1)}px`;
+        roomAnim.fsAnimTimer = setTimeout(() => {
+            roomAnim.fsClosing = false;
+            restoreRoomFromPortal(room, scene);
+            ensureStationLoop();
+        }, 490);
+        return;
+    }
+
+    roomAnim.fsClosing = false;
+    restoreRoomFromPortal(room, scene);
     ensureStationLoop();
 }
 
 if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
-    window.addEventListener('resize', () => { if (roomAnim.isFullscreen) syncFullscreenOrientation(); });
-    window.addEventListener('orientationchange', () => { if (roomAnim.isFullscreen) setTimeout(syncFullscreenOrientation, 80); });
+    const onFsViewportChange = () => { if (roomAnim.isFullscreen && !roomAnim.fsClosing) syncFullscreenOrientation(true); };
+    window.addEventListener('resize', onFsViewportChange);
+    window.addEventListener('orientationchange', () => {
+        if (roomAnim.isFullscreen && typeof setTimeout === 'function') {
+            setTimeout(onFsViewportChange, 60);
+            setTimeout(onFsViewportChange, 260);
+        }
+    });
+    if (window.visualViewport && typeof window.visualViewport.addEventListener === 'function') {
+        window.visualViewport.addEventListener('resize', onFsViewportChange);
+        window.visualViewport.addEventListener('scroll', onFsViewportChange);
+    }
     if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
         document.addEventListener('fullscreenchange', () => {
-            if (!document.fullscreenElement && roomAnim.isFullscreen && typeof window !== 'undefined' && window.innerWidth >= window.innerHeight) {
-                syncFullscreenOrientation();
-            }
+            if (roomAnim.isFullscreen && !roomAnim.fsClosing) onFsViewportChange();
         });
     }
 }
@@ -4136,8 +4709,21 @@ function touchRoomObject(obj, event) {
     if (event && typeof event.clientX === 'number' && scene && scene.getBoundingClientRect) {
         const rect = scene.getBoundingClientRect();
         if (rect.width > 0 && rect.height > 0 && (event.clientX || event.clientY)) {
-            fxX = ((event.clientX - rect.left) / rect.width) * FX_W;
-            fxY = ((event.clientY - rect.top) / rect.height) * FX_H;
+            const nx = (event.clientX - rect.left) / rect.width;
+            const ny = (event.clientY - rect.top) / rect.height;
+            // Точный перевод координат касания даже при повороте сцены на ±90° на портретном телефоне!
+            if (roomAnim.isFullscreen && room.classList && room.classList.contains('is-rotated')) {
+                if (roomAnim.fsFlip) {
+                    fxX = (1 - ny) * FX_W;
+                    fxY = nx * FX_H;
+                } else {
+                    fxX = ny * FX_W;
+                    fxY = (1 - nx) * FX_H;
+                }
+            } else {
+                fxX = nx * FX_W;
+                fxY = ny * FX_H;
+            }
         }
     }
 

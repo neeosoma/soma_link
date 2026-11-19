@@ -21,7 +21,7 @@ function makeStorage(initial = {}) {
 function loadRoom(env = {}) {
     const localStorage = env.localStorage || makeStorage();
     return runInNewContext(
-        roomCode + ';({ stationPhases, PROGRESSION_RULES, GREENHOUSE_WARMTH_STEPS, stationState, indifferenceIndex, equipStationPhase, inspectPlantStage, togglePlantGallery, inspectPlantKind, togglePtsDrawer, togglePtsDew, cyclePtsCatCoat, togglePtsDemoCassette, loadWarmthLedger, claimDailyWarmth, fireflyState, recordWhisperEcho, daysSinceLastWarmth, whisperAdmission, loadGreenhouse, plantNewGreenhouseSeed, selectGreenhouseSlot, loadCassettes, saveWhisperCassette, playCassette, pressPagerScan, pressPagerInfo, renderPager, PLANT_KINDS, PLANT_STAGES, PLANT_WARMTH_STEPS, PLANT_LEAF, PLANT_BLOOM, PLANT_POTS, CAT_COATS, catSpec, CITY_WINDOWS, hashStr, rng, plantSpec, plantStage, drawPlantSprite, drawCrtMonitor, drawRoomCosmetics, drawWindowWorld, drawStationFx, drawCassetteDeck, paintPlantFrame, toggleRoomFullscreen, exitRoomFullscreen, renderRoom, touchRoomObject, activateRoomObject, resetStationPreview, roomAnim });',
+        roomCode + ';({ stationPhases, PROGRESSION_RULES, GREENHOUSE_WARMTH_STEPS, stationState, indifferenceIndex, equipStationPhase, inspectPlantStage, togglePlantGallery, inspectPlantKind, togglePtsDrawer, togglePtsDew, cyclePtsCatCoat, togglePtsDemoCassette, loadWarmthLedger, claimDailyWarmth, fireflyState, recordWhisperEcho, daysSinceLastWarmth, whisperAdmission, loadGreenhouse, plantNewGreenhouseSeed, selectGreenhouseSlot, loadCassettes, saveWhisperCassette, playCassette, pressPagerScan, pressPagerInfo, renderPager, PLANT_KINDS, PLANT_STAGES, PLANT_WARMTH_STEPS, PLANT_LEAF, PLANT_BLOOM, PLANT_POTS, CAT_COATS, catSpec, CITY_WINDOWS, hashStr, rng, plantSpec, plantStage, drawPlantSprite, drawCrtMonitor, drawRoomCosmetics, drawWindowWorld, drawWindowLightBeams, drawStationFx, drawCassetteDeck, paintPlantFrame, getFullscreenViewport, computeFullscreenSceneBox, toggleRoomFullscreen, enterRoomFullscreen, exitRoomFullscreen, flipRoomFullscreen, renderRoom, touchRoomObject, activateRoomObject, resetStationPreview, roomAnim });',
         { player: { uid: 'u_0123456789abcdef', name: 'AGENT_1001', warmth: 0 }, roomPreview: false, localStorage, ...env }
     );
 }
@@ -560,4 +560,202 @@ test('v7: unique 7-coat cat, Fireflies of Silence retention, live CRT + all 8 ro
     // 4. Pain Feed 1-signal-per-day quota + meaningful text + anti-self-dox rules exist in index.html
     assert.ok(indexHtml.includes("POST_DAY_KEY = 'soma_post_day'") && indexHtml.includes('hasSentPainToday'), '1 post/day gate must be enforced');
     assert.ok(indexHtml.includes('validatePainPost') && indexHtml.includes('formatUntilNextSignal'), 'post validator and countdown must be wired');
+});
+
+test('v8: body-portal FLIP fullscreen + 180 flip + rotated pointer mapping, Dawn sunrise & viaduct, Pain Feed CTA, and equalized flagship cosmetics', () => {
+    const p = require('path'), fs = require('fs'), vm = require('vm');
+    const cosmCode = fs.readFileSync(p.join(__dirname, '..', 'cosmetics.js'), 'utf8');
+    const cosmCss = fs.readFileSync(p.join(__dirname, '..', 'cosmetics.css'), 'utf8');
+    const edgeCode = fs.readFileSync(p.join(__dirname, '..', 'billing', 'supabase', 'functions', 'soma-stars', 'index.ts'), 'utf8');
+
+    // 1. Body-portal FLIP fullscreen fits every mobile & desktop viewport with zero clipping and restores cleanly to exact DOM slot
+    const makeCls = () => {
+        const s = new Set();
+        return {
+            add: (...cs) => cs.forEach(c => s.add(c)),
+            remove: (...cs) => cs.forEach(c => s.delete(c)),
+            toggle: (c, f) => (f === undefined ? (s.has(c) ? s.delete(c) : s.add(c)) : (f ? s.add(c) : s.delete(c))),
+            contains: c => s.has(c)
+        };
+    };
+    const makeContainer = name => {
+        const node = {
+            name, children: [], style: {}, dataset: {}, classList: makeCls(),
+            appendChild(ch) {
+                if (ch.parentNode) ch.parentNode.removeChild(ch);
+                ch.parentNode = node; node.children.push(ch); return ch;
+            },
+            insertBefore(ch, ref) {
+                if (ch.parentNode) ch.parentNode.removeChild(ch);
+                ch.parentNode = node;
+                const idx = node.children.indexOf(ref);
+                if (idx >= 0) node.children.splice(idx, 0, ch); else node.children.push(ch);
+                return ch;
+            },
+            removeChild(ch) {
+                const idx = node.children.indexOf(ch);
+                if (idx >= 0) node.children.splice(idx, 1);
+                ch.parentNode = null;
+            },
+            setAttribute(k, v) { node[k] = v; },
+            querySelector: () => null,
+            querySelectorAll: () => []
+        };
+        return node;
+    };
+
+    const docEl = makeContainer('html');
+    const bodyEl = makeContainer('body');
+    const profileEl = makeContainer('view-profile');
+    const beforeSibling = makeContainer('tryon-bar');
+    const roomEl = makeContainer('station');
+    const sceneEl = makeContainer('station-scene');
+    const afterSibling = makeContainer('soma-pager');
+    const metaTheme = { content: '#0b0708', setAttribute(k, v) { this[k] = v; } };
+    profileEl.appendChild(beforeSibling);
+    profileEl.appendChild(roomEl);
+    profileEl.appendChild(afterSibling);
+
+    let cardRect = { left: 14, top: 158, width: 362, height: 226.4 };
+    roomEl.getBoundingClientRect = () => ({ left: 14, top: 158, width: 362, height: 520 });
+    sceneEl.getBoundingClientRect = () => cardRect;
+
+    const rafQueue = [];
+    const timers = [];
+    const vv = { width: 390, height: 718, offsetLeft: 0, offsetTop: 0, addEventListener: () => {} };
+    const domById = {
+        'station': roomEl,
+        'station-scene': sceneEl,
+        'soma-theme-color': metaTheme,
+        get 'station-fs-placeholder'() { return profileEl.children.find(c => c.id === 'station-fs-placeholder') || null; }
+    };
+    let fakeNow = 2000;
+    const r = loadRoom({
+        window: { innerWidth: 390, innerHeight: 844, visualViewport: vv, matchMedia: () => ({ matches: false }), addEventListener: () => {} },
+        document: {
+            hidden: false, documentElement: docEl, body: bodyEl,
+            createElement: tag => {
+                const el = makeContainer(tag);
+                el.getBoundingClientRect = () => ({ left: 14, top: 158, width: 362, height: 520 });
+                return el;
+            },
+            getElementById: id => domById[id] || null,
+            addEventListener: () => {}
+        },
+        performance: { now: () => (fakeNow += 500) },
+        requestAnimationFrame: fn => { rafQueue.push(fn); return rafQueue.length; },
+        setTimeout: (fn, ms) => { timers.push({ fn, ms }); return timers.length; },
+        clearTimeout: () => {},
+        getActiveCosmetics: () => ({ cat: true, steam: true, tape: true, garland: true, candles: true, pot: 'pot_kintsugi' })
+    });
+
+    // Check zero-clipping scene fit across iPhone Chrome (390x718), iPhone full (390x844), iPhone SE (375x667), iPad (768x1024), Desktop (1440x900)
+    for (const [w, h, expectRot] of [[390, 718, true], [390, 844, true], [375, 667, true], [768, 1024, true], [844, 390, false], [1440, 900, false]]) {
+        const box = r.computeFullscreenSceneBox({ left: 0, top: 0, width: w, height: h });
+        assert.equal(box.rotated, expectRot);
+        const visW = box.rotated ? box.sceneH : box.sceneW;
+        const visH = box.rotated ? box.sceneW : box.sceneH;
+        assert.ok(visW <= w + 0.05 && visH <= h + 0.05, `scene (${visW.toFixed(1)}x${visH.toFixed(1)}) must fit inside ${w}x${h} with zero clipping`);
+        assert.ok(Math.abs(visW - w) < 1 || Math.abs(visH - h) < 1, `scene must fill full long or short axis on ${w}x${h}`);
+    }
+
+    // Enter fullscreen on portrait iOS Chrome: portaled to body, UI hidden, starts from card FLIP transform, then animates to 90deg landscape
+    r.enterRoomFullscreen();
+    assert.equal(roomEl.parentNode, bodyEl, '#station must portal directly into document.body to cover all app chrome');
+    assert.equal(profileEl.children[1].id, 'station-fs-placeholder', 'placeholder must hold exact slot inside #view-profile');
+    assert.equal(docEl.classList.contains('is-soma-fs'), true, 'app UI must fade out in fullscreen');
+    assert.equal(metaTheme.content, '#040102');
+    assert.ok(sceneEl.style.transform.includes('rotate(0deg) scale('), 'initial FLIP frame must start from unrotated card scale');
+    while (rafQueue.length) rafQueue.shift()();
+    assert.equal(roomEl.classList.contains('is-fs-animating'), true);
+    assert.equal(roomEl.classList.contains('is-fs-active'), true);
+    assert.equal(roomEl.classList.contains('is-rotated'), true);
+    assert.equal(sceneEl.style.transform, 'translate(-50%, -50%) rotate(90deg) scale(1)');
+
+    // Pointer un-rotation in +90deg and -90deg (180° flip button) hits the exact window ripple coordinate!
+    // In +90deg portrait: rotated bounding box has width = sceneH, height = sceneW; center of window (fxX=396.5, fxY=180) maps to nx = 1 - 180/496, ny = 396.5/793
+    cardRect = { left: 0, top: 0, width: 390, height: 623.5 };
+    r.roomAnim.ripples.length = 0;
+    r.touchRoomObject('window', { clientX: (1 - 180 / 496) * 390, clientY: (410 / 793) * 623.5 });
+    assert.equal(r.roomAnim.ripples.length, 1);
+    assert.ok(Math.abs(r.roomAnim.ripples[0].x - 410) < 1 && Math.abs(r.roomAnim.ripples[0].y - 180) < 1, '+90deg touch must map to exact FX coordinate');
+
+    r.flipRoomFullscreen();
+    assert.equal(roomEl.classList.contains('is-flipped'), true);
+    assert.equal(sceneEl.style.transform, 'translate(-50%, -50%) rotate(-90deg) scale(1)');
+    r.roomAnim.ripples.length = 0;
+    r.touchRoomObject('window', { clientX: (180 / 496) * 390, clientY: (1 - 410 / 793) * 623.5 });
+    assert.ok(Math.abs(r.roomAnim.ripples[0].x - 410) < 1 && Math.abs(r.roomAnim.ripples[0].y - 180) < 1, '-90deg flipped touch must map to exact FX coordinate');
+
+    // Animated reverse FLIP exit flies back to card rect, then restores #station between beforeSibling and afterSibling
+    r.exitRoomFullscreen();
+    assert.equal(roomEl.classList.contains('is-fs-closing'), true);
+    assert.ok(sceneEl.style.transform.includes('rotate(0deg) scale('), 'closing FLIP must smoothly un-rotate back to card');
+    timers.pop().fn();
+    assert.equal(roomEl.parentNode, profileEl, '#station must return cleanly to #view-profile after exit');
+    assert.deepEqual(profileEl.children.map(c => c.name), ['tryon-bar', 'station', 'soma-pager'], 'exact sibling order preserved');
+    assert.equal(roomEl.classList.contains('is-fullscreen'), false);
+    assert.equal(docEl.classList.contains('is-soma-fs'), false);
+    assert.equal(metaTheme.content, '#0b0708');
+    assert.equal(sceneEl.style.transform, '');
+
+    // 2. Dawn (phase 3) sunrise, crisp viaduct, sunbeams, and all 3 animated artisan pots render cleanly with zero errors
+    const dummyGrad = { addColorStop() {} };
+    let dawnClips = 0, dawnArcs = 0;
+    const g = {
+        canvas: { width: 793, height: 496 },
+        fillStyle: '', strokeStyle: '', lineWidth: 1, lineCap: 'butt', lineJoin: 'miter', globalCompositeOperation: 'source-over',
+        save() {}, restore() {}, translate() {}, scale() {}, rotate() {}, clearRect() {},
+        beginPath() {}, closePath() {}, clip() { dawnClips++; }, fill() {}, stroke() {},
+        fillRect() {}, rect() {}, moveTo() {}, lineTo() {}, quadraticCurveTo() {}, bezierCurveTo() {},
+        arc() { dawnArcs++; }, ellipse() {},
+        createLinearGradient: () => dummyGrad, createRadialGradient: () => dummyGrad
+    };
+    r.drawWindowWorld(g, 4200, 3, 0.2);
+    r.drawRoomCosmetics(g, 4200, 3);
+    r.drawWindowLightBeams(g, 4200, 3, 0.2);
+    assert.ok(dawnClips >= 3 && dawnArcs >= 20, 'Dawn renders clipped sky sunrise, sun disc, viaduct arches, and room sunbeams');
+    for (const potSkin of ['pot_cinnabar', 'pot_moon', 'pot_kintsugi']) {
+        assert.doesNotThrow(() => r.drawPlantSprite(g, r.plantSpec('u_pot'), 5, { phase: 3, now: 2500, potSkin, fireflies: 5 }));
+    }
+
+    // 3. Pain Feed CTA visibility hooks present and cache-busted to v8
+    assert.ok(indexHtml.includes('soma-post-cta') && indexHtml.includes('soma-post-beacon') && indexHtml.includes('soma-post-arrow'));
+    assert.ok(indexHtml.includes('id="station-fs-flip"') && indexHtml.includes('room.js?v=8') && indexHtml.includes('cosmetics.css?v=8'));
+
+    // 4. Flagship cosmetics: equalized peer pricing within every category + 1:1 Edge Function parity + every frame/seal/title/pager styled in CSS
+    const cEnv = { localStorage: makeStorage(), player: { uid: 'u_01', warmth: 12, xp: 500 }, esc: s => String(s) };
+    vm.runInNewContext(cosmCode + ';globalThis.C = { SOMA_CATALOG, SOMA_SEALS_SVG, SOMA_SEAL_CLASS, sealHtmlOf, titleSpanOf };', cEnv);
+    const cat = cEnv.C.SOMA_CATALOG;
+    const pricesOf = slot => [...new Set(cat.filter(i => i.slot === slot).map(i => i.stars))];
+    assert.deepEqual(pricesOf('frame'), [150], 'all 6 flagship frames must share equal 150 Stars tier');
+    assert.equal(cat.filter(i => i.slot === 'frame').length, 6, '6 bespoke animated frames including frame_pulse');
+    assert.deepEqual(pricesOf('seal'), [100], 'all 5 animated seals must share equal 100 Stars tier');
+    assert.deepEqual(pricesOf('title'), [110], 'all 5 animated titles must share equal 110 Stars tier');
+    assert.deepEqual(pricesOf('pager'), [140], 'all 4 animated pager skins must share equal 140 Stars tier');
+    assert.deepEqual(pricesOf('pot'), [160], 'all 3 artisan pots must share equal 160 Stars tier');
+    const ambStars = [...new Set(cat.filter(i => ['steam', 'tape', 'garland', 'candles'].includes(i.slot)).map(i => i.stars))];
+    assert.deepEqual(ambStars, [140], 'all 4 room ambience items must share equal 140 Stars tier');
+
+    // Exact bidirectional 1:1 count and price parity with billing/supabase/functions/soma-stars/index.ts
+    const edgeEntries = [...edgeCode.matchAll(/^\s*(\w+)\s*:\s*\{\s*title:[^}]*stars:\s*(\d+)\s*\}/gm)];
+    assert.equal(edgeEntries.length, cat.length, 'Edge Function must have exact same item count as SOMA_CATALOG');
+    for (const [_, id, stars] of edgeEntries) {
+        const found = cat.find(i => i.id === id);
+        assert.ok(found, `Edge item ${id} must exist in SOMA_CATALOG`);
+        assert.equal(found.stars, Number(stars), `Edge price for ${id} must match SOMA_CATALOG`);
+    }
+    // Every frame, seal, title, and pager has dedicated CSS animation rules in cosmetics.css
+    for (const it of cat) {
+        if (it.slot === 'frame') assert.ok(cosmCss.includes(`.${it.css}`), `CSS must style frame ${it.css}`);
+        if (it.slot === 'seal') {
+            assert.ok(cosmCss.includes(`.${cEnv.C.SOMA_SEAL_CLASS[it.id]}`), `CSS must animate seal ${it.id}`);
+            assert.ok(cEnv.C.sealHtmlOf(it.id).includes(cEnv.C.SOMA_SEAL_CLASS[it.id]));
+        }
+        if (it.slot === 'title') {
+            assert.ok(cosmCss.includes(`.${it.titleCss}`), `CSS must animate title ${it.titleCss}`);
+            assert.ok(cEnv.C.titleSpanOf(it.id, true).includes(it.titleCss));
+        }
+        if (it.slot === 'pager') assert.ok(cosmCss.includes(`data-skin="${it.id}"`), `CSS must style pager ${it.id}`);
+    }
 });

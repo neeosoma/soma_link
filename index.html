@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="room.css?v=3">
+    <link rel="stylesheet" href="room.css?v=4">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@300;400;500;600;700&display=swap');
         .font-mono-tech { font-family: 'Share Tech Mono', monospace; }
@@ -226,7 +226,10 @@
         <div id="view-profile" class="hidden flex-1 overflow-y-auto p-3.5 sm:p-4 pb-24 space-y-4">
             <section id="station" class="station" aria-label="Моя комната">
                 <div id="station-scene" class="station-scene">
-                    <img id="station-bg" src="assets/quiet-station.jpg?v=3" width="1586" height="992" alt="Тёмная комната над ночным городом: слева кассетный магнитофон, ночник и ЭЛТ-терминал под висячей лампой, по центру круглое окно и живое растение на ковре, справа приёмник, кушетка и ночник">
+                    <img id="station-bg" src="assets/quiet-station.jpg?v=4" width="1586" height="992" alt="Тёмная комната над ночным городом: слева кассетный магнитофон, ночник и ЭЛТ-терминал под висячей лампой, по центру круглое окно и живое растение на ковре, справа приёмник, кушетка и ночник">
+                    <img id="station-lamp" class="station-lamp" src="assets/lamp.png?v=4" width="112" height="348" alt="" aria-hidden="true">
+                    <div class="station-nightlight station-nightlight--l" id="station-nl" aria-hidden="true"></div>
+                    <div class="station-nightlight station-nightlight--r" id="station-nr" aria-hidden="true"></div>
                     <div class="station-light" aria-hidden="true"></div>
                     <div class="station-rain" aria-hidden="true"></div>
                     <svg class="station-sky" viewBox="0 0 1000 625" aria-hidden="true">
@@ -245,6 +248,7 @@
                     <div class="station-crt" aria-hidden="true"><span class="station-crt-beam"></span></div>
                     <div class="station-dial" aria-hidden="true"><span class="station-dial-needle"></span></div>
                     <canvas id="station-fx" class="station-fx" width="793" height="496" aria-hidden="true"></canvas>
+                    <canvas id="station-deck" class="station-deck" width="110" height="72" aria-hidden="true"></canvas>
                     <canvas id="station-plant" class="station-plant" width="360" height="380" aria-hidden="true"></canvas>
                     <button type="button" class="station-hit station-hit--terminal" data-obj="terminal" aria-label="Терминал — открыть тренажёр «Слушатель»" onclick="activateRoomObject('terminal', event)"></button>
                     <button type="button" class="station-hit station-hit--radio" data-obj="radio" aria-label="Приёмник — открыть радио" onclick="activateRoomObject('radio', event)"></button>
@@ -265,8 +269,9 @@
                     <div class="station-plant-box">
                         <div class="station-plant-row">
                             <span id="station-plant-info" class="station-meta"></span>
-                            <span id="station-plant-sub" class="station-plant-sub"></span>
+                            <button type="button" id="station-kinds-toggle" class="station-kinds-toggle" aria-expanded="false" onclick="togglePlantGallery()">ВСЕ 7 ВИДОВ</button>
                         </div>
+                        <span id="station-plant-sub" class="station-plant-sub"></span>
                         <div id="station-plant-pips" class="station-stages" role="group" aria-label="Прогрессия 6 стадий роста растения">
                             <button type="button" data-stage-btn="0" onclick="inspectPlantStage(0)"><b>1</b><span>росток</span></button>
                             <button type="button" data-stage-btn="1" onclick="inspectPlantStage(1)"><b>2</b><span>всходы</span></button>
@@ -274,6 +279,15 @@
                             <button type="button" data-stage-btn="3" onclick="inspectPlantStage(3)"><b>4</b><span>крона</span></button>
                             <button type="button" data-stage-btn="4" onclick="inspectPlantStage(4)"><b>5</b><span>бутоны</span></button>
                             <button type="button" data-stage-btn="5" onclick="inspectPlantStage(5)"><b>6</b><span>цвет</span></button>
+                        </div>
+                        <div id="station-plant-kinds" class="station-kinds hidden" role="group" aria-label="Осмотр всех 7 видов растений">
+                            <button type="button" data-kind-btn="0" onclick="inspectPlantKind(0)">Папоротник</button>
+                            <button type="button" data-kind-btn="1" onclick="inspectPlantKind(1)">Кактус</button>
+                            <button type="button" data-kind-btn="2" onclick="inspectPlantKind(2)">Суккулент</button>
+                            <button type="button" data-kind-btn="3" onclick="inspectPlantKind(3)">Бамбук</button>
+                            <button type="button" data-kind-btn="4" onclick="inspectPlantKind(4)">Лиана</button>
+                            <button type="button" data-kind-btn="5" onclick="inspectPlantKind(5)">Цветок</button>
+                            <button type="button" data-kind-btn="6" onclick="inspectPlantKind(6)">Бонсай</button>
                         </div>
                     </div>
                     <p id="station-next"></p>
@@ -334,7 +348,7 @@
     </div>
 
 <script src="config.js"></script>
-<script src="room.js?v=3"></script>
+<script src="room.js?v=4"></script>
 <script src="music.js"></script>
 <script>
     const cfg = window.SOMA_CONFIG || {};

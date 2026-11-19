@@ -10,7 +10,7 @@ const indexHtml = readFileSync(require.resolve('../index.html'), 'utf8');
 
 function loadRoom(env = {}) {
     return runInNewContext(
-        roomCode + ';({ stationPhases, stationState, equipStationPhase, inspectPlantStage, PLANT_KINDS, PLANT_STAGES, PLANT_WARMTH_STEPS, PLANT_LEAF, PLANT_BLOOM, PLANT_POTS, CITY_WINDOWS, hashStr, rng, plantSpec, plantStage, drawPlantSprite, drawStationFx, paintPlantFrame, renderRoom, touchRoomObject, activateRoomObject, resetStationPreview, roomAnim });',
+        roomCode + ';({ stationPhases, stationState, equipStationPhase, inspectPlantStage, togglePlantGallery, inspectPlantKind, PLANT_KINDS, PLANT_STAGES, PLANT_WARMTH_STEPS, PLANT_LEAF, PLANT_BLOOM, PLANT_POTS, CITY_WINDOWS, hashStr, rng, plantSpec, plantStage, drawPlantSprite, drawStationFx, drawCassetteDeck, paintPlantFrame, renderRoom, touchRoomObject, activateRoomObject, resetStationPreview, roomAnim });',
         { player: { uid: 'u_0123456789abcdef', name: 'AGENT_1001', warmth: 4 }, roomPreview: false, ...env }
     );
 }
@@ -175,22 +175,38 @@ test('all 6 plant stages are inspectable and scene uses smooth object animations
 
     const stageBtns = [...indexHtml.matchAll(/data-stage-btn="(\d)"/g)].map(m => Number(m[1]));
     assert.deepEqual(stageBtns, [0, 1, 2, 3, 4, 5], 'bottom panel must expose all 6 growth stage buttons');
+    const kindBtns = [...indexHtml.matchAll(/data-kind-btn="(\d)"/g)].map(m => Number(m[1]));
+    assert.deepEqual(kindBtns, [0, 1, 2, 3, 4, 5, 6], 'bottom panel must allow inspecting all 7 plant species');
+    assert.ok(indexHtml.includes('id="station-lamp"') && indexHtml.includes('assets/lamp.png'), 'lamp must be a dedicated cutout layer');
+    assert.ok(!roomCode.includes('getLampSprite'), 'must not slice background image at runtime');
+    assert.ok(roomCss.includes('.station[data-phase="3"] .station-sky') && /data-phase="3"\]\s*\.station-sky\s*\{\s*opacity:\s*0/.test(roomCss), 'constellation must fade out in dawn light');
 
     let trainerCalls = 0, radioCalls = 0, fakeNow = 1000;
     const entryEl = { textContent: '', offsetWidth: 0, classList: { remove() {}, add() {} } };
     const infoEl = { textContent: '' };
     const subEl = { textContent: '' };
+    const starEl = { dataset: { star: '1' }, style: { opacity: 1 } };
     const domStageBtns = [0, 1, 2, 3, 4, 5].map(() => ({
         title: '', pressed: 'false',
+        classList: { toggle() {} },
+        setAttribute(k, v) { if (k === 'aria-pressed') this.pressed = v; }
+    }));
+    const domKindBtns = [0, 1, 2, 3, 4, 5, 6].map(() => ({
+        textContent: '', pressed: 'false',
         classList: { toggle() {} },
         setAttribute(k, v) { if (k === 'aria-pressed') this.pressed = v; }
     }));
     const roomEl = {
         dataset: {},
         querySelector() { return { setAttribute() {} }; },
-        querySelectorAll(sel) { return sel === '[data-stage-btn]' ? domStageBtns : []; }
+        querySelectorAll(sel) {
+            if (sel === '[data-stage-btn]') return domStageBtns;
+            if (sel === '[data-kind-btn]') return domKindBtns;
+            if (sel.includes('station-sky')) return [starEl];
+            return [];
+        }
     };
-    const { activateRoomObject, inspectPlantStage, renderRoom, roomAnim, CITY_WINDOWS } = loadRoom({
+    const { activateRoomObject, inspectPlantStage, togglePlantGallery, inspectPlantKind, renderRoom, roomAnim, PLANT_KINDS, CITY_WINDOWS } = loadRoom({
         performance: { now: () => (fakeNow += 4000) },
         openTrainer: () => { trainerCalls++; },
         openRadio: () => { radioCalls++; },
@@ -208,7 +224,9 @@ test('all 6 plant stages are inspectable and scene uses smooth object animations
 
     assert.ok(CITY_WINDOWS.length >= 50, 'city skyscraper windows must be animated');
     renderRoom();
+    const ownKind = roomAnim.ownSpec.kind;
     assert.equal(roomAnim.liveStage, 1); // warmth 4 => stage 2/6
+    assert.equal(starEl.style.opacity, 1); // night phase => stars visible
 
     // Inspect every single one of the 6 stages (0..5)
     for (let s = 0; s < 6; s++) {
@@ -218,6 +236,26 @@ test('all 6 plant stages are inspectable and scene uses smooth object animations
         assert.equal(domStageBtns[s].pressed, 'true');
         assert.ok(infoEl.textContent.includes(`${s + 1}/6`));
     }
+
+    // Inspect all 7 species without altering the player's own ID-bound plant
+    togglePlantGallery();
+    assert.equal(roomAnim.galleryOpen, true);
+    for (let k = 0; k < 7; k++) {
+        inspectPlantKind(k);
+        assert.equal(roomAnim.spec.kind, k);
+        assert.equal(roomAnim.ownSpec.kind, ownKind);
+        assert.ok(infoEl.textContent.startsWith(PLANT_KINDS[k]));
+    }
+    togglePlantGallery();
+    assert.equal(roomAnim.spec.kind, ownKind, 'closing gallery restores own ID-bound plant');
+
+    // Verify stars hide when dawn light pours through window (phase 3)
+    const dawnRoom = loadRoom({
+        player: { uid: 'u_0123456789abcdef', name: 'AGENT_1001', warmth: 30 },
+        document: { hidden: false, getElementById: id => id === 'station' ? roomEl : null }
+    });
+    dawnRoom.renderRoom();
+    assert.equal(starEl.style.opacity, 0, 'stars must hide at max dawn phase');
 
     // Smooth object timelines start cleanly on tap
     activateRoomObject('lamp');

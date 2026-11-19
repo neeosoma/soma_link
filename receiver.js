@@ -881,7 +881,7 @@
             ov.className = 'rx-overlay hidden';
             ov.setAttribute('role', 'dialog');
             ov.setAttribute('aria-modal', 'true');
-            ov.setAttribute('aria-label', 'Ламповый приёмник и фонотека SOMA RX-88');
+            ov.setAttribute('aria-label', 'Ламповый приёмник SOMA RX-88');
             ov.innerHTML = `
                 <div class="rx-chassis" id="rx-chassis">
                     <div class="rx-head">
@@ -889,7 +889,6 @@
                             <div class="rx-brand">
                                 <span class="rx-pilot" aria-hidden="true"></span>
                                 <span class="rx-model">SOMA // RX-88</span>
-                                <span class="rx-model-sub">· ЛАМПОВАЯ ФОНОТЕКА</span>
                             </div>
                             <div class="rx-head-right">
                                 <span class="rx-stereo-lamp" aria-hidden="true">STEREO</span>

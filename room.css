@@ -693,6 +693,25 @@
     color: #ffb8c2;
 }
 
+.station-ctx-row button.station-vhs-chip.is-fav {
+    border-color: rgba(255, 198, 128, 0.44);
+    color: #ffe3bc;
+}
+
+.station-ctx-row button.station-vhs-open-btn {
+    background: linear-gradient(180deg, rgba(62, 18, 28, 0.92), rgba(32, 8, 14, 0.96));
+    border-color: rgba(255, 168, 132, 0.48);
+    color: #ffe8d6;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+}
+
+.station-ctx-row button.station-vhs-open-btn:hover {
+    background: linear-gradient(180deg, rgba(88, 24, 38, 0.95), rgba(44, 11, 20, 0.98));
+    border-color: rgba(255, 206, 152, 0.78);
+    color: #fff8f0;
+}
+
 /* Диегетические панели круглого окна (выбор открытых атмосфер) и кассетной деки */
 .station-ctx {
     display: grid;

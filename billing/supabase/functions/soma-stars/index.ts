@@ -149,7 +149,7 @@ Deno.serve(async req => {
         if (!tgUser) return json({ error: 'Откройте SOMA_LINK внутри Telegram' }, 401);
 
         const uid = await makeUid(tgUser.id);
-        const payload = JSON.stringify({ v: 1, uid, itemId, tg: tgUser.id });
+        const payload = JSON.stringify({ v: 1, uid, itemId });
 
         const tgRes = await tgApi(botToken, 'createInvoiceLink', {
             title: item.title,
@@ -168,10 +168,11 @@ Deno.serve(async req => {
 
     // 2. ВЕБХУК ОТ TELEGRAM (ПОДТВЕРЖДЕНИЕ И ЗАЧИСЛЕНИЕ ПОКУПКИ)
     if (path.endsWith('/webhook')) {
-        if (webhookSecret) {
-            const headerSecret = req.headers.get('x-telegram-bot-api-secret-token') || '';
-            if (headerSecret !== webhookSecret) return json({ error: 'Forbidden' }, 403);
+        if (!webhookSecret) {
+            return json({ error: 'TG_WEBHOOK_SECRET is required' }, 500);
         }
+        const headerSecret = req.headers.get('x-telegram-bot-api-secret-token') || '';
+        if (headerSecret !== webhookSecret) return json({ error: 'Forbidden' }, 403);
 
         const update = await req.json().catch(() => ({}));
 
@@ -182,7 +183,8 @@ Deno.serve(async req => {
             try {
                 const p = JSON.parse(q.invoice_payload || '{}');
                 const item = CATALOG[p.itemId];
-                ok = Boolean(item && q.currency === 'XTR' && q.total_amount === item.stars && p.uid);
+                const payerUid = q.from?.id ? await makeUid(Number(q.from.id)) : p.uid;
+                ok = Boolean(item && q.currency === 'XTR' && q.total_amount === item.stars && p.uid && payerUid === p.uid);
             } catch { ok = false; }
 
             await tgApi(botToken, 'answerPreCheckoutQuery', {
@@ -193,21 +195,28 @@ Deno.serve(async req => {
             return json({ ok: true });
         }
 
-        // 2б. Успешный платёж — записываем покупку в Supabase навсегда
+        // 2б. Успешный платёж — записываем покупку в Supabase навсегда (без сохранения сырого Telegram ID!)
         const sp = update.message?.successful_payment;
         if (sp && sp.currency === 'XTR') {
             try {
                 const p = JSON.parse(sp.invoice_payload || '{}');
                 const item = CATALOG[p.itemId];
-                if (item && p.uid && sp.telegram_payment_charge_id) {
+                const payerUid = update.message?.from?.id ? await makeUid(Number(update.message.from.id)) : p.uid;
+                if (
+                    item &&
+                    p.uid &&
+                    payerUid === p.uid &&
+                    Number(sp.total_amount) === item.stars &&
+                    sp.telegram_payment_charge_id
+                ) {
                     const admin = createClient(supabaseUrl, serviceKey);
                     await admin.rpc('grant_soma_cosmetic', {
                         p_charge_id: String(sp.telegram_payment_charge_id),
                         p_username: String(p.uid),
-                        p_tg_user_id: Number(update.message?.from?.id || p.tg || 0),
+                        p_tg_user_id: 0,
                         p_item_id: String(p.itemId),
-                        p_stars: Number(sp.total_amount || item.stars),
-                        p_payload: String(sp.invoice_payload),
+                        p_stars: Number(item.stars),
+                        p_payload: JSON.stringify({ v: 1, uid: String(p.uid), itemId: String(p.itemId) }),
                     });
                 }
             } catch (e) {

@@ -1,6 +1,6 @@
 const stationPhases = [
     { at: 0,   name: 'Дождь',    entry: 'Город шумит за мокрым стеклом. В пустом горшке тихо спит земля.' },
-    { at: 20,  name: 'Оттепель', entry: 'Дождь редеет. От круглого окна больше не тянет прежним холодом.' },
+    { at: 20,  name: 'Оттепель', entry: 'Тучи расступились: в морозной дымке сияет лунное гало, с арки окна тихо звенит живая капель, а комнату наполняет серебристый свет.' },
     { at: 108, name: 'Очаг',     entry: 'Под золотым серпом луны над городом плывут тёплые небесные фонарики, а ковёр согрет живым светом.' },
     { at: 240, name: 'Рассвет',  entry: 'Дождь стих. За окном разливается тёплый фиалково-космический рассвет в россыпи утренних звёзд.' }
 ];
@@ -211,7 +211,7 @@ const PLANT_NOTES = [
 const ROOM_LINES = {
     window: [
         ['Стекло прохладное. Живые капли скользят вниз мимо мерцающих окон NEEO~CITY.', 'За круглым окном дышит ночной город — в высотках тихо загораются и гаснут огни.'],
-        ['Дождь становится мягче. В мокром стекле плывут тёплые огни дальних башен.', 'Редкие капли неспешно сбегают по стеклу, а окна домов перемигиваются в ночи.'],
+        ['Сквозь расступившиеся облака льётся жемчужный свет полной луны в радужно-ледяном гало, а над башнями плывёт тёплый пар оттепели.', 'С хрустальных сосулек под сводом окна срывается живая серебряная капель — долгий холод отступил.'],
         ['Над башнями NEEO~CITY неспешно поднимаются золотые небесные фонарики, отражаясь в тёплой дымке.', 'Тонкий янтарный серп луны хранит тишину, а живые огоньки плывут меж ночных высоток.'],
         ['Дождь ушёл. За высотками NEEO~CITY дышит глубокий фиалково-космический рассвет в искрах звёзд.', 'Тёплый аметистово-розовый свет зари мягко скользит из окна на ковёр и листву.']
     ],
@@ -220,12 +220,12 @@ const ROOM_LINES = {
         'Абажур неспешно покачивается под потолком и мягко замирает в тишине.'
     ],
     vines: [
-        'Живые лианы над кушеткой тихо шелестят в полумраке — они раскроют путь в Оранжерею, когда расцветёт ваш первый цветок.',
-        'Сердцевидные листья мягко качнулись от прикосновения, затаив дыхание будущего зимнего сада.'
+        'Багряные бархатные лианы над кушеткой тихо шелестят в полумраке — они раскроют путь в Оранжерею, когда расцветёт ваш первый цветок.',
+        'Сердцевидные листья гранатового плюща мягко качнулись от прикосновения, затаив дыхание будущего зимнего сада.'
     ],
     vinesOpen: [
-        'Живые лианы мягко расступились — за тёплой листвой открывается стеклянный купол вашей Оранжереи.',
-        'По изумрудным плетям пробежал тихий свет: дверь в купол Оранжереи открыта.'
+        'Живые багряные лианы мягко расступились — за тёплой листвой открывается стеклянный купол вашей Оранжереи.',
+        'По бархатно-гранатовым плетям пробежал тёплый рубиновый свет: дверь в купол Оранжереи открыта.'
     ],
     shelf: [
         'Карман старой деки мягко открылся, показал кассету без подписи и плавно втянул её обратно.',
@@ -711,7 +711,8 @@ function drawCeramicPot(g, bx, baseY, sp, stage, lit, soilOpts) {
     const CUSTOM_POTS = {
         pot_kintsugi: ['#080507', '#1d1318', '#422c35'], // чёрная глина раку + 24k сусальное золото кинцуги
         pot_cinnabar: ['#3a050b', '#9e1426', '#eb4458'], // императорский киноварный лак с золотым поясом
-        pot_moon:     ['#1c1b28', '#525068', '#b8b4cc']  // лунный селадоновый фарфор с жемчужным отливом
+        pot_moon:     ['#1c1b28', '#525068', '#b8b4cc'], // лунный селадоновый фарфор с жемчужным отливом
+        pot_amethyst: ['#10051c', '#431868', '#a65ee6']  // резной полуночный аметистовый оникс с гранёным кристаллом
     };
     const potSkin = so.potSkin && CUSTOM_POTS[so.potSkin] ? so.potSkin : '';
     const [pDark, pMid, pLight] = potSkin ? CUSTOM_POTS[potSkin] : sp.pot;
@@ -724,7 +725,9 @@ function drawCeramicPot(g, bx, baseY, sp, stage, lit, soilOpts) {
                 ? ['rgba(255, 206, 98, 0.24)', 'rgba(180, 112, 24, 0.08)']
                 : potSkin === 'pot_cinnabar'
                     ? ['rgba(255, 76, 96, 0.28)', 'rgba(165, 18, 38, 0.09)']
-                    : ['rgba(206, 204, 242, 0.24)', 'rgba(118, 112, 168, 0.08)'];
+                    : potSkin === 'pot_amethyst'
+                        ? ['rgba(216, 132, 255, 0.30)', 'rgba(118, 36, 184, 0.10)']
+                        : ['rgba(206, 204, 242, 0.24)', 'rgba(118, 112, 168, 0.08)'];
             const pg = g.createRadialGradient(bx, baseY + 4, 6, bx, baseY + 4, bw + 34);
             pg.addColorStop(0, auraCol[0]);
             pg.addColorStop(0.55, auraCol[1]);
@@ -734,18 +737,26 @@ function drawCeramicPot(g, bx, baseY, sp, stage, lit, soilOpts) {
         }
         // Точёные ножки и лаковая площадка подставки кадаи
         const stW = bw + 8;
-        g.fillStyle = potSkin === 'pot_moon' ? '#181420' : '#16080a';
+        g.fillStyle = (potSkin === 'pot_moon' || potSkin === 'pot_amethyst') ? '#170f24' : '#16080a';
         g.beginPath();
         g.roundRect ? g.roundRect(bx - stW * 0.78, baseY + 2, 9, 6.5, 2) : g.fillRect(bx - stW * 0.78, baseY + 2, 9, 6.5);
         g.roundRect ? g.roundRect(bx + stW * 0.78 - 9, baseY + 2, 9, 6.5, 2) : g.fillRect(bx + stW * 0.78 - 9, baseY + 2, 9, 6.5);
         g.fill();
-        g.fillStyle = potSkin === 'pot_kintsugi' ? '#24120c' : potSkin === 'pot_cinnabar' ? '#2c080c' : '#231f2e';
+        g.fillStyle = potSkin === 'pot_kintsugi'
+            ? '#24120c'
+            : potSkin === 'pot_cinnabar'
+                ? '#2c080c'
+                : potSkin === 'pot_amethyst'
+                    ? '#230d38'
+                    : '#231f2e';
         g.beginPath(); g.ellipse(bx, baseY + 1.8, stW, 6.8, 0, 0, Math.PI * 2); g.fill();
         g.strokeStyle = potSkin === 'pot_kintsugi'
             ? 'rgba(248, 206, 104, 0.68)'
             : potSkin === 'pot_cinnabar'
                 ? 'rgba(255, 178, 112, 0.55)'
-                : 'rgba(218, 216, 248, 0.55)';
+                : potSkin === 'pot_amethyst'
+                    ? 'rgba(232, 176, 255, 0.66)'
+                    : 'rgba(218, 216, 248, 0.55)';
         g.lineWidth = 1.25;
         g.beginPath(); g.ellipse(bx, baseY + 1.4, stW - 1, 6.0, 0, 0, Math.PI); g.stroke();
         g.restore();
@@ -926,6 +937,83 @@ function drawCeramicPot(g, bx, baseY, sp, stage, lit, soilOpts) {
         g.moveTo(bx - tw * 0.55, topY + 14);
         g.quadraticCurveTo(bx - bw * 0.52, topY + sh.h * 0.55, bx - bw * 0.44, baseY - 8);
         g.stroke();
+    } else if (potSkin === 'pot_amethyst') {
+        // Аметистовый оникс: двойная серебряно-лавандовая филигрань, прожилки оникса, гранёный аметист и сумеречная пыльца
+        const gemGlow = 0.62 + potPulse * 0.32;
+        // Полупрозрачные шёлковые прожилки полуночного оникса
+        g.strokeStyle = `rgba(214, 152, 255, ${(0.22 + potPulse * 0.12).toFixed(3)})`;
+        g.lineWidth = 2.1;
+        g.lineCap = 'round';
+        g.beginPath();
+        g.moveTo(bx - tw * 0.62, topY + sh.h * 0.30);
+        g.bezierCurveTo(bx - tw * 0.18, topY + sh.h * 0.48, bx + tw * 0.22, topY + sh.h * 0.38, bx + tw * 0.64, topY + sh.h * 0.56);
+        g.stroke();
+        g.lineWidth = 1.3;
+        g.beginPath();
+        g.moveTo(bx - bw * 0.58, topY + sh.h * 0.72);
+        g.quadraticCurveTo(bx, topY + sh.h * 0.84, bx + bw * 0.56, topY + sh.h * 0.68);
+        g.stroke();
+
+        // Ювелирный серебряно-сиреневый пояс филиграни с боковыми подвесками
+        g.strokeStyle = `rgba(242, 214, 255, ${(0.70 + potPulse * 0.24).toFixed(3)})`;
+        g.lineWidth = 1.5;
+        g.beginPath();
+        g.moveTo(bx - bandW, bandY - 2);
+        g.quadraticCurveTo(bx, bandY + 7.5, bx + bandW, bandY - 2);
+        g.stroke();
+        g.strokeStyle = `rgba(216, 158, 255, ${(0.48 + potPulse * 0.2).toFixed(3)})`;
+        g.lineWidth = 1.05;
+        g.beginPath();
+        g.moveTo(bx - bandW * 0.88, bandY + 6.2);
+        g.bezierCurveTo(bx - bandW * 0.34, bandY + 15.5, bx + bandW * 0.34, bandY + 15.5, bx + bandW * 0.88, bandY + 6.2);
+        g.stroke();
+
+        // Гранёный королевский аметист в серебряной оправе по центру сосуда
+        const gy = bandY + 10.2;
+        radialAura(g, bx, gy, 15.5, '#fae8ff', '#9333ea', 0.44 + potPulse * 0.26);
+        g.fillStyle = `rgba(245, 226, 255, ${gemGlow.toFixed(3)})`;
+        g.beginPath();
+        g.moveTo(bx, gy - 6.6);
+        g.lineTo(bx + 5.1, gy);
+        g.lineTo(bx, gy + 6.8);
+        g.lineTo(bx - 5.1, gy);
+        g.closePath();
+        g.fill();
+        g.fillStyle = '#7e22ce';
+        g.beginPath();
+        g.moveTo(bx, gy - 5.0);
+        g.lineTo(bx + 3.7, gy);
+        g.lineTo(bx, gy + 5.2);
+        g.lineTo(bx - 3.7, gy);
+        g.closePath();
+        g.fill();
+        // Светящаяся верхняя грань кристалла
+        g.fillStyle = `rgba(253, 242, 255, ${(0.82 + potPulse * 0.16).toFixed(3)})`;
+        g.beginPath();
+        g.moveTo(bx, gy - 4.6);
+        g.lineTo(bx + 1.8, gy - 0.3);
+        g.lineTo(bx, gy + 1.4);
+        g.lineTo(bx - 2.4, gy - 0.5);
+        g.closePath();
+        g.fill();
+
+        // Боковые гранёные капли и мерцающие сиреневые искры
+        const sparks = [[-0.44, 5.4, 0.3], [0.44, 5.4, 1.9], [-0.26, 15.2, 3.2], [0.26, 15.2, 4.7]];
+        for (let si = 0; si < sparks.length; si++) {
+            const [sx, sy, ph] = sparks[si];
+            const twk = prefersStillRoom() ? 0.78 : (0.4 + 0.6 * (0.5 + 0.5 * Math.sin(potT * 2.3 + ph)));
+            g.fillStyle = `rgba(248, 224, 255, ${twk.toFixed(3)})`;
+            g.beginPath(); g.arc(bx + bandW * sx, bandY + sy, 1.0 + twk * 0.75, 0, Math.PI * 2); g.fill();
+        }
+
+        // Скользящий зеркальный аметистовый блик по полированному ониксу
+        const onxShift = prefersStillRoom() ? 0 : Math.sin(potT * 0.78 + 0.6) * (tw * 0.12);
+        g.strokeStyle = `rgba(244, 216, 255, ${(0.34 + potPulse * 0.16).toFixed(3)})`;
+        g.lineWidth = 3.2;
+        g.beginPath();
+        g.moveTo(bx - tw * 0.54 + onxShift, topY + 13);
+        g.quadraticCurveTo(bx - bw * 0.50 + onxShift, topY + sh.h * 0.55, bx - bw * 0.42 + onxShift, baseY - 7);
+        g.stroke();
     } else {
         g.strokeStyle = mixHex(pLight, '#ff9aa4', 0.22, stage >= 3 ? 0.42 : 0.22);
         g.lineWidth = 1.3;
@@ -1017,7 +1105,9 @@ function drawCeramicPot(g, bx, baseY, sp, stage, lit, soilOpts) {
     // Передняя кромка венчика перекрывает грунт снизу для объёма
     g.strokeStyle = potSkin === 'pot_kintsugi'
         ? 'rgba(246, 203, 100, 0.46)'
-        : mixHex(pLight, '#ffc4ca', 0.2, 0.5);
+        : potSkin === 'pot_amethyst'
+            ? 'rgba(236, 188, 255, 0.54)'
+            : mixHex(pLight, '#ffc4ca', 0.2, 0.5);
     g.lineWidth = 1.6;
     g.beginPath();
     g.ellipse(bx, topY + 3, rw - 1.5, ry + 0.5, 0, Math.PI * 0.08, Math.PI * 0.92);
@@ -1027,6 +1117,12 @@ function drawCeramicPot(g, bx, baseY, sp, stage, lit, soilOpts) {
         g.fillStyle = '#ffe294';
         g.beginPath(); g.ellipse(bx - tw * 0.45, topY + 8.5, 3.2, 1.5, 0.25, 0, Math.PI * 2); g.fill();
         g.beginPath(); g.ellipse(bx + tw * 0.47, topY + 8.2, 2.8, 1.4, -0.25, 0, Math.PI * 2); g.fill();
+    } else if (potSkin === 'pot_amethyst') {
+        // Серебряно-аметистовые инкрустации на венчике ониксового сосуда
+        g.fillStyle = '#f5d8ff';
+        g.beginPath(); g.ellipse(bx, topY + ry + 3.2, 3.4, 1.4, 0, 0, Math.PI * 2); g.fill();
+        g.beginPath(); g.ellipse(bx - tw * 0.5, topY + 8.4, 2.3, 1.1, 0.22, 0, Math.PI * 2); g.fill();
+        g.beginPath(); g.ellipse(bx + tw * 0.5, topY + 8.4, 2.3, 1.1, -0.22, 0, Math.PI * 2); g.fill();
     }
 
     return { soilY: topY + 2, halfW: sw, rimW: rw, baseY };
@@ -2771,7 +2867,7 @@ function drawPlantSprite(ctx, spec, stage, opts) {
         const emptyPot = drawCeramicPot(ctx, bx, baseY, spec, -1, phase >= 2 || pulse > 0.15 || !!spec.isAlien, {
             dry: !!o.dry,
             ready: !!o.soilReady || !!spec.isAlien,
-            potSkin: o.potSkin || (spec.isAlien ? 'pot_kintsugi' : '')
+            potSkin: o.potSkin === 'default' ? '' : (o.potSkin || (spec.isAlien ? 'pot_kintsugi' : ''))
         });
         if (spec.isAlien) {
             // Спящее звёздное семя тихо дышит перламутровым светом сквозь почву!
@@ -2847,7 +2943,7 @@ function drawPlantSprite(ctx, spec, stage, opts) {
 
     const pot = drawCeramicPot(ctx, bx, baseY, spec, s, phase >= 2 || pulse > 0.15 || !!spec.isAlien, {
         dry: !!o.dry,
-        potSkin: o.potSkin || (spec.isAlien ? 'pot_kintsugi' : '')
+        potSkin: o.potSkin === 'default' ? '' : (o.potSkin || (spec.isAlien ? 'pot_kintsugi' : ''))
     });
     const by = pot.soilY;
 
@@ -3267,11 +3363,82 @@ function loadGreenhouse(currentWarmthFallback) {
     } else if (g.placed === 'alien' && alienSeed) {
         placed = 'alien';
     }
-    return { bloomed, activeSeed: seed, alienSeed, placed };
+    // Индивидуальные сосуды для каждого вида в Оранжерее ('0'..'7' и 'alien' → 'default' | pot_*)
+    const VALID_POT_CHOICES = new Set(['default', 'pot_cinnabar', 'pot_moon', 'pot_kintsugi', 'pot_amethyst']);
+    const pots = {};
+    if (g.pots && typeof g.pots === 'object') {
+        for (const [k, v] of Object.entries(g.pots)) {
+            const validSlot = k === 'alien' || (/^\d+$/.test(k) && Number(k) >= 0 && Number(k) < PLANT_KINDS.length);
+            if (validSlot && typeof v === 'string' && VALID_POT_CHOICES.has(v)) {
+                pots[k] = v;
+            }
+        }
+    }
+    return { bloomed, activeSeed: seed, alienSeed, placed, pots };
 }
 
 function saveGreenhouse(gh) {
     lsSet('soma_greenhouse', JSON.stringify(gh));
+}
+
+function isPotSkinAvailable(potId) {
+    if (!potId || potId === 'default') return true;
+    if (isPtsMode()) return ['pot_cinnabar', 'pot_moon', 'pot_kintsugi', 'pot_amethyst'].includes(potId);
+    if (typeof getOwnedPotSkins === 'function') {
+        try { return getOwnedPotSkins().includes(potId); } catch (_) {}
+    }
+    if (typeof isOwned === 'function') {
+        try { return !!isOwned(potId); } catch (_) {}
+    }
+    const c = getRoomCosmeticsSafe();
+    return c && c.pot === potId;
+}
+
+// Возвращает сосуд, выбранный в Оранжерее для конкретного цветка ('0'..'7' или 'alien'):
+//   'default'      → родная терракота/керамика вида (перекрывает даже глобальный сосуд и кинцуги пришельца)
+//   'pot_*'        → выбранный авторский сосуд мастера (если открыт у игрока / в PTS)
+//   не задан       → fallbackPot (или 'pot_kintsugi' для пришельца)
+function potSkinForFlower(slot, fallbackPot, ghOverride) {
+    const key = slot === 'alien' ? 'alien' : String(Number(slot));
+    const gh = ghOverride || loadGreenhouse();
+    const chosen = gh && gh.pots && gh.pots[key];
+    if (chosen === 'default') return 'default';
+    if (chosen && isPotSkinAvailable(chosen)) return chosen;
+    if (slot === 'alien') {
+        if (fallbackPot && isPotSkinAvailable(fallbackPot)) return fallbackPot;
+        return 'pot_kintsugi';
+    }
+    return fallbackPot || '';
+}
+
+function setGreenhouseFlowerPot(slot, potSkin) {
+    const key = slot === 'alien' ? 'alien' : String(Number(slot));
+    const okSlot = key === 'alien' || (/^\d+$/.test(key) && Number(key) >= 0 && Number(key) < PLANT_KINDS.length);
+    if (!okSlot) return false;
+    const norm = (!potSkin || potSkin === 'default') ? 'default' : String(potSkin);
+    const allowed = new Set(['default', 'pot_cinnabar', 'pot_moon', 'pot_kintsugi', 'pot_amethyst']);
+    if (!allowed.has(norm)) return false;
+    if (norm !== 'default' && !isPotSkinAvailable(norm)) return false;
+    const gh = loadGreenhouse();
+    if (!gh.pots || typeof gh.pots !== 'object') gh.pots = {};
+    gh.pots[key] = norm;
+    saveGreenhouse(gh);
+    if (typeof renderRoom === 'function') renderRoom();
+    return true;
+}
+
+function activeRoomPotSkin(fallbackPot, specOverride) {
+    const cosm = getRoomCosmeticsSafe();
+    const fb = fallbackPot !== undefined ? fallbackPot : ((cosm && cosm.pot) || '');
+    // Во время живой примерки сосуда в комнате из Бутика сразу показываем примеряемый сосуд!
+    if (typeof shopState !== 'undefined' && shopState && shopState.liveRoomTry && shopState.preview && String(shopState.preview).startsWith('pot_')) {
+        return shopState.preview;
+    }
+    const sp = specOverride || roomAnim.spec || plantSpec();
+    if (!sp) return fb;
+    if (sp.isAlien) return potSkinForFlower('alien', fb);
+    if (Number.isInteger(sp.kind)) return potSkinForFlower(sp.kind, fb);
+    return fb;
 }
 
 function isGreenhouseUnlocked(ownSpecOverride) {
@@ -3792,7 +3959,287 @@ function drawWindowWorld(g, now, phase, winGlow) {
     g.ellipse(WIN_CX, WIN_CY, WIN_RX - 2, WIN_RY - 2, 0, 0, Math.PI * 2);
     g.clip();
 
-    if (phase === 2) {
+    if (phase === 1) {
+        // ===== АТМОСФЕРА «ОТТЕПЕЛЬ» (ВАУ-ЭФФЕКТ): РАССТУПИВШИЕСЯ ТУЧИ, ПОЛНАЯ ЖЕМЧУЖНАЯ ЛУНА В 22° ЛЕДЯНОМ ГАЛО,
+        //       СЕРЕБРИСТО-РОЗОВЫЙ ПАР ПРОБУЖДАЮЩЕГОСЯ ГОРОДА И ХРУСТАЛЬНЫЕ ТАЮЩИЕ СОСУЛЬКИ С ЖИВОЙ КАПЕЛЬЮ! =====
+        // Все высотки NEEO~CITY на 100% нетронуты — небесный просвет и гало живут строго за точным контуром зданий!
+        const still = prefersStillRoom();
+        const t = still ? 5.4 : now * 0.001;
+        const breathe = still ? 0.6 : (0.5 + 0.5 * Math.sin(t * 0.52));
+
+        g.save();
+        clipWindowSky(g);
+
+        // 1. Бархатно-сизое предвесеннее небо с перламутрово-ледяным просветом и тёплым розоватым дыханием у горизонта
+        if (g.createLinearGradient) {
+            const tk = g.createLinearGradient(0, 26, 0, 192);
+            tk.addColorStop(0.00, 'rgba(18, 22, 42, 0.72)');
+            tk.addColorStop(0.34, 'rgba(46, 56, 92, 0.58)');
+            tk.addColorStop(0.66, 'rgba(104, 118, 158, 0.50)');
+            tk.addColorStop(0.88, 'rgba(196, 168, 198, 0.52)');
+            tk.addColorStop(1.00, 'rgba(244, 206, 220, 0.62)');
+            g.fillStyle = tk;
+            g.fillRect(242, 22, 324, 172);
+        }
+
+        // Диагональное серебряно-перламутровое «окно» в расступившихся зимних тучах
+        const mx = 438, my = 74, mr = 10.6;
+        if (g.createRadialGradient) {
+            g.save();
+            g.globalCompositeOperation = 'screen';
+            const rift = g.createRadialGradient(mx, my, 4, mx - 18, my + 24, 132);
+            const ra = 0.42 + breathe * 0.09 + winGlow * 0.09;
+            rift.addColorStop(0.00, `rgba(240, 248, 255, ${ra.toFixed(3)})`);
+            rift.addColorStop(0.32, `rgba(186, 214, 248, ${(ra * 0.66).toFixed(3)})`);
+            rift.addColorStop(0.68, `rgba(224, 176, 212, ${(ra * 0.34).toFixed(3)})`);
+            rift.addColorStop(1.00, 'rgba(40, 28, 56, 0)');
+            g.fillStyle = rift;
+            g.fillRect(242, 22, 324, 172);
+
+            // Тёплый перламутрово-розовый отсвет тающего города снизу между башнями
+            const cg = g.createRadialGradient(408, 186, 8, 408, 170, 128);
+            cg.addColorStop(0.00, `rgba(255, 214, 226, ${(0.32 + breathe * 0.07).toFixed(3)})`);
+            cg.addColorStop(0.48, `rgba(186, 208, 244, ${(0.20 + breathe * 0.05).toFixed(3)})`);
+            cg.addColorStop(1.00, 'rgba(60, 40, 80, 0)');
+            g.fillStyle = cg;
+            g.fillRect(242, 22, 324, 172);
+            g.restore();
+        }
+
+        // 2. Хрустальные морозные звёзды в чистом просвете между облаками
+        for (let s = 0; s < 26; s++) {
+            const st = COSMIC_DAWN_STARS[s];
+            if (st.y > 128) continue;
+            const dMoon = Math.hypot(st.x - mx, st.y - my);
+            if (dMoon < 24) continue;
+            const tw = still ? 0.72 : (0.32 + 0.68 * (0.5 + 0.5 * Math.sin(t * (st.speed * 1.15) + st.phase)));
+            g.globalAlpha = tw * 0.72;
+            g.fillStyle = s % 3 === 0 ? '#e0f2fe' : (s % 3 === 1 ? '#f8fafc' : '#fce7f3');
+            g.beginPath(); g.arc(st.x, st.y, st.r * 0.9, 0, Math.PI * 2); g.fill();
+        }
+        g.globalAlpha = 1;
+
+        // 3. ГЛАВНОЕ НЕБЕСНОЕ ЧУДО «ОТТЕПЕЛИ»: настоящее радужно-ледяное 22° лунное гало с парселенами (ложными лунами)!
+        if (g.createRadialGradient) {
+            g.save();
+            g.globalCompositeOperation = 'screen';
+            const haloR = 42;
+            const ha = 0.34 + breathe * 0.09 + winGlow * 0.08;
+            const hg = g.createRadialGradient(mx, my, haloR - 9, mx, my, haloR + 11);
+            hg.addColorStop(0.00, 'rgba(255, 196, 214, 0)');
+            hg.addColorStop(0.34, `rgba(255, 206, 222, ${(ha * 0.68).toFixed(3)})`); // тёплая розоватая внутренняя кромка гало
+            hg.addColorStop(0.54, `rgba(244, 250, 255, ${ha.toFixed(3)})`);          // жемчужно-серебряное кольцо кристаллов льда
+            hg.addColorStop(0.76, `rgba(176, 222, 255, ${(ha * 0.72).toFixed(3)})`); // прозрачный ледяной внешний ореол
+            hg.addColorStop(1.00, 'rgba(148, 196, 248, 0)');
+            g.fillStyle = hg;
+            g.beginPath(); g.arc(mx, my, haloR + 11, 0, Math.PI * 2); g.fill();
+
+            // Две нежные световые «парселены» (боковые блики в ледяных кристаллах на кольце гало)
+            for (const sgn of [-1, 1]) {
+                const px = mx + sgn * haloR;
+                radialAura(g, px, my, 10.5, '#ffffff', '#bae6fd', (0.30 + breathe * 0.12));
+            }
+            // Тонкая горизонтальная световая дуга через луну
+            const arcG = g.createLinearGradient(mx - haloR - 18, my, mx + haloR + 18, my);
+            arcG.addColorStop(0.00, 'rgba(224, 242, 254, 0)');
+            arcG.addColorStop(0.22, `rgba(224, 242, 254, ${(ha * 0.36).toFixed(3)})`);
+            arcG.addColorStop(0.50, `rgba(255, 255, 255, ${(ha * 0.48).toFixed(3)})`);
+            arcG.addColorStop(0.78, `rgba(224, 242, 254, ${(ha * 0.36).toFixed(3)})`);
+            arcG.addColorStop(1.00, 'rgba(224, 242, 254, 0)');
+            g.strokeStyle = arcG;
+            g.lineWidth = 1.4;
+            g.beginPath(); g.moveTo(mx - haloR - 16, my); g.lineTo(mx + haloR + 16, my); g.stroke();
+
+            // Двойная жемчужная корона вокруг полной Луны
+            radialAura(g, mx, my, 27, '#f0f9ff', '#c4b5fd', 0.48 + breathe * 0.08);
+            radialAura(g, mx, my, 15, '#ffffff', '#e0f2fe', 0.62 + breathe * 0.08);
+            g.restore();
+        }
+
+        // Полный жемчужно-серебряный диск Луны с деликатными лунными морями
+        if (g.createRadialGradient) {
+            const mg = g.createRadialGradient(mx - 2.6, my - 2.8, 1.2, mx, my, mr);
+            mg.addColorStop(0.00, '#ffffff');
+            mg.addColorStop(0.62, '#f1f5ff');
+            mg.addColorStop(1.00, '#cbd5f0');
+            g.fillStyle = mg;
+        } else g.fillStyle = '#f4f7ff';
+        g.beginPath(); g.arc(mx, my, mr, 0, Math.PI * 2); g.fill();
+        // Едва заметный акварельный рельеф лунных морей
+        g.fillStyle = 'rgba(148, 163, 204, 0.22)';
+        g.beginPath(); g.ellipse(mx + 2.4, my - 1.8, 3.1, 2.2, 0.4, 0, Math.PI * 2); g.fill();
+        g.beginPath(); g.ellipse(mx - 2.8, my + 2.6, 2.6, 1.8, -0.3, 0, Math.PI * 2); g.fill();
+        g.beginPath(); g.ellipse(mx + 1.6, my + 3.4, 1.8, 1.3, 0.1, 0, Math.PI * 2); g.fill();
+
+        // 4. Медленно расступающиеся перламутровые облака с посеребрёнными луной краями
+        if (g.createRadialGradient) {
+            const drift = still ? 0 : Math.sin(t * 0.055) * 12;
+            const clouds = [
+                [328 - drift * 0.8, 76, 62, 7.5, 0.34, true],
+                [488 + drift * 0.9, 92, 54, 6.2, 0.32, true],
+                [424 + drift * 0.45, 82, 34, 3.6, 0.22, true], // тонкая полупрозрачная вуаль у нижнего края Луны
+                [362 + drift * 0.6, 122, 68, 6.0, 0.28, false],
+                [456 - drift * 0.5, 142, 58, 5.4, 0.30, false]
+            ];
+            for (let ci = 0; ci < clouds.length; ci++) {
+                const [cx, cy, cw, ch, ca, silver] = clouds[ci];
+                g.save();
+                g.translate(cx, cy);
+                g.scale(1, ch / cw);
+                const clg = g.createRadialGradient(0, -cw * 0.15, cw * 0.08, 0, 0, cw);
+                if (silver) {
+                    clg.addColorStop(0.00, `rgba(244, 250, 255, ${ca.toFixed(3)})`);
+                    clg.addColorStop(0.52, `rgba(176, 198, 232, ${(ca * 0.58).toFixed(3)})`);
+                    clg.addColorStop(1.00, 'rgba(92, 108, 152, 0)');
+                } else {
+                    clg.addColorStop(0.00, `rgba(248, 214, 230, ${ca.toFixed(3)})`);
+                    clg.addColorStop(0.55, `rgba(178, 192, 228, ${(ca * 0.54).toFixed(3)})`);
+                    clg.addColorStop(1.00, 'rgba(96, 98, 138, 0)');
+                }
+                g.fillStyle = clg;
+                g.beginPath(); g.arc(0, 0, cw, 0, Math.PI * 2); g.fill();
+                g.restore();
+            }
+        }
+
+        // 5. Поднимающиеся с тёплых крыш невесомые кристаллики тающего инея и серебряной пыльцы в лунном свете
+        g.save();
+        g.globalCompositeOperation = 'screen';
+        for (let m = 0; m < 20; m++) {
+            const seed = (m * 0.371) % 1;
+            const prog = (seed + t * (0.018 + (m % 4) * 0.005)) % 1;
+            const my2 = 188 - prog * 136;
+            const mx2 = 286 + ((m * 47.3) % 236) + Math.sin(t * (0.55 + (m % 3) * 0.18) + m * 1.7) * 9;
+            const fade = Math.sin(prog * Math.PI) * (still ? 0.8 : (0.55 + 0.45 * Math.sin(t * 2.4 + m * 1.9)));
+            if (fade < 0.06) continue;
+            const isRose = m % 3 === 0;
+            radialAura(g, mx2, my2, 4.4 + (m % 3) * 1.3, '#ffffff', isRose ? '#f9a8d4' : '#93c5fd', fade * 0.42);
+            g.fillStyle = `rgba(248, 252, 255, ${(fade * 0.88).toFixed(3)})`;
+            g.beginPath(); g.arc(mx2, my2, 0.75 + (m % 2) * 0.35, 0, Math.PI * 2); g.fill();
+        }
+        g.restore();
+
+        g.restore(); // конец clipWindowSky — здания кристально чёткие!
+
+        // 6. Шёлковые ленты серебристо-розового тумана оттепели, неспешно плывущие в каньоне над мокрыми крышами
+        if (g.createRadialGradient) {
+            g.save();
+            g.globalCompositeOperation = 'screen';
+            const mistShift = still ? 0 : Math.sin(t * 0.16) * 16;
+            const mists = [
+                [352 + mistShift, 224, 96, 13, 0.13, 'rgba(214, 234, 255, ', 'rgba(232, 182, 212, '],
+                [446 - mistShift * 0.8, 248, 108, 15, 0.15, 'rgba(244, 212, 228, ', 'rgba(182, 214, 248, '],
+                [398 + mistShift * 0.5, 292, 124, 18, 0.14, 'rgba(226, 240, 255, ', 'rgba(236, 178, 206, ']
+            ];
+            for (let mi = 0; mi < mists.length; mi++) {
+                const [rx, ry, rw, rh, ra, c0, c1] = mists[mi];
+                g.save();
+                g.translate(rx, ry);
+                g.scale(1, rh / rw);
+                const mg = g.createRadialGradient(0, 0, 6, 0, 0, rw);
+                mg.addColorStop(0.00, `${c0}${ra.toFixed(3)})`);
+                mg.addColorStop(0.55, `${c1}${(ra * 0.55).toFixed(3)})`);
+                mg.addColorStop(1.00, 'rgba(120, 140, 180, 0)');
+                g.fillStyle = mg;
+                g.beginPath(); g.arc(0, 0, rw, 0, Math.PI * 2); g.fill();
+                g.restore();
+            }
+            g.restore();
+        }
+
+        // 7. Деликатный тающий морозный узор по самому краю круглого стекла (оставляя центр идеально прозрачным!)
+        if (g.createRadialGradient) {
+            g.save();
+            g.globalCompositeOperation = 'screen';
+            const fg = g.createRadialGradient(WIN_CX, WIN_CY, WIN_RX - 24, WIN_CX, WIN_CY, WIN_RX - 1);
+            fg.addColorStop(0.00, 'rgba(220, 238, 255, 0)');
+            fg.addColorStop(0.68, 'rgba(220, 238, 255, 0.04)');
+            fg.addColorStop(1.00, `rgba(232, 244, 255, ${(0.16 + breathe * 0.04).toFixed(3)})`);
+            g.fillStyle = fg;
+            g.beginPath(); g.ellipse(WIN_CX, WIN_CY, WIN_RX - 1, WIN_RY - 1, 0, 0, Math.PI * 2); g.fill();
+            g.restore();
+        }
+
+        // 8. ЮВЕЛИРНАЯ ЖИВАЯ КАПЕЛЬ: хрустальные тающие сосульки вдоль верхней каменной арки окна
+        //    с алмазными каплями талой воды, которые наливаются светом луны и срываются вниз!
+        const icicles = [
+            { ang: -2.12, len: 14, spd: 0.34, ph: 0.10 },
+            { ang: -1.94, len: 21, spd: 0.27, ph: 0.52 },
+            { ang: -1.78, len: 13, spd: 0.41, ph: 0.83 },
+            { ang: -1.64, len: 24, spd: 0.24, ph: 0.28 },
+            { ang: -1.50, len: 16, spd: 0.36, ph: 0.67 },
+            { ang: -1.36, len: 22, spd: 0.29, ph: 0.15 },
+            { ang: -1.21, len: 15, spd: 0.38, ph: 0.91 },
+            { ang: -1.04, len: 18, spd: 0.31, ph: 0.44 }
+        ];
+        g.save();
+        for (let ii = 0; ii < icicles.length; ii++) {
+            const ic = icicles[ii];
+            const ix = WIN_CX + Math.cos(ic.ang) * (WIN_RX - 2.5);
+            const iy = WIN_CY + Math.sin(ic.ang) * (WIN_RY - 2.5);
+            const tipY = iy + ic.len;
+            const halfBase = 1.6 + (ic.len > 18 ? 0.75 : 0.25);
+
+            // Прозрачное хрустальное тело сосульки с лунным бликом
+            if (g.createLinearGradient) {
+                const ig = g.createLinearGradient(ix, iy, ix, tipY);
+                ig.addColorStop(0.00, 'rgba(226, 242, 255, 0.62)');
+                ig.addColorStop(0.55, 'rgba(244, 250, 255, 0.48)');
+                ig.addColorStop(1.00, 'rgba(255, 255, 255, 0.86)');
+                g.fillStyle = ig;
+            } else g.fillStyle = 'rgba(236, 248, 255, 0.65)';
+            g.beginPath();
+            g.moveTo(ix - halfBase, iy - 1);
+            g.lineTo(ix + halfBase, iy - 1);
+            g.lineTo(ix + 0.35, tipY);
+            g.lineTo(ix - 0.35, tipY);
+            g.closePath();
+            g.fill();
+
+            // Тонкая алмазная грань света по левой стороне сосульки
+            g.strokeStyle = 'rgba(255, 255, 255, 0.78)';
+            g.lineWidth = 0.65;
+            g.beginPath();
+            g.moveTo(ix - halfBase * 0.45, iy);
+            g.lineTo(ix, tipY);
+            g.stroke();
+
+            // Цикл живой капели: 0..0.62 — капля набухает и сияет на кончике; 0.62..1.0 — срывается вниз с серебряным следом!
+            const cyc = still ? ((ii * 0.29 + 0.35) % 1) : ((t * ic.spd + ic.ph) % 1);
+            if (cyc < 0.62) {
+                const grow = cyc / 0.62;
+                const dr = 0.75 + grow * 1.15;
+                const dy = tipY + 0.9 + grow * 1.5;
+                if (grow > 0.42) {
+                    g.save();
+                    g.globalCompositeOperation = 'screen';
+                    radialAura(g, ix, dy, 5.2 * grow, '#ffffff', '#bae6fd', 0.46 * grow);
+                    g.restore();
+                }
+                g.fillStyle = `rgba(248, 252, 255, ${(0.65 + grow * 0.32).toFixed(3)})`;
+                g.beginPath(); g.ellipse(ix, dy, dr * 0.82, dr * 1.18, 0, 0, Math.PI * 2); g.fill();
+            } else {
+                const fall = (cyc - 0.62) / 0.38;
+                const fallDist = fall * fall * 195;
+                const dy = tipY + 2.4 + fallDist;
+                if (insideWindow(ix, dy, 4)) {
+                    const fa = (1 - fall * 0.55) * 0.88;
+                    const trail = Math.min(20, 4 + fall * 18);
+                    if (g.createLinearGradient) {
+                        const dtg = g.createLinearGradient(ix, dy - trail, ix, dy);
+                        dtg.addColorStop(0, 'rgba(224, 242, 254, 0)');
+                        dtg.addColorStop(1, `rgba(240, 249, 255, ${(fa * 0.58).toFixed(3)})`);
+                        g.strokeStyle = dtg;
+                    } else g.strokeStyle = `rgba(240, 249, 255, ${(fa * 0.5).toFixed(3)})`;
+                    g.lineWidth = 1.05;
+                    g.beginPath(); g.moveTo(ix, dy - trail); g.lineTo(ix, dy); g.stroke();
+                    g.fillStyle = `rgba(255, 255, 255, ${fa.toFixed(3)})`;
+                    g.beginPath(); g.ellipse(ix, dy, 1.05, 1.85, 0, 0, Math.PI * 2); g.fill();
+                }
+            }
+        }
+        g.restore();
+    } else if (phase === 2) {
         // ===== АТМОСФЕРА «ОЧАГ» (ВАУ-ЭФФЕКТ): БАРХАТНАЯ ЯНТАРНО-ВИННАЯ НОЧЬ, ЗОЛОТОЙ СЕРП ЛУНЫ И ПАРЯЩИЕ НЕБЕСНЫЕ ФОНАРИКИ! =====
         // Все здания остаются на 100% нетронутыми — небо живёт строго за точным силуэтом высоток!
         const still = prefersStillRoom();
@@ -4283,32 +4730,35 @@ function drawWindowWorld(g, now, phase, winGlow) {
         }
     }
 
-    // Живой дождь и капли по стеклу (только фазы 0..2; на «Рассвете» дождя нет)
+    // Живой дождь и капли по стеклу (на «Оттепели» — редкие серебряные капли по стеклу вместо холодного ливня; на «Рассвете» сухо)
     if (phase < 3) {
-        const streakCount = [42, 22, 9, 0][phase];
+        const streakCount = [42, 7, 9, 0][phase];
+        const isThaw = phase === 1;
         g.lineCap = 'round';
         for (let i = 0; i < streakCount; i++) {
             const d = FX_RAIN[i];
-            const al = d.alpha * (phase === 0 ? 0.95 : phase === 1 ? 0.72 : 0.48);
-            g.strokeStyle = d.near ? `rgba(255,146,158,${al.toFixed(3)})` : `rgba(218,58,78,${al.toFixed(3)})`;
+            const al = d.alpha * (phase === 0 ? 0.95 : isThaw ? 0.52 : 0.48);
+            g.strokeStyle = isThaw
+                ? (d.near ? `rgba(232, 244, 255, ${al.toFixed(3)})` : `rgba(218, 186, 214, ${al.toFixed(3)})`)
+                : (d.near ? `rgba(255,146,158,${al.toFixed(3)})` : `rgba(218,58,78,${al.toFixed(3)})`);
             g.lineWidth = d.near ? 1.1 : 0.75;
             g.beginPath();
             g.moveTo(d.x, d.y);
-            g.lineTo(d.x - d.len * 0.08, d.y + d.len);
+            g.lineTo(d.x - d.len * (isThaw ? 0.03 : 0.08), d.y + d.len * (isThaw ? 0.75 : 1));
             g.stroke();
         }
-        const dropCount = [15, 10, 5, 0][phase];
+        const dropCount = [15, 12, 5, 0][phase];
         for (let i = 0; i < dropCount; i++) {
             const dr = FX_DROPS[i];
             if (!insideWindow(dr.x, dr.y, 6)) continue;
             const tg = g.createLinearGradient(dr.x, dr.y - dr.trail, dr.x, dr.y);
-            tg.addColorStop(0, 'rgba(255,112,128,0)');
-            tg.addColorStop(1, 'rgba(255,132,146,0.24)');
+            tg.addColorStop(0, isThaw ? 'rgba(224,242,254,0)' : 'rgba(255,112,128,0)');
+            tg.addColorStop(1, isThaw ? 'rgba(236,246,255,0.34)' : 'rgba(255,132,146,0.24)');
             g.strokeStyle = tg;
-            g.lineWidth = 1.0;
+            g.lineWidth = isThaw ? 1.1 : 1.0;
             g.beginPath(); g.moveTo(dr.x, dr.y - dr.trail); g.lineTo(dr.x, dr.y); g.stroke();
-            g.fillStyle = 'rgba(255,190,198,0.65)';
-            g.beginPath(); g.ellipse(dr.x, dr.y, 1.1, 1.6, 0, 0, Math.PI * 2); g.fill();
+            g.fillStyle = isThaw ? 'rgba(248,252,255,0.82)' : 'rgba(255,190,198,0.65)';
+            g.beginPath(); g.ellipse(dr.x, dr.y, isThaw ? 1.25 : 1.1, isThaw ? 1.85 : 1.6, 0, 0, Math.PI * 2); g.fill();
         }
     }
 
@@ -4326,29 +4776,43 @@ function drawWindowWorld(g, now, phase, winGlow) {
 }
 
 // 2) Кинематографичный объёмный свет ИЗ круглого окна в комнату:
+//    на «Оттепели» (phase=1) — хрустальный жемчужно-лунный свет с нежным розовым отблеском и влажным серебром на своде;
 //    на «Очаге» (phase=2) — медово-янтарное тепло фонариков и луны; на «Рассвете» (phase=3) — тёплый фиалково-космический свет!
 function drawWindowLightBeams(g, now, phase, winGlow) {
-    if (phase < 2) return;
+    if (phase < 1) return;
     const isMax = phase === 3;
+    const isThaw = phase === 1;
     const still = prefersStillRoom();
-    const strength = (isMax ? 0.88 : 0.66) + winGlow * 0.15;
+    const strength = (isMax ? 0.88 : isThaw ? 0.72 : 0.66) + winGlow * 0.15;
     const b1 = still ? 0.55 : (0.5 + 0.5 * Math.sin(now * 0.00058));
     const b2 = still ? 0.5 : (0.5 + 0.5 * Math.sin(now * 0.00039 + 1.8));
     const sway = still ? 0 : Math.sin(now * 0.00032) * 8;
-    const sunX = 419.5, sunY = 181.5;
+    const sunX = isThaw ? 426 : 419.5, sunY = isThaw ? 168 : 181.5;
 
     g.save();
     g.globalCompositeOperation = 'screen';
 
-    // 1. Плавный блик по нижнему каменному своду окна (аметистово-розовый на Рассвете, медово-золотой на Очаге)
-    const rimA = (isMax ? (0.42 + b1 * 0.11) : (0.34 + b1 * 0.09)) * Math.min(1.2, strength);
+    // 1. Плавный блик по нижнему каменному своду окна (влажное серебро капели на Оттепели, золото на Очаге, аметист на Рассвете)
+    const rimA = (isMax ? (0.42 + b1 * 0.11) : isThaw ? (0.38 + b1 * 0.10) : (0.34 + b1 * 0.09)) * Math.min(1.2, strength);
     g.lineCap = 'round';
     if (g.createLinearGradient) {
         const sg = g.createLinearGradient(WIN_CX - WIN_RX * 0.88, 0, WIN_CX + WIN_RX * 0.88, 0);
         sg.addColorStop(0.00, 'rgba(180, 96, 180, 0)');
-        sg.addColorStop(0.25, isMax ? `rgba(214, 134, 248, ${(rimA * 0.62).toFixed(3)})` : `rgba(255, 174, 96, ${(rimA * 0.62).toFixed(3)})`);
-        sg.addColorStop(0.52, isMax ? `rgba(255, 202, 224, ${rimA.toFixed(3)})` : `rgba(255, 218, 142, ${rimA.toFixed(3)})`);
-        sg.addColorStop(0.78, isMax ? `rgba(214, 134, 248, ${(rimA * 0.62).toFixed(3)})` : `rgba(255, 174, 96, ${(rimA * 0.62).toFixed(3)})`);
+        sg.addColorStop(0.25, isMax
+            ? `rgba(214, 134, 248, ${(rimA * 0.62).toFixed(3)})`
+            : isThaw
+                ? `rgba(186, 222, 255, ${(rimA * 0.68).toFixed(3)})`
+                : `rgba(255, 174, 96, ${(rimA * 0.62).toFixed(3)})`);
+        sg.addColorStop(0.52, isMax
+            ? `rgba(255, 202, 224, ${rimA.toFixed(3)})`
+            : isThaw
+                ? `rgba(248, 252, 255, ${rimA.toFixed(3)})`
+                : `rgba(255, 218, 142, ${rimA.toFixed(3)})`);
+        sg.addColorStop(0.78, isMax
+            ? `rgba(214, 134, 248, ${(rimA * 0.62).toFixed(3)})`
+            : isThaw
+                ? `rgba(244, 202, 226, ${(rimA * 0.66).toFixed(3)})`
+                : `rgba(255, 174, 96, ${(rimA * 0.62).toFixed(3)})`);
         sg.addColorStop(1.00, 'rgba(180, 96, 180, 0)');
         g.strokeStyle = sg;
     } else g.strokeStyle = `rgba(232, 168, 238, ${rimA.toFixed(3)})`;
@@ -4370,7 +4834,11 @@ function drawWindowLightBeams(g, now, phase, winGlow) {
         const sh = shafts[idx];
         const drift = still ? 0 : Math.sin(now * (0.00034 + idx * 0.00005) + idx * 1.5) * 0.024;
         const pulse = still ? 0.6 : (0.5 + 0.5 * Math.sin(now * (0.00052 + idx * 0.00007) + idx * 1.2));
-        const roomA = (isMax ? (0.118 + pulse * 0.052) : (0.092 + pulse * 0.042)) * sh.w * strength;
+        const roomA = (isMax
+            ? (0.118 + pulse * 0.052)
+            : isThaw
+                ? (0.094 + pulse * 0.044)
+                : (0.092 + pulse * 0.042)) * sh.w * strength;
         g.save();
         g.translate(sunX, sunY);
         g.rotate(sh.ang + drift);
@@ -4379,10 +4847,14 @@ function drawWindowLightBeams(g, now, phase, winGlow) {
             const rg = g.createRadialGradient(0, sh.cy - 22, 6, 0, sh.cy, sh.r);
             rg.addColorStop(0.00, isMax
                 ? `rgba(244, 178, 248, ${roomA.toFixed(3)})`
-                : `rgba(255, 198, 118, ${roomA.toFixed(3)})`);
+                : isThaw
+                    ? `rgba(232, 244, 255, ${roomA.toFixed(3)})`
+                    : `rgba(255, 198, 118, ${roomA.toFixed(3)})`);
             rg.addColorStop(0.50, isMax
                 ? `rgba(176, 74, 212, ${(roomA * 0.58).toFixed(3)})`
-                : `rgba(228, 92, 56, ${(roomA * 0.52).toFixed(3)})`);
+                : isThaw
+                    ? `rgba(218, 168, 212, ${(roomA * 0.52).toFixed(3)})`
+                    : `rgba(228, 92, 56, ${(roomA * 0.52).toFixed(3)})`);
             rg.addColorStop(1.00, 'rgba(92, 18, 86, 0)');
             g.fillStyle = rg;
             g.beginPath(); g.arc(0, sh.cy, sh.r, 0, Math.PI * 2); g.fill();
@@ -4390,7 +4862,7 @@ function drawWindowLightBeams(g, now, phase, winGlow) {
         g.restore();
     }
 
-    // 3. Живое световое озеро на персидском ковре и у пледа (и на «Очаге», и на «Рассвете»!)
+    // 3. Живое световое озеро на персидском ковре и у пледа (жемчужно-лунное на Оттепели, медовое на Очаге, фиалковое на Рассвете!)
     g.save();
     g.translate(WIN_CX - 3 + sway * 0.5, 420);
     g.scale(1, 0.33);
@@ -4401,6 +4873,11 @@ function drawWindowLightBeams(g, now, phase, winGlow) {
             pg.addColorStop(0.45, `rgba(172, 68, 198, ${(0.15 + b1 * 0.04).toFixed(3)})`);
             pg.addColorStop(0.78, `rgba(116, 28, 112, ${(0.07 + b1 * 0.02).toFixed(3)})`);
             pg.addColorStop(1.00, 'rgba(68, 12, 72, 0)');
+        } else if (isThaw) {
+            pg.addColorStop(0.00, `rgba(232, 245, 255, ${(0.22 + b2 * 0.055).toFixed(3)})`);
+            pg.addColorStop(0.45, `rgba(226, 176, 214, ${(0.13 + b1 * 0.038).toFixed(3)})`);
+            pg.addColorStop(0.78, `rgba(148, 88, 146, ${(0.06 + b1 * 0.02).toFixed(3)})`);
+            pg.addColorStop(1.00, 'rgba(72, 24, 68, 0)');
         } else {
             pg.addColorStop(0.00, `rgba(255, 194, 108, ${(0.24 + b2 * 0.065).toFixed(3)})`);
             pg.addColorStop(0.45, `rgba(232, 98, 58, ${(0.14 + b1 * 0.04).toFixed(3)})`);
@@ -7211,54 +7688,60 @@ function drawGreenhouseVines(g, now, phase) {
     const rustleEnv = touchDt < 2.6 ? Math.exp(-touchDt * 1.45) * Math.sin(touchDt * 7.4) : 0;
     const touchGlow = softBell(now - (roomAnim.vinesStart || -1e9), 280, 420, 1200);
 
-    // Палитра листвы органично слита с бордово-тёплой тенью ниши + тёплый изумрудно-янтарный свет Оранжереи при открытии
+    // Единая живая багряно-гранатовая палитра лиан (без чужеродной зелени!):
+    // тон-в-тон продолжает родные тёмно-бордовые плети на стене, так что оба слоя сливаются
+    // в одно живое бархатное растение, согретое тёплым рубиново-розовым светом комнаты.
     const warmPhase = phase === 2;
     const dawnPhase = phase === 3;
-    const baseDark  = '#16060a';
+    const thawPhase = phase === 1;
+    const baseDark  = '#130306';
     const baseMid   = ghOpen
-        ? (warmPhase ? '#3a2b20' : dawnPhase ? '#2e2234' : '#2a2c24')
-        : (warmPhase ? '#381518' : dawnPhase ? '#2e1424' : '#2c0e14');
+        ? (warmPhase ? '#471118' : dawnPhase ? '#420f24' : thawPhase ? '#400d1b' : '#3f0b14')
+        : (warmPhase ? '#3a0d13' : dawnPhase ? '#350c1e' : '#330911');
     const baseLight = ghOpen
-        ? (warmPhase ? '#6e5838' : dawnPhase ? '#584862' : '#4a5a42')
-        : (warmPhase ? '#5e2622' : dawnPhase ? '#4e2438' : '#4c1a21');
+        ? (warmPhase ? '#862228' : dawnPhase ? '#7a1f3d' : thawPhase ? '#781b30' : '#761826')
+        : (warmPhase ? '#66191f' : dawnPhase ? '#5c1730' : '#5b131f');
     const rimCol    = secretAwait
-        ? '#e9c2ff'
+        ? '#e9b8ff'
         : ghOpen
-            ? (warmPhase ? '#ffe49e' : '#a7f3d0')
-            : (warmPhase ? '#ffb878' : dawnPhase ? '#d8a4d8' : '#c85a64');
+            ? (warmPhase ? '#ffc288' : dawnPhase ? '#f09ac8' : thawPhase ? '#f4b4cc' : '#f26d7f')
+            : (warmPhase ? '#e8966c' : dawnPhase ? '#cf7ea8' : '#c94c5e');
 
     const breath = still ? 0.65 : (0.55 + 0.45 * Math.sin(t * 1.45));
 
     g.save();
 
-    // Деликатное изумрудно-золотое (или аметистовое при 8/8) дыхание за лианами, когда Оранжерея открыта
+    // Деликатное тёплое рубиново-гранатовое (или аметистовое при 8/8) дыхание среди листвы — единое с комнатой!
     if (ghOpen) {
         g.save();
         g.globalCompositeOperation = 'screen';
-        const auraA = (0.14 + 0.08 * breath + 0.16 * touchGlow);
+        const auraA = (0.13 + 0.07 * breath + 0.16 * touchGlow);
         radialAura(g, 740, 178, 54,
-            secretAwait ? '#d8b4fe' : (warmPhase ? '#ffd88a' : '#86efac'),
-            secretAwait ? '#6d28d9' : '#14532d',
+            secretAwait ? '#d8b4fe' : (warmPhase ? '#ffbe78' : dawnPhase ? '#f08cc0' : '#ff6b80'),
+            secretAwait ? '#6d28d9' : '#6e0d20',
             auraA);
         radialAura(g, 744, 224, 38,
-            secretAwait ? '#f0abfc' : '#bbf7d0',
-            '#7f1d2d',
+            secretAwait ? '#f0abfc' : (warmPhase ? '#ffd49e' : '#ff98a8'),
+            '#5e0b1b',
             auraA * 0.62);
         g.restore();
     } else if (touchGlow > 0.02) {
         g.save();
         g.globalCompositeOperation = 'screen';
-        radialAura(g, 740, 182, 42, '#ff9c86', '#6e1828', touchGlow * 0.18);
+        radialAura(g, 740, 182, 42, '#ff8694', '#6e1022', touchGlow * 0.18);
         g.restore();
     }
 
-    // Пышная шапка верхних листьев у кашпо (x: 736, y: 118)
+    // Пышная живая шапка верхних и глубинных багряных листьев — оживляет тёмные фоновые плети в единую крону
     const crownLeaves = [
-        { x: 724, y: 116, s: 6.2, a: -0.58 },
-        { x: 736, y: 113, s: 6.8, a: -0.08 },
-        { x: 749, y: 115, s: 6.5, a: 0.44 },
-        { x: 731, y: 121, s: 5.8, a: -0.22 },
-        { x: 744, y: 121, s: 6.0, a: 0.25 }
+        { x: 722, y: 116, s: 6.5, a: -0.60 },
+        { x: 730, y: 114, s: 6.2, a: -0.26 },
+        { x: 737, y: 113, s: 7.0, a: -0.05 },
+        { x: 745, y: 114, s: 6.4, a: 0.24 },
+        { x: 752, y: 116, s: 6.6, a: 0.48 },
+        { x: 727, y: 122, s: 6.0, a: -0.30 },
+        { x: 737, y: 122, s: 6.2, a: 0.04 },
+        { x: 747, y: 122, s: 6.1, a: 0.28 }
     ];
     for (let c = 0; c < crownLeaves.length; c++) {
         const cl = crownLeaves[c];
@@ -7266,7 +7749,7 @@ function drawGreenhouseVines(g, now, phase) {
         drawVineHeartLeaf(
             g, cl.x + cSway, cl.y, cl.s, cl.a + cSway * 0.03,
             baseDark, baseMid, baseLight, rimCol,
-            ghOpen ? (0.46 + 0.2 * breath + 0.2 * touchGlow) : (0.30 + 0.18 * touchGlow)
+            ghOpen ? (0.48 + 0.18 * breath + 0.2 * touchGlow) : (0.32 + 0.18 * touchGlow)
         );
     }
 
@@ -7282,9 +7765,9 @@ function drawGreenhouseVines(g, now, phase) {
             return nat + (air + touch) * Math.pow(u, 1.22);
         };
 
-        // Гибкий органичный стебель плети
-        g.strokeStyle = mixHex(baseDark, baseLight, ghOpen ? 0.52 : 0.36, 0.86);
-        g.lineWidth = 1.1;
+        // Тёплая гранатовая подсветка-стебель, оживляющая и родные тёмные плети под ним
+        g.strokeStyle = mixHex(baseDark, baseLight, ghOpen ? 0.62 : 0.44, 0.92);
+        g.lineWidth = 1.25;
         g.lineCap = 'round';
         g.beginPath();
         g.moveTo(st.x0, st.y0);
@@ -7298,46 +7781,61 @@ function drawGreenhouseVines(g, now, phase) {
         // Тонкий завиток усика на самом кончике плети
         const tipX = st.x0 + wave(1);
         const tipY = st.y0 + st.len;
-        g.strokeStyle = mixHex(baseLight, rimCol, ghOpen ? 0.48 : 0.22, 0.62);
-        g.lineWidth = 0.72;
+        g.strokeStyle = mixHex(baseLight, rimCol, ghOpen ? 0.48 : 0.26, 0.68);
+        g.lineWidth = 0.78;
         g.beginPath();
         g.moveTo(tipX, tipY);
         g.bezierCurveTo(tipX + (si % 2 ? 3.2 : -3.2), tipY + 4.2, tipX + (si % 2 ? -2.2 : 2.2), tipY + 7.4, tipX + (si % 2 ? 1.2 : -1.2), tipY + 8.2);
         g.stroke();
 
-        // Сердцевидные листья и живые росистые бутоны портала Оранжереи
+        // Глубинные бархатно-бордовые листочки второго плана — бесшовно связывают живые плети с фоновыми лианами стены
+        for (let bi = 0; bi < st.leaves.length - 1; bi++) {
+            const bu = (st.leaves[bi].u + st.leaves[bi + 1].u) * 0.5;
+            const bwx = wave(bu) * 0.55;
+            const bdx = -st.leaves[bi].dx * 0.62;
+            const bMid = mixHex(baseDark, baseMid, 0.78);
+            const bTop = mixHex(baseMid, baseLight, 0.58);
+            drawVineHeartLeaf(
+                g, st.x0 + bwx + bdx, st.y0 + st.len * bu,
+                st.leaves[bi].s * 0.86, -st.leaves[bi].ang * 0.65,
+                baseDark, bMid, bTop, rimCol, ghOpen ? 0.30 : 0.20
+            );
+        }
+
+        // Сердцевидные листья и живые рубиново-янтарные бутоны портала Оранжереи
         for (let li = 0; li < st.leaves.length; li++) {
             const lf = st.leaves[li];
             const wx = wave(lf.u);
             const lx = st.x0 + wx + lf.dx;
             const ly = st.y0 + st.len * lf.u;
             const flutter = still ? 0 : Math.sin(t * 1.9 + st.ph + li * 1.3) * 0.055 + rustleEnv * 0.11 * lf.u;
-            const tShift = lf.tone === 2 ? 0.18 : (lf.tone === 0 ? -0.12 : 0);
+            const tShift = lf.tone === 2 ? 0.22 : (lf.tone === 0 ? -0.10 : 0.04);
             const lMid = tShift >= 0 ? mixHex(baseMid, baseLight, tShift) : mixHex(baseMid, baseDark, -tShift);
-            const lTop = tShift >= 0 ? mixHex(baseLight, rimCol, ghOpen ? 0.24 : 0.12) : baseLight;
+            const lTop = tShift >= 0 ? mixHex(baseLight, rimCol, ghOpen ? 0.26 : 0.14) : baseLight;
             const rimA = ghOpen
-                ? (0.44 + 0.26 * Math.sin(t * 1.6 + si + li * 0.7) * 0.5 + 0.16 + touchGlow * 0.22)
-                : (0.28 + touchGlow * 0.2);
+                ? (0.46 + 0.24 * Math.sin(t * 1.6 + si + li * 0.7) * 0.5 + 0.16 + touchGlow * 0.22)
+                : (0.30 + touchGlow * 0.2);
 
             // Черешок
-            g.strokeStyle = mixHex(baseMid, rimCol, 0.2, 0.72);
-            g.lineWidth = 0.75;
+            g.strokeStyle = mixHex(baseMid, rimCol, 0.24, 0.78);
+            g.lineWidth = 0.78;
             g.beginPath();
             g.moveTo(st.x0 + wx, ly - 1.4);
             g.lineTo(lx, ly);
             g.stroke();
 
-            drawVineHeartLeaf(g, lx, ly, lf.s, lf.ang + flutter + wx * 0.025, baseDark, lMid, lTop, rimCol, Math.min(0.92, rimA));
+            drawVineHeartLeaf(g, lx, ly, lf.s * 1.05, lf.ang + flutter + wx * 0.025, baseDark, lMid, lTop, rimCol, Math.min(0.92, rimA));
 
-            // Когда Оранжерея открыта — среди листвы нежно дышат фарфорово-росистые бутоны!
+            // Когда Оранжерея открыта — среди багряной листвы нежно дышат рубиново-жемчужные бутоны!
             if (ghOpen && lf.bud) {
                 const bx = lx + (lf.dx < 0 ? -2.2 : 2.2);
                 const by = ly + lf.s * 0.42;
                 const bPulse = still ? 0.8 : (0.65 + 0.35 * Math.sin(t * 2.1 + si * 1.7 + li));
-                const budCore = secretAwait && (si === 2 && li === 2) ? '#f5d0fe' : '#fef3c7';
-                const budGlow = secretAwait && (si === 2 && li === 2) ? '#c084fc' : '#6ee7b7';
+                const isSecretBud = secretAwait && (si === 2 && li === 2);
+                const budCore = isSecretBud ? '#f5d0fe' : (warmPhase ? '#ffe8b8' : '#ffd8de');
+                const budGlow = isSecretBud ? '#c084fc' : (warmPhase ? '#f59e0b' : '#f43f5e');
                 radialAura(g, bx, by, 5.6, budCore, budGlow, (0.34 + touchGlow * 0.28) * bPulse);
-                g.fillStyle = mixHex(budCore, '#ffffff', 0.35, 0.92);
+                g.fillStyle = mixHex(budCore, '#fff5f7', 0.38, 0.92);
                 g.beginPath();
                 g.ellipse(bx, by, 1.45, 2.05, lf.ang * 0.5, 0, Math.PI * 2);
                 g.fill();
@@ -7345,21 +7843,24 @@ function drawGreenhouseVines(g, now, phase) {
         }
     }
 
-    // Парящие искорки оранжерейной пыльцы вокруг живых лиан — мягкий бессловесный знак живого портала
+    // Парящие рубиново-янтарные искорки пыльцы вокруг живых лиан — мягкий знак живого портала в Оранжерею
     if (ghOpen) {
         const moteCount = secretAwait ? 6 : 4;
         for (let m = 0; m < moteCount; m++) {
             const seed = m * 1.93 + 0.6;
             const cyc = still ? ((m + 0.5) / moteCount) : ((t * (0.14 + (m % 3) * 0.03) + m * 0.27) % 1);
-            const ma = Math.sin(cyc * Math.PI) * (0.62 + touchGlow * 0.32);
+            const ma = Math.sin(cyc * Math.PI) * (0.58 + touchGlow * 0.32);
             if (ma < 0.05) continue;
             const mx = 720 + ((m * 13) % 40) + Math.sin(t * 1.15 + seed) * 5.2;
             const my = 246 - cyc * 124;
             const isVioletMote = secretAwait && (m % 2 === 0);
-            radialAura(g, mx, my, 4.8, isVioletMote ? '#f3e8ff' : '#fef08a', isVioletMote ? '#a855f7' : '#34d399', ma * 0.55);
+            radialAura(g, mx, my, 4.8,
+                isVioletMote ? '#f3e8ff' : '#ffe4cc',
+                isVioletMote ? '#a855f7' : '#e11d48',
+                ma * 0.52);
             g.fillStyle = isVioletMote
                 ? `rgba(245, 224, 255, ${ma.toFixed(3)})`
-                : `rgba(236, 253, 215, ${ma.toFixed(3)})`;
+                : `rgba(255, 224, 226, ${ma.toFixed(3)})`;
             g.beginPath();
             g.arc(mx, my, 0.95, 0, Math.PI * 2);
             g.fill();
@@ -7699,7 +8200,7 @@ function paintPlantFrame(now) {
         fireflies: roomAnim.fireflyCount || 0,
         firefliesDrowsy: !!roomAnim.fireflyDrowsy,
         now,
-        potSkin: cosm.pot || ''
+        potSkin: activeRoomPotSkin(cosm.pot || '', roomAnim.spec)
     });
 }
 
@@ -8592,22 +9093,35 @@ function touchRoomObject(obj, event) {
         const cosm = getRoomCosmeticsSafe();
         if (cosm.cat) {
             roomAnim.catPetStart = now;
-            const myCat = catSpec(undefined, Number.isInteger(roomAnim.inspectCatCoat) ? roomAnim.inspectCatCoat : null);
+            const myCat = activeCatSpec();
+            const cName = typeof getPetName === 'function' ? getPetName('cat') : '';
+            const dName = (cosm.dog && typeof getPetName === 'function') ? getPetName('dog') : '';
             modeLabel = myCat.rare
                 ? `ЖУРНАЛ // ✦ ${myCat.coat.name.toUpperCase()} (0.1%)`
                 : `ЖУРНАЛ // ${myCat.coat.name.toUpperCase()}`;
-            const catLines = myCat.rare
-                ? [
-                    'Ваш редчайший чёрный кот (шанс 0.1%!) приподнял голову: золотой полумесяц во лбу мягко вспыхнул, и он тихо замурчал под ладонью.',
-                    'Обсидианово-чёрный хранитель с сияющим полумесяцем во лбу блаженно зажмурился и согрел край пледа тёплым мурчанием.'
-                ]
-                : [
-                    `Ваш ${myCat.coat.short} кот приподнял голову, блеснул глазами и тепло замурчал под ладонью.`,
-                    `Тёплый клубок (${myCat.summary.toLowerCase()}) сладко зажмурился, повёл хвостом и согрел край пледа.`
-                ];
+            const catLines = cName
+                ? (myCat.rare
+                    ? [
+                        `${cName} приподнял голову на ваш голос: золотой полумесяц во лбу мягко вспыхнул, и он тихо замурчал под ладонью.`,
+                        `${cName} — ваш полуночный хранитель с сияющим полумесяцем — блаженно зажмурился и согрел край пледа тёплым мурчанием.`
+                    ]
+                    : [
+                        `${cName} приподнял голову, узнал ваше прикосновение, блеснул глазами и тепло замурчал под ладонью.`,
+                        `${cName} (${myCat.coat.short} хранитель) сладко зажмурился, повёл хвостом и согрел край пледа.`
+                    ])
+                : (myCat.rare
+                    ? [
+                        'Ваш редчайший чёрный кот (шанс 0.1%!) приподнял голову: золотой полумесяц во лбу мягко вспыхнул, и он тихо замурчал под ладонью.',
+                        'Обсидианово-чёрный хранитель с сияющим полумесяцем во лбу блаженно зажмурился и согрел край пледа тёплым мурчанием.'
+                    ]
+                    : [
+                        `Ваш ${myCat.coat.short} кот приподнял голову, блеснул глазами и тепло замурчал под ладонью.`,
+                        `Тёплый клубок (${myCat.summary.toLowerCase()}) сладко зажмурился, повёл хвостом и согрел край пледа.`
+                    ]);
             if (cosm.dog) {
-                const myDog = dogSpec(undefined, Number.isInteger(roomAnim.inspectDogBreed) ? roomAnim.inspectDogBreed : null);
-                catLines.push(`Ваш ${myCat.coat.short} кот лениво переглянулся с другом на ковре (${myDog.breed.short}) — в комнате двойное живое тепло.`);
+                const myDog = activeDogSpec();
+                const dogRef = dName ? `с другом на ковре — ${dName}` : `с другом на ковре (${myDog.breed.short})`;
+                catLines.push(`${cName || `Ваш ${myCat.coat.short} кот`} лениво переглянулся ${dogRef} — в комнате двойное живое тепло.`);
             }
             line = nextRoomLine('cat', catLines);
             playObjectTone('cat');
@@ -8621,22 +9135,35 @@ function touchRoomObject(obj, event) {
         const cosm = getRoomCosmeticsSafe();
         if (!cosm.dog) return;
         roomAnim.dogPetStart = now;
-        const myDog = dogSpec(undefined, Number.isInteger(roomAnim.inspectDogBreed) ? roomAnim.inspectDogBreed : null);
+        const myDog = activeDogSpec();
+        const dName = typeof getPetName === 'function' ? getPetName('dog') : '';
+        const cName = (cosm.cat && typeof getPetName === 'function') ? getPetName('cat') : '';
         modeLabel = myDog.rare
             ? `ЖУРНАЛ // ✦ ${myDog.breed.name.toUpperCase()} (0.1%)`
             : `ЖУРНАЛ // ${myDog.breed.name.toUpperCase()}`;
-        const dogLines = myDog.rare
-            ? [
-                `Ваша редчайшая белая мальтийская болонка (шанс 0.1%!) сонно дрогнула шелковистыми фиолетовыми ушками и мягко взмахнула фиолетовым хвостом сквозь дрёму!`,
-                `Белоснежное чудо с фиолетовыми ушками и фиолетовым хвостом блаженно зажмурилось от ласки, ещё уютнее подогнув лапки на персидском коврике.`
-            ]
-            : [
-                `Ваш ${myDog.breed.short} сонно приподнял голову, ткнулся тёплым носом в ладонь и счастливо завилял хвостом сквозь дрёму!`,
-                `Верный хранитель (${myDog.breed.name.toLowerCase()}) блаженно зажмурился от ласки и ещё уютнее подогнул тёплые лапки на персидском коврике у пледа.`
-            ];
+        const dogLines = dName
+            ? (myDog.rare
+                ? [
+                    `${dName} сонно дрогнула шелковистыми фиолетовыми ушками на ваше прикосновение и мягко взмахнула фиолетовым хвостом сквозь дрёму!`,
+                    `${dName} — белоснежное чудо с фиолетовыми ушками — блаженно зажмурилась от ласки, ещё уютнее подогнув лапки на персидском коврике.`
+                ]
+                : [
+                    `${dName} сонно приподнял голову, ткнулся тёплым носом в вашу ладонь и счастливо завилял хвостом сквозь дрёму!`,
+                    `${dName} (${myDog.breed.name.toLowerCase()}) блаженно зажмурился от ласки и ещё уютнее подогнул тёплые лапки на персидском коврике у пледа.`
+                ])
+            : (myDog.rare
+                ? [
+                    `Ваша редчайшая белая мальтийская болонка (шанс 0.1%!) сонно дрогнула шелковистыми фиолетовыми ушками и мягко взмахнула фиолетовым хвостом сквозь дрёму!`,
+                    `Белоснежное чудо с фиолетовыми ушками и фиолетовым хвостом блаженно зажмурилось от ласки, ещё уютнее подогнув лапки на персидском коврике.`
+                ]
+                : [
+                    `Ваш ${myDog.breed.short} сонно приподнял голову, ткнулся тёплым носом в ладонь и счастливо завилял хвостом сквозь дрёму!`,
+                    `Верный хранитель (${myDog.breed.name.toLowerCase()}) блаженно зажмурился от ласки и ещё уютнее подогнул тёплые лапки на персидском коврике у пледа.`
+                ]);
         if (cosm.cat) {
-            const myCat = catSpec(undefined, Number.isInteger(roomAnim.inspectCatCoat) ? roomAnim.inspectCatCoat : null);
-            dogLines.push(`Ваш ${myDog.breed.short} сладко спит, подогнув лапки на коврике у пледа, а рядом на кушетке мурчит ${myCat.coat.short} кот — тихое родство двух живых сердец.`);
+            const myCat = activeCatSpec();
+            const catRef = cName || `${myCat.coat.short} кот`;
+            dogLines.push(`${dName || `Ваш ${myDog.breed.short}`} сладко дремлет на коврике у пледа, а рядом на кушетке тихо мурчит ${catRef} — родство двух живых сердец.`);
         }
         line = nextRoomLine('dog', dogLines);
         playObjectTone('dog');
@@ -8853,8 +9380,6 @@ function togglePtsDrawer() {
     if (!roomAnim.ptsOpen) {
         roomAnim.inspectStage = null;
         roomAnim.inspectKind = null;
-        roomAnim.inspectCatCoat = null;
-        roomAnim.inspectDogBreed = null;
         roomAnim.galleryOpen = false;
         roomAnim.ptsDew = false;
         roomAnim.customEntry = '';
@@ -8874,6 +9399,46 @@ function togglePtsDew() {
     renderRoom();
 }
 
+// Активные спутники игрока (с учётом выбранной масти/породы в комнате и PTS, без подмены на базовый индекс 0!)
+function activeCatSpec(uid) {
+    const ov = (uid === undefined && isPtsMode() && Number.isInteger(roomAnim.inspectCatCoat))
+        ? roomAnim.inspectCatCoat
+        : (uid === undefined && Number.isInteger(roomAnim.inspectCatCoat) ? roomAnim.inspectCatCoat : null);
+    return catSpec(uid, ov);
+}
+
+function activeDogSpec(uid) {
+    const ov = (uid === undefined && Number.isInteger(roomAnim.inspectDogBreed))
+        ? roomAnim.inspectDogBreed
+        : null;
+    return dogSpec(uid, ov);
+}
+
+function savePtsPetInspect() {
+    if (!isPtsMode()) return;
+    try {
+        if (typeof sessionStorage !== 'undefined') {
+            sessionStorage.setItem('soma_pts_pets', JSON.stringify({
+                cat: Number.isInteger(roomAnim.inspectCatCoat) ? roomAnim.inspectCatCoat : null,
+                dog: Number.isInteger(roomAnim.inspectDogBreed) ? roomAnim.inspectDogBreed : null
+            }));
+        }
+    } catch (_) {}
+}
+
+function restorePtsPetInspect() {
+    if (!isPtsMode()) return;
+    try {
+        if (typeof sessionStorage !== 'undefined') {
+            const d = JSON.parse(sessionStorage.getItem('soma_pts_pets') || 'null');
+            if (d && typeof d === 'object') {
+                if (Number.isInteger(d.cat) && d.cat >= 0 && d.cat <= CAT_COATS.length) roomAnim.inspectCatCoat = d.cat;
+                if (Number.isInteger(d.dog) && d.dog >= 0 && d.dog <= DOG_BREEDS.length) roomAnim.inspectDogBreed = d.dog;
+            }
+        }
+    } catch (_) {}
+}
+
 // PTS: посмотреть все 7 базовых мастей кота + редчайшего чёрного кота 0.1% с полумесяцем во лбу!
 function cyclePtsCatCoat() {
     if (!isPtsMode()) return;
@@ -8882,11 +9447,12 @@ function cyclePtsCatCoat() {
     const cur = Number.isInteger(roomAnim.inspectCatCoat) ? roomAnim.inspectCatCoat : own.coatIdx;
     const next = (cur + 1) % total;
     roomAnim.inspectCatCoat = next === own.coatIdx ? null : next;
+    savePtsPetInspect();
     // Если кот ещё не надет — включаем его в PTS для наглядного осмотра
     if (typeof grantOwnedItem === 'function' && typeof getActiveCosmetics === 'function' && !getActiveCosmetics().cat) {
         grantOwnedItem('room_cat');
     }
-    const shown = catSpec(undefined, roomAnim.inspectCatCoat);
+    const shown = activeCatSpec();
     roomAnim.catPetStart = typeof performance !== 'undefined' ? performance.now() : Date.now();
     roomAnim.customMode = shown.rare
         ? 'PTS // ✦ КОТ 0.1% · ПОЛУНОЧНАЯ ЛУНА'
@@ -8894,10 +9460,14 @@ function cyclePtsCatCoat() {
     roomAnim.customEntry = shown.rare
         ? 'Ультра-редкая масть (шанс 0.1%): полностью чёрный кот с сияющим золотым полумесяцем во лбу!'
         : (next === own.coatIdx
-            ? `Ваш родной кот по ID: ${shown.summary}.`
-            : `Осмотр масти «${shown.coat.name}» (ваш родной по ID: ${own.coat.name}).`);
+            ? `Ваш родной кот: ${shown.summary}.`
+            : `Осмотр масти «${shown.coat.name}» (родной: ${own.coat.name}).`);
     playObjectTone('cat');
     renderRoom();
+    if (typeof renderShop === 'function') {
+        const sm = typeof document !== 'undefined' && document.getElementById('shop-modal');
+        if (sm && !sm.classList.contains('hidden')) renderShop();
+    }
 }
 
 // PTS: посмотреть все 7 базовых пород пса + редчайшую белую мальтийскую болонку 0.1% с фиолетовыми ушами и хвостом!
@@ -8908,10 +9478,11 @@ function cyclePtsDogBreed() {
     const cur = Number.isInteger(roomAnim.inspectDogBreed) ? roomAnim.inspectDogBreed : own.breedIdx;
     const next = (cur + 1) % total;
     roomAnim.inspectDogBreed = next === own.breedIdx ? null : next;
+    savePtsPetInspect();
     if (typeof grantOwnedItem === 'function' && typeof getActiveCosmetics === 'function' && !getActiveCosmetics().dog) {
         grantOwnedItem('room_dog');
     }
-    const shown = dogSpec(undefined, roomAnim.inspectDogBreed);
+    const shown = activeDogSpec();
     roomAnim.dogPetStart = typeof performance !== 'undefined' ? performance.now() : Date.now();
     roomAnim.customMode = shown.rare
         ? 'PTS // ✦ ПЁС 0.1% · МАЛЬТЕЗЕ'
@@ -8919,10 +9490,14 @@ function cyclePtsDogBreed() {
     roomAnim.customEntry = shown.rare
         ? `Ультра-редкая порода (шанс 0.1%): белая мальтийская болонка с фиолетовыми ушами и фиолетовым хвостом!`
         : (next === own.breedIdx
-            ? `Ваш родной пёс по ID: ${shown.summary}.`
-            : `Осмотр породы «${shown.breed.name}» (ваш родной по ID: ${own.breed.name}).`);
+            ? `Ваш родной пёс: ${shown.summary}.`
+            : `Осмотр породы «${shown.breed.name}» (родной: ${own.breed.name}).`);
     playObjectTone('dog');
     renderRoom();
+    if (typeof renderShop === 'function') {
+        const sm = typeof document !== 'undefined' && document.getElementById('shop-modal');
+        if (sm && !sm.classList.contains('hidden')) renderShop();
+    }
 }
 
 // PTS: посмотреть все 7 секретных внеземных растений (в релизе каждому игроку достаётся строго 1 свой вид после 7/7!)
@@ -9051,6 +9626,10 @@ function renderRoom() {
         : (typeof rankIdx === 'function' ? rankIdx() : 0);
     const stars = rIdx + 1;
     const phase = stationPhases[active];
+    if (!roomAnim.ptsPetsRestored && isPtsMode()) {
+        roomAnim.ptsPetsRestored = true;
+        restorePtsPetInspect();
+    }
 
     const ledger = loadWarmthLedger();
     const adm = whisperAdmission(warmth, ledger);
@@ -9587,6 +10166,7 @@ function resetStationPreview() {
     roomAnim.inspectAlienKind = null;
     roomAnim.inspectCatCoat = null;
     roomAnim.inspectDogBreed = null;
+    try { if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem('soma_pts_pets'); } catch (_) {}
     roomAnim.ptsOpen = previewing ? true : roomAnim.ptsOpen;
     roomAnim.customEntry = '';
     roomAnim.customMode = '';

@@ -728,21 +728,21 @@ test('v8: body-portal FLIP fullscreen + 180 flip + rotated pointer mapping, Dawn
     r.drawRoomCosmetics(g, 4200, 3);
     r.drawWindowLightBeams(g, 4200, 3, 0.2);
     assert.ok(dawnClips >= 3 && dawnArcs >= 20, 'Dawn renders clipped sky sunrise, sun disc, viaduct arches, and room sunbeams');
-    for (const potSkin of ['pot_cinnabar', 'pot_moon', 'pot_kintsugi']) {
+    for (const potSkin of ['pot_cinnabar', 'pot_moon', 'pot_kintsugi', 'pot_amethyst']) {
         assert.doesNotThrow(() => r.drawPlantSprite(g, r.plantSpec('u_pot'), 5, { phase: 3, now: 2500, potSkin, fireflies: 5 }));
     }
 
-    // 3. Pain Feed CTA visibility hooks present and cache-busted to v14
+    // 3. Pain Feed CTA visibility hooks present and cache-busted to v15
     assert.ok(indexHtml.includes('soma-post-cta') && indexHtml.includes('soma-post-beacon') && indexHtml.includes('soma-post-arrow'));
     assert.ok(
         indexHtml.includes('id="station-fs-flip"')
-        && indexHtml.includes('room.js?v=14')
-        && indexHtml.includes('cosmetics.css?v=14')
-        && indexHtml.includes('receiver.js?v=14')
-        && indexHtml.includes('vhs.js?v=14')
-        && indexHtml.includes('greenhouse.js?v=14')
-        && indexHtml.includes('blimp.js?v=14')
-        && indexHtml.includes('share.js?v=14')
+        && indexHtml.includes('room.js?v=15')
+        && indexHtml.includes('cosmetics.css?v=15')
+        && indexHtml.includes('receiver.js?v=15')
+        && indexHtml.includes('vhs.js?v=15')
+        && indexHtml.includes('greenhouse.js?v=15')
+        && indexHtml.includes('blimp.js?v=15')
+        && indexHtml.includes('share.js?v=15')
     );
 
     // 4. Flagship cosmetics + collectible 7" vinyl pressings: equalized peer pricing + 1:1 Edge Function parity
@@ -907,7 +907,7 @@ test('v9: true native browser fullscreen (even with Telegram SDK loaded), fixed-
     // 4. Simultaneous cat + dog ownership, equipping, petting, duet journal line, PTS dog cycler, and SQL trigger protection!
     const cEnv = { localStorage: makeStorage(), player: { uid: 'u_duet_77', warmth: 42, xp: 300 }, esc: s => String(s) };
     vm.runInNewContext(cosmCode + ';globalThis.C = { SOMA_CATALOG, grantOwnedItem, getActiveCosmetics, toggleEquipCosmetic };', cEnv);
-    assert.equal(cEnv.C.SOMA_CATALOG.length, 30, '30 flagship cosmetic items including room_dog');
+    assert.equal(cEnv.C.SOMA_CATALOG.length, 31, '31 flagship cosmetic items including pot_amethyst and room_dog');
     const dogItem = cEnv.C.SOMA_CATALOG.find(i => i.id === 'room_dog');
     const catItem = cEnv.C.SOMA_CATALOG.find(i => i.id === 'room_cat');
     assert.ok(dogItem && dogItem.stars === 220 && catItem.stars === 220, 'cat and dog share equal 220 Stars companion tier');
@@ -1680,4 +1680,295 @@ test('v14: animated hanging vines Greenhouse portal (zero button), unclipped Ful
             assert.doesNotThrow(() => openEnv.drawCompanionDog(dCtx, 2400, ph, false), `dog breed #${bi} awake/petted in phase ${ph}`);
         }
     }
+});
+
+test('v15: 4th pot (pot_amethyst) + per-flower Greenhouse picker, sheer FS caption, Thaw WOW atmosphere, private pet names, Keepers heading, clean AV-88/VTR-90 corners, crimson vines, and accurate Boutique pet preview', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const ghCode = fs.readFileSync(path.join(__dirname, '..', 'greenhouse.js'), 'utf8');
+    const ghCss = fs.readFileSync(path.join(__dirname, '..', 'greenhouse.css'), 'utf8');
+    const rxCss = fs.readFileSync(path.join(__dirname, '..', 'receiver.css'), 'utf8');
+    const vhsCss = fs.readFileSync(path.join(__dirname, '..', 'vhs.css'), 'utf8');
+    const shareCode = fs.readFileSync(path.join(__dirname, '..', 'share.js'), 'utf8');
+    const edgeFnCode = fs.readFileSync(path.join(__dirname, '..', 'billing/supabase/functions/soma-stars/index.ts'), 'utf8');
+
+    // 1. Receiver & Tape Deck: zero top corner rivet dots (.rx-chassis::before/after & .vhs-chassis::before/after removed)
+    assert.ok(!rxCss.includes('.rx-chassis::before') && !rxCss.includes('.rx-chassis::after'), 'Receiver top corner dots removed');
+    assert.ok(!vhsCss.includes('.vhs-chassis::before') && !vhsCss.includes('.vhs-chassis::after'), 'VHS Tape Deck top corner dots removed');
+
+    // 2. Fullscreen caption (.station-fs-caption): airy translucent glass, pointer-events: none, low-profile over sleeping dog
+    const capBlock = (roomCss.match(/\.station-fs-caption\s*\{[\s\S]*?\}/) || [''])[0];
+    assert.ok(capBlock.includes('pointer-events: none'), 'FS caption never blocks taps on sleeping dog');
+    assert.ok(!capBlock.includes('0.82'), 'opaque 0.82 dark block removed from FS caption');
+    assert.ok(/rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*0\.(30|32|34|40|42)\)/.test(capBlock), 'FS caption uses sheer translucent alpha <= 0.42');
+    assert.ok(capBlock.includes('backdrop-filter: blur(4px)'), 'FS caption has refined soft glass blur');
+
+    // 3. Full integrated PTS + PROD sandbox: room.js + cosmetics.js + greenhouse.js + share.js
+    const vm = require('vm');
+    const cosmCode = fs.readFileSync(path.join(__dirname, '..', 'cosmetics.js'), 'utf8');
+    const makeEl = (id) => {
+        const classes = new Set();
+        return {
+            id,
+            textContent: '',
+            innerHTML: '',
+            value: '',
+            title: '',
+            style: {},
+            dataset: {},
+            attrs: {},
+            setAttribute(k, v) { this.attrs[k] = v; },
+            getAttribute(k) { return this.attrs[k]; },
+            classList: {
+                add: (...cs) => cs.forEach(c => classes.add(c)),
+                remove: (...cs) => cs.forEach(c => classes.delete(c)),
+                toggle: (c, f) => (f === undefined ? (classes.has(c) ? classes.delete(c) : classes.add(c)) : (f ? classes.add(c) : classes.delete(c))),
+                contains: (c) => classes.has(c)
+            }
+        };
+    };
+    const store = makeStorage();
+    const sessStore = makeStorage();
+    let isPts = true;
+    const domMap = new Map();
+    const regEl = (id) => {
+        if (!domMap.has(id)) {
+            const e = makeEl(id);
+            e.innerHTML = '';
+            e.value = '';
+            e.children = [];
+            e.appendChild = (c) => { e.children.push(c); return c; };
+            e.querySelector = (sel) => domMap.get(sel.replace(/^#/, '')) || null;
+            e.querySelectorAll = () => [];
+            e.focus = () => {};
+            e.select = () => {};
+            domMap.set(id, e);
+        }
+        return domMap.get(id);
+    };
+    ['shop-body', 'shop-preview', 'shop-notice', 'shop-modal', 'shop-petname-input',
+     'dossier-modal', 'dossier-card', 'dossier-body', 'station-tryon-bar', 'station-tryon-text',
+     'station-tryon-buy', 'station-entry', 'station-mode', 'station-fs-caption', 'station', 'station-scene'].forEach(regEl);
+
+    const makeMockCanvas = (w = 440, h = 460) => ({
+        width: w, height: h, style: {}, dataset: {},
+        classList: makeEl('cv').classList,
+        getContext: () => ({
+            canvas: { width: w, height: h },
+            save() {}, restore() {}, clearRect() {}, fillRect() {}, strokeRect() {},
+            beginPath() {}, closePath() {}, moveTo() {}, lineTo() {}, quadraticCurveTo() {},
+            bezierCurveTo() {}, arc() {}, ellipse() {}, clip() {}, fill() {}, stroke() {},
+            translate() {}, rotate() {}, scale() {}, setLineDash() {}, drawImage() {},
+            roundRect() {}, rect() {}, fillText() {}, strokeText() {},
+            measureText: (t) => ({ width: String(t).length * 7 }),
+            createLinearGradient: () => ({ addColorStop() {} }),
+            createRadialGradient: () => ({ addColorStop() {} })
+        })
+    });
+
+    const env = {
+        window: {
+            SOMA_CONFIG: { get ENV() { return isPts ? 'pts' : 'prod'; } },
+            matchMedia: () => ({ matches: false }),
+            addEventListener() {}, removeEventListener() {}
+        },
+        document: {
+            hidden: false,
+            body: regEl('body'),
+            getElementById: (id) => domMap.get(id) || null,
+            querySelectorAll: () => [],
+            addEventListener() {},
+            createElement: (tag) => {
+                if (tag === 'canvas') return makeMockCanvas();
+                const el = makeEl(tag);
+                el.children = [];
+                el.onclick = null;
+                el.appendChild = (ch) => { el.children.push(ch); return ch; };
+                el.querySelector = (sel) => {
+                    const id = sel.replace(/^#/, '');
+                    const walk = (n) => {
+                        if (!n) return null;
+                        if (n.id === id) return n;
+                        for (const c of (n.children || [])) { const f = walk(c); if (f) return f; }
+                        return null;
+                    };
+                    return walk(el);
+                };
+                return el;
+            }
+        },
+        localStorage: store,
+        sessionStorage: sessStore,
+        performance: { now: () => 4800 },
+        setTimeout: (fn) => { fn(); return 1; },
+        clearTimeout() {},
+        player: { uid: 'u_v15_check', warmth: 360, xp: 1200 },
+        ranks: [{ minXp: 0, title: 'УР. 1' }, { minXp: 1000, title: 'УР. 6 // ВЕРШИНА' }],
+        anonLabel: () => 'Аноним #7527',
+        esc: s => String(s),
+        SFX: { tap() {}, react() {}, block() {}, egg() {} },
+        Math, Number, String, Boolean, Array, Object, Set, Map, JSON, Date, RegExp, parseInt, parseFloat, isNaN, isFinite
+    };
+    env.window.document = env.document;
+    vm.runInNewContext(
+        roomCode + '\n' + cosmCode + '\n'
+        + 'Object.assign(globalThis, { SOMA_CATALOG, SHOP_GROUP_META, shopState, stationPhases, roomAnim, RARE_MOON_CAT_INDEX, RARE_MALTESE_INDEX });',
+        env
+    );
+    env.window.bindSomaSceneScroll = env.bindSomaSceneScroll;
+    env.window.somaClientToLocal = env.somaClientToLocal;
+
+    // 4. 4th Master Pot `pot_amethyst`: equal 160 ⭐ tier + Edge Function parity + draws cleanly across all pot shapes
+    const pots = env.SOMA_CATALOG.filter(i => i.slot === 'pot');
+    assert.deepEqual(Array.from(pots, p => p.id), ['pot_cinnabar', 'pot_moon', 'pot_kintsugi', 'pot_amethyst'], '4 Master Pots present');
+    assert.deepEqual([...new Set(Array.from(pots, p => p.stars))], [160], 'all 4 Master Pots share 160 ⭐ peer price');
+    assert.ok(edgeFnCode.includes("pot_amethyst:") && edgeFnCode.includes("stars: 160"), 'Edge Function has pot_amethyst at 160 ⭐');
+    for (let k = 0; k < 8; k++) {
+        const sp = env.gallerySpecForKind(k, env.plantSpec());
+        assert.doesNotThrow(() => env.drawPlantSprite(makeMockCanvas().getContext('2d'), sp, 5, { potSkin: 'pot_amethyst', now: 3200, phase: 1 }));
+    }
+    assert.doesNotThrow(() => env.drawPlantSprite(makeMockCanvas().getContext('2d'), env.alienSpec(), 5, { potSkin: 'pot_amethyst', now: 3200, phase: 3 }));
+    assert.doesNotThrow(() => env.drawPlantSprite(makeMockCanvas().getContext('2d'), env.alienSpec(), 5, { potSkin: 'default', now: 3200, phase: 3 }));
+
+    // 5. Per-flower pot selection in Greenhouse (each flower keeps its own vessel + PROD ownership gating + FS zero-clip CSS)
+    assert.equal(env.setGreenhouseFlowerPot(0, 'pot_amethyst'), true);
+    assert.equal(env.setGreenhouseFlowerPot(3, 'pot_moon'), true);
+    assert.equal(env.setGreenhouseFlowerPot(6, 'pot_cinnabar'), true);
+    assert.equal(env.setGreenhouseFlowerPot(7, 'default'), true);
+    assert.equal(env.setGreenhouseFlowerPot('alien', 'pot_amethyst'), true);
+    assert.equal(env.potSkinForFlower(0, 'pot_kintsugi'), 'pot_amethyst');
+    assert.equal(env.potSkinForFlower(3, 'pot_kintsugi'), 'pot_moon');
+    assert.equal(env.potSkinForFlower(6, 'pot_kintsugi'), 'pot_cinnabar');
+    assert.equal(env.potSkinForFlower(7, 'pot_kintsugi'), 'default', 'explicit default clay overrides global pot');
+    assert.equal(env.potSkinForFlower('alien', 'pot_kintsugi'), 'pot_amethyst', 'alien respects chosen amethyst pot');
+    assert.equal(env.setGreenhouseFlowerPot('alien', 'default'), true);
+    assert.equal(env.potSkinForFlower('alien', 'pot_kintsugi'), 'default', 'alien respects explicit native clay choice');
+    assert.ok(ghCode.includes('id="gh-pot-bar"') && ghCode.includes('pot_amethyst') && ghCode.includes('setGreenhouseFlowerPot'));
+    assert.ok(ghCss.includes('.gh-overlay.is-in-fs .gh-pot-txt') && ghCss.includes('.gh-pot-opt--amethyst'), 'FS Greenhouse keeps compact pot gems with 0 clipping');
+    assert.ok(shareCode.includes('activeRoomPotSkin') && shareCode.includes('potSkinForFlower'), 'Share postcards reflect chosen per-flower pots');
+
+    // PROD ownership gate: unowned pot cannot be set; owned pot works!
+    isPts = false;
+    assert.equal(env.setGreenhouseFlowerPot(2, 'pot_amethyst'), false, 'PROD rejects unowned pot_amethyst');
+    env.grantOwnedItem('pot_amethyst');
+    assert.equal(env.setGreenhouseFlowerPot(2, 'pot_amethyst'), true, 'PROD accepts owned pot_amethyst');
+    assert.equal(env.potSkinForFlower(2, ''), 'pot_amethyst');
+    assert.equal(env.potSkinForFlower(3, ''), '', 'PROD gracefully falls back if PTS-chosen pot is not owned');
+    isPts = true;
+
+    // 6. Companion heading strictly `// ХРАНИТЕЛИ ТЕПЛА` (zero `по ID`, zero `спутники`, zero `можно обоих/двоих`)
+    assert.equal(env.SHOP_GROUP_META.companion.title, '// ХРАНИТЕЛИ ТЕПЛА');
+    env.switchShopTab('room');
+    const roomShopHtml = regEl('shop-body').innerHTML;
+    assert.ok(roomShopHtml.includes('// ХРАНИТЕЛИ ТЕПЛА'), 'Boutique Room shows ХРАНИТЕЛИ ТЕПЛА');
+    assert.ok(!/спутники|можно обоих|можно двоих|по id/i.test(roomShopHtml), 'zero mentions of ID or dual-equip hint in Boutique Room');
+
+    // 7. IMG_2254.png FIX: Selecting 0.1% Moon Cat + 0.1% White Maltese (even after closing PTS drawer!) displays exact names in Boutique preview!
+    env.grantOwnedItem('room_cat');
+    env.grantOwnedItem('room_dog');
+    env.roomAnim.inspectCatCoat = env.RARE_MOON_CAT_INDEX;   // 7 -> Полуночная Луна
+    env.roomAnim.inspectDogBreed = env.RARE_MALTESE_INDEX;   // 7 -> Белая мальтийская болонка
+    env.roomAnim.ptsOpen = true;
+    env.togglePtsDrawer(); // collapse PTS drawer — must NOT wipe chosen cat/dog!
+    env.renderShop();
+    const prevHtml = regEl('shop-preview').innerHTML;
+    assert.ok(prevHtml.includes('🐈 Полуночная Луна'), 'Boutique preview shows selected 0.1% Black Moon Cat');
+    assert.ok(prevHtml.includes('🐕 Белая мальтийская болонка'), 'Boutique preview shows selected 0.1% White Maltese');
+    assert.ok(!prevHtml.includes('Рыжий огонёк') && !prevHtml.includes('Рыжий сиба-ину'), 'never falls back to wrong index-0 names');
+
+    // 8. Custom Cat & Dog naming: prompted on purchase, validated, displayed STRICTLY in room interaction journal and NOWHERE else!
+    const freshPetEnv = () => {
+        env.shopState.owned = env.shopState.owned.filter(x => x !== 'room_cat' && x !== 'room_dog');
+        env.purchaseCosmetic('room_cat');
+        assert.equal(env.shopState.namingPet, 'cat', 'purchasing cat immediately opens naming prompt');
+        assert.ok(regEl('shop-body').innerHTML.includes('shop-petname-input'), 'naming input rendered right inside Boutique card');
+        env.purchaseCosmetic('room_dog');
+        assert.equal(env.shopState.namingPet, 'dog', 'purchasing dog immediately opens naming prompt');
+    };
+    freshPetEnv();
+    assert.equal(env.sanitizePetName('https://spam.ru').ok, false, 'blocks URLs in pet names');
+    assert.equal(env.sanitizePetName('@badhandle').ok, false, 'blocks @handles in pet names');
+    assert.equal(env.sanitizePetName('ОченьДлинноеИмяПитомца123').ok, false, 'caps pet name at 20 chars');
+    regEl('shop-petname-input').value = 'Нокс';
+    env.saveMyPetName('cat');
+    regEl('shop-petname-input').value = 'Юки';
+    env.saveMyPetName('dog');
+    assert.equal(env.getPetName('cat'), 'Нокс');
+    assert.equal(env.getPetName('dog'), 'Юки');
+
+    // Privacy guarantee: custom pet names NEVER leak into Boutique preview, item descriptions, or Top dossier!
+    env.shopState.namingPet = '';
+    env.renderShop();
+    assert.ok(!regEl('shop-preview').innerHTML.includes('Нокс') && !regEl('shop-preview').innerHTML.includes('Юки'), 'pet names never appear in Boutique preview banner');
+    assert.ok(!regEl('shop-body').innerHTML.includes('Нокс') && !regEl('shop-body').innerHTML.includes('Юки'), 'pet names never appear on Boutique cards when editor closed');
+    env.shopState.lastBoard = [{ username: 'u_v15_check', place: 1, xp: 1200, help_attempts: 0 }];
+    env.openDossierByIndex(0);
+    assert.ok(!regEl('dossier-body').innerHTML.includes('Нокс') && !regEl('dossier-body').innerHTML.includes('Юки'), 'pet names never leak into public Top dossier');
+    assert.ok(regEl('dossier-body').innerHTML.includes('Полуночная Луна') && regEl('dossier-body').innerHTML.includes('Белая мальтийская болонка'), 'own dossier shows active Moon Cat & Maltese');
+
+    // Room interaction journal DOES warmly feature both custom names!
+    const catJournalLines = [];
+    const dogJournalLines = [];
+    for (let i = 0; i < 3; i++) {
+        env.activateRoomObject('bed');
+        catJournalLines.push(regEl('station-entry').textContent);
+        env.activateRoomObject('dog');
+        dogJournalLines.push(regEl('station-entry').textContent);
+    }
+    assert.ok(catJournalLines.every(l => l.includes('Нокс')), 'every cat interaction journal line addresses the cat by its custom name');
+    assert.ok(catJournalLines.some(l => l.includes('Юки')), 'duet cat line also names the sleeping dog friend');
+    assert.ok(dogJournalLines.every(l => l.includes('Юки')), 'every dog interaction journal line addresses the dog by its custom name');
+    assert.ok(dogJournalLines.some(l => l.includes('Нокс')), 'duet dog line also names the purring cat friend');
+    assert.ok(!regEl('station-mode').textContent.includes('Нокс') && !regEl('station-mode').textContent.includes('Юки'), 'pet names stay strictly inside journal body text');
+
+    // 9. «Оттепель» (Phase 1) WOW overhaul: clipped-sky lunar halo + moon + clouds + mist + 8 icicles w/ live капель + volumetric room beams!
+    let thawClips = 0, thawArcs = 0, thawEllipses = 0, beamArcs = 0;
+    const recGrad = { addColorStop() {} };
+    const thawCtx = {
+        save() {}, restore() {}, beginPath() {}, closePath() {}, moveTo() {}, lineTo() {},
+        quadraticCurveTo() {}, bezierCurveTo() {}, fillRect() {}, strokeRect() {},
+        fill() {}, stroke() {}, translate() {}, rotate() {}, scale() {},
+        clip() { thawClips++; },
+        arc() { thawArcs++; },
+        ellipse() { thawEllipses++; },
+        createLinearGradient: () => recGrad,
+        createRadialGradient: () => recGrad
+    };
+    env.drawWindowWorld(thawCtx, 5200, 1, 0.25);
+    assert.ok(thawClips >= 2 && thawArcs >= 45 && thawEllipses >= 12, 'Phase 1 Thaw draws clipped sky, lunar 22° halo, stars, clouds, mist, and live icicle melt drops');
+    const beamCtx = { ...thawCtx, arc() { beamArcs++; } };
+    env.drawWindowLightBeams(beamCtx, 5200, 1, 0.25);
+    assert.ok(beamArcs >= 7, 'Phase 1 Thaw casts 6 volumetric moonlit beams + shimmering rug reflection into the room');
+    assert.ok(env.stationPhases[1].entry.includes('гало') && env.stationPhases[1].entry.includes('капель'), 'Thaw phase caption reflects lunar halo & melting капель');
+
+    // 10. Harmonized crimson-garnet hanging vines: ZERO green-dominant colors across ALL 4 phases (locked, open, and 8/8 secret)!
+    const recordedStyles = [];
+    const parseRgb = (s) => {
+        if (typeof s !== 'string') return null;
+        let m = s.match(/^#([0-9a-f]{6})$/i);
+        if (m) {
+            const n = parseInt(m[1], 16);
+            return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+        }
+        m = s.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+        return m ? [+m[1], +m[2], +m[3]] : null;
+    };
+    const vineCtx = {
+        save() {}, restore() {}, beginPath() {}, closePath() {}, moveTo() {}, lineTo() {},
+        quadraticCurveTo() {}, bezierCurveTo() {}, arc() {}, ellipse() {}, fill() {}, stroke() {},
+        translate() {}, rotate() {}, scale() {},
+        set fillStyle(v) { recordedStyles.push(v); },
+        set strokeStyle(v) { recordedStyles.push(v); },
+        createLinearGradient: () => ({ addColorStop(_, c) { recordedStyles.push(c); } }),
+        createRadialGradient: () => ({ addColorStop(_, c) { recordedStyles.push(c); } })
+    };
+    for (const ph of [0, 1, 2, 3]) {
+        env.drawGreenhouseVines(vineCtx, 3100, ph);
+    }
+    const greenColors = recordedStyles.filter(c => {
+        const rgb = parseRgb(c);
+        return rgb && rgb[1] > rgb[0] + 4; // G strictly exceeding R = greenish!
+    });
+    assert.equal(greenColors.length, 0, `Hanging vines draw ZERO green colors (found: ${greenColors.join(', ')})`);
+    assert.ok(recordedStyles.length > 200, 'Hanging vines render rich layered crimson-garnet foliage & buds');
 });

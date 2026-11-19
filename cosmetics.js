@@ -49,16 +49,17 @@ const SOMA_CATALOG = [
     { id: 'pager_ghost', tab: 'pager', group: 'pagers', slot: 'pager', motion: 'ДЫМКА ЭФИРА',    sample: 'CH·04 // WHITE NOISE', stars: 140, name: 'Белый шум',          desc: 'Анодированный титановый хром с живой опалово-серебряной дымкой на холодной матрице.' },
     { id: 'pager_brass', tab: 'pager', group: 'pagers', slot: 'pager', motion: 'ЗОЛОТОЙ БЛИК',   sample: 'CH·04 // GUNMETAL',   stars: 140, name: 'Воронёная сталь',     desc: 'Оружейный корпус с четырьмя латунными винтами, скользящим часовым бликом и тёплой шкалой.' },
 
-    // 4. АВТОРСКИЕ СОСУДЫ (160 ⭐), ЖИВАЯ АТМОСФЕРА КОМНАТЫ (140 ⭐) И КОТ-ХРАНИТЕЛЬ (220 ⭐)
+    // 4. АВТОРСКИЕ СОСУДЫ (160 ⭐), ЖИВАЯ АТМОСФЕРА КОМНАТЫ (140 ⭐) И ХРАНИТЕЛИ ТЕПЛА (220 ⭐)
     { id: 'pot_cinnabar', tab: 'room', group: 'pots',     slot: 'pot',     stars: 160, name: 'Киноварный лак',           desc: 'Императорская киноварь на подставке кадай с двойным золотым поясом, сияющей печатью и живым лаковым переливом.' },
     { id: 'pot_moon',     tab: 'room', group: 'pots',     slot: 'pot',     stars: 160, name: 'Лунный селадон',           desc: 'Жемчужно-дымчатый фарфор на подставке с лунным серпом в живом ореоле и мерцающими серебряными искрами.' },
     { id: 'pot_kintsugi', tab: 'room', group: 'pots',     slot: 'pot',     stars: 160, name: 'Керамика Кинцуги',         desc: 'Чёрная японская глина раку на подставке кадай, исцелённая дышащими швами 24k золота с бегущим бликом.' },
+    { id: 'pot_amethyst', tab: 'room', group: 'pots',     slot: 'pot',     stars: 160, name: 'Аметистовый оникс',        desc: 'Резной полуночный оникс на подставке кадай с сияющим гранёным аметистом, серебряной филигранью и сумеречной пыльцой.' },
     { id: 'room_steam',   tab: 'room', group: 'ambience', slot: 'steam',   stars: 140, name: 'Чай и сандал у терминала', desc: 'Янтарный чай с густым паром и курильница с тлеющей палочкой благовоний и шёлковым дымком.' },
     { id: 'room_tape',    tab: 'room', group: 'ambience', slot: 'tape',    stars: 140, name: 'Винил «Ночной экспресс»',  desc: 'Крутится пластинка, танцуют огни усилителя, по виадуку идёт светящийся поезд + тёплый лоу-фай звук.' },
     { id: 'room_garland', tab: 'room', group: 'ambience', slot: 'garland', stars: 140, name: 'Гирлянда Эдисона у окна',  desc: '13 винтажных лампочек с тёплыми вольфрамовыми нитями и золотым светом по каменной арке окна.' },
     { id: 'room_candles', tab: 'room', group: 'ambience',  slot: 'candles', stars: 140, name: 'Живые свечи станции',      desc: 'Шесть восковых свечей с трепещущим живым пламенем и тёплыми бликами у ковра и на полке радио.' },
-    { id: 'room_cat',     tab: 'room', group: 'companion', slot: 'cat',     stars: 220, name: 'Живой кот-хранитель',      desc: 'Крупный тёплый кот одной из 7 мастей по вашему ID на кушетке: глубоко дышит, мурчит и дружит с псом (шанс 0.1% — уникальный чёрный кот с полумесяцем во лбу!).' },
-    { id: 'room_dog',     tab: 'room', group: 'companion', slot: 'dog',     stars: 220, name: 'Живой пёс-хранитель',      desc: 'Крупный пёс одной из 7 пород по вашему ID спит на персидском коврике рядом с котом (шанс 0.1% — уникальная белая мальтийская болонка с фиолетовыми ушами и хвостом!).' }
+    { id: 'room_cat',     tab: 'room', group: 'companion', slot: 'cat',     stars: 220, name: 'Живой кот-хранитель',      desc: 'Крупный тёплый кот одной из 7 мастей на кушетке: глубоко дышит, мурчит, откликается на данное вами имя и дружит с псом (шанс 0.1% — уникальный чёрный кот с полумесяцем во лбу!).' },
+    { id: 'room_dog',     tab: 'room', group: 'companion', slot: 'dog',     stars: 220, name: 'Живой пёс-хранитель',      desc: 'Крупный пёс одной из 7 пород спит на персидском коврике рядом с котом, виляет хвостом и помнит данное вами имя (шанс 0.1% — уникальная белая мальтийская болонка с фиолетовыми ушами и хвостом!).' }
 ];
 
 const SOMA_ITEM_MAP = Object.fromEntries(SOMA_CATALOG.map(it => [it.id, it]));
@@ -84,8 +85,97 @@ const SHOP_GROUP_META = {
     pagers:    { title: '// КОРПУСА NEEOSOMA // NMAV-04', pill: 'ЕДИНЫЙ ТИР · 140 ⭐' },
     pots:      { title: '// СОСУДЫ МАСТЕРА',           pill: 'ЕДИНЫЙ ТИР · 160 ⭐' },
     ambience:  { title: '// ЖИВАЯ АТМОСФЕРА СТАНЦИИ',  pill: 'ЕДИНЫЙ ТИР · 140 ⭐' },
-    companion: { title: '// ЖИВЫЕ СПУТНИКИ ПО ID (МОЖНО ОБОИХ)', pill: 'ЕДИНЫЙ ТИР · 220 ⭐' }
+    companion: { title: '// ХРАНИТЕЛИ ТЕПЛА',          pill: 'ЕДИНЫЙ ТИР · 220 ⭐' }
 };
+
+const SOMA_POT_IDS = ['pot_cinnabar', 'pot_moon', 'pot_kintsugi', 'pot_amethyst'];
+const SOMA_POT_META = {
+    '':           { short: 'Родная глина',      badge: 'ТЕРРАКОТА СТАНЦИИ' },
+    pot_cinnabar: { short: 'Киноварь',          badge: 'ИМПЕРАТОРСКИЙ ЛАК · ПЕЧАТЬ 24K' },
+    pot_moon:     { short: 'Селадон',           badge: 'ЛУННЫЙ ФАРФОР · СЕРП И СОЗВЕЗДИЯ' },
+    pot_kintsugi: { short: 'Кинцуги',           badge: 'ЧЁРНАЯ ГЛИНА РАКУ · ШВЫ 24K' },
+    pot_amethyst: { short: 'Аметист',           badge: 'ПОЛУНОЧНЫЙ ОНИКС · ГРАНЁНЫЙ КРИСТАЛЛ' }
+};
+
+function getOwnedPotSkins() {
+    const pts = typeof isPtsMode === 'function' && isPtsMode();
+    return SOMA_POT_IDS.filter(id => pts || isOwned(id));
+}
+
+// ===== ЛИЧНЫЕ ИМЕНА ХРАНИТЕЛЕЙ ТЕПЛА (ВИДНЫ СТРОГО В ЖУРНАЛЕ ПРИ ВЗАИМОДЕЙСТВИИ!) =====
+function petNamesStorageKey() {
+    const uid = (typeof player !== 'undefined' && player && player.uid) ? String(player.uid) : '';
+    return uid ? `soma_pet_names_${uid}` : 'soma_pet_names';
+}
+
+function loadPetNamesMap() {
+    try {
+        const raw = localStorage.getItem(petNamesStorageKey()) || localStorage.getItem('soma_pet_names') || '{}';
+        const obj = JSON.parse(raw);
+        if (obj && typeof obj === 'object') return obj;
+    } catch (_) {}
+    return {};
+}
+
+function sanitizePetName(raw) {
+    const clean = String(raw || '')
+        .replace(/[\u0000-\u001F\u007F<>`]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    if (!clean) return { ok: true, value: '' };
+    if (clean.length > 20) return { ok: false, error: 'Имя хранителя — не длиннее 20 символов.' };
+    if (/(https?:\/\/|www\.|t\.me\/|@[a-z0-9_]{3,}|\.[a-z]{2,5}\b)/i.test(clean)) {
+        return { ok: false, error: 'В имени нельзя использовать ссылки и @ники.' };
+    }
+    if ((clean.match(/\d/g) || []).length >= 5) {
+        return { ok: false, error: 'Слишком много цифр — дайте живое тёплое имя.' };
+    }
+    if (!/^[\p{L}\p{N}\s\-’'·.]+$/u.test(clean)) {
+        return { ok: false, error: 'Используйте буквы, пробел или дефис.' };
+    }
+    return { ok: true, value: clean };
+}
+
+function getPetName(kind) {
+    if (kind !== 'cat' && kind !== 'dog') return '';
+    const map = loadPetNamesMap();
+    const val = typeof map[kind] === 'string' ? map[kind].trim() : '';
+    const chk = sanitizePetName(val);
+    return chk.ok ? chk.value : '';
+}
+
+function setPetName(kind, rawName) {
+    if (kind !== 'cat' && kind !== 'dog') return { ok: false, error: 'Неизвестный питомец.' };
+    const chk = sanitizePetName(rawName);
+    if (!chk.ok) return chk;
+    const map = loadPetNamesMap();
+    if (chk.value) map[kind] = chk.value;
+    else delete map[kind];
+    try {
+        const payload = JSON.stringify(map);
+        localStorage.setItem(petNamesStorageKey(), payload);
+        localStorage.setItem('soma_pet_names', payload);
+    } catch (_) {}
+    return { ok: true, value: chk.value };
+}
+
+function currentSelfCatSpec() {
+    if (typeof activeCatSpec === 'function') return activeCatSpec();
+    if (typeof catSpec === 'function') {
+        const ov = (typeof roomAnim !== 'undefined' && Number.isInteger(roomAnim.inspectCatCoat)) ? roomAnim.inspectCatCoat : null;
+        return catSpec(undefined, ov);
+    }
+    return null;
+}
+
+function currentSelfDogSpec() {
+    if (typeof activeDogSpec === 'function') return activeDogSpec();
+    if (typeof dogSpec === 'function') {
+        const ov = (typeof roomAnim !== 'undefined' && Number.isInteger(roomAnim.inspectDogBreed)) ? roomAnim.inspectDogBreed : null;
+        return dogSpec(undefined, ov);
+    }
+    return null;
+}
 
 const shopState = {
     tab: 'frames',
@@ -93,6 +183,7 @@ const shopState = {
     equipped: { frame: '', seal: '', title: '', epitaph: '', pager: '', pot: '', cat: false, dog: false, steam: false, tape: false, garland: false, candles: false },
     preview: null, // временная примерка любого предмета до покупки (включая живой показ прямо в комнате!)
     liveRoomTry: false,
+    namingPet: '', // '' | 'cat' | 'dog' — камерное предложение дать имя при покупке или переименовании
     topMode: 'all', // 'all' | 'week'
     lastBoard: [],
     myRank: null,
@@ -353,10 +444,12 @@ function renderRoomTryOnBar() {
     }
     const pts = typeof isPtsMode === 'function' && isPtsMode();
     let label = `ПРИМЕРКА: «${it.name}»`;
-    if (it.id === 'room_cat' && typeof catSpec === 'function') {
-        label = `ПРИМЕРКА: ВАШ КОТ · ${catSpec().coat.name.toUpperCase()}`;
-    } else if (it.id === 'room_dog' && typeof dogSpec === 'function') {
-        label = `ПРИМЕРКА: ВАШ ПЁС · ${dogSpec().breed.name.toUpperCase()}`;
+    const tryCat = it.id === 'room_cat' ? currentSelfCatSpec() : null;
+    const tryDog = it.id === 'room_dog' ? currentSelfDogSpec() : null;
+    if (tryCat && tryCat.coat) {
+        label = `ПРИМЕРКА: ВАШ КОТ · ${tryCat.coat.name.toUpperCase()}`;
+    } else if (tryDog && tryDog.breed) {
+        label = `ПРИМЕРКА: ВАШ ПЁС · ${tryDog.breed.name.toUpperCase()}`;
     }
     if (txt) txt.textContent = label;
     if (buyBtn) {
@@ -555,18 +648,66 @@ function grantOwnedItem(id) {
     applyCosmeticsToUI();
 }
 
+function openPetNamePrompt(kind) {
+    if (kind !== 'cat' && kind !== 'dog') return;
+    shopState.tab = 'room';
+    shopState.namingPet = kind;
+    renderShop();
+    setTimeout(() => {
+        const inp = typeof document !== 'undefined' && document.getElementById('shop-petname-input');
+        if (inp && typeof inp.focus === 'function') {
+            try { inp.focus(); inp.select && inp.select(); } catch (_) {}
+        }
+    }, 30);
+}
+
+function saveMyPetName(kind) {
+    const k = kind === 'dog' ? 'dog' : 'cat';
+    const itemId = k === 'dog' ? 'room_dog' : 'room_cat';
+    if (!isOwned(itemId)) return;
+    const inp = typeof document !== 'undefined' && document.getElementById('shop-petname-input');
+    const res = setPetName(k, inp ? inp.value : '');
+    if (!res.ok) {
+        shopState.notice = '⛔ ' + res.error;
+        if (typeof SFX !== 'undefined' && SFX.block) SFX.block();
+        renderShop();
+        return;
+    }
+    shopState.namingPet = '';
+    const who = k === 'dog' ? 'Пёс' : 'Кот';
+    shopState.notice = res.value
+        ? `✓ ${who} запомнил своё имя — «${res.value}». Оно звучит только в строках журнала комнаты, когда вы рядом.`
+        : `✓ Имя снято — в журнале снова звучит природный облик хранителя.`;
+    try { Telegram.WebApp.HapticFeedback.notificationOccurred('success'); } catch (_) {}
+    if (typeof SFX !== 'undefined' && SFX.react) SFX.react();
+    renderShop();
+}
+
+function skipMyPetName() {
+    shopState.namingPet = '';
+    if (typeof SFX !== 'undefined' && SFX.tap) SFX.tap();
+    renderShop();
+}
+
 async function purchaseCosmetic(id) {
     const it = SOMA_ITEM_MAP[id];
     if (!it || shopState.buying) return;
     if (isOwned(id)) { toggleEquipCosmetic(id); return; }
 
+    const isPet = id === 'room_cat' || id === 'room_dog';
+    const petKind = id === 'room_dog' ? 'dog' : (id === 'room_cat' ? 'cat' : '');
+
     const pts = typeof isPtsMode === 'function' && isPtsMode();
     if (pts) {
         grantOwnedItem(id);
-        shopState.notice = `✓ PTS: «${it.name}» открыт и надет (в релизе — ${it.stars} ⭐ Telegram Stars).`;
+        if (isPet) shopState.namingPet = petKind;
+        shopState.notice = isPet
+            ? `✓ PTS: «${it.name}» уже в комнате — при желании дайте ему личное имя ниже!`
+            : `✓ PTS: «${it.name}» открыт и надет (в релизе — ${it.stars} ⭐ Telegram Stars).`;
         try { Telegram.WebApp.HapticFeedback.notificationOccurred('success'); } catch (_) {}
         if (typeof SFX !== 'undefined' && SFX.react) SFX.react();
         renderShop();
+        if (isPet) openPetNamePrompt(petKind);
         return;
     }
 
@@ -600,12 +741,15 @@ async function purchaseCosmetic(id) {
             shopState.buying = '';
             if (status === 'paid') {
                 grantOwnedItem(id);
+                if (isPet) shopState.namingPet = petKind;
                 // Подтверждаем список покупок из Supabase (записанный вебхуком бота)
                 try {
                     const { data: row } = await supabaseClient.from('soma_users').select('owned_cosmetics').eq('username', player.uid).single();
                     if (row) hydrateCosmeticsFromCloud(row);
                 } catch (_) {}
-                shopState.notice = `✓ Оплачено (${it.stars} ⭐): «${it.name}» навсегда в вашей коллекции!`;
+                shopState.notice = isPet
+                    ? `✓ Оплачено (${it.stars} ⭐): «${it.name}» теперь живёт у вас — дайте ему имя!`
+                    : `✓ Оплачено (${it.stars} ⭐): «${it.name}» навсегда в вашей коллекции!`;
                 try { tg.HapticFeedback.notificationOccurred('success'); } catch (_) {}
                 if (typeof SFX !== 'undefined' && SFX.egg) SFX.egg();
             } else if (status === 'cancelled') {
@@ -614,6 +758,7 @@ async function purchaseCosmetic(id) {
                 shopState.notice = 'Не удалось завершить оплату. Попробуйте позже.';
             }
             renderShop();
+            if (status === 'paid' && isPet) openPetNamePrompt(petKind);
         });
     } catch (e) {
         shopState.buying = '';
@@ -641,11 +786,14 @@ function renderShop() {
     const pts = typeof isPtsMode === 'function' && isPtsMode();
 
     if (prev) {
-        const myCatLabel = typeof catSpec === 'function' ? catSpec().coat.name : 'Кот-хранитель';
-        const myDogLabel = typeof dogSpec === 'function' ? dogSpec().breed.name : 'Пёс-хранитель';
+        const selfCat = currentSelfCatSpec();
+        const selfDog = currentSelfDogSpec();
+        const myCatLabel = (selfCat && selfCat.coat && selfCat.coat.name) ? selfCat.coat.name : 'Кот-хранитель';
+        const myDogLabel = (selfDog && selfDog.breed && selfDog.breed.name) ? selfDog.breed.name : 'Пёс-хранитель';
+        const activeRoomPot = (typeof activeRoomPotSkin === 'function' ? activeRoomPotSkin(c.pot) : c.pot) || '';
         const gearBits = [];
         if (c.pager && SOMA_ITEM_MAP[c.pager]) gearBits.push(`📟 ${SOMA_ITEM_MAP[c.pager].name}`);
-        if (c.pot && SOMA_ITEM_MAP[c.pot]) gearBits.push(`🏺 ${SOMA_ITEM_MAP[c.pot].name}`);
+        if (activeRoomPot && SOMA_ITEM_MAP[activeRoomPot]) gearBits.push(`🏺 ${SOMA_ITEM_MAP[activeRoomPot].name}`);
         if (c.cat) gearBits.push(`🐈 ${myCatLabel}`);
         if (c.dog) gearBits.push(`🐕 ${myDogLabel}`);
         if (c.garland) gearBits.push('💡 Огни Эдисона');
@@ -720,6 +868,12 @@ function renderShop() {
                     <span class="pager-carrier text-[8.5px]">${esc(it.motion || '')}</span>
                 </div>
             </div>`;
+        } else if (it.slot === 'pot' && SOMA_POT_META[it.id]) {
+            liveSwatch = `
+            <div class="shop-swatch-pot shop-swatch-pot--${it.id}">
+                <span class="shop-swatch-pot-gem"><i class="shop-swatch-pot-dot" aria-hidden="true"></i><span>${esc(SOMA_POT_META[it.id].badge)}</span></span>
+                <span class="opacity-70 shrink-0">ОРАНЖЕРЕЯ</span>
+            </div>`;
         }
         const buyLabel = shopState.buying === it.id
             ? 'СЧЁТ...'
@@ -735,11 +889,35 @@ function renderShop() {
         const motionNote = (it.slot === 'seal' && it.motion)
             ? `<span class="text-[8.5px] font-mono-tech text-rose-300/75">· ${esc(it.motion)}</span>`
             : '';
-        const personalPet = (it.id === 'room_cat' && typeof catSpec === 'function')
-            ? `<div class="text-[9.5px] font-mono-tech text-amber-300/95 mt-1">✦ ВАШ КОТ ПО ID: ${esc(catSpec().summary.toUpperCase())}</div>`
-            : (it.id === 'room_dog' && typeof dogSpec === 'function')
-                ? `<div class="text-[9.5px] font-mono-tech text-amber-300/95 mt-1">✦ ВАШ ПЁС ПО ID: ${esc(dogSpec().summary.toUpperCase())}</div>`
+        const cardCat = it.id === 'room_cat' ? currentSelfCatSpec() : null;
+        const cardDog = it.id === 'room_dog' ? currentSelfDogSpec() : null;
+        const personalPet = (cardCat && cardCat.summary)
+            ? `<div class="text-[9.5px] font-mono-tech text-amber-300/95 mt-1">✦ ВАШ КОТ: ${esc(cardCat.summary.toUpperCase())}</div>`
+            : (cardDog && cardDog.summary)
+                ? `<div class="text-[9.5px] font-mono-tech text-amber-300/95 mt-1">✦ ВАШ ПЁС: ${esc(cardDog.summary.toUpperCase())}</div>`
                 : '';
+        const petKind = it.id === 'room_cat' ? 'cat' : (it.id === 'room_dog' ? 'dog' : '');
+        const hasPetName = petKind && owned && !!getPetName(petKind);
+        const petNameBtn = (petKind && owned)
+            ? `<button type="button" class="shop-btn shop-btn--petname" onclick="openPetNamePrompt('${petKind}')">${hasPetName ? '✎ ИМЯ' : '✎ ДАТЬ ИМЯ'}</button>`
+            : '';
+        const petNameEditor = (petKind && owned && shopState.namingPet === petKind)
+            ? `
+            <div class="shop-petname-box">
+                <div class="shop-petname-title">${petKind === 'cat' ? '✦ КАК НАЗОВЁТЕ ВАШЕГО КОТА-ХРАНИТЕЛЯ?' : '✦ КАК НАЗОВЁТЕ ВАШЕГО ПСА-ХРАНИТЕЛЯ?'}</div>
+                <div class="shop-petname-sub">Имя знаете только вы — оно оживёт лишь в журнале комнаты, когда вы гладите питомца.</div>
+                <div class="shop-petname-row">
+                    <input id="shop-petname-input" type="text" maxlength="20" class="shop-petname-input"
+                        placeholder="${petKind === 'cat' ? 'Напр. Нокс, Луна, Уголёк...' : 'Напр. Юки, Марс, Облачко...'}"
+                        value="${esc(getPetName(petKind))}"
+                        onkeydown="if(event.key==='Enter'){event.preventDefault();saveMyPetName('${petKind}');}">
+                    <button type="button" class="shop-btn shop-btn--buy" style="flex:0 0 auto;padding-inline:11px" onclick="saveMyPetName('${petKind}')">СОХРАНИТЬ</button>
+                </div>
+                <div class="flex justify-end">
+                    <button type="button" class="text-[9.5px] font-mono-tech text-gray-400 hover:text-gray-200 transition" onclick="skipMyPetName()">ПОЗЖЕ</button>
+                </div>
+            </div>`
+            : '';
         html += `
         <div class="shop-item ${eq ? 'is-equipped' : ''}">
             ${liveSwatch}
@@ -756,10 +934,11 @@ function renderShop() {
             </div>
             <div class="shop-actions">
                 ${owned
-                    ? `<button type="button" class="shop-btn shop-btn--equip" ${it.slot === 'epitaph_unlock' ? 'disabled' : `onclick="toggleEquipCosmetic('${it.id}')"`}>${eqLabel}</button>`
+                    ? `<button type="button" class="shop-btn shop-btn--equip" ${it.slot === 'epitaph_unlock' ? 'disabled' : `onclick="toggleEquipCosmetic('${it.id}')"`}>${eqLabel}</button>${petNameBtn}`
                     : `<button type="button" class="shop-btn shop-btn--buy" onclick="purchaseCosmetic('${it.id}')">${buyLabel}</button>
                        <button type="button" class="shop-btn shop-btn--try" onclick="tryCosmetic('${it.id}')">${tryLabel}</button>`}
             </div>
+            ${petNameEditor}
         </div>`;
     });
 
@@ -1049,11 +1228,13 @@ function openDossier(entry) {
     if (c.pager && SOMA_ITEM_MAP[c.pager]) gear.push('Пейджер: ' + SOMA_ITEM_MAP[c.pager].name);
     if (c.pot && SOMA_ITEM_MAP[c.pot]) gear.push('Сосуд: ' + SOMA_ITEM_MAP[c.pot].name);
     if (c.cat) {
-        const catName = typeof catSpec === 'function' ? catSpec(entry.username).coat.name : 'Кот-хранитель';
+        const dCat = me ? currentSelfCatSpec() : (typeof catSpec === 'function' ? catSpec(entry.username) : null);
+        const catName = (dCat && dCat.coat && dCat.coat.name) ? dCat.coat.name : 'Кот-хранитель';
         gear.push('Кот: ' + catName);
     }
     if (c.dog) {
-        const dogName = typeof dogSpec === 'function' ? dogSpec(entry.username).breed.name : 'Пёс-хранитель';
+        const dDog = me ? currentSelfDogSpec() : (typeof dogSpec === 'function' ? dogSpec(entry.username) : null);
+        const dogName = (dDog && dDog.breed && dDog.breed.name) ? dDog.breed.name : 'Пёс-хранитель';
         gear.push('Пёс: ' + dogName);
     }
     if (c.garland) gear.push('Огни Эдисона');

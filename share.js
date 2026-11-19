@@ -373,10 +373,13 @@
                 if (Number.isInteger(plantKindOverride)) stg = 5;
                 const cosm = (typeof getActiveCosmetics === 'function') ? getActiveCosmetics() : {};
                 const flies = (typeof silenceFirefliesCount === 'function') ? silenceFirefliesCount() : (stg >= 4 ? 5 : 2);
+                const sharePot = typeof activeRoomPotSkin === 'function'
+                    ? activeRoomPotSkin(cosm.pot || '', spec)
+                    : (spec && spec.isAlien ? 'pot_kintsugi' : (cosm.pot || ''));
                 drawPlantSprite(pg, spec, stg, {
                     phase,
                     now,
-                    potSkin: spec && spec.isAlien ? 'pot_kintsugi' : (cosm.pot || ''),
+                    potSkin: sharePot,
                     fireflies: flies
                 });
                 g.drawImage(pcv, 0.35333 * rw, 0.47488 * rh, 0.29333 * rw, 0.4939 * rh);
@@ -1255,7 +1258,8 @@
 
         if (isAlienCard && typeof drawPlantSprite === 'function') {
             const spCv = makeCanvas(440, 460);
-            drawPlantSprite(spCv.getContext('2d'), useSpec, 5, { phase: snap.phaseIdx, glow: 0.72, now: 2400, potSkin: 'pot_kintsugi' });
+            const alPot = typeof potSkinForFlower === 'function' ? potSkinForFlower('alien', snap.cosm.pot || '') : 'pot_kintsugi';
+            drawPlantSprite(spCv.getContext('2d'), useSpec, 5, { phase: snap.phaseIdx, glow: 0.72, now: 2400, potSkin: alPot });
             g.drawImage(spCv, 640, 86, 440, 460);
         }
 

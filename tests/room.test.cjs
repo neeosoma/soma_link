@@ -273,10 +273,40 @@ test('release UI hides spoilers, pager replaces NEEO_PHONE, window picks unlocke
     assert.ok(!roomCode.includes('getLampSprite'), 'must not slice background image at runtime');
     assert.ok(roomCss.includes('.station[data-phase="3"] .station-sky') && /data-phase="3"\]\s*\.station-sky\s*\{\s*opacity:\s*0/.test(roomCss), 'constellation must fade out in dawn light');
 
-    // Trainer expanded to >=20 scenarios
-    const scenBlock = indexHtml.match(/const SCEN = \[([\s\S]*?)\n    \];/);
-    assert.ok(scenBlock);
-    assert.ok((scenBlock[1].match(/\{\s*t:\s*'/g) || []).length >= 20, 'trainer must have a rich seasonal bank of scenarios');
+    // Trainer expanded to 60 nuanced scenarios in scenarios.js, and bottom #view-profile safety button removed
+    const p = require('path'), vm = require('vm'), fs = require('fs');
+    const scenPath = p.join(__dirname, '..', 'scenarios.js');
+    const scenCtx = {};
+    vm.runInNewContext(fs.readFileSync(scenPath, 'utf8') + ';globalThis.OUT = SCEN;', scenCtx);
+    assert.ok(Array.isArray(scenCtx.OUT) && scenCtx.OUT.length >= 60, 'trainer must have >=60 nuanced scenarios');
+    const seenPrompts = new Set();
+    for (const sc of scenCtx.OUT) {
+        assert.ok(sc.t.length >= 25 && !seenPrompts.has(sc.t), 'every scenario prompt must be unique and meaningful');
+        seenPrompts.add(sc.t);
+        assert.equal(sc.o.length, 3, 'each scenario has 3 choices');
+        assert.equal(sc.o.filter(o => o[1] === 1).length, 1, 'each scenario has exactly 1 empathetic choice');
+    }
+    const profileMatch = indexHtml.match(/<div id="view-profile"[\s\S]*?<script src="config\.js">/);
+    assert.ok(profileMatch && !profileMatch[0].includes('openSafety('), 'bottom safety button in room view must be removed while sticky top banner stays');
+    assert.ok(indexHtml.includes('onclick="openSafety()"'), 'top sticky crisis help button must stay intact');
+
+    // Cosmetic catalog + serverless Telegram Stars Edge Function 1:1 parity + anti-contact epitaph filter
+    const cosmCode = fs.readFileSync(p.join(__dirname, '..', 'cosmetics.js'), 'utf8');
+    const edgeCode = fs.readFileSync(p.join(__dirname, '..', 'billing', 'supabase', 'functions', 'soma-stars', 'index.ts'), 'utf8');
+    const cosmLs = makeStorage();
+    const cosmEnv = { localStorage: cosmLs, player: { uid: 'u_01', warmth: 7, xp: 100 } };
+    vm.runInNewContext(cosmCode + ';globalThis.API = { SOMA_CATALOG, sanitizeEpitaph, grantOwnedItem, getActiveCosmetics };', cosmEnv);
+    assert.ok(cosmEnv.API.SOMA_CATALOG.length >= 24, 'rich cosmetic catalog across Top and Room');
+    for (const item of cosmEnv.API.SOMA_CATALOG) {
+        const re = new RegExp(`\\b${item.id}\\s*:\\s*\\{[^}]*stars:\\s*${item.stars}\\b`);
+        assert.ok(re.test(edgeCode), `Edge Function price must match catalog item ${item.id}`);
+        cosmEnv.API.grantOwnedItem(item.id);
+    }
+    assert.equal(cosmEnv.player.warmth, 7, 'cosmetics must NEVER alter player warmth or plant growth');
+    assert.equal(cosmEnv.API.sanitizeEpitaph('Тишина громче чужих сирен.').ok, true);
+    assert.equal(cosmEnv.API.sanitizeEpitaph('пиши @mytag').ok, false, 'epitaph must block @handles');
+    assert.equal(cosmEnv.API.sanitizeEpitaph('https://t.me/foo').ok, false, 'epitaph must block URLs');
+    assert.equal(cosmEnv.API.sanitizeEpitaph('+7 999 123 45 67').ok, false, 'epitaph must block phone numbers');
 
     let trainerCalls = 0, radioCalls = 0, fakeNow = 1000;
     const makeClassList = (initHidden = false) => {

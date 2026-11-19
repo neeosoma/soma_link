@@ -591,7 +591,13 @@ function drawCeramicPot(g, bx, baseY, sp, stage, lit, soilOpts) {
     const sh = shapes[sp.potShape] || shapes[0];
     const topY = baseY - sh.h;
     const tw = sh.topW * 0.5, bw = sh.botW * 0.5;
-    const [pDark, pMid, pLight] = sp.pot;
+    const CUSTOM_POTS = {
+        pot_kintsugi: ['#090608', '#1b1216', '#3a2730'], // матовая чёрная глина раку + золотые швы кинцуги
+        pot_cinnabar: ['#2b0409', '#7d1120', '#cf384b'], // императорский киноварный лак
+        pot_moon:     ['#141118', '#3a3442', '#7d7285']  // дымчатый лунный фарфор
+    };
+    const potSkin = so.potSkin && CUSTOM_POTS[so.potSkin] ? so.potSkin : '';
+    const [pDark, pMid, pLight] = potSkin ? CUSTOM_POTS[potSkin] : sp.pot;
 
     // Глубокая мягкая тень горшка на ковре (прочно «сажает» растение в комнату)
     if (g.createRadialGradient) {
@@ -650,15 +656,60 @@ function drawCeramicPot(g, bx, baseY, sp, stage, lit, soilOpts) {
         g.fill();
     }
 
-    // Тонкая рельефная бороздка ручной работы
-    g.strokeStyle = mixHex(pLight, '#ff9aa4', 0.22, stage >= 3 ? 0.42 : 0.22);
-    g.lineWidth = 1.3;
+    // Тонкая рельефная бороздка ручной работы (или золотые швы Кинцуги / двойной кант Киновари)
     const bandY = topY + sh.h * 0.44;
     const bandW = tw * 0.92;
-    g.beginPath();
-    g.moveTo(bx - bandW, bandY);
-    g.quadraticCurveTo(bx, bandY + 9, bx + bandW, bandY);
-    g.stroke();
+    if (potSkin === 'pot_kintsugi') {
+        g.save();
+        g.lineCap = 'round';
+        g.lineJoin = 'round';
+        const drawGoldSeam = pts => {
+            g.strokeStyle = 'rgba(130, 78, 16, 0.85)';
+            g.lineWidth = 2.4;
+            g.beginPath();
+            pts.forEach(([x, y], i) => { if (i === 0) g.moveTo(x, y); else g.lineTo(x, y); });
+            g.stroke();
+            g.strokeStyle = '#f6cb64';
+            g.lineWidth = 1.35;
+            g.stroke();
+            g.strokeStyle = 'rgba(255, 245, 198, 0.78)';
+            g.lineWidth = 0.55;
+            g.stroke();
+        };
+        // Главный золотой шов исцеления с живой развилкой по керамике
+        drawGoldSeam([
+            [bx - tw * 0.44, topY + 6],
+            [bx - tw * 0.28, topY + sh.h * 0.34],
+            [bx - tw * 0.06, topY + sh.h * 0.52],
+            [bx + bw * 0.22, topY + sh.h * 0.78],
+            [bx + bw * 0.44, baseY - 2]
+        ]);
+        drawGoldSeam([
+            [bx - tw * 0.06, topY + sh.h * 0.52],
+            [bx + tw * 0.22, topY + sh.h * 0.40],
+            [bx + tw * 0.46, topY + 9]
+        ]);
+        drawGoldSeam([
+            [bx - tw * 0.28, topY + sh.h * 0.34],
+            [bx - bw * 0.52, topY + sh.h * 0.66]
+        ]);
+        g.restore();
+    } else {
+        g.strokeStyle = potSkin === 'pot_cinnabar'
+            ? 'rgba(255, 196, 138, 0.52)'
+            : mixHex(pLight, '#ff9aa4', 0.22, stage >= 3 ? 0.42 : 0.22);
+        g.lineWidth = 1.3;
+        g.beginPath();
+        g.moveTo(bx - bandW, bandY);
+        g.quadraticCurveTo(bx, bandY + 9, bx + bandW, bandY);
+        g.stroke();
+        if (potSkin === 'pot_cinnabar') {
+            g.beginPath();
+            g.moveTo(bx - bandW * 0.96, bandY + 5);
+            g.quadraticCurveTo(bx, bandY + 14, bx + bandW * 0.96, bandY + 5);
+            g.stroke();
+        }
+    }
     g.restore();
 
     // Объёмный керамический венчик (ободок)
@@ -740,11 +791,19 @@ function drawCeramicPot(g, bx, baseY, sp, stage, lit, soilOpts) {
     }
 
     // Передняя кромка венчика перекрывает грунт снизу для объёма
-    g.strokeStyle = mixHex(pLight, '#ffc4ca', 0.2, 0.5);
+    g.strokeStyle = potSkin === 'pot_kintsugi'
+        ? 'rgba(246, 203, 100, 0.46)'
+        : mixHex(pLight, '#ffc4ca', 0.2, 0.5);
     g.lineWidth = 1.6;
     g.beginPath();
     g.ellipse(bx, topY + 3, rw - 1.5, ry + 0.5, 0, Math.PI * 0.08, Math.PI * 0.92);
     g.stroke();
+    if (potSkin === 'pot_kintsugi') {
+        // Золотая спайка на самом венчике сосуда
+        g.fillStyle = '#ffe294';
+        g.beginPath(); g.ellipse(bx - tw * 0.45, topY + 8.5, 3.2, 1.5, 0.25, 0, Math.PI * 2); g.fill();
+        g.beginPath(); g.ellipse(bx + tw * 0.47, topY + 8.2, 2.8, 1.4, -0.25, 0, Math.PI * 2); g.fill();
+    }
 
     return { soilY: topY + 2, halfW: sw, rimW: rw, baseY };
 }
@@ -1704,7 +1763,8 @@ function drawPlantSprite(ctx, spec, stage, opts) {
         }
         drawCeramicPot(ctx, bx, baseY, spec, -1, phase >= 2 || pulse > 0.15, {
             dry: !!o.dry,
-            ready: !!o.soilReady
+            ready: !!o.soilReady,
+            potSkin: o.potSkin || ''
         });
         ctx.restore();
         return;
@@ -1731,7 +1791,10 @@ function drawPlantSprite(ctx, spec, stage, opts) {
         });
     }
 
-    const pot = drawCeramicPot(ctx, bx, baseY, spec, s, phase >= 2 || pulse > 0.15, { dry: !!o.dry });
+    const pot = drawCeramicPot(ctx, bx, baseY, spec, s, phase >= 2 || pulse > 0.15, {
+        dry: !!o.dry,
+        potSkin: o.potSkin || ''
+    });
     const by = pot.soilY;
 
     // Естественная физика по видам: кактус, розетка суккулента и ствол бонсая НЕ качаются из стороны в сторону!
@@ -2592,6 +2655,142 @@ function drawCassetteDeck(now) {
     g.restore();
 }
 
+// Косметические штрихи комнаты: пар над родной кружкой у терминала и спящий чёрный кот на кушетке
+function getRoomCosmeticsSafe() {
+    if (typeof getActiveCosmetics === 'function') {
+        try { return getActiveCosmetics() || {}; } catch (_) {}
+    }
+    return roomAnim.cosmeticsOverride || {};
+}
+
+function drawRoomCosmetics(g, now, phase) {
+    const cosm = getRoomCosmeticsSafe();
+    const still = prefersStillRoom();
+
+    // 1) Тонкий живой пар, поднимающийся прямо из родной керамической кружки на столе (x=238, y=286)
+    if (cosm.steam) {
+        g.save();
+        g.lineCap = 'round';
+        for (let i = 0; i < 3; i++) {
+            const cycle = still ? (0.3 + i * 0.22) : (((now * 0.00024) + i * 0.333) % 1);
+            const alpha = Math.sin(cycle * Math.PI) * (phase === 3 ? 0.32 : 0.26);
+            if (alpha <= 0.01) continue;
+            const sx = 237.8 + (i - 1) * 2.1;
+            const sy = 285.5 - cycle * 3.5;
+            const topY = sy - 11 - cycle * 13;
+            const sway = Math.sin((still ? 1 : now * 0.0016) + i * 2.1) * 3.1;
+            g.strokeStyle = `rgba(255, 174, 180, ${alpha.toFixed(3)})`;
+            g.lineWidth = 1.25 - cycle * 0.42;
+            g.beginPath();
+            g.moveTo(sx, sy);
+            g.bezierCurveTo(sx - sway, sy - 6, sx + sway * 1.15, topY + 6, sx + sway * 0.55, topY);
+            g.stroke();
+        }
+        g.restore();
+    }
+
+    // 2) Спящий чёрный кот, свернувшийся клубком на стёганой багровой кушетке (x=626, y=334)
+    if (cosm.cat) {
+        const cx = 626, cy = 334;
+        const breathe = still ? 0 : Math.sin(now * 0.00145) * 0.85;
+        const tailWave = still ? 0 : Math.pow(Math.max(0, Math.sin(now * 0.00075)), 5) * 2.8;
+        const petElapsed = now - (roomAnim.catPetStart || -1e9);
+        const purrBlink = !still && petElapsed > 0 && petElapsed < 1900;
+        const nlBoost = !still ? softBell(now - roomAnim.nightRStart, 650, 900, 1700) : 0;
+        const rimAlpha = 0.54 + (phase >= 2 ? 0.14 : 0) + nlBoost * 0.28;
+
+        g.save();
+        // Глубокая мягкая тень в складках тёмно-багрового покрывала
+        g.fillStyle = 'rgba(5, 1, 2, 0.78)';
+        g.beginPath();
+        g.ellipse(cx + 1, cy + 5.5, 22.5, 7.2, 0.05, 0, Math.PI * 2);
+        g.fill();
+
+        // Округлый бархатно-чёрный корпус спящего клубка (дышит спинкой)
+        if (g.createRadialGradient) {
+            const bg = g.createRadialGradient(cx + 2, cy - 5 - breathe, 2, cx, cy, 22);
+            bg.addColorStop(0, '#24080e');
+            bg.addColorStop(0.55, '#110306');
+            bg.addColorStop(1, '#070103');
+            g.fillStyle = bg;
+        } else g.fillStyle = '#0e0305';
+        g.beginPath();
+        g.moveTo(cx - 18, cy + 3);
+        g.bezierCurveTo(cx - 19, cy - 8 - breathe, cx - 5, cy - 12.5 - breathe, cx + 8, cy - 10.5 - breathe);
+        g.bezierCurveTo(cx + 19, cy - 8.5 - breathe * 0.6, cx + 22, cy - 1, cx + 19, cy + 4.5);
+        g.bezierCurveTo(cx + 11, cy + 8.5, cx - 10, cy + 8.2, cx - 18, cy + 3);
+        g.closePath();
+        g.fill();
+
+        // Тёплый багровый контровой блик по спинке от ночника и круглого окна
+        g.strokeStyle = `rgba(198, 54, 72, ${rimAlpha.toFixed(3)})`;
+        g.lineWidth = 1.25;
+        g.beginPath();
+        g.moveTo(cx - 12, cy - 6.8 - breathe * 0.8);
+        g.quadraticCurveTo(cx + 3, cy - 12.2 - breathe, cx + 17.5, cy - 5.2 - breathe * 0.5);
+        g.stroke();
+
+        // Складка бедра для живого объёма
+        g.strokeStyle = 'rgba(138, 34, 48, 0.34)';
+        g.lineWidth = 1;
+        g.beginPath();
+        g.arc(cx + 7, cy + 1, 8.5, Math.PI * 1.15, Math.PI * 1.78);
+        g.stroke();
+
+        // Голова, уютно уложенная на передние лапки
+        const hx = cx - 11.5, hy = cy - 1.2 - breathe * 0.35;
+        g.fillStyle = '#0c0205';
+        g.beginPath();
+        g.ellipse(hx, hy, 8.2, 6.6, -0.12, 0, Math.PI * 2);
+        g.fill();
+
+        // Острые кошачьи ушки с тонким алым кантом
+        const drawEar = (ex, ey, lx, ly, rx, ry) => {
+            g.fillStyle = '#0b0204';
+            g.beginPath();
+            g.moveTo(lx, ly); g.lineTo(ex, ey); g.lineTo(rx, ry); g.closePath();
+            g.fill();
+            g.strokeStyle = `rgba(190, 52, 70, ${(rimAlpha * 0.9).toFixed(3)})`;
+            g.lineWidth = 0.95;
+            g.beginPath(); g.moveTo(lx, ly); g.lineTo(ex, ey); g.lineTo(rx, ry); g.stroke();
+            g.fillStyle = 'rgba(132, 34, 48, 0.54)';
+            g.beginPath();
+            g.moveTo(lx + 1.2, ly - 0.3); g.lineTo(ex + 0.3, ey + 1.7); g.lineTo(rx - 1.1, ry - 0.2);
+            g.closePath(); g.fill();
+        };
+        drawEar(hx - 5.2, hy - 10.6, hx - 7.4, hy - 3.6, hx - 1.6, hy - 5.2);
+        drawEar(hx + 3.2, hy - 10.8 + (purrBlink ? -0.6 : 0), hx - 0.4, hy - 5.4, hx + 5.8, hy - 3.8);
+
+        // Глазки: мирно сомкнуты во сне, а при поглаживании на миг блестят тёплым янтарём
+        if (purrBlink && petElapsed > 180 && petElapsed < 1450) {
+            g.fillStyle = '#ffb85c';
+            g.beginPath(); g.ellipse(hx - 3.4, hy + 0.8, 1.5, 0.85, 0.1, 0, Math.PI * 2); g.fill();
+            g.beginPath(); g.ellipse(hx + 1.6, hy + 0.9, 1.5, 0.85, -0.1, 0, Math.PI * 2); g.fill();
+        } else {
+            g.strokeStyle = 'rgba(165, 56, 70, 0.45)';
+            g.lineWidth = 0.85;
+            g.beginPath(); g.arc(hx - 3.4, hy + 0.6, 1.6, 0.2, Math.PI - 0.2); g.stroke();
+            g.beginPath(); g.arc(hx + 1.6, hy + 0.7, 1.6, 0.2, Math.PI - 0.2); g.stroke();
+        }
+
+        // Пушистый чёрный хвост, мягко обнимающий бок
+        g.strokeStyle = '#090204';
+        g.lineWidth = 3.4;
+        g.lineCap = 'round';
+        g.beginPath();
+        g.moveTo(cx + 17, cy + 3.5);
+        g.bezierCurveTo(cx + 14, cy + 8.5, cx - 2, cy + 9.2, cx - 10, cy + 6.2 - tailWave);
+        g.stroke();
+        g.strokeStyle = `rgba(176, 48, 66, ${(rimAlpha * 0.72).toFixed(3)})`;
+        g.lineWidth = 0.9;
+        g.beginPath();
+        g.moveTo(cx + 15, cy + 5.2);
+        g.quadraticCurveTo(cx + 3, cy + 8.8, cx - 9.5, cy + 5.6 - tailWave);
+        g.stroke();
+        g.restore();
+    }
+}
+
 function drawStationFx(now, step) {
     const cv = typeof document !== 'undefined' && document.getElementById('station-fx');
     if (!cv || !cv.getContext) return;
@@ -2655,6 +2854,7 @@ function drawStationFx(now, step) {
     }
 
     drawWindowWorld(g, now, phase, winGlow);
+    drawRoomCosmetics(g, now, phase);
     drawWindowLightBeams(g, now, phase, winGlow);
     updateSwingingLamp(g, now);
     updateNightlights(g, now);
@@ -2712,13 +2912,15 @@ function paintPlantFrame(now) {
         const idle = Math.sin(now * 0.00082) * (kind === 6 ? 1.0 : kind === 2 ? 1.6 : 2.2);
         sway = idle + rustle;
     }
+    const cosm = getRoomCosmeticsSafe();
     drawPlantSprite(g, roomAnim.spec, roomAnim.stage, {
         sway,
         glow: touchGlow,
         phase: roomAnim.activePhase,
         soilReady: roomAnim.soilReady,
         dry: roomAnim.soilDry,
-        dew: roomAnim.dewActive
+        dew: roomAnim.dewActive,
+        potSkin: cosm.pot || ''
     });
 }
 
@@ -2788,6 +2990,10 @@ function playObjectTone(obj) {
         tone(440, 0.75, 'sine', 0.013, 0.12);
     } else if (obj === 'bed') {
         tone(220, 0.55, 'sine', 0.02); tone(330, 0.65, 'sine', 0.014, 0.12);
+    } else if (obj === 'cat') {
+        // Тихое тёплое кошачье мурчание под ладонью
+        for (let p = 0; p < 5; p++) tone(52 + (p % 2) * 4, 0.2, 'triangle', 0.018, p * 0.14, 46);
+        tone(294, 0.5, 'sine', 0.012, 0.1);
     } else if (obj === 'pager') {
         if (typeof noise === 'function') noise(0.028, 0.025, 0, 2200);
         tone(920, 0.055, 'square', 0.014, 0.02, 640);
@@ -2931,9 +3137,20 @@ function touchRoomObject(obj, event) {
     } else if (obj === 'bed') {
         roomAnim.contextPanel = '';
         if ((now - roomAnim.nightRStart) > 900) roomAnim.nightRStart = now;
-        modeLabel = 'ЖУРНАЛ // КУШЕТКА';
-        line = nextRoomLine('bed', ROOM_LINES.bed);
-        playObjectTone('bed');
+        const cosm = getRoomCosmeticsSafe();
+        if (cosm.cat) {
+            roomAnim.catPetStart = now;
+            modeLabel = 'ЖУРНАЛ // ЧЁРНЫЙ КОТ';
+            line = nextRoomLine('cat', [
+                'Чёрный кот приоткрыл сонные янтарные глаза и тихо замурчал под ладонью, согревая край пледа.',
+                'Тёплый бархатный клубок мерно дышит у подушки и лениво повёл кончиком хвоста в ответ на касание.'
+            ]);
+            playObjectTone('cat');
+        } else {
+            modeLabel = 'ЖУРНАЛ // КУШЕТКА';
+            line = nextRoomLine('bed', ROOM_LINES.bed);
+            playObjectTone('bed');
+        }
     }
 
     if (line) {

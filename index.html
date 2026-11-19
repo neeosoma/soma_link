@@ -7,7 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="room.css?v=5">
+    <link rel="stylesheet" href="room.css?v=6">
+    <link rel="stylesheet" href="cosmetics.css?v=6">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@300;400;500;600;700&display=swap');
         .font-mono-tech { font-family: 'Share Tech Mono', monospace; }
@@ -176,6 +177,40 @@
         </div>
     </div>
 
+    <!-- БУТИК ЭСТЕТИКИ И СТАТУСА (СТРОГО БЕЗ ВЛИЯНИЯ НА ТЕПЛО И РОСТ) -->
+    <div id="shop-modal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-[2px] flex items-center justify-center p-3 sm:p-4" onclick="if(event.target===this)closeShop()">
+        <div class="shop-shell w-full max-w-md max-h-[90vh] flex flex-col bg-[#0b0608] border border-red-500/45 rounded-2xl shadow-2xl overflow-hidden">
+            <div class="flex justify-between items-center px-4 pt-3.5 pb-2 border-b border-red-500/15">
+                <div>
+                    <div class="text-[11px] font-mono-tech text-amber-200/90 uppercase tracking-wider">✦ АТРИБУТЫ // БУТИК СТАНЦИИ</div>
+                    <div class="text-[9.5px] font-mono-tech text-gray-500">Топ циников · Моя комната · Живая примерка</div>
+                </div>
+                <button type="button" onclick="closeShop()" class="text-gray-500 hover:text-white text-sm px-1.5 py-0.5" aria-label="Закрыть">✕</button>
+            </div>
+            <div class="shop-tabs px-3 pt-2.5 pb-2" role="tablist" aria-label="Разделы атрибутов">
+                <button type="button" class="shop-tab" data-shop-tab="frames" aria-pressed="true" onclick="switchShopTab('frames')">РАМКИ</button>
+                <button type="button" class="shop-tab" data-shop-tab="status" aria-pressed="false" onclick="switchShopTab('status')">СТАТУС</button>
+                <button type="button" class="shop-tab" data-shop-tab="pager" aria-pressed="false" onclick="switchShopTab('pager')">ПЕЙДЖЕР</button>
+                <button type="button" class="shop-tab" data-shop-tab="room" aria-pressed="false" onclick="switchShopTab('room')">КОМНАТА</button>
+            </div>
+            <div class="flex-1 overflow-y-auto px-3.5 pb-3.5 space-y-2.5">
+                <div id="shop-preview" class="shop-preview-card"></div>
+                <div id="shop-notice" class="hidden px-3 py-2 rounded-xl bg-amber-950/25 border border-amber-400/30 text-[10.5px] font-mono-tech text-amber-200 leading-snug"></div>
+                <div id="shop-body" class="space-y-2"></div>
+            </div>
+            <div class="px-4 py-2 bg-[#080305] border-t border-red-500/15 text-[9.5px] font-mono-tech text-gray-500 text-center">
+                ⚖ Кодекс SOMA: атрибуты меняют только облик. Тепло и рост растения не продаются.
+            </div>
+        </div>
+    </div>
+
+    <!-- ДОСЬЕ НАБЛЮДАТЕЛЯ (ПРИ НАЖАТИИ НА ИГРОКА В ТОПЕ) -->
+    <div id="dossier-modal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-[2px] flex items-center justify-center p-4" onclick="if(event.target===this)closeDossier()">
+        <div id="dossier-card" class="w-full max-w-sm bg-[#100608] border border-red-500/45 p-5 rounded-2xl shadow-2xl">
+            <div id="dossier-body" class="space-y-3"></div>
+        </div>
+    </div>
+
     <!-- ОСНОВНОЙ ИНТЕРФЕЙС -->
     <div class="w-full max-w-md bg-[#0e0608] md:border md:border-red-500/30 md:rounded-3xl shadow-2xl flex flex-col app-h overflow-hidden relative">
         
@@ -221,9 +256,22 @@
             </div>
         </div>
 
-        <!-- ЭКРАН 2: ТОП -->
-        <div id="view-top" class="hidden flex-1 overflow-y-auto p-4 pb-20 space-y-3">
-            <div class="text-xs font-mono-tech text-red-400 uppercase tracking-wider border-b border-red-500/20 pb-2">// РЕЙТИНГ АБСОЛЮТНЫХ НАБЛЮДАТЕЛЕЙ</div>
+        <!-- ЭКРАН 2: ТОП ЦИНИКОВ (ПАНОПТИКУМ) -->
+        <div id="view-top" class="hidden flex-1 overflow-y-auto p-3.5 sm:p-4 pb-24 space-y-3">
+            <div class="top-head">
+                <div class="top-title-wrap">
+                    <span class="top-kicker">NEEO_CITY // ПАНОПТИКУМ</span>
+                    <h2 class="top-heading">ТОП ЦИНИКОВ</h2>
+                </div>
+                <button type="button" onclick="openShop('frames')" class="top-shop-btn">✦ АТРИБУТЫ</button>
+            </div>
+            <div class="top-modes" role="tablist" aria-label="Режим рейтинга">
+                <button type="button" class="top-mode-btn" data-top-mode="all" aria-pressed="true" onclick="switchTopMode('all')">♛ ПАНТЕОН ВСЕХ ВРЕМЁН</button>
+                <button type="button" class="top-mode-btn" data-top-mode="week" aria-pressed="false" onclick="switchTopMode('week')">🔥 ОХОТА НЕДЕЛИ</button>
+            </div>
+            <div id="top-subnote" class="top-subnote">Главный зал наблюдателей NEEO_CITY · нажмите на любого для досье</div>
+            <div id="top-chase" class="top-chase"></div>
+            <div id="top-podium" class="top-podium"></div>
             <div id="leaderboard-list" class="space-y-2"></div>
         </div>
 
@@ -231,8 +279,8 @@
         <div id="view-profile" class="hidden flex-1 overflow-y-auto p-3.5 sm:p-4 pb-24 space-y-4">
             <section id="station" class="station" aria-label="Моя комната">
                 <div id="station-scene" class="station-scene">
-                    <img id="station-bg" src="assets/quiet-station.jpg?v=5" width="1586" height="992" alt="Тёмная комната над ночным городом: слева кассетный магнитофон, ночник и ЭЛТ-терминал под висячей лампой, по центру круглое окно и керамический горшок на ковре, справа приёмник, кушетка и ночник">
-                    <img id="station-lamp" class="station-lamp" src="assets/lamp.png?v=5" width="112" height="348" alt="" aria-hidden="true">
+                    <img id="station-bg" src="assets/quiet-station.jpg?v=6" width="1586" height="992" alt="Тёмная комната над ночным городом: слева кассетный магнитофон, ночник и ЭЛТ-терминал под висячей лампой, по центру круглое окно и керамический горшок на ковре, справа приёмник, кушетка и ночник">
+                    <img id="station-lamp" class="station-lamp" src="assets/lamp.png?v=6" width="112" height="348" alt="" aria-hidden="true">
                     <div class="station-nightlight station-nightlight--l" id="station-nl" aria-hidden="true"></div>
                     <div class="station-nightlight station-nightlight--r" id="station-nr" aria-hidden="true"></div>
                     <div class="station-light" aria-hidden="true"></div>
@@ -378,15 +426,20 @@
                     <button type="button" class="pager-key pager-key--alt" onclick="pressPagerInfo()">◌ ПАМЯТКА</button>
                 </div>
             </section>
-            <div class="bg-[#12080a] border border-red-500/40 p-5 rounded-2xl space-y-4 relative overflow-hidden">
-                <div class="flex justify-between items-center text-[10px] font-mono-tech text-gray-500">
+            <div id="witness-card" class="bg-[#12080a] border border-red-500/40 p-5 rounded-2xl space-y-4 relative overflow-hidden">
+                <div class="flex justify-between items-center gap-2 text-[10px] font-mono-tech text-gray-500">
                     <span>NEEOSOMA // SOMA_LINK</span>
-                    <span>SECURE NODE // ПУЛЬС: ЖИВ</span>
+                    <button type="button" onclick="openShop('room')" class="top-shop-btn">✦ АТРИБУТЫ</button>
                 </div>
                 <div>
                     <div class="text-xs text-gray-400 font-mono-tech">СВИДЕТЕЛЬ:</div>
-                    <div id="card-name" class="text-xl font-bold text-white tracking-wide">@USER</div>
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <span id="card-seal" class="inline-flex items-center empty:hidden"></span>
+                        <span id="card-name" class="text-xl font-bold text-white tracking-wide">@USER</span>
+                    </div>
+                    <div id="card-custom-title" class="hidden top-custom-title mt-0.5"></div>
                     <div id="card-rank" class="text-xs font-mono-tech text-red-400 mt-0.5">УР. 1 // СЛУЧАЙНЫЙ ПРОХОЖИЙ</div>
+                    <p id="card-epitaph" class="hidden top-epitaph mt-1"></p>
                 </div>
                 <div class="grid grid-cols-2 gap-2 pt-2 border-t border-red-500/20 font-mono-tech">
                     <div class="bg-[#080405] p-2.5 rounded-xl border border-red-950">
@@ -410,14 +463,13 @@
             <button onclick="copyShareText()" class="w-full py-3.5 bg-red-950 hover:bg-red-900 border border-red-500/50 text-red-200 font-bold text-xs font-mono-tech uppercase tracking-wider rounded-xl transition">
                 ПОДЕЛИТЬСЯ ОТЧЁТОМ СОУЧАСТИЯ
             </button>
-            <button type="button" onclick="openSafety()" class="w-full py-2 text-[10px] font-mono-tech text-gray-500 hover:text-red-300 transition">
-                🛟 ОПОРА — ДЫХАНИЕ И КОНТАКТЫ КРИЗИСНОЙ ПОМОЩИ
-            </button>
         </div>
     </div>
 
 <script src="config.js"></script>
-<script src="room.js?v=5"></script>
+<script src="scenarios.js?v=6"></script>
+<script src="room.js?v=6"></script>
+<script src="cosmetics.js?v=6"></script>
 <script src="music.js"></script>
 <script>
     const cfg = window.SOMA_CONFIG || {};
@@ -488,13 +540,19 @@
     }
     function initSoundUI() {
         document.getElementById('snd-btn').innerText = soundOn ? '🔊' : '🔇';
-        document.addEventListener('pointerdown', () => { if (soundOn) startDrone(); }, { once: true });
+        document.addEventListener('pointerdown', () => {
+            if (soundOn) {
+                startDrone();
+                if (typeof syncAmbientTape === 'function' && typeof getActiveCosmetics === 'function') syncAmbientTape(!!getActiveCosmetics().tape);
+            }
+        }, { once: true });
     }
     function toggleSound() {
         soundOn = !soundOn;
         try { localStorage.setItem('soma_sound', soundOn ? '1' : '0'); } catch (e) {}
         document.getElementById('snd-btn').innerText = soundOn ? '🔊' : '🔇';
         if (soundOn) { startDrone(); SFX.tap(); } else stopDrone();
+        if (typeof syncAmbientTape === 'function' && typeof getActiveCosmetics === 'function') syncAmbientTape(!!getActiveCosmetics().tape);
     }
 
     // ===== КОМНАТА, ТЕПЛО, ТРЕНАЖЁР, УДЕРЖАНИЕ ВЗГЛЯДА =====
@@ -546,118 +604,23 @@
         try { Telegram.WebApp.HapticFeedback.notificationOccurred('success'); } catch (e) {}
         SFX.react();
         player.xp += 15;
+        if (typeof addWeeklyXp === 'function') addWeeklyXp(15);
         if (res.granted) addWarmth(res.granted);
         updateCloudProfile(); updateHeader(); renderFeed();
     }
 
-    // Тренажёр «Слушатель» в терминале: 24 жизненные ситуации на сезон (до +2 тепла и 4 разборов в день)
+    // Тренажёр «Слушатель» в терминале: 60 живых ситуаций в scenarios.js (до +2 тепла и 4 разборов в день)
     const DAILY_TRAINER_SESSIONS = 4;
-    const SCEN = [
-        { t: 'Мне 34, и полгода никто не звонил просто так.', o: [
-            ['Держись, всё наладится!', 0, 'Торопит к «хорошему» и оставляет одиночество незамеченным.'],
-            ['Это звучит очень одиноко. Каково это, когда телефон молчит?', 1, 'Называет чувство и открывает место для разговора.'],
-            ['Позвони кому-нибудь сам, делов-то.', 0, 'Совет-давление: человек и так это знает.'] ] },
-        { t: 'Меня уволили, а жене я до сих пор не сказал.', o: [
-            ['Надо было сразу сказать, она же жена.', 0, 'Осуждение только добавляет стыда.'],
-            ['Сколько ты носишь это в себе? Звучит очень тяжело.', 1, 'Видит тяжесть ноши и не оценивает человека.'],
-            ['Другие и не такое переживают.', 0, 'Сравнение обесценивает его боль.'] ] },
-        { t: 'Мама сказала, что я её разочаровал.', o: [
-            ['Ты, наверное, преувеличиваешь.', 0, 'Ставит под сомнение живое чувство.'],
-            ['Услышать такое от мамы больно. Что именно тебя задело сильнее всего?', 1, 'Признаёт боль и бережно даёт выговориться.'],
-            ['Не обращай внимания, все родители так.', 0, 'Отмахивается и закрывает разговор.'] ] },
-        { t: 'Боюсь, что проживу жизнь зря.', o: [
-            ['Не думай об этом, займись делом.', 0, 'Запрещает чувство вместо того, чтобы услышать.'],
-            ['Этот страх говорит, что тебе не всё равно, как ты живёшь. О чём ты тоскуешь?', 1, 'Уважает страх и мягко касается смысла.'],
-            ['Всем так кажется, это возрастное.', 0, 'Навешивает ярлык вместо присутствия.'] ] },
-        { t: 'Врач сказал ждать результатов неделю. Седьмой день, не сплю.', o: [
-            ['Всё будет хорошо, не накручивай!', 0, 'Пустое обещание, в которое тревога не верит.'],
-            ['Ждать такое мучительно. Как ты держишься в эту последнюю ночь?', 1, 'Признаёт тяжесть ожидания и остаётся рядом.'],
-            ['Перестань гуглить симптомы.', 0, 'Упрёк вместо тепла.'] ] },
-        { t: 'После ухода пса прошло три месяца, а я всё ещё ставлю миску с водой.', o: [
-            ['Заведи нового щенка — сразу отпустит.', 0, 'Пытается заменить незаменимую привязанность.'],
-            ['Руки всё ещё помнят его. Каким он был?', 1, 'Принимает горе без спешки и даёт вспомнить с теплом.'],
-            ['Пора уже отпустить, три месяца прошло.', 0, 'Ставит таймер на чужую скорбь.'] ] },
-        { t: 'Сегодня мой день рождения. Купил маленький торт и ем один на кухне.', o: [
-            ['Да ладно, день рождения — обычный день, забей.', 0, 'Обесценивает важный для человека вечер.'],
-            ['Тихий и грустный вечер. Я рад, что ты написал сюда — с днём рождения тебя.', 1, 'Не прячется от грусти и дарит живое присутствие.'],
-            ['Надо было заранее позвать друзей.', 0, 'Перекладывает вину на того, кому и так больно.'] ] },
-        { t: 'Я так устала работать, что утром плачу в лифте, но уйти не могу — кредиты.', o: [
-            ['Просто смени работу, здоровье дороже!', 0, 'Игнорирует реальную ловушку, о которой человек прямо сказал.'],
-            ['Как будто зажата между усталостью и долгом, без передышки. Давно так?', 1, 'Точно отражает тупик, не требуя невозможного.'],
-            ['Сейчас всем тяжело с деньгами.', 0, 'Растворяет личную боль в общей статистике.'] ] },
-        { t: 'Лучший друг перестал отвечать, хотя каждый день в сети.', o: [
-            ['Значит, не такой уж и друг — вычеркни.', 0, 'Рубит сплеча по живой привязанности.'],
-            ['Горько видеть «в сети» и оставаться в тишине. Ты скучаешь по нему?', 1, 'Замечает тихую обиду и растерянность.'],
-            ['Может, он просто занят, не выдумывай.', 0, 'Защищает отсутствующего вместо того, кто рядом.'] ] },
-        { t: 'Кажется, на новой работе скоро поймут, что я ничего не умею.', o: [
-            ['Глупости, тебя же взяли — значит умный!', 0, 'Спор с чувством редко его успокаивает.'],
-            ['Страшно всё время ждать разоблачения. В какие моменты это накрывает сильнее?', 1, 'Принимает тревогу всерьёз и помогает её разглядеть.'],
-            ['Почитай про синдром самозванца.', 0, 'Отправляет к статье вместо человеческого контакта.'] ] },
-        { t: 'Ухаживаю за больным отцом второй год. Иногда злюсь на него — и ненавижу себя за это.', o: [
-            ['Нельзя злиться, он же не виноват, что болеет.', 0, 'Бьёт по самому больному — чувству вины.'],
-            ['Два года без выдоха вымотают любого. Злость здесь — от усталости, а не от нелюбви.', 1, 'Снимает стыд и видит за злостью истощение.'],
-            ['Найми сиделку и отдохни.', 0, 'Холодная инструкция вместо сочувствия.'] ] },
-        { t: 'Переехал в другой город ради мечты, а вечерами вою от пустых стен.', o: [
-            ['Сам же хотел переехать, чего теперь жалеть.', 0, 'Запрещает грустить о своём же выборе.'],
-            ['Даже правильный шаг бывает очень одиноким поначалу. Чего из дома не хватает больше всего?', 1, 'Разрешает одновременно идти к мечте и скучать.'],
-            ['Запишись в спортзал, найдёшь компанию.', 0, 'Быстрый рецепт, когда человеку нужно быть услышанным.'] ] },
-        { t: 'Расстались полгода назад, а я до сих пор мысленно рассказываю ей, как прошёл день.', o: [
-            ['Удали фото и начни ходить на свидания.', 0, 'Механический совет не лечит привычку любить.'],
-            ['Трудно отучиться делиться жизнью с тем, кто был самым близким. О чём сегодня хотелось ей сказать?', 1, 'Бережно встречает невысказанную нежность.'],
-            ['Она уже давно о тебе забыла, очнись.', 0, 'Жестокая «встряска» только закрывает человека.'] ] },
-        { t: 'Когда у меня выходной, я лежу и грызу себя за то, что ничего полезного не делаю.', o: [
-            ['Составь расписание отдыха, очень помогает!', 0, 'Превращает даже отдых в очередной отчёт.'],
-            ['Выходит, даже лёжа ты не отдыхаешь, потому что внутри идёт суд. Откуда этот строгий голос?', 1, 'Точно замечает внутреннее напряжение без нравоучений.'],
-            ['Мне бы твои проблемы — целый выходной!', 0, 'Обесценивание через иронию.'] ] },
-        { t: 'В компании все смеются, я тоже улыбаюсь, а внутри — как за толстым стеклом.', o: [
-            ['Будь проще, вливайся в разговор!', 0, 'Просит надеть ещё одну маску.'],
-            ['Одиночество среди людей переносится особенно остро. Утомительно всё время держать улыбку?', 1, 'Видит человека по ту сторону «стекла».'],
-            ['Не ходи туда, если не нравится.', 0, 'Упрощает сложное чувство до бытового действия.'] ] },
-        { t: 'Раньше писал музыку каждую ночь, а уже год не могу подойти к инструменту.', o: [
-            ['Нужна дисциплина: садись хотя бы на 15 минут в день.', 0, 'Давит там, где внутри и так выжжено.'],
-            ['Больно, когда замолкает то, чем ты дышал. Что чувствуешь, когда проходишь мимо инструмента?', 1, 'Слышит тоску по себе прежнему без давления.'],
-            ['Значит, перегорел, найди другое хобби.', 0, 'Легко списывает то, что человеку дорого.'] ] },
-        { t: 'Не успел попросить прощения у бабушки. Думал, приеду на выходных.', o: [
-            ['Не казни себя, она бы всё равно простила.', 0, 'Спешит утешить, не дав прожить слова.'],
-            ['Эти несказанные слова так тяжело носить внутри. Что бы ты сказал ей, если бы успел?', 1, 'Даёт безопасное место произнести главное.'],
-            ['Прошлого не вернёшь, надо жить дальше.', 0, 'Захлопывает дверь перед живым горем.'] ] },
-        { t: 'У всех ровесников семьи и квартиры, а я в съёмной комнате начинаю всё с нуля.', o: [
-            ['Не сравнивай себя с другими, у каждого свой путь.', 0, 'Правильный лозунг, но звучит как отписка.'],
-            ['Начинать заново страшно, особенно когда кажется, что все ушли вперёд. Что тебя сейчас держит?', 1, 'Признаёт уязвимость и ищет опору вместе с человеком.'],
-            ['Зато свободен, никаких обязательств!', 0, 'Фальшивый позитив мимо чужой боли.'] ] },
-        { t: 'Вчера в метро накрыла паника — думал, сердце остановится. Теперь боюсь спускаться.', o: [
-            ['От панической атаки не умирают, это всё в голове.', 0, 'Сухой факт обесценивает пережитый ужас.'],
-            ['Пережить такое одному в толпе очень страшно. Как ты сейчас себя чувствуешь?', 1, 'Сначала признаёт пережитый страх и возвращает в «сейчас».'],
-            ['Пересиль себя и поезжай снова, иначе закрепится.', 0, 'Толкает в страх без поддержки.'] ] },
-        { t: 'Сын-подросток закрыл дверь и крикнул, чтобы я оставила его в покое. Сижу в коридоре.', o: [
-            ['Это гормоны, перебесится — не бери в голову.', 0, 'Стирает живую растерянность матери.'],
-            ['Обидно и тревожно остаться перед закрытой дверью, когда хочется быть рядом. Тебе сейчас одиноко?', 1, 'Слышит любовь и бессилие за этой сценой.'],
-            ['Надо строже с ним, распустила.', 0, 'Осуждение и призыв к войне вместо понимания.'] ] },
-        { t: 'Спина болит почти каждый день. Я перестал жаловаться — вижу, что близкие устали слушать.', o: [
-            ['А ты пробовал бассейн или остеопата?', 0, 'Человек с хронической болью слышал этот совет сотню раз.'],
-            ['Тяжело терпеть боль и ещё тяжелее — молчать о ней, чтобы никого не обременять. Здесь можно не скрывать.', 1, 'Снимает одиночество молчания без непрошеных рецептов.'],
-            ['Главное — настрой, мысли материальны!', 0, 'Делает человека «виноватым» в собственной боли.'] ] },
-        { t: 'Завидую подруге, у которой всё получается легко, и мне противно от самой себя.', o: [
-            ['Фу, зависть разрушает — порадуйся за неё искренне.', 0, 'Стыдит за честное признание.'],
-            ['Нужна смелость, чтобы в этом признаться. Похоже, тебе самой сейчас очень не хватает лёгкости и отдачи.', 1, 'Переводит стыдную зависть на язык живой потребности.'],
-            ['Ты просто не видишь её проблем.', 0, 'Спорит вместо того, чтобы услышать усталость.'] ] },
-        { t: 'Приезжаю к родителям и каждый раз замечаю, как сильно они постарели за полгода.', o: [
-            ['Ну а что ты хотел, все мы не молодеем.', 0, 'Холодная банальность там, где щемит сердце.'],
-            ['От этого так тихо сжимается внутри — время вдруг становится видимым. Как прошла ваша встреча?', 1, 'Разделяет хрупкую нежность момента.'],
-            ['Чаще приезжай, потом жалеть будешь.', 0, 'Превращает светлую грусть в упрёк.'] ] },
-        { t: 'Третью ночь лежу без сна до утра. В темноте любая мелочь вырастает в катастрофу.', o: [
-            ['Убери телефон за час до сна и выпей ромашку.', 0, 'Совет из памятки, когда человеку тревожно прямо сейчас.'],
-            ['Ночью мысли правда кажутся вдесятеро тяжелее. Какая из них не отпускает тебя сегодня?', 1, 'Присоединяется в ночной тишине и помогает выдохнуть.'],
-            ['Просто закрой глаза и ни о чём не думай.', 0, 'Если бы это работало, человек бы уже спал.'] ] }
-    ];
     let trSc = 0;
     function updateTrainerMeta() {
         const el = document.getElementById('trainer-meta');
         if (!el || typeof loadWarmthLedger !== 'function') return;
         const l = loadWarmthLedger();
+        let done = {}; try { done = JSON.parse(localStorage.getItem('soma_trained') || '{}'); } catch (e) {}
+        const seenCount = Object.keys(done).filter(k => +k >= 0 && +k < SCEN.length).length;
         const adm = whisperAdmission(player.warmth || 0, l);
         const gateTxt = adm.admitted ? 'ДОПУСК: ГОТОВ' : `ДОПУСК: ${adm.trained}/${adm.trainedNeed}`;
-        el.innerHTML = `<span>ТЕПЛО СЕГОДНЯ: <b class="text-red-300">${l.trainer}/${PROGRESSION_RULES.DAILY_TRAINER_CAP}</b></span><span>${gateTxt}</span>`;
+        el.innerHTML = `<span>ТЕПЛО: <b class="text-red-300">${l.trainer}/${PROGRESSION_RULES.DAILY_TRAINER_CAP}</b> · АРХИВ <b class="text-gray-300">${seenCount}/${SCEN.length}</b></span><span>${gateTxt}</span>`;
     }
     function openTrainer() { SFX.tap(); renderTrainer(); document.getElementById('trainer-modal').classList.remove('hidden'); }
     function closeTrainer() { document.getElementById('trainer-modal').classList.add('hidden'); }
@@ -676,8 +639,12 @@
         const unseen = left.filter(i => !done[i]);
         const pool = unseen.length ? unseen : left;
         trSc = pool[Math.floor(Math.random() * pool.length)];
-        const order = SCEN[trSc].o.map((x, k) => k).sort(() => Math.random() - 0.5);
-        body.innerHTML = `<p class="text-[11px] font-mono-tech text-gray-500">Сигнал из сети (${todayCount + 1}/${DAILY_TRAINER_SESSIONS}):</p>
+        const order = [0, 1, 2];
+        for (let i = order.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [order[i], order[j]] = [order[j], order[i]];
+        }
+        body.innerHTML = `<p class="text-[11px] font-mono-tech text-gray-500">Сигнал #${String(trSc + 1).padStart(2, '0')} из ${SCEN.length} · сеанс ${todayCount + 1}/${DAILY_TRAINER_SESSIONS}:</p>
             <div class="bg-[#12080a] border border-red-500/20 rounded-xl p-3 text-sm text-gray-200 font-mono-tech leading-relaxed">«${esc(SCEN[trSc].t)}»</div>
             <p class="text-[11px] font-mono-tech text-gray-500">Как откликнуться, не раня?</p>
             ${order.map(k => `<button onclick="trainerPick(${k})" class="w-full text-left px-3 py-2.5 bg-[#180a0d] hover:bg-red-950/40 text-xs text-gray-200 rounded-lg border border-red-500/20 leading-relaxed">${esc(SCEN[trSc].o[k][0])}</button>`).join('')}`;
@@ -692,6 +659,7 @@
         if (o[1]) {
             SFX.react();
             player.xp += 20;
+            if (typeof addWeeklyXp === 'function') addWeeklyXp(20);
             const res = typeof claimDailyWarmth === 'function' ? claimDailyWarmth('trainer') : { granted: 1 };
             gainedWarmth = res.granted;
             if (gainedWarmth) addWarmth(gainedWarmth);
@@ -749,7 +717,11 @@
             : '<div class="text-[11px] font-mono-tech text-gray-500">Сигнал слабый. Частота ещё настраивается.</div>';
         let first = false;
         try { first = !localStorage.getItem('soma_music'); if (first) localStorage.setItem('soma_music', '1'); } catch (e) {}
-        if (first) { player.xp += 50; updateCloudProfile(); updateHeader(); }
+        if (first) {
+            player.xp += 50;
+            if (typeof addWeeklyXp === 'function') addWeeklyXp(50);
+            updateCloudProfile(); updateHeader();
+        }
         document.getElementById('music-bonus').classList.toggle('hidden', !first);
         document.getElementById('music-modal').classList.remove('hidden');
         SFX.tune();
@@ -826,12 +798,14 @@
             let { data } = await supabaseClient.from('soma_users').select('*').eq('username', player.uid).single();
             if (data) {
                 player = { ...player, xp: data.xp || 0, seen: data.seen || 0, reacts: data.reacts || 0, helpAttempts: data.help_attempts || 0, warmth: Math.max(player.warmth || 0, data.warmth || 0) };
+                if (typeof hydrateCosmeticsFromCloud === 'function') hydrateCosmeticsFromCloud(data);
             } else {
                 await supabaseClient.from('soma_users').insert([{ username: player.uid, xp: 0, seen: 0, reacts: 0, help_attempts: 0 }]);
             }
         } catch(e) {}
 
         updateHeader();
+        if (typeof applyCosmeticsToUI === 'function') applyCosmeticsToUI();
         await fetchPosts();
         setInterval(refreshFeed, 8000);
         document.addEventListener('visibilitychange', refreshFeed);
@@ -897,6 +871,7 @@
         if (typeof indifferenceIndex === 'function') {
             document.getElementById('indiff-val').innerText = `${indifferenceIndex(player.warmth || 0)}%`;
         }
+        if (typeof applyCosmeticsToUI === 'function') applyCosmeticsToUI();
         renderRoom();
     }
 
@@ -965,6 +940,7 @@
         try { Telegram.WebApp.HapticFeedback.impactOccurred('light'); } catch (e) {}
         SFX.react();
         player.xp += xpGain;
+        if (typeof addWeeklyXp === 'function') addWeeklyXp(xpGain);
         player.reacts++;
         player.seen++;
 
@@ -991,6 +967,7 @@
         if (egg) {
             try { localStorage.setItem('soma_egg', '1'); } catch (e) {}
             player.xp += 100;
+            if (typeof addWeeklyXp === 'function') addWeeklyXp(100);
             try { Telegram.WebApp.HapticFeedback.notificationOccurred('success'); } catch (e) {}
         }
         updateCloudProfile();
@@ -1071,45 +1048,20 @@
         document.getElementById(`tab-${tab}`).classList.add('bg-red-950/60', 'text-red-400', 'font-bold', 'border', 'border-red-500/40');
         document.getElementById(`tab-${tab}`).classList.remove('text-gray-400');
 
-        if (tab === 'top') renderLeaderboard();
+        if (tab === 'top' && typeof renderLeaderboard === 'function') renderLeaderboard();
         if (tab === 'profile') updateHeader();
     }
 
-    async function renderLeaderboard() {
-        let data = null, myRank = null;
-        try {
-            const res = await supabaseClient.from('soma_users').select('username,xp,help_attempts').order('xp', { ascending: false }).limit(50);
-            data = res.data;
-            const c = await supabaseClient.from('soma_users').select('username', { count: 'exact', head: true }).gt('xp', player.xp);
-            if (typeof c.count === 'number') myRank = c.count + 1;
-        } catch(e) {}
-
-        const list = document.getElementById('leaderboard-list');
-        if (!data || data.length === 0) {
-            data = [{ username: player.uid, xp: player.xp, help_attempts: player.helpAttempts }];
-        }
-
-        const row = (b, place) => {
-            const me = b.username === player.uid;
-            return `
-            <div class="p-3 bg-[#12080a] border ${me ? 'border-red-500/60' : 'border-red-500/20'} rounded-xl flex justify-between items-center text-xs font-mono-tech">
-                <div class="flex items-center space-x-3">
-                    <span class="text-gray-500 font-bold">#${place}</span>
-                    <div>
-                        <div class="text-white font-bold">${esc(anonLabel(b.username))}${me ? ' <span class="text-amber-400">// ВЫ</span>' : ''}</div>
-                        <div class="text-[10px] text-gray-500">Попыток помочь: ${b.help_attempts || 0}</div>
-                    </div>
-                </div>
-                <div class="text-red-400 font-bold">${b.xp || 0} XP</div>
-            </div>`;
-        };
-
-        let html = data.map((b, idx) => row(b, idx + 1)).join('');
-        if (!data.some(b => b.username === player.uid) && myRank) {
-            html += `<div class="text-center text-[10px] text-gray-600 font-mono-tech py-1">· · ·</div>` + row({ username: player.uid, xp: player.xp, help_attempts: player.helpAttempts }, myRank);
-        }
-        list.innerHTML = html;
-    }
+    document.addEventListener('keydown', e => {
+        if (e.key !== 'Escape') return;
+        if (typeof closeDossier === 'function') closeDossier();
+        if (typeof closeShop === 'function') closeShop();
+        closeTrainer();
+        closeMusic();
+        closePostModal();
+        closeBlockModal();
+        closeEgg();
+    });
 
     function copyShareText() {
         const rank = document.getElementById('rank-title').innerText;

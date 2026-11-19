@@ -121,8 +121,8 @@ begin
         if coalesce(new.cosmetics ->> 'epitaph', '') <> '' and not ('perk_epitaph' = any(v_owned)) then
             new.cosmetics := new.cosmetics - 'epitaph';
         end if;
-        if length(coalesce(new.cosmetics ->> 'epitaph', '')) > 42 then
-            new.cosmetics := jsonb_set(new.cosmetics, '{epitaph}', to_jsonb(left(new.cosmetics ->> 'epitaph', 42)));
+        if length(coalesce(new.cosmetics ->> 'epitaph', '')) > 66 then
+            new.cosmetics := jsonb_set(new.cosmetics, '{epitaph}', to_jsonb(left(new.cosmetics ->> 'epitaph', 66)));
         end if;
     else
         new.cosmetics := '{}'::jsonb;

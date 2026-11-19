@@ -556,6 +556,9 @@
             const cur = getTapes().find(t => t.id === activeId());
             if (cur) showFullscreenCaption(`VHS #${padNum(cur.num)} · ${cur.date} · «${cur.text.slice(0, 58)}${cur.text.length > 58 ? '…' : ''}»`);
         }
+        if (typeof window !== 'undefined' && typeof window.restoreSomaScroll === 'function') {
+            window.restoreSomaScroll();
+        }
     }
 
     function refresh() {

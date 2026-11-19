@@ -1,8 +1,8 @@
 const stationPhases = [
     { at: 0,   name: 'Дождь',    entry: 'Город шумит за мокрым стеклом. В пустом горшке тихо спит земля.' },
     { at: 20,  name: 'Оттепель', entry: 'Дождь редеет. От круглого окна больше не тянет прежним холодом.' },
-    { at: 108, name: 'Очаг',     entry: 'Мягкий свет ночных окон и ночников сходится на тёплом ковре.' },
-    { at: 240, name: 'Рассвет',  entry: 'Дождь стих. Из круглого окна в комнату медленно льётся алый рассвет.' }
+    { at: 108, name: 'Очаг',     entry: 'Под золотым серпом луны над городом плывут тёплые небесные фонарики, а ковёр согрет живым светом.' },
+    { at: 240, name: 'Рассвет',  entry: 'Дождь стих. За окном разливается тёплый фиалково-космический рассвет в россыпи утренних звёзд.' }
 ];
 
 // Сезонный ритм (~90 тёплых дней до цветения, без гринда и без наказаний за паузы)
@@ -18,17 +18,17 @@ const PROGRESSION_RULES = {
     SEASON_WARMTH: 360        // полный сезон тепла (90 тёплых дней × 4)
 };
 
-// ===== УНИКАЛЬНОЕ РАСТЕНИЕ ИГРОКА (точная привязка к прежнему анонимному ID) =====
-const PLANT_KINDS = ['ПАПОРОТНИК', 'КАКТУС', 'СУККУЛЕНТ', 'БАМБУК', 'ЛИАНА', 'ЦВЕТОК', 'БОНСАЙ'];
+// ===== УНИКАЛЬНОЕ РАСТЕНИЕ ИГРОКА (8 земных видов + 9-е тайное внеземное растение-пасхалка!) =====
+const PLANT_KINDS = ['ПАПОРОТНИК', 'КАКТУС', 'СУККУЛЕНТ', 'БАМБУК', 'ЛИАНА', 'ЦВЕТОК', 'БОНСАЙ', 'ОРХИДЕЯ'];
 const PLANT_STAGES = ['росток', 'всходы', 'побеги', 'крона', 'бутоны', 'цветение'];
 // Нелинейная сезонная шкала: нед. 1 (20) → нед. 2 (52) → 1 мес. (108) → 1.5 мес. (180) → 2 мес. (240) → 3 мес. (360)
 const PLANT_WARMTH_STEPS = [20, 52, 108, 180, 240, 360];
-// Шкала для новых семян в Оранжерее после расцвета родного вида (~75 тёплых дней на вид, год+ на все 7)
+// Шкала для новых семян в Оранжерее после расцвета родного вида (~75 тёплых дней на вид, полный цикл на все 8)
 const GREENHOUSE_WARMTH_STEPS = [16, 48, 96, 156, 216, 300];
-// Секретное внеземное семя (1 из 7 навсегда на игрока после 7/7 видов — требует в 2.5× больше бережного ухода!)
+// Секретное 9-е внеземное семя-пасхалка (1 из 7 навсегда на игрока СТРОГО после 8/8 земных видов!)
 const ALIEN_WARMTH_STEPS = [48, 132, 256, 412, 576, 760];
 
-// 7 уникальных неземных форм жизни (каждому игроку после 7/7 земных растений может достаться ТОЛЬКО ОДИН вид навсегда!)
+// 7 уникальных неземных форм жизни (9-я тайная пасхалка: после 8/8 земных растений игроку достаётся ТОЛЬКО ОДИН вид навсегда!)
 const ALIEN_KINDS = [
     {
         id: 'nebula_seraph',
@@ -197,6 +197,14 @@ const PLANT_NOTES = [
         'Взрослый бонсай с фактурной корой раскинул гармоничную многоярусную крону.',
         'Древний ветвистый бонсай усыпан сотнями нежных розово-алых бутонов.',
         'Бонсай в полном цвету — живое облако лепестков сияет и тихо опадает на ковёр.'
+    ],
+    [
+        'Меж сосновой коры и мха проснулись первые плотные глянцевые листки орхидеи.',
+        'Молодая орхидея раскинула мясистую изумрудную розетку и пустила серебристый воздушный корень.',
+        'Из сердца розетки грациозно вытянулся тонкий изогнутый цветонос.',
+        'Высокая дуга цветоноса набрала силу, а воздушные корни мягко обняли край керамики.',
+        'Вдоль изящной дуги налились жемчужно-бархатные бутоны, и первый цветок уже раскрыл крылья.',
+        'Каскад королевской орхидеи фаленопсис расцвёл целиком — бархатные цветы-бабочки парят в полумраке.'
     ]
 ];
 
@@ -204,8 +212,8 @@ const ROOM_LINES = {
     window: [
         ['Стекло прохладное. Живые капли скользят вниз мимо мерцающих окон NEEO~CITY.', 'За круглым окном дышит ночной город — в высотках тихо загораются и гаснут огни.'],
         ['Дождь становится мягче. В мокром стекле плывут тёплые огни дальних башен.', 'Редкие капли неспешно сбегают по стеклу, а окна домов перемигиваются в ночи.'],
-        ['Дождь почти стих. Огни высоток и моста ровно дышат в глубокой тишине.', 'За стеклом засыпают кварталы — то одно, то другое окно мягко гаснет.'],
-        ['Дождь ушёл. Из круглого окна в комнату медленно струится живой алый рассвет.', 'Тёплые лучи рассвета скользят из окна на ковёр, а в домах догорают ночные окна.']
+        ['Над башнями NEEO~CITY неспешно поднимаются золотые небесные фонарики, отражаясь в тёплой дымке.', 'Тонкий янтарный серп луны хранит тишину, а живые огоньки плывут меж ночных высоток.'],
+        ['Дождь ушёл. За высотками NEEO~CITY дышит глубокий фиалково-космический рассвет в искрах звёзд.', 'Тёплый аметистово-розовый свет зари мягко скользит из окна на ковёр и листву.']
     ],
     lamp: [
         'Подвесная лампа плавно качнулась на шнуре — тёплый блик поплыл по столу.',
@@ -278,7 +286,7 @@ function plantSpec(id) {
     };
 }
 
-// ЕДИНСТВЕННОЕ СЕКРЕТНОЕ ВНЕЗЕМНОЕ РАСТЕНИЕ ИГРОКА (1 из 7 навсегда, открывается строго после 7/7 земных видов!)
+// ЕДИНСТВЕННОЕ СЕКРЕТНОЕ ВНЕЗЕМНОЕ РАСТЕНИЕ ИГРОКА (9-я пасхалка 1 из 7 навсегда, открывается строго после 8/8 земных видов!)
 function alienSpec(id, overrideAlienKind) {
     const src = String(id || (typeof player !== 'undefined' && (player.uid || player.name)) || 'guest');
     const h = hashStr('neeosoma_xeno_seed_v1:' + src);
@@ -1932,7 +1940,269 @@ function drawSpeciesBonsai(g, bx, by, sp, s, pal, bl, breath, pulse, r) {
     drawFoliageCloud(topX, topY - 10, 29 + s * 5.2, 14 + s * 2.1);
 }
 
-// ===== 7 СЕКРЕТНЫХ ВНЕЗЕМНЫХ РАСТЕНИЙ НЕРЕАЛЬНОЙ КРАСОТЫ (1 ИЗ 7 НАВСЕГДА ПОСЛЕ 7/7 ЗЕМНЫХ ВИДОВ!) =====
+// 8-Й ЗЕМНОЙ ВИД — КОРОЛЕВСКАЯ ОРХИДЕЯ ФАЛЕНОПСИС (6 стадий: глянцевая розетка, серебристые воздушные корни, изящная дуга и бархатные цветы-бабочки!)
+function drawSpeciesOrchid(g, bx, by, pot, spec, s, pal, bl, sway, pulse, r) {
+    const dir = spec.lean >= 0 ? 1 : -1;
+    const sw = sway * 11;
+
+    // 1. Серебристо-шалфейные воздушные корни с живыми изумрудными кончиками, обнимающие край горшка (с 2-й стадии)
+    if (s >= 1) {
+        const roots = [
+            [-26, 2, -48, 12, -56, 30],
+            [24, 3, 46, 10, 52, 26],
+            [-14, 4, -34, 18, -38, 38],
+            [16, 4, 36, 16, 42, 36]
+        ].slice(0, s >= 3 ? 4 : 2);
+        g.save();
+        g.lineCap = 'round';
+        roots.forEach(([x0, y0, cx1, cy1, x1, y1]) => {
+            g.strokeStyle = 'rgba(20, 8, 12, 0.55)';
+            g.lineWidth = 4.2;
+            g.beginPath(); g.moveTo(bx + x0, by + y0); g.quadraticCurveTo(bx + cx1, by + cy1, bx + x1, by + y1); g.stroke();
+            g.strokeStyle = mixHex('#b8cfc4', pal[3], 0.35);
+            g.lineWidth = 2.6;
+            g.beginPath(); g.moveTo(bx + x0, by + y0); g.quadraticCurveTo(bx + cx1, by + cy1, bx + x1, by + y1); g.stroke();
+            // Живой салатовый растущий кончик воздушного корня
+            g.fillStyle = pal[3];
+            g.beginPath(); g.arc(bx + x1, by + y1, 1.7, 0, Math.PI * 2); g.fill();
+        });
+        g.restore();
+    }
+
+    // 2. Пышная прикорневая розетка широких глянцевых мясистых листьев фаленопсиса
+    const drawOrchidLeaf = (ox, oy, ang, len, wid, rimFlag) => {
+        g.save();
+        g.translate(ox, oy);
+        g.rotate(ang);
+        if (g.createLinearGradient) {
+            const lg = g.createLinearGradient(0, 0, len, 0);
+            lg.addColorStop(0, pal[0]);
+            lg.addColorStop(0.45, pal[2]);
+            lg.addColorStop(0.88, pal[3]);
+            lg.addColorStop(1, pal[1]);
+            g.fillStyle = lg;
+        } else g.fillStyle = pal[2];
+        g.beginPath();
+        g.moveTo(0, 0);
+        g.bezierCurveTo(len * 0.28, -wid, len * 0.82, -wid * 0.92, len, 0);
+        g.bezierCurveTo(len * 0.82, wid * 0.92, len * 0.28, wid, 0, 0);
+        g.closePath();
+        g.fill();
+        // Глянцевый восковой блик и утопленная центральная жилка
+        g.strokeStyle = rimFlag ? pal[4] : mixHex(pal[3], '#ffffff', 0.28, 0.55);
+        g.lineWidth = 1.1;
+        g.beginPath();
+        g.moveTo(len * 0.14, -wid * 0.52);
+        g.quadraticCurveTo(len * 0.58, -wid * 0.68, len * 0.92, -wid * 0.12);
+        g.stroke();
+        g.strokeStyle = pal[0];
+        g.globalAlpha = 0.52;
+        g.lineWidth = 1.0;
+        g.beginPath(); g.moveTo(2, 0); g.quadraticCurveTo(len * 0.52, wid * 0.06, len * 0.94, 0); g.stroke();
+        g.restore();
+    };
+
+    const leafScale = 0.55 + Math.min(s, 4) * 0.12;
+    if (s >= 2) {
+        drawOrchidLeaf(bx - 4, by + 1, -2.86 + sway * 0.08, 66 * leafScale, 15 * leafScale, false);
+        drawOrchidLeaf(bx + 4, by + 1, -0.28 + sway * 0.08, 66 * leafScale, 15 * leafScale, true);
+    }
+    drawOrchidLeaf(bx - 2, by - 1, -2.52 + sway * 0.12, 58 * leafScale, 16 * leafScale, false);
+    drawOrchidLeaf(bx + 2, by - 1, -0.62 + sway * 0.12, 58 * leafScale, 16 * leafScale, true);
+    if (s >= 1) {
+        drawOrchidLeaf(bx, by - 3, -2.14 + sway * 0.14, 46 * leafScale, 13.5 * leafScale, true);
+        drawOrchidLeaf(bx, by - 3, -1.00 + sway * 0.14, 46 * leafScale, 13.5 * leafScale, true);
+    }
+    if (s <= 1) return;
+
+    // 3. Тонкая бамбуковая опора с джутовым узелком (с 4-й стадии) и грациозная дуга цветоноса
+    const archH = s === 2 ? 96 : (s === 3 ? 138 : (s === 4 ? 168 : 186));
+    const p0x = bx, p0y = by - 3;
+    const p1x = bx - dir * (24 + s * 3) + sw * 0.35, p1y = by - archH * 0.62;
+    const p2x = bx + dir * (6 + s * 4) + sw * 0.7, p2y = by - archH * 1.04;
+    const p3x = bx + dir * (44 + (s - 2) * 11) + sw, p3y = by - archH * (s >= 4 ? 0.72 : 0.86);
+
+    const spikePt = (t) => {
+        const u = 1 - t;
+        return {
+            x: u*u*u*p0x + 3*u*u*t*p1x + 3*u*t*t*p2x + t*t*t*p3x,
+            y: u*u*u*p0y + 3*u*u*t*p1y + 3*u*t*t*p2y + t*t*t*p3y
+        };
+    };
+
+    if (s >= 3) {
+        const stakeTopX = bx - dir * 13 + sw * 0.22;
+        const stakeTopY = by - archH * 0.74;
+        g.save();
+        g.strokeStyle = '#5c3c28';
+        g.lineWidth = 2.6;
+        g.lineCap = 'round';
+        g.beginPath(); g.moveTo(bx - dir * 9, by + 1); g.lineTo(stakeTopX, stakeTopY); g.stroke();
+        g.strokeStyle = '#9c6e4c';
+        g.lineWidth = 1.0;
+        g.beginPath(); g.moveTo(bx - dir * 8.4, by + 1); g.lineTo(stakeTopX + 0.6, stakeTopY); g.stroke();
+        // Аккуратная перевязка цветоноса к бамбуковой палочке
+        const tie = spikePt(0.4);
+        g.strokeStyle = '#d4a373';
+        g.lineWidth = 1.6;
+        g.beginPath(); g.moveTo(stakeTopX + dir * 1.5, tie.y); g.lineTo(tie.x, tie.y); g.stroke();
+        g.restore();
+    }
+
+    // Сам живой изогнутый цветонос орхидеи
+    g.save();
+    g.lineCap = 'round';
+    g.strokeStyle = pal[0];
+    g.lineWidth = 4.6;
+    g.beginPath(); g.moveTo(p0x, p0y); g.bezierCurveTo(p1x, p1y, p2x, p2y, p3x, p3y); g.stroke();
+    g.strokeStyle = mixHex(pal[2], bl[0], 0.25);
+    g.lineWidth = 2.7;
+    g.beginPath(); g.moveTo(p0x, p0y); g.bezierCurveTo(p1x, p1y, p2x, p2y, p3x, p3y); g.stroke();
+    // Узелки-междоузлия на цветоносе
+    [0.24, 0.44, 0.62].forEach(nt => {
+        const np = spikePt(nt);
+        g.fillStyle = pal[3];
+        g.beginPath(); g.ellipse(np.x, np.y, 2.5, 1.6, 0.3, 0, Math.PI * 2); g.fill();
+    });
+
+    // Вторая боковая веточка каскада в полном цвету!
+    let subPts = [];
+    if (s >= 4) {
+        const b0 = spikePt(0.50);
+        const bx1 = b0.x - dir * 24 + sw * 0.2, by1 = b0.y - 24;
+        const bx2 = b0.x - dir * (s === 5 ? 48 : 34) + sw * 0.4, by2 = b0.y - (s === 5 ? 12 : 18);
+        g.strokeStyle = pal[0]; g.lineWidth = 3.2;
+        g.beginPath(); g.moveTo(b0.x, b0.y); g.quadraticCurveTo(bx1, by1, bx2, by2); g.stroke();
+        g.strokeStyle = mixHex(pal[2], bl[0], 0.28); g.lineWidth = 1.9;
+        g.beginPath(); g.moveTo(b0.x, b0.y); g.quadraticCurveTo(bx1, by1, bx2, by2); g.stroke();
+        subPts = [
+            { x: (b0.x + bx1 * 2 + bx2) * 0.25, y: (b0.y + by1 * 2 + by2) * 0.25 - 2 },
+            { x: bx2, y: by2 }
+        ];
+    }
+    g.restore();
+
+    // Кисть жемчужного бутона орхидеи
+    const drawOrchidBud = (x, y, rad, tilt) => {
+        g.save();
+        g.translate(x, y);
+        g.rotate(tilt);
+        if (g.createRadialGradient) {
+            const bg = g.createRadialGradient(-rad * 0.25, -rad * 0.3, 1, 0, 0, rad * 1.2);
+            bg.addColorStop(0, mixHex(bl[2], '#ffffff', 0.45));
+            bg.addColorStop(0.6, bl[1]);
+            bg.addColorStop(1, bl[0]);
+            g.fillStyle = bg;
+        } else g.fillStyle = bl[1];
+        g.beginPath(); g.ellipse(0, 0, rad * 1.05, rad * 0.82, 0, 0, Math.PI * 2); g.fill();
+        g.strokeStyle = mixHex(bl[2], '#ffffff', 0.4, 0.65);
+        g.lineWidth = 0.85;
+        g.stroke();
+        g.restore();
+    };
+
+    // Кисть скульптурного цветка-бабочки фаленопсиса (3 чашелистика + 2 широких бархатных лепестка-крыла + тигровая золотисто-рубиновая губа!)
+    const drawOrchidBlossom = (x, y, sz, tilt) => {
+        if (g.createRadialGradient) {
+            radialAura(g, x, y, sz * (1.75 + pulse * 0.35), bl[2], bl[0], 0.22 + pulse * 0.16);
+        }
+        g.save();
+        g.translate(x, y);
+        g.rotate(tilt);
+        const cWhite = mixHex(bl[2], '#fff7fb', 0.52);
+        const cBlush = bl[2];
+        const cRich = bl[1];
+        const cDeep = bl[0];
+
+        // 3 задних чашелистика (верхний и два нижних)
+        [[-Math.PI * 0.5, 0.96, 0.48], [Math.PI * 0.26, 0.92, 0.44], [Math.PI * 0.74, 0.92, 0.44]].forEach(([a, l, w]) => {
+            g.save();
+            g.rotate(a);
+            g.fillStyle = mixHex(cBlush, cWhite, 0.38);
+            g.beginPath();
+            g.moveTo(0, 0);
+            g.bezierCurveTo(sz * 0.3, -sz * w, sz * l * 0.88, -sz * w * 0.8, sz * l, 0);
+            g.bezierCurveTo(sz * l * 0.88, sz * w * 0.8, sz * 0.3, sz * w, 0, 0);
+            g.closePath();
+            g.fill();
+            g.strokeStyle = cWhite;
+            g.lineWidth = 0.8;
+            g.stroke();
+            g.restore();
+        });
+
+        // 2 широких округлых лепестка-крыла бабочки с нежным градиентом от рубинового сердца к жемчужному краю
+        [-0.14, Math.PI + 0.14].forEach((a) => {
+            g.save();
+            g.rotate(a);
+            if (g.createRadialGradient) {
+                const wg = g.createRadialGradient(sz * 0.2, 0, 1, sz * 0.55, 0, sz * 0.95);
+                wg.addColorStop(0, cRich);
+                wg.addColorStop(0.55, cBlush);
+                wg.addColorStop(1, cWhite);
+                g.fillStyle = wg;
+            } else g.fillStyle = cBlush;
+            g.beginPath();
+            g.moveTo(0, 0);
+            g.bezierCurveTo(sz * 0.22, -sz * 0.78, sz * 0.98, -sz * 0.74, sz * 1.06, 0);
+            g.bezierCurveTo(sz * 0.98, sz * 0.74, sz * 0.22, sz * 0.78, 0, 0);
+            g.closePath();
+            g.fill();
+            g.strokeStyle = cWhite;
+            g.lineWidth = 0.95;
+            g.stroke();
+            g.restore();
+        });
+
+        // Скульптурная бархатная губа (labellum) с золотым горлышком и крапинками!
+        g.fillStyle = cDeep;
+        g.beginPath();
+        g.moveTo(-sz * 0.28, sz * 0.04);
+        g.quadraticCurveTo(0, sz * 0.74, sz * 0.28, sz * 0.04);
+        g.quadraticCurveTo(0, sz * 0.28, -sz * 0.28, sz * 0.04);
+        g.closePath();
+        g.fill();
+        g.fillStyle = '#ffd56b';
+        g.beginPath(); g.ellipse(0, sz * 0.16, sz * 0.2, sz * 0.14, 0, 0, Math.PI * 2); g.fill();
+        // Жемчужная колонка в самом центре орхидеи
+        g.fillStyle = '#ffffff';
+        g.beginPath(); g.ellipse(0, -sz * 0.04, sz * 0.13, sz * 0.16, 0, 0, Math.PI * 2); g.fill();
+        g.restore();
+    };
+
+    if (s === 2) {
+        drawOrchidBud(p3x, p3y, 4.6, dir * 0.3);
+    } else if (s === 3) {
+        [0.72, 0.88, 1.0].forEach((bt, i) => {
+            const bp = spikePt(bt);
+            drawOrchidBud(bp.x, bp.y + 3, 6.2 - i * 0.8, dir * 0.25);
+        });
+    } else if (s === 4) {
+        const f1 = spikePt(0.62);
+        drawOrchidBlossom(f1.x, f1.y + 2, 16.5, -dir * 0.1);
+        [0.78, 0.91, 1.0].forEach((bt, i) => {
+            const bp = spikePt(bt);
+            drawOrchidBud(bp.x, bp.y + 4, 7.6 - i * 1.1, dir * 0.3);
+        });
+        if (subPts[1]) drawOrchidBud(subPts[1].x, subPts[1].y + 2, 6.8, -dir * 0.3);
+    } else {
+        // Стадия 5 (6/6): роскошный королевский каскад из 6 крупных бархатных цветов и жемчужного бутона на кончике!
+        if (subPts[0]) drawOrchidBlossom(subPts[0].x, subPts[0].y, 16.2, -dir * 0.18);
+        if (subPts[1]) drawOrchidBlossom(subPts[1].x, subPts[1].y + 2, 14.5, -dir * 0.28);
+        [
+            [0.56, 20.5, -0.06],
+            [0.70, 19.2,  0.08],
+            [0.83, 17.4,  0.18],
+            [0.94, 14.8,  0.26]
+        ].forEach(([bt, sz, tl]) => {
+            const bp = spikePt(bt);
+            drawOrchidBlossom(bp.x, bp.y + 3, sz, dir * tl);
+        });
+        drawOrchidBud(p3x + dir * 5, p3y + 5, 5.8, dir * 0.42);
+    }
+}
+
+// ===== 7 СЕКРЕТНЫХ ВНЕЗЕМНЫХ РАСТЕНИЙ НЕРЕАЛЬНОЙ КРАСОТЫ (9-Я ПАСХАЛКА: 1 ИЗ 7 НАВСЕГДА СТРОГО ПОСЛЕ 8/8!) =====
 function drawSpeciesAlien(ctx, bx, by, pot, spec, s, sway, pulse, now) {
     const al = spec.alien || ALIEN_KINDS[0];
     const kind = Number.isInteger(spec.alienKind) ? spec.alienKind : 0;
@@ -2451,15 +2721,17 @@ function drawSpeciesAlien(ctx, bx, by, pot, spec, s, sway, pulse, now) {
 function drawPlantSprite(ctx, spec, stage, opts) {
     if (!ctx || !spec) return;
     const o = opts || {};
-    const W = ctx.canvas ? ctx.canvas.width : 360;
-    const H = ctx.canvas ? ctx.canvas.height : 380;
+    const W = ctx.canvas ? ctx.canvas.width : 440;
+    const H = ctx.canvas ? ctx.canvas.height : 460;
     ctx.clearRect(0, 0, W, H);
     ctx.imageSmoothingEnabled = true;
 
-    // Масштабирование под любой размер холста (базовая сетка 360×380)
-    const sx = W / 360, sy = H / 380;
+    // Увеличенная сетка 440×460 с полями безопасности (+40px слева/справа, +72px сверху, +8px снизу):
+    // ни один лепесток, кристалл, корона затмения и ни один пиксель свечения никогда не обрезаются по краю!
+    const sx = W / 440, sy = H / 460;
     ctx.save();
     if (sx !== 1 || sy !== 1) ctx.scale(sx, sy);
+    ctx.translate(40, 72);
 
     const rawStage = (stage === undefined || stage === null) ? -1 : Math.trunc(Number(stage));
     const s = Math.max(-1, Math.min(5, Number.isNaN(rawStage) ? -1 : rawStage));
@@ -2514,15 +2786,21 @@ function drawPlantSprite(ctx, spec, stage, opts) {
         return;
     }
 
-    // Мягкий атмосферный ореол от света круглого окна (или неземная биолюминесценция пришельца!)
+    // Мягкий атмосферный ореол от света круглого окна (полностью затухает внутри холста 440×460 — 0% обрезки!)
     if (spec.isAlien) {
         const al = spec.alien || ALIEN_KINDS[0];
         const auraA = 0.14 + s * 0.048 + pulse * 0.14 + (phase === 3 ? 0.04 : 0);
-        radialAura(ctx, bx, baseY - 96 - s * 22, 92 + s * 24, al.mid, al.deep, auraA);
-        if (s >= 3) radialAura(ctx, bx, baseY - 142 - s * 16, 62 + s * 14, al.accent, al.aura, auraA * 0.62);
+        const ay1 = baseY - 88 - s * 18;
+        const ar1 = Math.min(86 + s * 20, ay1 + 68, 214);
+        radialAura(ctx, bx, ay1, ar1, al.mid, al.deep, auraA);
+        if (s >= 3) {
+            const ay2 = baseY - 134 - s * 14;
+            const ar2 = Math.min(62 + s * 14, ay2 + 68, 210);
+            radialAura(ctx, bx, ay2, ar2, al.accent, al.aura, auraA * 0.62);
+        }
     } else if (s >= 3 || pulse > 0.04 || o.dew) {
         const auraA = (s >= 3 ? (s - 2) * 0.045 : 0) + (phase === 3 ? 0.06 : 0) + pulse * 0.12 + (o.dew ? 0.05 : 0);
-        radialAura(ctx, bx, baseY - 82 - s * 16, 78 + s * 18, bl[1], '#8c1428', auraA);
+        radialAura(ctx, bx, baseY - 82 - s * 16, Math.min(78 + s * 18, 208), bl[1], '#8c1428', auraA);
     }
 
     // Опавшие живые лепестки (или звёздная пыльца пришельца!) на ковре вокруг горшка в полном цвету
@@ -2537,7 +2815,7 @@ function drawPlantSprite(ctx, spec, stage, opts) {
             ctx.beginPath(); ctx.ellipse(bx + ox, baseY + oy, 3.6, 1.5, (i - 4) * 0.12, 0, Math.PI * 2); ctx.fill();
         });
         ctx.restore();
-    } else if (s === 5 && (spec.kind === 6 || spec.kind === 5 || spec.kind === 4)) {
+    } else if (s === 5 && (spec.kind === 7 || spec.kind === 6 || spec.kind === 5 || spec.kind === 4)) {
         const fallen = [[-82, 4, 0.3], [-58, 12, -0.5], [-28, 16, 0.2], [32, 15, -0.3], [64, 10, 0.6], [86, 3, -0.2], [50, -2, 0.4]];
         fallen.forEach(([ox, oy, rot], i) => {
             ctx.save();
@@ -2566,6 +2844,7 @@ function drawPlantSprite(ctx, spec, stage, opts) {
     else if (spec.kind === 3) drawSpeciesBamboo(ctx, bx, by, spec, s, pal, bl, sway, pulse, r);
     else if (spec.kind === 4) drawSpeciesVine(ctx, bx, by, pot, spec, s, pal, bl, sway, pulse, r);
     else if (spec.kind === 5) drawSpeciesFlower(ctx, bx, by, spec, s, pal, bl, sway, pulse, r);
+    else if (spec.kind === 7) drawSpeciesOrchid(ctx, bx, by, pot, spec, s, pal, bl, sway, pulse, r);
     else drawSpeciesBonsai(ctx, bx, by, spec, s, pal, bl, sway, pulse, r);
 
     // «Светлячки тишины» и живое золотое биолюминесцентное сияние кроны (механика ежедневного присутствия 1..7)
@@ -3051,7 +3330,7 @@ function plantNewGreenhouseSeed(currentWarmth, ownSpec) {
     return gh.activeSeed;
 }
 
-// Бонусное секретное внеземное семя: выдаётся СТРОГО после 7/7 земных растений, и СТРОГО 1 вид из 7 навсегда на игрока!
+// Бонусное 9-е секретное внеземное семя: выдаётся СТРОГО после 8/8 земных растений, и СТРОГО 1 вид из 7 навсегда на игрока!
 function plantSecretAlienSeed() {
     const gh = loadGreenhouse();
     if (gh.bloomed.length < PLANT_KINDS.length) return null;
@@ -3108,6 +3387,16 @@ function openGreenhouse(opts) {
         return true;
     }
     return false;
+}
+
+// Удобный вход в Оранжерею прямо из полноэкранного режима (и для игроков с открытым куполом, и в PTS-режиме!)
+function openGreenhouseFromFullscreen(ev) {
+    if (ev && ev.stopPropagation) ev.stopPropagation();
+    const unlocked = isGreenhouseUnlocked();
+    if (!unlocked && !isPtsMode()) return false;
+    const ok = openGreenhouse(unlocked ? {} : { ptsDemo: true });
+    if (typeof bumpFullscreenHud === 'function') bumpFullscreenHud();
+    return ok;
 }
 
 // Видеоархив VHS входящих анонимных «Шёпотов» (полная дата ДД.ММ.ГГГГ, постоянный номер кассеты, избранное)
@@ -3400,121 +3689,362 @@ function spawnPlantSpores(count, isPetals) {
     if (roomAnim.spores.length > 24) roomAnim.spores.splice(0, roomAnim.spores.length - 24);
 }
 
-// Точный попиксельный контур неба НАД крышами высоток NEEO~CITY (силуэты зданий остаются 100% чёткими!)
+// Точный попиксельный контур неба НАД реальными высотками NEEO~CITY из assets/quiet-station.jpg:
+// ни одна башня, водонапорный бак, решётчатая радиомачта, купол, кран или шпиль не перекрывается ни на 1 пиксель —
+// все здания остаются на 100% идентичными во всех 4 атмосферах (Дождь · Оттепель · Очаг · Рассвет)!
 const NEEO_SKY_POLY = [
-    [242, 126], [262, 126], [262, 118], [284, 118], [284, 128], [293, 128], [293, 182],
-    [298, 182], [298, 143], [304, 134], [306, 120], [308, 134], [314, 143], [314, 174],
-    [325, 174], [325, 165], [328, 165], [328, 145], [333, 145], [333, 121], [337, 114],
-    [339, 98],  [341, 114], [345, 121], [346, 144], [351, 144], [351, 165], [356, 165],
-    [356, 184], [360, 172], [364, 165], [368, 172], [373, 172], [373, 165], [379, 159],
-    [381, 150], [383, 159], [389, 165], [389, 176], [394, 176], [394, 169], [399, 162],
-    [401, 152], [403, 162], [411, 168], [411, 189],
-    [428, 189],
-    [428, 173], [436, 170], [438, 162], [440, 170], [448, 173], [448, 188],
-    [459, 188], [459, 161], [465, 161], [465, 150], [485, 150], [485, 159], [491, 159],
-    [491, 181], [517, 181],
-    [517, 128], [522, 128], [522, 102], [530, 92], [530, 82], [566, 82]
+    // Левая высотка и надстройка на крыше (x=242..286)
+    [242, 117], [267, 117], [267, 113], [274, 113], [274, 117], [285, 117], [286, 120],
+    // Узкая башня слева (x=286..295) и ступенчатый корпус (x=295..300)
+    [286, 152], [288, 152], [288, 139], [295, 139], [295, 154], [300, 154],
+    // Башня ар-деко со шпилем (x=300..314) и плоский средний дом (x=314..327)
+    [300, 136], [303, 131], [306, 131], [307, 124], [308, 131], [311, 131], [314, 136],
+    [314, 163], [327, 163],
+    // Главный лево-центральный небоскрёб с квадратной ажурной башней и радиомачтой (x=327..358)
+    [327, 141], [330, 138], [333, 138], [333, 112], [337, 108], [339, 94], [341, 94],
+    [342, 108], [349, 110], [349, 138], [356, 138], [358, 142],
+    // Нижний квартал с щипцом (x=358..375) и индустриальная башня (x=375..391)
+    [358, 177], [361, 177], [363.5, 169], [366, 177], [375, 177],
+    [375, 163], [381, 163], [382.5, 158], [385, 163], [391, 163],
+    // Центральная башня со шпилем (x=395..413)
+    [391, 173], [395, 173], [395, 168], [400, 168], [403, 157], [405, 168], [413, 168],
+    // Истинный каньон горизонта (x=413..431)
+    [413, 191], [426, 191], [426, 184], [431, 184],
+    // Право-центральная башня с антенной (x=431..449) и дальний просвет (x=449..460)
+    [431, 174], [438, 174], [439, 163], [440, 174], [449, 174],
+    [449, 188], [451, 183], [456, 183], [456, 188], [460, 188],
+    // Широкий жилой небоскрёб с реальным баком на крыше (x=460..496)
+    [460, 149], [467, 149], [468, 144], [469, 149], [480, 149], [480, 139], [489, 139], [489, 149], [496, 149],
+    // Проём с реальным портовым краном (x=496..515)
+    [496, 163], [504, 163], [505.5, 151], [507, 163], [508, 163], [508, 172], [515, 172],
+    // Правый ступенчатый небоскрёб до самого свода окна (x=515..566)
+    [515, 122], [520, 122], [521, 114], [523, 121], [524, 121], [525, 108], [526, 121], [528, 121], [528, 76], [566, 76]
 ];
 
-// 1) Окна в домах NEEO~CITY, заря, небесный дирижабль и дождь за круглым стеклом
+// Детерминированные звёзды космоса и живые небесные фонарики «Очага» (0 аллокаций в кадре!)
+const COSMIC_DAWN_STARS = (function () {
+    const sr = rng(0x50a13d);
+    const out = [];
+    for (let i = 0; i < 46; i++) {
+        out.push({
+            x: 262 + sr() * 272,
+            y: 38 + Math.pow(sr(), 1.25) * 114,
+            r: i < 5 ? (1.25 + sr() * 0.45) : (0.52 + sr() * 0.68),
+            sparkle: i < 5,
+            col: i % 4 === 0 ? '#ffe8cf' : (i % 3 === 0 ? '#f5d0fe' : (i % 2 === 0 ? '#e9d5ff' : '#fff8ff')),
+            speed: 0.7 + sr() * 1.6,
+            phase: sr() * Math.PI * 2
+        });
+    }
+    return out;
+})();
+
+const HEARTH_LANTERNS = (function () {
+    const lr = rng(0xf1e72a);
+    const out = [];
+    for (let i = 0; i < 28; i++) {
+        const tier = i < 10 ? 0 : (i < 20 ? 1 : 2); // 0: дальние искры, 1: средние, 2: крупные тёплые фонарики
+        out.push({
+            x0: 278 + ((i * 37.3 + lr() * 18) % 244),
+            seed: lr(),
+            speed: 0.011 + tier * 0.0045 + lr() * 0.005,
+            swayAmp: 3.5 + tier * 2.6 + lr() * 2.4,
+            swayFreq: 0.32 + lr() * 0.35,
+            phase: lr() * Math.PI * 2,
+            w: tier === 0 ? 1.15 : (tier === 1 ? 1.85 : 2.55),
+            h: tier === 0 ? 1.5 : (tier === 1 ? 2.45 : 3.4),
+            tier
+        });
+    }
+    return out;
+})();
+
+function clipWindowSky(g) {
+    g.beginPath();
+    g.moveTo(242, 22);
+    g.lineTo(566, 22);
+    for (let i = NEEO_SKY_POLY.length - 1; i >= 0; i--) g.lineTo(NEEO_SKY_POLY[i][0], NEEO_SKY_POLY[i][1]);
+    g.closePath();
+    g.clip();
+}
+
+// 1) Окна в домах NEEO~CITY, «Очаг» с золотым месяцем и небесными фонариками, космический фиалковый «Рассвет» и дирижабль
 function drawWindowWorld(g, now, phase, winGlow) {
     g.save();
     g.beginPath();
     g.ellipse(WIN_CX, WIN_CY, WIN_RX - 2, WIN_RY - 2, 0, 0, Math.PI * 2);
     g.clip();
 
-    // На «Очаге» (phase=2) — тихое предрассветное тепло за горизонтом; на «Рассвете» (phase=3) — настоящий живой восход солнца!
     if (phase === 2) {
-        const breathe = 0.5 + 0.5 * Math.sin(now * 0.00052);
-        g.save();
-        g.globalCompositeOperation = 'screen';
-        const dg = g.createRadialGradient(419, 182, 6, 412, 178, 128);
-        const a = 0.1 + breathe * 0.03;
-        dg.addColorStop(0, `rgba(255,152,112,${a.toFixed(3)})`);
-        dg.addColorStop(0.45, `rgba(224,52,68,${(a * 0.58).toFixed(3)})`);
-        dg.addColorStop(1, 'rgba(90,8,20,0)');
-        g.fillStyle = dg;
-        g.fillRect(WIN_CX - WIN_RX, WIN_CY - WIN_RY, WIN_RX * 2, 200);
-        g.restore();
-    } else if (phase === 3) {
+        // ===== АТМОСФЕРА «ОЧАГ» (ВАУ-ЭФФЕКТ): БАРХАТНАЯ ЯНТАРНО-ВИННАЯ НОЧЬ, ЗОЛОТОЙ СЕРП ЛУНЫ И ПАРЯЩИЕ НЕБЕСНЫЕ ФОНАРИКИ! =====
+        // Все здания остаются на 100% нетронутыми — небо живёт строго за точным силуэтом высоток!
         const still = prefersStillRoom();
-        const t = still ? 4.0 : now * 0.001;
-        const breathe = still ? 0.5 : (0.5 + 0.5 * Math.sin(t * 0.55));
-        const sunX = 419.5;
-        const sunY = 176.5 + (still ? 0 : Math.sin(t * 0.35) * 1.1);
-        const skyPoly = NEEO_SKY_POLY;
+        const t = still ? 6.2 : now * 0.001;
+        const breathe = still ? 0.55 : (0.5 + 0.5 * Math.sin(t * 0.58));
 
-        // 1) ЖИВОЕ РАССВЕТНОЕ НЕБО строго ЗА силуэтами небоскрёбов (ни грамма мыла поверх домов!)
         g.save();
-        g.beginPath();
-        g.moveTo(242, 22);
-        g.lineTo(566, 22);
-        for (let i = skyPoly.length - 1; i >= 0; i--) g.lineTo(skyPoly[i][0], skyPoly[i][1]);
-        g.closePath();
-        g.clip();
+        clipWindowSky(g);
 
-        // Многослойный живописный градиент настоящего рассвета: от бархатного винного зенита к расплавленному золоту у горизонта
+        // 1. Глубокий бархатный гранатово-янтарный градиент вечернего неба с золотым теплом у горизонта
         if (g.createLinearGradient) {
-            const sk = g.createLinearGradient(0, 26, 0, 191);
-            sk.addColorStop(0.00, 'rgba(42, 8, 22, 0.88)');
-            sk.addColorStop(0.26, 'rgba(98, 20, 42, 0.88)');
-            sk.addColorStop(0.50, 'rgba(176, 44, 62, 0.90)');
-            sk.addColorStop(0.70, 'rgba(232, 92, 72, 0.92)');
-            sk.addColorStop(0.86, 'rgba(255, 162, 88, 0.94)');
-            sk.addColorStop(1.00, 'rgba(255, 228, 148, 0.96)');
-            g.fillStyle = sk;
-        } else g.fillStyle = '#d85c4c';
-        g.fillRect(242, 22, 324, 172);
-
-        // Широкий золотисто-персиковый купол солнечной короны за центральными башнями
-        if (g.createRadialGradient) {
-            const halo = g.createRadialGradient(sunX, sunY + 4, 4, sunX, sunY - 6, 132);
-            halo.addColorStop(0.00, `rgba(255, 248, 206, ${(0.88 + breathe * 0.08 + winGlow * 0.04).toFixed(3)})`);
-            halo.addColorStop(0.18, `rgba(255, 204, 118, ${(0.62 + breathe * 0.08).toFixed(3)})`);
-            halo.addColorStop(0.48, 'rgba(255, 118, 82, 0.28)');
-            halo.addColorStop(1.00, 'rgba(160, 28, 52, 0)');
-            g.fillStyle = halo;
+            const hk = g.createLinearGradient(0, 32, 0, 191);
+            hk.addColorStop(0.00, 'rgba(20, 5, 14, 0.56)');
+            hk.addColorStop(0.42, 'rgba(58, 12, 24, 0.42)');
+            hk.addColorStop(0.74, 'rgba(132, 36, 32, 0.46)');
+            hk.addColorStop(0.92, 'rgba(218, 96, 46, 0.55)');
+            hk.addColorStop(1.00, 'rgba(255, 168, 78, 0.68)');
+            g.fillStyle = hk;
             g.fillRect(242, 22, 324, 172);
         }
 
-        // Веер мягких растушёванных небесных лучей, расходящихся ВВЕРХ от восходящего солнца
+        // Тёплое медово-золотое дыхание городских огней, поднимающееся из каньона между высотками
+        if (g.createRadialGradient) {
+            g.save();
+            g.globalCompositeOperation = 'screen';
+            const hg = g.createRadialGradient(418, 186, 6, 412, 168, 142);
+            const ha = 0.34 + breathe * 0.08 + winGlow * 0.08;
+            hg.addColorStop(0.00, `rgba(255, 206, 118, ${ha.toFixed(3)})`);
+            hg.addColorStop(0.38, `rgba(245, 118, 58, ${(ha * 0.58).toFixed(3)})`);
+            hg.addColorStop(0.75, `rgba(168, 38, 42, ${(ha * 0.24).toFixed(3)})`);
+            hg.addColorStop(1.00, 'rgba(80, 10, 18, 0)');
+            g.fillStyle = hg;
+            g.fillRect(242, 22, 324, 172);
+            g.restore();
+        }
+
+        // 2. Тихие тёплые вечерние звёзды цвета шампанского в верхней части свода
+        for (let s = 0; s < 22; s++) {
+            const st = COSMIC_DAWN_STARS[s];
+            if (st.y > 122) continue;
+            const tw = still ? 0.65 : (0.35 + 0.65 * (0.5 + 0.5 * Math.sin(t * st.speed + st.phase)));
+            g.globalAlpha = tw * 0.62;
+            g.fillStyle = '#ffe9c2';
+            g.beginPath(); g.arc(st.x, st.y, st.r * 0.85, 0, Math.PI * 2); g.fill();
+        }
+        g.globalAlpha = 1;
+
+        // 3. Ювелирный золотисто-медовый серп Луны с мягким пепельным светом и двойным янтарным ореолом (x=378, y=74)
+        const mx = 378, my = 74, mr = 10.2;
+        if (g.createRadialGradient) {
+            g.save();
+            g.globalCompositeOperation = 'screen';
+            radialAura(g, mx, my, 46, '#ffd282', '#c84b31', 0.32 + breathe * 0.07);
+            radialAura(g, mx, my, 21, '#fff2c6', '#f59e0b', 0.44 + breathe * 0.08);
+            g.restore();
+        }
+        // Тонкий пепельный свет теневой стороны Луны
+        g.fillStyle = 'rgba(255, 214, 158, 0.08)';
+        g.beginPath(); g.arc(mx, my, mr, 0, Math.PI * 2); g.fill();
+        // Изящный сияющий золотой полумесяц (чистая геометрия двух дуг без вырезания неба!)
+        g.save();
+        g.translate(mx, my);
+        g.rotate(-0.38);
+        g.fillStyle = '#fff3cf';
+        g.beginPath();
+        g.arc(0, 0, mr, -Math.PI * 0.76, Math.PI * 0.76, false);
+        g.bezierCurveTo(mr * 0.22, mr * 0.52, mr * 0.22, -mr * 0.52, Math.cos(-Math.PI * 0.76) * mr, Math.sin(-Math.PI * 0.76) * mr);
+        g.closePath();
+        g.fill();
+        g.restore();
+
+        // 4. Нежные янтарно-алые вечерние облачка, подсвеченные снизу тёплым светом фонариков
+        if (g.createRadialGradient) {
+            const cd = still ? 0 : Math.sin(t * 0.04) * 9;
+            [[448 - cd, 88, 46, 5.2, 0.22], [312 + cd * 0.7, 94, 38, 4.6, 0.2], [418 + cd * 0.5, 134, 58, 4.8, 0.26]].forEach(([cx, cy, cw, ch, ca]) => {
+                g.save();
+                g.translate(cx, cy);
+                g.scale(1, ch / cw);
+                const cg = g.createRadialGradient(0, 0, cw * 0.1, 0, 0, cw);
+                cg.addColorStop(0, `rgba(255, 178, 102, ${ca.toFixed(3)})`);
+                cg.addColorStop(0.55, `rgba(182, 58, 48, ${(ca * 0.55).toFixed(3)})`);
+                cg.addColorStop(1, 'rgba(90, 16, 24, 0)');
+                g.fillStyle = cg;
+                g.beginPath(); g.arc(0, 0, cw, 0, Math.PI * 2); g.fill();
+                g.restore();
+            });
+        }
+
+        // 5. ГЛАВНОЕ ЧУДО «ОЧАГА»: 28 живых золотых небесных фонариков, медленно взмывающих из-за башен NEEO~CITY!
+        for (let i = 0; i < HEARTH_LANTERNS.length; i++) {
+            const ln = HEARTH_LANTERNS[i];
+            const prog = (ln.seed + t * ln.speed) % 1;
+            const ly = 190 - prog * 148; // плавно поднимаются из-за крыш (y=190) под самый купол окна (y=42)
+            const lx = ln.x0 + Math.sin(t * ln.swayFreq + ln.phase) * ln.swayAmp + prog * (i % 2 === 0 ? 7 : -6);
+            // Мягкое проявление у горизонта и растворение высоко в небе
+            const fade = Math.min(1, prog * 5.5) * Math.min(1, (1 - prog) * 3.6);
+            if (fade <= 0.03) continue;
+            const flick = still ? 0.85 : (0.78 + 0.22 * Math.sin(t * 3.4 + ln.phase * 2.1));
+            const al = fade * flick;
+
+            // Тёплый медово-персиковый ореол каждого фонарика
+            if (g.createRadialGradient) {
+                g.save();
+                g.globalCompositeOperation = 'screen';
+                const hr = ln.w * (ln.tier === 2 ? 4.8 : 4.0);
+                radialAura(g, lx, ly, hr, '#ffd88a', '#ea580c', al * (ln.tier === 0 ? 0.34 : 0.48));
+                g.restore();
+            }
+            // Рисовая бумага купола фонарика и живой огонёк фитиля снизу
+            g.save();
+            g.globalAlpha = Math.min(1, al * 0.95);
+            g.fillStyle = ln.tier === 0 ? '#ffcf78' : '#ffb347';
+            g.beginPath();
+            g.roundRect
+                ? g.roundRect(lx - ln.w * 0.5, ly - ln.h * 0.55, ln.w, ln.h, ln.w * 0.38)
+                : g.rect(lx - ln.w * 0.5, ly - ln.h * 0.55, ln.w, ln.h);
+            g.fill();
+            // Яркое золотисто-белое сердечко пламени в основании фонарика
+            g.fillStyle = '#fffbeb';
+            g.beginPath();
+            g.arc(lx, ly + ln.h * 0.16, Math.max(0.55, ln.w * 0.32), 0, Math.PI * 2);
+            g.fill();
+            g.restore();
+        }
+        g.restore();
+
+        // Едва уловимое тёплое янтарное свечение воздуха в каньоне (не трогая и не перерисовывая здания!)
         g.save();
         g.globalCompositeOperation = 'screen';
-        const skyRays = [-1.15, -0.76, -0.40, -0.06, 0.28, 0.64, 1.04];
+        radialAura(g, 419, 188, 34, '#ffbe6b', '#b83c28', 0.14 + breathe * 0.04);
+        g.restore();
+    } else if (phase === 3) {
+        // ===== АТМОСФЕРА «РАССВЕТ»: ГЛУБОКИЙ ТЁПЛЫЙ ФИАЛКОВО-КОСМИЧЕСКИЙ РАССВЕТ НАД NEEO~CITY =====
+        // 100% идентичные здания: ни один пиксель крыш, мачт, кранов и водонапорных баков не затирается!
+        const still = prefersStillRoom();
+        const t = still ? 4.0 : now * 0.001;
+        const breathe = still ? 0.5 : (0.5 + 0.5 * Math.sin(t * 0.52));
+        const sunX = 419.5;
+        const sunY = 181.5 + (still ? 0 : Math.sin(t * 0.32) * 0.9);
+
+        g.save();
+        clipWindowSky(g);
+
+        // 1) Глубокий бархатно-тёмный космический градиент с тёплым фиолетово-аметистовым и розово-золотым тоном!
+        if (g.createLinearGradient) {
+            const sk = g.createLinearGradient(0, 26, 0, 192);
+            sk.addColorStop(0.00, 'rgba(9, 3, 22, 0.94)');    // глубокий бархатный космос в зените
+            sk.addColorStop(0.28, 'rgba(22, 8, 46, 0.93)');   // тёмный ночной индиго-аметист
+            sk.addColorStop(0.54, 'rgba(52, 16, 82, 0.92)');  // глубокий тёплый фиолетовый бархат
+            sk.addColorStop(0.74, 'rgba(104, 30, 106, 0.92)');// тёплая космическая слива-орхидея
+            sk.addColorStop(0.88, 'rgba(168, 58, 108, 0.93)');// тёплый розово-пурпурный предрассвет
+            sk.addColorStop(0.96, 'rgba(224, 118, 114, 0.94)');// мягкий персиково-розовый горизонт
+            sk.addColorStop(1.00, 'rgba(255, 192, 144, 0.95)');// тёплая заря в самом каньоне
+            g.fillStyle = sk;
+        } else g.fillStyle = '#341052';
+        g.fillRect(242, 22, 324, 172);
+
+        // 2) Диагональная космическая туманность (шёлковый фиалково-розовый рукав Млечного Пути через свод окна!)
+        if (g.createRadialGradient) {
+            g.save();
+            g.globalCompositeOperation = 'screen';
+            [
+                [356, 68, 92, 24, -0.32, 'rgba(156, 72, 232, 0.22)', 'rgba(91, 33, 182, 0)'],
+                [438, 86, 86, 22, -0.28, 'rgba(218, 104, 236, 0.19)', 'rgba(126, 34, 206, 0)'],
+                [398, 58, 68, 15, -0.30, 'rgba(248, 174, 202, 0.13)', 'rgba(168, 85, 247, 0)']
+            ].forEach(([nx, ny, nrw, nrh, rot, cA, cB]) => {
+                g.save();
+                g.translate(nx, ny);
+                g.rotate(rot);
+                g.scale(1, nrh / nrw);
+                const ng = g.createRadialGradient(0, 0, 4, 0, 0, nrw);
+                ng.addColorStop(0, cA);
+                ng.addColorStop(1, cB);
+                g.fillStyle = ng;
+                g.beginPath(); g.arc(0, 0, nrw, 0, Math.PI * 2); g.fill();
+                g.restore();
+            });
+
+            // Мягкий аметистово-розово-золотой купол восходящей зари за центральным каньоном
+            const halo = g.createRadialGradient(sunX, sunY + 4, 3, sunX, sunY - 6, 112);
+            halo.addColorStop(0.00, `rgba(255, 224, 184, ${(0.68 + breathe * 0.08 + winGlow * 0.05).toFixed(3)})`);
+            halo.addColorStop(0.24, `rgba(232, 118, 162, ${(0.42 + breathe * 0.06).toFixed(3)})`);
+            halo.addColorStop(0.56, 'rgba(138, 48, 178, 0.21)');
+            halo.addColorStop(1.00, 'rgba(48, 12, 78, 0)');
+            g.fillStyle = halo;
+            g.fillRect(242, 22, 324, 172);
+            g.restore();
+        }
+
+        // 3) Россыпь живых космических звёзд и сияющих утренних алмазных светил в фиалковом зените!
+        for (let i = 0; i < COSMIC_DAWN_STARS.length; i++) {
+            const st = COSMIC_DAWN_STARS[i];
+            const heightFade = Math.max(0, Math.min(1, (162 - st.y) / 92));
+            if (heightFade <= 0.04) continue;
+            const tw = still ? 0.78 : (0.42 + 0.58 * (0.5 + 0.5 * Math.sin(t * st.speed + st.phase)));
+            const sa = heightFade * tw * (st.sparkle ? 0.95 : 0.78);
+            g.save();
+            g.globalAlpha = sa;
+            g.fillStyle = st.col;
+            g.beginPath(); g.arc(st.x, st.y, st.r, 0, Math.PI * 2); g.fill();
+            if (st.sparkle) {
+                // Тонкие четырёхлучевые космические блики у самых ярких утренних звёзд
+                g.strokeStyle = st.col;
+                g.globalAlpha = sa * 0.62;
+                g.lineWidth = 0.65;
+                const arm = st.r * (2.8 + tw * 1.1);
+                g.beginPath();
+                g.moveTo(st.x - arm, st.y); g.lineTo(st.x + arm, st.y);
+                g.moveTo(st.x, st.y - arm); g.lineTo(st.x, st.y + arm);
+                g.stroke();
+            }
+            g.restore();
+        }
+
+        // Редкая беззвучная падающая звезда в фиолетовом космосе (проскальзывает раз в ~15 секунд)
+        if (!still) {
+            const meteorCycle = (t % 15.5);
+            if (meteorCycle > 11.2 && meteorCycle < 12.15) {
+                const mp = (meteorCycle - 11.2) / 0.95;
+                const mx1 = 468 - mp * 92, my1 = 52 + mp * 38;
+                const mx0 = mx1 + 22, my0 = my1 - 9.1;
+                const ma = Math.sin(mp * Math.PI) * 0.85;
+                if (g.createLinearGradient) {
+                    const mg = g.createLinearGradient(mx0, my0, mx1, my1);
+                    mg.addColorStop(0, 'rgba(216, 180, 254, 0)');
+                    mg.addColorStop(1, `rgba(255, 245, 255, ${ma.toFixed(3)})`);
+                    g.strokeStyle = mg;
+                    g.lineWidth = 1.15;
+                    g.beginPath(); g.moveTo(mx0, my0); g.lineTo(mx1, my1); g.stroke();
+                }
+            }
+        }
+
+        // 4) Нежные веерные лучи космического рассвета (сиренево-розовое золото), расходящиеся вверх от зари
+        g.save();
+        g.globalCompositeOperation = 'screen';
+        const skyRays = [-1.08, -0.68, -0.32, 0.0, 0.34, 0.72, 1.08];
         for (let r = 0; r < skyRays.length; r++) {
-            const ang = -Math.PI * 0.5 + skyRays[r] + (still ? 0 : Math.sin(t * 0.24 + r * 1.3) * 0.024);
-            const ra = (0.09 + 0.05 * (0.5 + 0.5 * Math.sin(t * 0.48 + r * 1.7))) * (1 + winGlow * 0.25);
+            const ang = -Math.PI * 0.5 + skyRays[r] + (still ? 0 : Math.sin(t * 0.22 + r * 1.3) * 0.02);
+            const ra = (0.075 + 0.042 * (0.5 + 0.5 * Math.sin(t * 0.46 + r * 1.7))) * (1 + winGlow * 0.22);
             g.save();
             g.translate(sunX, sunY);
             g.rotate(ang);
-            g.scale(1, 0.13);
+            g.scale(1, 0.12);
             if (g.createRadialGradient) {
-                const rg = g.createRadialGradient(52, 0, 4, 68, 0, 108);
-                rg.addColorStop(0, `rgba(255, 232, 162, ${ra.toFixed(3)})`);
-                rg.addColorStop(0.55, `rgba(255, 152, 102, ${(ra * 0.42).toFixed(3)})`);
-                rg.addColorStop(1, 'rgba(255, 110, 90, 0)');
+                const rg = g.createRadialGradient(48, 0, 4, 66, 0, 106);
+                rg.addColorStop(0, `rgba(255, 198, 218, ${ra.toFixed(3)})`);
+                rg.addColorStop(0.52, `rgba(192, 112, 248, ${(ra * 0.48).toFixed(3)})`);
+                rg.addColorStop(1, 'rgba(108, 34, 168, 0)');
                 g.fillStyle = rg;
-                g.beginPath(); g.arc(68, 0, 108, 0, Math.PI * 2); g.fill();
+                g.beginPath(); g.arc(66, 0, 106, 0, Math.PI * 2); g.fill();
             }
             g.restore();
         }
         g.restore();
 
-        // Живописные перистые облака рассвета (мягкие многослойные мазки с тёплым золотым подсветом снизу — без жёстких краёв!)
-        const drawDawnCloud = (cx, cy, w, h, topCol, glowCol, puffs) => {
+        // 5) Бархатные сливово-фиалковые облака с тёплой розово-золотой кромкой снизу
+        const drawCosmicCloud = (cx, cy, w, h, topCol, glowCol, puffs) => {
             if (!g.createRadialGradient) return;
-            // 1. Тёплое золотисто-коралловое свечение по нижней кромке облачной гряды
             g.save();
-            g.translate(cx, cy + h * 0.48);
+            g.translate(cx, cy + h * 0.46);
             g.scale(1, h / w);
-            const ug = g.createRadialGradient(0, 0, w * 0.08, 0, 0, w * 1.05);
+            const ug = g.createRadialGradient(0, 0, w * 0.08, 0, 0, w * 1.04);
             ug.addColorStop(0, glowCol);
-            ug.addColorStop(0.58, glowCol.replace(/[\d.]+\)$/, m => (parseFloat(m) * 0.48).toFixed(3) + ')'));
-            ug.addColorStop(1, 'rgba(255, 160, 110, 0)');
+            ug.addColorStop(0.58, glowCol.replace(/[\d.]+\)$/, m => (parseFloat(m) * 0.46).toFixed(3) + ')'));
+            ug.addColorStop(1, 'rgba(216, 132, 224, 0)');
             g.fillStyle = ug;
-            g.beginPath(); g.arc(0, 0, w * 1.05, 0, Math.PI * 2); g.fill();
+            g.beginPath(); g.arc(0, 0, w * 1.04, 0, Math.PI * 2); g.fill();
             g.restore();
-            // 2. Мягкие клубящиеся винно-лиловые пряди облака сверху
             for (let p = 0; p < puffs.length; p++) {
                 const [ox, oy, rw, rh] = puffs[p];
                 g.save();
@@ -3522,180 +4052,70 @@ function drawWindowWorld(g, now, phase, winGlow) {
                 g.scale(1, (h * rh) / (w * rw));
                 const pg = g.createRadialGradient(0, 0, 0, 0, 0, w * rw);
                 pg.addColorStop(0, topCol);
-                pg.addColorStop(0.55, topCol.replace(/[\d.]+\)$/, m => (parseFloat(m) * 0.55).toFixed(3) + ')'));
-                pg.addColorStop(1, 'rgba(60, 12, 28, 0)');
+                pg.addColorStop(0.55, topCol.replace(/[\d.]+\)$/, m => (parseFloat(m) * 0.52).toFixed(3) + ')'));
+                pg.addColorStop(1, 'rgba(34, 10, 58, 0)');
                 g.fillStyle = pg;
                 g.beginPath(); g.arc(0, 0, w * rw, 0, Math.PI * 2); g.fill();
                 g.restore();
             }
         };
-        const d1 = still ? 0 : Math.sin(t * 0.045) * 11;
-        const d2 = still ? 0 : Math.cos(t * 0.038 + 1.1) * 9;
-        const d3 = still ? 0 : Math.sin(t * 0.032 + 2.4) * 8;
-        drawDawnCloud(374 + d1, 68, 62, 7.5, 'rgba(58, 11, 28, 0.52)', 'rgba(255, 152, 118, 0.36)',
-            [[-0.38, 0.1, 0.52, 0.85], [0.02, -0.18, 0.64, 1.1], [0.42, 0.14, 0.46, 0.78]]);
-        drawDawnCloud(458 - d2, 95, 52, 6.2, 'rgba(84, 16, 36, 0.46)', 'rgba(255, 186, 126, 0.44)',
-            [[-0.32, 0.08, 0.55, 0.9], [0.15, -0.16, 0.58, 1.05], [0.48, 0.18, 0.38, 0.7]]);
-        drawDawnCloud(308 + d3, 92, 44, 5.5, 'rgba(78, 15, 34, 0.44)', 'rgba(255, 172, 122, 0.38)',
-            [[-0.25, 0.05, 0.55, 0.9], [0.22, -0.12, 0.52, 0.95]]);
-        drawDawnCloud(416 + d2 * 0.7, 126, 68, 5.2, 'rgba(124, 28, 44, 0.36)', 'rgba(255, 218, 142, 0.52)',
-            [[-0.42, 0.1, 0.48, 0.8], [-0.04, -0.14, 0.58, 0.95], [0.38, 0.08, 0.46, 0.78]]);
-        drawDawnCloud(472 - d1 * 0.6, 143, 38, 3.8, 'rgba(148, 42, 50, 0.28)', 'rgba(255, 232, 158, 0.55)',
-            [[-0.22, 0, 0.56, 0.85], [0.26, -0.1, 0.48, 0.8]]);
+        const d1 = still ? 0 : Math.sin(t * 0.042) * 10;
+        const d2 = still ? 0 : Math.cos(t * 0.036 + 1.1) * 8;
+        drawCosmicCloud(372 + d1, 74, 56, 6.4, 'rgba(26, 9, 52, 0.56)', 'rgba(232, 142, 248, 0.34)',
+            [[-0.36, 0.1, 0.52, 0.85], [0.02, -0.18, 0.62, 1.08], [0.42, 0.14, 0.45, 0.78]]);
+        drawCosmicCloud(456 - d2, 99, 50, 5.8, 'rgba(46, 14, 74, 0.5)', 'rgba(248, 152, 214, 0.38)',
+            [[-0.32, 0.08, 0.54, 0.9], [0.15, -0.15, 0.58, 1.04], [0.46, 0.16, 0.38, 0.7]]);
+        drawCosmicCloud(416 + d2 * 0.65, 130, 64, 4.8, 'rgba(72, 22, 92, 0.4)', 'rgba(255, 182, 178, 0.44)',
+            [[-0.4, 0.1, 0.48, 0.8], [-0.04, -0.14, 0.58, 0.95], [0.38, 0.08, 0.45, 0.78]]);
 
-        // НАСТОЯЩИЙ ДИСК ВОСХОДЯЩЕГО СОЛНЦА в каньоне между центральными башнями (419.5, 176.5)
+        // 6) Мягкий диск восходящего светила в истинном центральном каньоне (419.5, 181.5)
         if (g.createRadialGradient) {
-            const corona = g.createRadialGradient(sunX, sunY, 4, sunX, sunY, 30);
-            corona.addColorStop(0, 'rgba(255, 252, 226, 0.96)');
-            corona.addColorStop(0.36, `rgba(255, 216, 126, ${(0.72 + breathe * 0.12).toFixed(3)})`);
-            corona.addColorStop(0.72, 'rgba(255, 156, 86, 0.28)');
-            corona.addColorStop(1, 'rgba(255, 130, 74, 0)');
+            const corona = g.createRadialGradient(sunX, sunY, 3, sunX, sunY, 26);
+            corona.addColorStop(0, 'rgba(255, 246, 228, 0.94)');
+            corona.addColorStop(0.38, `rgba(255, 186, 168, ${(0.64 + breathe * 0.1).toFixed(3)})`);
+            corona.addColorStop(0.74, 'rgba(214, 102, 218, 0.26)');
+            corona.addColorStop(1, 'rgba(148, 52, 198, 0)');
             g.fillStyle = corona;
-            g.beginPath(); g.arc(sunX, sunY, 30, 0, Math.PI * 2); g.fill();
+            g.beginPath(); g.arc(sunX, sunY, 26, 0, Math.PI * 2); g.fill();
 
-            const disc = g.createRadialGradient(sunX, sunY - 1.2, 1, sunX, sunY, 8.2);
-            disc.addColorStop(0, '#fffef6');
-            disc.addColorStop(0.68, '#fff1c2');
-            disc.addColorStop(1, 'rgba(255, 208, 114, 0.72)');
+            const disc = g.createRadialGradient(sunX, sunY - 1, 1, sunX, sunY, 6.8);
+            disc.addColorStop(0, '#fffdf9');
+            disc.addColorStop(0.68, '#ffe6d4');
+            disc.addColorStop(1, 'rgba(255, 176, 168, 0.65)');
             g.fillStyle = disc;
-        } else g.fillStyle = '#fff6d4';
-        g.beginPath(); g.arc(sunX, sunY, 8.0, 0, Math.PI * 2); g.fill();
-
-        // Тонкий реалистичный силуэт башенного крана и шпилей небоскрёбов на фоне золотого неба
-        g.strokeStyle = 'rgba(46, 9, 18, 0.82)';
-        g.lineWidth = 0.95;
-        g.beginPath();
-        // Вертикальная мачта башенного крана и горизонтальная стрела (как в оригинальном арте x=502, y=162)
-        g.moveTo(502.5, 181); g.lineTo(502.5, 152);
-        g.moveTo(494.5, 161.5); g.lineTo(515.5, 161.5);
-        // Пологие ванты стрелы
-        g.lineWidth = 0.55;
-        g.moveTo(502.5, 153); g.lineTo(512.5, 161.5);
-        g.moveTo(502.5, 153); g.lineTo(496.5, 161.5);
-        g.moveTo(512.5, 161.5); g.lineTo(512.5, 170);
-        // Изящные громоотводы на вершинах шпилей
-        g.lineWidth = 0.85;
-        g.moveTo(339, 99);  g.lineTo(339, 89);
-        g.moveTo(306, 121); g.lineTo(306, 113);
-        g.moveTo(381, 151); g.lineTo(381, 144);
-        g.moveTo(401, 153); g.lineTo(401, 145);
-        g.stroke();
-        // Противовес и кабина крана
-        g.fillStyle = 'rgba(46, 9, 18, 0.85)';
-        g.fillRect(495, 161.5, 2.8, 1.8);
-        g.fillRect(501.3, 161.5, 2.4, 2.4);
-
-        // Три крошечные утренние птицы, неспешно парящие в золотом небе рассвета
-        const birdPeriod = 18;
-        const bt = still ? 0.42 : ((t % birdPeriod) / birdPeriod);
-        if (bt < 0.85) {
-            const bp = bt / 0.85;
-            const bx0 = 335 + bp * 155;
-            const by0 = 104 - Math.sin(bp * Math.PI) * 18;
-            g.strokeStyle = 'rgba(54, 10, 20, 0.72)';
-            g.lineWidth = 0.85;
-            g.lineCap = 'round';
-            for (let b = 0; b < 3; b++) {
-                const bx = bx0 - b * 8.5, by = by0 + (b === 1 ? -4.2 : b * 2.6);
-                const flap = still ? 1.0 : Math.sin(t * 5.8 + b * 1.7) * 1.3;
-                g.beginPath();
-                g.moveTo(bx - 2.2, by - flap);
-                g.quadraticCurveTo(bx - 0.7, by - 0.7, bx, by);
-                g.quadraticCurveTo(bx + 0.7, by - 0.7, bx + 2.2, by - flap);
-                g.stroke();
-            }
-        }
+        } else g.fillStyle = '#ffe8d8';
+        g.beginPath(); g.arc(sunX, sunY, 6.6, 0, Math.PI * 2); g.fill();
         g.restore();
 
-        // 2) ЗОЛОТОЙ КОНТРОВОЙ СВЕТ ПО ГРАНЯМ НЕБОСКРЁБОВ (яркое золото возле солнца, мягкая медь к краям окна!)
+        // 7) Деликатный фиалково-розовый контровой рефлекс строго по реальным крышам (0 перерисованных стен — здания 1:1!)
         g.save();
-        g.lineCap = 'round';
-        g.lineJoin = 'round';
+        g.globalCompositeOperation = 'screen';
         if (g.createRadialGradient) {
-            const rimGrad = g.createRadialGradient(sunX, sunY, 6, sunX, sunY, 155);
-            rimGrad.addColorStop(0.00, `rgba(255, 244, 192, ${(0.92 + breathe * 0.08).toFixed(3)})`);
-            rimGrad.addColorStop(0.38, `rgba(255, 202, 122, ${(0.68 + breathe * 0.1).toFixed(3)})`);
-            rimGrad.addColorStop(0.75, 'rgba(238, 118, 92, 0.36)');
-            rimGrad.addColorStop(1.00, 'rgba(180, 58, 66, 0.14)');
+            const rimGrad = g.createRadialGradient(sunX, sunY, 6, sunX, sunY, 152);
+            rimGrad.addColorStop(0.00, `rgba(255, 218, 188, ${(0.58 + breathe * 0.08).toFixed(3)})`);
+            rimGrad.addColorStop(0.42, 'rgba(236, 152, 232, 0.36)');
+            rimGrad.addColorStop(1.00, 'rgba(168, 92, 238, 0.14)');
             g.strokeStyle = rimGrad;
-        } else {
-            g.strokeStyle = 'rgba(255, 202, 124, 0.55)';
-        }
-        g.lineWidth = 1.05;
+        } else g.strokeStyle = 'rgba(232, 156, 238, 0.32)';
+        g.lineWidth = 0.75;
+        g.lineJoin = 'round';
         g.beginPath();
-        for (let i = 0; i < skyPoly.length; i++) {
-            const [px, py] = skyPoly[i];
+        for (let i = 0; i < NEEO_SKY_POLY.length; i++) {
+            const [px, py] = NEEO_SKY_POLY[i];
             if (i === 0) g.moveTo(px, py); else g.lineTo(px, py);
         }
         g.stroke();
-
-        // Мягкий солнечный ореол, переливающийся через край каньона (даёт живой оптический «bloom» настоящего солнца!)
-        g.save();
-        g.globalCompositeOperation = 'screen';
-        radialAura(g, sunX, sunY + 3, 38, '#ffe29c', '#e05848', 0.24 + breathe * 0.06);
-        g.restore();
-
-        // Яркие солнечные блики на внутренних вертикальных стенах башен, обращённых прямо к солнцу!
-        const litEdges = [
-            // Правые грани левых башен (смотрят вправо на солнце)
-            [293, 129, 293, 212, 0.42],
-            [314, 143, 314, 198, 0.46],
-            [345.5, 121, 345.5, 144, 0.62],
-            [351, 144, 351, 165, 0.64],
-            [356, 165, 356, 220, 0.68],
-            [389, 165, 389, 214, 0.62],
-            [411, 168, 411, 218, 0.88], // левая стена солнечного каньона!
-            // Левые грани правых башен (смотрят влево на солнце)
-            [428, 173, 428, 218, 0.88], // правая стена солнечного каньона!
-            [459, 161, 459, 224, 0.72],
-            [465, 150, 465, 161, 0.65],
-            [517, 128, 517, 232, 0.56],
-            [522, 102, 522, 128, 0.50],
-            // Коньки ближних крыш внизу окна
-            [342, 250, 382, 250, 0.42],
-            [412, 252, 462, 250, 0.45]
-        ];
-        for (let e = 0; e < litEdges.length; e++) {
-            const [x1, y1, x2, y2, al] = litEdges[e];
-            g.strokeStyle = `rgba(255, 212, 132, ${al.toFixed(3)})`;
-            g.lineWidth = (x1 === 411 || x1 === 428) ? 1.35 : 1.0;
-            g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke();
+        // Бесшовная тёпло-фиолетовая атмосферная дымка по фасадам ночных башен (плавный 0->max->0 без единого шва!)
+        if (g.createLinearGradient) {
+            const atm = g.createLinearGradient(0, 94, 0, 312);
+            atm.addColorStop(0.00, 'rgba(138, 52, 196, 0)');
+            atm.addColorStop(0.36, 'rgba(164, 62, 182, 0.11)');
+            atm.addColorStop(0.68, 'rgba(128, 44, 152, 0.08)');
+            atm.addColorStop(1.00, 'rgba(68, 18, 96, 0)');
+            g.fillStyle = atm;
+            g.fillRect(WIN_CX - WIN_RX, 94, WIN_RX * 2, 218);
         }
-
-        // 3) ЧЁТКИЙ АРХИТЕКТУРНЫЙ КАМЕННЫЙ ВИАДУК И БЛЕСТЯЩИЕ НА СОЛНЦЕ РЕЛЬСЫ (x=355..459, y=221.5..246)
-        // Лёгкая золотистая утренняя дымка ТОЛЬКО в проёмах трёх арок под мостом
-        const arches = [[374, 9.0], [404, 13.5], [436, 11.5]];
-        for (let a = 0; a < arches.length; a++) {
-            const [ax, arw] = arches[a];
-            radialAura(g, ax, 235, arw * 1.25, '#ffc478', '#b83244', 0.22);
-            // Тёплый золотой блик по внутреннему своду каменной арки
-            g.strokeStyle = 'rgba(255, 192, 122, 0.52)';
-            g.lineWidth = 0.95;
-            g.beginPath();
-            g.ellipse(ax, 236, arw, 7.2, 0, Math.PI * 1.08, Math.PI * 1.92);
-            g.stroke();
-        }
-        // Тёмная чёткая стальная балка полотна моста и каменные опоры (чтобы поезд ВСЕГДА шёл по реальному мосту!)
-        g.fillStyle = 'rgba(28, 5, 10, 0.88)';
-        g.fillRect(355, 222.2, 104, 3.4);
-        const piers = [360, 385, 419, 449];
-        for (let p = 0; p < piers.length; p++) {
-            g.fillRect(piers[p], 225.4, 4.4, 19);
-            // Солнечная кромка на грани каждой каменной опоры, обращённой к солнцу
-            const edgeX = piers[p] < sunX ? piers[p] + 4.4 : piers[p];
-            g.fillStyle = 'rgba(255, 196, 124, 0.42)';
-            g.fillRect(edgeX, 225.6, 0.85, 17);
-            g.fillStyle = 'rgba(28, 5, 10, 0.88)';
-        }
-        // Непрерывная сияющая золотом линия стальных рельсов и балюстрады виадука!
-        g.strokeStyle = 'rgba(255, 224, 148, 0.82)';
-        g.lineWidth = 1.05;
-        g.beginPath(); g.moveTo(355, 222.0); g.lineTo(459, 222.0); g.stroke();
-        // Ажурные перила и шпалы виадука
-        g.fillStyle = 'rgba(255, 198, 126, 0.48)';
-        for (let rx = 357; rx < 458; rx += 4) {
-            g.fillRect(rx, 220.9, 0.8, 1.1);
-        }
+        radialAura(g, sunX, sunY + 3, 30, '#ffd4c2', '#b845c8', 0.22 + breathe * 0.05);
         g.restore();
     }
 
@@ -3712,19 +4132,29 @@ function drawWindowWorld(g, now, phase, winGlow) {
             g.fillStyle = `rgba(20,4,7,${dim.toFixed(3)})`;
             g.fillRect(wx, wy, ww, wh);
         } else if (mood > 0.22) {
-            // Мягкое тёплое разгорание окна изнутри
-            const glow = smooth01((mood - 0.22) / 0.68) * (0.42 + (phase === 3 ? 0.14 : 0.08));
+            // Мягкое тёплое разгорание окна изнутри: на «Очаге» — уютный медовый янтарь, на «Рассвете» — тёплый сиренево-персиковый свет!
+            const glow = smooth01((mood - 0.22) / 0.68) * (phase === 2 ? 0.62 : (phase === 3 ? 0.54 : 0.48));
             const cx = wx + ww * 0.5, cy = wy + wh * 0.5;
-            radialAura(g, cx, cy, Math.max(ww, wh) * 1.4, '#ff9892', '#c8283e', glow * 0.55);
-            g.fillStyle = `rgba(255,186,168,${(glow * 0.55).toFixed(3)})`;
+            if (phase === 2) {
+                radialAura(g, cx, cy, Math.max(ww, wh) * 1.55, '#ffd07a', '#d95826', glow * 0.62);
+                g.fillStyle = `rgba(255,222,152,${(glow * 0.68).toFixed(3)})`;
+            } else if (phase === 3) {
+                radialAura(g, cx, cy, Math.max(ww, wh) * 1.45, '#ffc8d8', '#a844c8', glow * 0.54);
+                g.fillStyle = `rgba(255,214,224,${(glow * 0.58).toFixed(3)})`;
+            } else {
+                radialAura(g, cx, cy, Math.max(ww, wh) * 1.4, '#ff9892', '#c8283e', glow * 0.55);
+                g.fillStyle = `rgba(255,186,168,${(glow * 0.55).toFixed(3)})`;
+            }
             g.fillRect(wx + 0.3, wy + 0.3, Math.max(1, ww - 0.6), Math.max(1, wh - 0.6));
         }
     }
 
     // Тёплые огни моста и неспешные сигнальные маячки на крышах высоток
     for (let b = 0; b < BRIDGE_LIGHTS.length; b++) {
-        const a = 0.2 + 0.3 * (0.5 + 0.5 * Math.sin(now * 0.00095 + b * 0.9));
-        g.fillStyle = `rgba(255,164,154,${a.toFixed(3)})`;
+        const a = (phase === 2 ? 0.34 : 0.22) + 0.32 * (0.5 + 0.5 * Math.sin(now * 0.00095 + b * 0.9));
+        g.fillStyle = phase === 2
+            ? `rgba(255,212,132,${a.toFixed(3)})`
+            : (phase === 3 ? `rgba(248,186,232,${a.toFixed(3)})` : `rgba(255,164,154,${a.toFixed(3)})`);
         g.fillRect(BRIDGE_LIGHTS[b] - 0.8, 232, 1.6, 1.4);
     }
     CITY_BEACONS.forEach(bc => {
@@ -3739,12 +4169,7 @@ function drawWindowWorld(g, now, phase, winGlow) {
     // Ненавязчивый небесный дирижабль NEEO~CITY с цифровым табло (плывёт за силуэтами высоток и за каплями дождя!)
     if (typeof window !== 'undefined' && window.SOMA_BLIMP && typeof window.SOMA_BLIMP.drawInWindow === 'function') {
         g.save();
-        g.beginPath();
-        g.moveTo(242, 22);
-        g.lineTo(566, 22);
-        for (let i = NEEO_SKY_POLY.length - 1; i >= 0; i--) g.lineTo(NEEO_SKY_POLY[i][0], NEEO_SKY_POLY[i][1]);
-        g.closePath();
-        g.clip();
+        clipWindowSky(g);
         window.SOMA_BLIMP.drawInWindow(g, now, phase);
         g.restore();
     }
@@ -3883,52 +4308,52 @@ function drawWindowWorld(g, now, phase, winGlow) {
     g.restore();
 }
 
-// 2) Кинематографичный объёмный утренний свет ИЗ круглого окна в комнату (не замутняя силуэты города и моста!)
+// 2) Кинематографичный объёмный свет ИЗ круглого окна в комнату:
+//    на «Очаге» (phase=2) — медово-янтарное тепло фонариков и луны; на «Рассвете» (phase=3) — тёплый фиалково-космический свет!
 function drawWindowLightBeams(g, now, phase, winGlow) {
     if (phase < 2) return;
     const isMax = phase === 3;
     const still = prefersStillRoom();
-    const strength = (isMax ? 1 : 0.24) + winGlow * 0.15;
+    const strength = (isMax ? 0.88 : 0.66) + winGlow * 0.15;
     const b1 = still ? 0.55 : (0.5 + 0.5 * Math.sin(now * 0.00058));
     const b2 = still ? 0.5 : (0.5 + 0.5 * Math.sin(now * 0.00039 + 1.8));
     const sway = still ? 0 : Math.sin(now * 0.00032) * 8;
-    const sunX = 419.5, sunY = 176.5;
+    const sunX = 419.5, sunY = 181.5;
 
     g.save();
     g.globalCompositeOperation = 'screen';
 
-    // 1. Плавный золотисто-коралловый блик утреннего солнца по нижнему каменному своду окна (мягко сходит на нет к краям!)
-    const rimA = (isMax ? (0.44 + b1 * 0.12) : (0.16 + b1 * 0.06)) * Math.min(1.2, strength);
+    // 1. Плавный блик по нижнему каменному своду окна (аметистово-розовый на Рассвете, медово-золотой на Очаге)
+    const rimA = (isMax ? (0.42 + b1 * 0.11) : (0.34 + b1 * 0.09)) * Math.min(1.2, strength);
     g.lineCap = 'round';
     if (g.createLinearGradient) {
         const sg = g.createLinearGradient(WIN_CX - WIN_RX * 0.88, 0, WIN_CX + WIN_RX * 0.88, 0);
-        sg.addColorStop(0.00, 'rgba(255, 160, 110, 0)');
-        sg.addColorStop(0.25, isMax ? `rgba(255, 186, 122, ${(rimA * 0.62).toFixed(3)})` : `rgba(255, 128, 126, ${(rimA * 0.6).toFixed(3)})`);
-        sg.addColorStop(0.52, isMax ? `rgba(255, 228, 164, ${rimA.toFixed(3)})` : `rgba(255, 146, 140, ${rimA.toFixed(3)})`);
-        sg.addColorStop(0.78, isMax ? `rgba(255, 186, 122, ${(rimA * 0.62).toFixed(3)})` : `rgba(255, 128, 126, ${(rimA * 0.6).toFixed(3)})`);
-        sg.addColorStop(1.00, 'rgba(255, 160, 110, 0)');
+        sg.addColorStop(0.00, 'rgba(180, 96, 180, 0)');
+        sg.addColorStop(0.25, isMax ? `rgba(214, 134, 248, ${(rimA * 0.62).toFixed(3)})` : `rgba(255, 174, 96, ${(rimA * 0.62).toFixed(3)})`);
+        sg.addColorStop(0.52, isMax ? `rgba(255, 202, 224, ${rimA.toFixed(3)})` : `rgba(255, 218, 142, ${rimA.toFixed(3)})`);
+        sg.addColorStop(0.78, isMax ? `rgba(214, 134, 248, ${(rimA * 0.62).toFixed(3)})` : `rgba(255, 174, 96, ${(rimA * 0.62).toFixed(3)})`);
+        sg.addColorStop(1.00, 'rgba(180, 96, 180, 0)');
         g.strokeStyle = sg;
-    } else g.strokeStyle = `rgba(255, 198, 132, ${rimA.toFixed(3)})`;
-    g.lineWidth = isMax ? 3.0 : 2.2;
+    } else g.strokeStyle = `rgba(232, 168, 238, ${rimA.toFixed(3)})`;
+    g.lineWidth = isMax ? 2.8 : 2.5;
     g.beginPath();
     g.ellipse(WIN_CX, WIN_CY + 1, WIN_RX + 1.5, WIN_RY + 1.5, 0, Math.PI * 0.14, Math.PI * 0.86);
     g.stroke();
 
-    // 2. Бархатные объёмные солнечные лучи (с мягкими растушёванными краями без резких граней!),
-    //    льющиеся из окна на растение, ковёр, край стола и кушетку, НЕ размывая здания и рельсы за окном!
+    // 2. Бархатные объёмные лучи из окна на растение, ковёр, край стола и кушетку (не замутняя здания!)
     const shafts = [
-        { ang: -0.54, spread: 0.14, cy: 232, r: 156, w: 0.92 }, // золотой луч на стол с горячим чаем
-        { ang: -0.30, spread: 0.15, cy: 228, r: 158, w: 1.15 }, // левый луч на свечи и ковёр
-        { ang: -0.09, spread: 0.16, cy: 224, r: 162, w: 1.48 }, // яркий утренний сноп прямо на цветок и сосуд
-        { ang:  0.10, spread: 0.16, cy: 224, r: 162, w: 1.42 }, // центральный золотой сноп на персидский ковёр
-        { ang:  0.31, spread: 0.15, cy: 228, r: 158, w: 1.12 }, // правый луч на ковёр и свечи
-        { ang:  0.54, spread: 0.14, cy: 234, r: 158, w: 0.96 }  // тёплый солнечный луч на кушетку и спящего кота
+        { ang: -0.54, spread: 0.14, cy: 232, r: 156, w: 0.90 },
+        { ang: -0.30, spread: 0.15, cy: 228, r: 158, w: 1.12 },
+        { ang: -0.09, spread: 0.16, cy: 224, r: 162, w: 1.44 },
+        { ang:  0.10, spread: 0.16, cy: 224, r: 162, w: 1.40 },
+        { ang:  0.31, spread: 0.15, cy: 228, r: 158, w: 1.10 },
+        { ang:  0.54, spread: 0.14, cy: 234, r: 158, w: 0.94 }
     ];
     for (let idx = 0; idx < shafts.length; idx++) {
         const sh = shafts[idx];
         const drift = still ? 0 : Math.sin(now * (0.00034 + idx * 0.00005) + idx * 1.5) * 0.024;
         const pulse = still ? 0.6 : (0.5 + 0.5 * Math.sin(now * (0.00052 + idx * 0.00007) + idx * 1.2));
-        const roomA = (isMax ? (0.135 + pulse * 0.062) : (0.095 + pulse * 0.048)) * sh.w * strength;
+        const roomA = (isMax ? (0.118 + pulse * 0.052) : (0.092 + pulse * 0.042)) * sh.w * strength;
         g.save();
         g.translate(sunX, sunY);
         g.rotate(sh.ang + drift);
@@ -3936,41 +4361,51 @@ function drawWindowLightBeams(g, now, phase, winGlow) {
         if (g.createRadialGradient) {
             const rg = g.createRadialGradient(0, sh.cy - 22, 6, 0, sh.cy, sh.r);
             rg.addColorStop(0.00, isMax
-                ? `rgba(255, 214, 142, ${roomA.toFixed(3)})`
-                : `rgba(255, 132, 122, ${roomA.toFixed(3)})`);
+                ? `rgba(244, 178, 248, ${roomA.toFixed(3)})`
+                : `rgba(255, 198, 118, ${roomA.toFixed(3)})`);
             rg.addColorStop(0.50, isMax
-                ? `rgba(250, 122, 90, ${(roomA * 0.58).toFixed(3)})`
-                : `rgba(222, 48, 66, ${(roomA * 0.5).toFixed(3)})`);
-            rg.addColorStop(1.00, 'rgba(150, 18, 34, 0)');
+                ? `rgba(176, 74, 212, ${(roomA * 0.58).toFixed(3)})`
+                : `rgba(228, 92, 56, ${(roomA * 0.52).toFixed(3)})`);
+            rg.addColorStop(1.00, 'rgba(92, 18, 86, 0)');
             g.fillStyle = rg;
             g.beginPath(); g.arc(0, sh.cy, sh.r, 0, Math.PI * 2); g.fill();
         }
         g.restore();
     }
 
-    // 3. Живое тёплое пятно утреннего солнца, разливающееся по персидскому ковру, кушетке и краю стола!
-    if (isMax) {
-        g.save();
-        g.translate(WIN_CX - 3 + sway * 0.5, 420);
-        g.scale(1, 0.33);
-        if (g.createRadialGradient) {
-            const pg = g.createRadialGradient(0, -24, 14, 0, 0, 236);
-            pg.addColorStop(0.00, `rgba(255, 206, 132, ${(0.32 + b2 * 0.075).toFixed(3)})`);
-            pg.addColorStop(0.42, `rgba(250, 116, 88, ${(0.19 + b1 * 0.048).toFixed(3)})`);
-            pg.addColorStop(0.76, `rgba(198, 38, 56, ${(0.085 + b1 * 0.02).toFixed(3)})`);
-            pg.addColorStop(1.00, 'rgba(140, 14, 30, 0)');
-            g.fillStyle = pg;
-            g.beginPath(); g.arc(0, 0, 236, 0, Math.PI * 2); g.fill();
+    // 3. Живое световое озеро на персидском ковре и у пледа (и на «Очаге», и на «Рассвете»!)
+    g.save();
+    g.translate(WIN_CX - 3 + sway * 0.5, 420);
+    g.scale(1, 0.33);
+    if (g.createRadialGradient) {
+        const pg = g.createRadialGradient(0, -24, 14, 0, 0, 232);
+        if (isMax) {
+            pg.addColorStop(0.00, `rgba(244, 174, 238, ${(0.25 + b2 * 0.06).toFixed(3)})`);
+            pg.addColorStop(0.45, `rgba(172, 68, 198, ${(0.15 + b1 * 0.04).toFixed(3)})`);
+            pg.addColorStop(0.78, `rgba(116, 28, 112, ${(0.07 + b1 * 0.02).toFixed(3)})`);
+            pg.addColorStop(1.00, 'rgba(68, 12, 72, 0)');
+        } else {
+            pg.addColorStop(0.00, `rgba(255, 194, 108, ${(0.24 + b2 * 0.065).toFixed(3)})`);
+            pg.addColorStop(0.45, `rgba(232, 98, 58, ${(0.14 + b1 * 0.04).toFixed(3)})`);
+            pg.addColorStop(0.78, `rgba(168, 32, 42, ${(0.065 + b1 * 0.02).toFixed(3)})`);
+            pg.addColorStop(1.00, 'rgba(110, 12, 24, 0)');
         }
-        g.restore();
+        g.fillStyle = pg;
+        g.beginPath(); g.arc(0, 0, 232, 0, Math.PI * 2); g.fill();
+    }
+    g.restore();
 
-        // Тёплый утренний солнечный свет мягко касается кота на кушетке, радиополки и стола с чаем
-        radialAura(g, 608, 336, 86, '#ffbe76', '#b8283e', 0.14 + b1 * 0.035);
-        radialAura(g, 224, 294, 66, '#ffba74', '#b8283e', 0.12 + b2 * 0.03);
+    if (isMax) {
+        radialAura(g, 608, 336, 86, '#e9a8ff', '#8e2c9e', 0.12 + b1 * 0.032);
+        radialAura(g, 224, 294, 66, '#f5b8e8', '#8e2c9e', 0.1 + b2 * 0.028);
+    } else {
+        // На «Очаге» тёплый янтарный отсвет камина/ночников мягко обнимает кушетку, стол и ковёр!
+        radialAura(g, 612, 336, 92, '#ffbe68', '#b83228', 0.15 + b1 * 0.04);
+        radialAura(g, 222, 296, 74, '#ffb862', '#b82e28', 0.13 + b2 * 0.035);
     }
 
-    // 4. Золотистые утренние пылинки, неспешно танцующие в лучах солнца внутри комнаты
-    const moteCnt = isMax ? FX_MOTES.length : 8;
+    // 4. Парящие искры света в комнате: золотые угольки тепла на «Очаге» и сиренево-звёздная пыльца на «Рассвете»!
+    const moteCnt = FX_MOTES.length;
     for (let i = 0; i < moteCnt; i++) {
         const m = FX_MOTES[i];
         const v = (m.v + (still ? 0 : now * m.speed)) % 1;
@@ -3980,10 +4415,16 @@ function drawWindowLightBeams(g, now, phase, winGlow) {
         const my = 232 + v * 228;
         const edgeFade = Math.sin(v * Math.PI) * (1 - Math.abs(m.u - 0.5) * 1.35);
         const tw = still ? 0.75 : (0.45 + 0.55 * Math.sin(now * 0.0014 + m.phase));
-        const ma = Math.max(0, edgeFade * tw * (isMax ? 0.62 : 0.22));
+        const ma = Math.max(0, edgeFade * tw * (isMax ? 0.56 : 0.44));
         if (ma < 0.03) continue;
-        g.fillStyle = isMax ? `rgba(255, 232, 174, ${ma.toFixed(3)})` : `rgba(255, 198, 190, ${ma.toFixed(3)})`;
-        g.beginPath(); g.arc(mx, my, m.size * (isMax ? 1.12 : 1), 0, Math.PI * 2); g.fill();
+        if (isMax) {
+            g.fillStyle = (i % 2 === 0)
+                ? `rgba(232, 198, 255, ${ma.toFixed(3)})`
+                : `rgba(255, 222, 178, ${ma.toFixed(3)})`;
+        } else {
+            g.fillStyle = `rgba(255, 214, 132, ${ma.toFixed(3)})`;
+        }
+        g.beginPath(); g.arc(mx, my, m.size * (isMax ? 1.12 : 1.06), 0, Math.PI * 2); g.fill();
     }
     g.restore();
 }
@@ -4283,6 +4724,21 @@ const CAT_COATS = [
     }
 ];
 
+// УЛЬТРА-РЕДКАЯ МАСТЬ (РОВНО 0.1% — 1 ШАНС ИЗ 1000 ПРИ ПОЛУЧЕНИИ КОТА!):
+// Полностью обсидианово-чёрный кот с сияющим золотисто-лунным полумесяцем во лбу!
+const RARE_MOON_CAT_INDEX = 7;
+const RARE_MOON_CAT_COAT = {
+    id: 'midnight_luna',
+    name: 'Полуночная Луна',
+    short: 'редчайший чёрный кот с полумесяцем во лбу',
+    rarity: '0.1%',
+    rare: true,
+    dark: '#040108', mid: '#0e0717', light: '#241438', rim: '#d8b4fe',
+    belly: '#0b0512', stripe: '#020005', earIn: '#6d3580',
+    moonCore: '#fff9db', moonGold: '#fde047', moonGlow: '#c084fc',
+    eyeL: '#f5d0fe', eyeR: '#fde68a', pattern: 'luna'
+};
+
 const CAT_EARS = ['чуткие ушки', 'рысьи кисточки', 'мягкие ушки'];
 
 function catSpec(rawId, overrideCoat) {
@@ -4294,17 +4750,33 @@ function catSpec(rawId, overrideCoat) {
     }
     // Дополнительное перемешивание, чтобы масть кота и вид растения распределялись независимо
     const mix = Math.imul(h ^ (h >>> 13), 0x5bd1e995) >>> 0;
-    const coatIdx = Number.isInteger(overrideCoat) && overrideCoat >= 0 && overrideCoat < CAT_COATS.length
-        ? overrideCoat
-        : (mix % CAT_COATS.length);
-    const earStyle = (mix >>> 7) % 3; // 0: классика, 1: рысьи кисточки, 2: плюшевые
-    const socks = ((mix >>> 10) % 3) === 0;
-    const starMark = ((mix >>> 12) % 3) === 0;
-    const purrHz = 46 + ((mix >>> 14) % 14);
-    const coat = CAT_COATS[coatIdx];
-    const summary = `${coat.name}${earStyle === 1 ? ' · рысьи кисточки' : ''}`;
+
+    // Независимый точный бросок 1 из 1000 (строго 0.1%!) на уникального чёрного кота с полумесяцем во лбу!
+    let rareHash = hashStr('neeosoma_rare_mooncat_01pct:' + src);
+    rareHash = Math.imul((rareHash ^ 0x3c6ef372) >>> 0, 0x85ebca6b) >>> 0;
+    rareHash = (rareHash ^ (rareHash >>> 15)) >>> 0;
+    const isNaturalRare = (rareHash % 1000) === 0;
+
+    let coatIdx;
+    if (Number.isInteger(overrideCoat) && overrideCoat >= 0 && overrideCoat <= RARE_MOON_CAT_INDEX) {
+        coatIdx = overrideCoat;
+    } else if (isNaturalRare) {
+        coatIdx = RARE_MOON_CAT_INDEX;
+    } else {
+        coatIdx = mix % CAT_COATS.length;
+    }
+    const isRare = coatIdx === RARE_MOON_CAT_INDEX;
+    const earStyle = isRare ? 0 : ((mix >>> 7) % 3); // у лунного кота — точёные острые ушки!
+    const socks = !isRare && ((mix >>> 10) % 3) === 0; // строго 100% чёрный до кончиков лап!
+    const starMark = !isRare && ((mix >>> 12) % 3) === 0;
+    const purrHz = isRare ? 44 : (46 + ((mix >>> 14) % 14));
+    const coat = isRare ? RARE_MOON_CAT_COAT : CAT_COATS[coatIdx];
+    const summary = isRare
+        ? 'Чёрный кот с полумесяцем во лбу (✦ 0.1%)'
+        : `${coat.name}${earStyle === 1 ? ' · рысьи кисточки' : ''}`;
     return {
-        coatIdx, coat, earStyle, earName: CAT_EARS[earStyle],
+        coatIdx, coat, rare: isRare, rarity: isRare ? '0.1%' : '',
+        earStyle, earName: CAT_EARS[earStyle],
         socks, starMark, purrHz, seed: mix, summary
     };
 }
@@ -4622,11 +5094,16 @@ function drawCompanionCat(g, now, phase, still) {
 
     g.save();
 
-    // 1. ТЁПЛЫЙ ОРЕОЛ ЖИВОГО ПРИСУТСТВИЯ на кушетке (дышит вместе с котом — комната сразу теплеет!)
+    // 1. ТЁПЛЫЙ ОРЕОЛ ЖИВОГО ПРИСУТСТВИЯ на кушетке (у редчайшего лунного кота 0.1% — мягкое мистическое аметистово-золотое сияние!)
     g.save();
     g.globalCompositeOperation = 'screen';
     const hearthA = 0.2 + breath * 0.11 + (isPetted ? 0.16 : 0) + nlBoost * 0.1 + (phase === 3 ? 0.05 : 0);
-    radialAura(g, cx + 1, cy - 2, 54, '#ffb668', '#b82238', hearthA);
+    if (c.pattern === 'luna') {
+        radialAura(g, cx + 1, cy - 2, 56, '#e9d5ff', '#7e22ce', hearthA * 0.92);
+        radialAura(g, cx - 15, cy - 5, 28, '#fef08a', '#a855f7', 0.18 + breath * 0.08 + (isPetted ? 0.14 : 0));
+    } else {
+        radialAura(g, cx + 1, cy - 2, 54, '#ffb668', '#b82238', hearthA);
+    }
     g.restore();
 
     // 2. Мягкая бархатная растушёванная тень в складках стёганого пледа (без жёсткого края!)
@@ -4710,12 +5187,18 @@ function drawCompanionCat(g, now, phase, still) {
         g.fillStyle = 'rgba(36, 12, 10, 0.55)';
         g.beginPath(); g.ellipse(cx + 22, cy + 3, 9, 7, 0, 0, Math.PI * 2); g.fill();
     }
-    // Мягкий тёплый алый рефлекс комнаты по низу шерсти, чтобы любая масть сидела в сцене как родная!
+    // Мягкий рефлекс комнаты по низу шерсти (у чёрного лунного кота 0.1% — чистый глубокий чёрный обсидиановый шёлк!)
     if (g.createLinearGradient) {
         const tint = g.createLinearGradient(cx, bodyTop, cx, cy + 10);
-        tint.addColorStop(0, 'rgba(255, 112, 96, 0.12)');
-        tint.addColorStop(0.6, 'rgba(140, 16, 32, 0.16)');
-        tint.addColorStop(1, 'rgba(18, 2, 5, 0.58)');
+        if (c.pattern === 'luna') {
+            tint.addColorStop(0, 'rgba(192, 132, 252, 0.14)');
+            tint.addColorStop(0.45, 'rgba(14, 6, 26, 0.55)');
+            tint.addColorStop(1, 'rgba(3, 1, 6, 0.86)');
+        } else {
+            tint.addColorStop(0, 'rgba(255, 112, 96, 0.12)');
+            tint.addColorStop(0.6, 'rgba(140, 16, 32, 0.16)');
+            tint.addColorStop(1, 'rgba(18, 2, 5, 0.58)');
+        }
         g.fillStyle = tint;
         g.fillRect(cx - 30, bodyTop - 4, 64, 34);
     }
@@ -4753,20 +5236,50 @@ function drawCompanionCat(g, now, phase, still) {
     g.ellipse(hx + 2.2, hy + 6.4, 5.4, 3.2, 0.15, 0, Math.PI * 2);
     g.fill();
 
-    // 6. Выразительная круглая головка с щёчками
+    // 6. Выразительная круглая головка с щёчками (у лунного кота 0.1% — чисто-чёрный бархат для контраста с полумесяцем!)
     if (g.createRadialGradient) {
         const hg = g.createRadialGradient(hx - 1, hy - 3, 1.5, hx, hy, 12);
-        hg.addColorStop(0, mixHex(c.light, '#ffb8b0', 0.12));
-        hg.addColorStop(0.65, mixHex(c.mid, '#6e1422', 0.16));
-        hg.addColorStop(1, c.dark);
+        if (c.pattern === 'luna') {
+            hg.addColorStop(0, '#231336');
+            hg.addColorStop(0.55, '#0c0514');
+            hg.addColorStop(1, '#030106');
+        } else {
+            hg.addColorStop(0, mixHex(c.light, '#ffb8b0', 0.12));
+            hg.addColorStop(0.65, mixHex(c.mid, '#6e1422', 0.16));
+            hg.addColorStop(1, c.dark);
+        }
         g.fillStyle = hg;
     } else g.fillStyle = c.mid;
     g.beginPath();
     g.ellipse(hx, hy, 11.2, 9.0, -0.1, 0, Math.PI * 2);
     g.fill();
 
-    // Сиамская тёмная маска или звёздочка/буква «М» табби на лбу
-    if (c.pattern === 'siamese') {
+    // Сияющий золотой полумесяц во лбу (0.1% «Полуночная Луна»!) / сиамская маска / буква «М» табби / звёздочка
+    if (c.pattern === 'luna') {
+        const mx = hx - 1.1, my = hy - 3.9, mr = 2.95;
+        const mPulse = 0.72 + breath * 0.28 + (isPetted ? 0.2 : 0);
+        if (g.createRadialGradient) {
+            g.save();
+            g.globalCompositeOperation = 'screen';
+            radialAura(g, mx, my, 8.2, c.moonGold || '#fde047', c.moonGlow || '#c084fc', 0.52 * mPulse);
+            g.restore();
+        }
+        // Ювелирный золотисто-лунный серп рожками вверх на чисто-чёрном лбу (как у Луны из ночной легенды!)
+        g.save();
+        g.translate(mx, my);
+        g.fillStyle = c.moonGold || '#fde047';
+        g.beginPath();
+        g.arc(0, 0, mr, -Math.PI * 0.12, Math.PI * 1.12, false);
+        g.bezierCurveTo(-mr * 0.62, mr * 0.42, mr * 0.62, mr * 0.42, Math.cos(-Math.PI * 0.12) * mr, Math.sin(-Math.PI * 0.12) * mr);
+        g.closePath();
+        g.fill();
+        // Белоснежный лунный блик в сердце полумесяца
+        g.fillStyle = c.moonCore || '#fffbeb';
+        g.beginPath();
+        g.ellipse(0, mr * 0.62, mr * 0.52, mr * 0.22, 0, 0, Math.PI * 2);
+        g.fill();
+        g.restore();
+    } else if (c.pattern === 'siamese') {
         g.fillStyle = 'rgba(32, 10, 10, 0.78)';
         g.beginPath(); g.ellipse(hx - 1.2, hy + 1.4, 7.2, 5.2, -0.05, 0, Math.PI * 2); g.fill();
     } else if (c.pattern === 'calico') {
@@ -4846,9 +5359,11 @@ function drawCompanionCat(g, now, phase, still) {
         g.beginPath(); g.arc(hx + 2.2, hy + 2.0, 2.2, Math.PI * 1.15, Math.PI * 1.85); g.stroke();
     } else {
         // Мирно сомкнутые реснички во сне
-        g.strokeStyle = (c.pattern === 'tuxedo' || c.pattern === 'tortie' || c.pattern === 'siamese')
-            ? 'rgba(235, 148, 152, 0.62)'
-            : 'rgba(42, 10, 14, 0.72)';
+        g.strokeStyle = c.pattern === 'luna'
+            ? 'rgba(233, 213, 255, 0.72)'
+            : ((c.pattern === 'tuxedo' || c.pattern === 'tortie' || c.pattern === 'siamese')
+                ? 'rgba(235, 148, 152, 0.62)'
+                : 'rgba(42, 10, 14, 0.72)');
         g.lineWidth = 1.15;
         g.beginPath(); g.arc(hx - 4.6, hy + 0.6, 2.2, 0.18, Math.PI - 0.18); g.stroke();
         g.beginPath(); g.arc(hx + 2.2, hy + 0.8, 2.2, 0.18, Math.PI - 0.18); g.stroke();
@@ -6587,6 +7102,9 @@ function restoreRoomFromPortal(room, scene) {
     if (room && room.classList) {
         room.classList.remove('is-fullscreen', 'is-fs-active', 'is-fs-animating', 'is-fs-closing', 'is-rotated', 'is-flipped', 'is-fs-idle');
     }
+    if (typeof window !== 'undefined' && typeof window.restoreSomaScroll === 'function') {
+        window.restoreSomaScroll();
+    }
 }
 
 function syncFullscreenOrientation(applyTransform) {
@@ -7197,11 +7715,18 @@ function touchRoomObject(obj, event) {
         if (cosm.cat) {
             roomAnim.catPetStart = now;
             const myCat = catSpec(undefined, Number.isInteger(roomAnim.inspectCatCoat) ? roomAnim.inspectCatCoat : null);
-            modeLabel = `ЖУРНАЛ // ${myCat.coat.name.toUpperCase()}`;
-            const catLines = [
-                `Ваш ${myCat.coat.short} кот приподнял голову, блеснул глазами и тепло замурчал под ладонью.`,
-                `Тёплый клубок (${myCat.summary.toLowerCase()}) сладко зажмурился, повёл хвостом и согрел край пледа.`
-            ];
+            modeLabel = myCat.rare
+                ? `ЖУРНАЛ // ✦ ${myCat.coat.name.toUpperCase()} (0.1%)`
+                : `ЖУРНАЛ // ${myCat.coat.name.toUpperCase()}`;
+            const catLines = myCat.rare
+                ? [
+                    'Ваш редчайший чёрный кот (шанс 0.1%!) приподнял голову: золотой полумесяц во лбу мягко вспыхнул, и он тихо замурчал под ладонью.',
+                    'Обсидианово-чёрный хранитель с сияющим полумесяцем во лбу блаженно зажмурился и согрел край пледа тёплым мурчанием.'
+                ]
+                : [
+                    `Ваш ${myCat.coat.short} кот приподнял голову, блеснул глазами и тепло замурчал под ладонью.`,
+                    `Тёплый клубок (${myCat.summary.toLowerCase()}) сладко зажмурился, повёл хвостом и согрел край пледа.`
+                ];
             if (cosm.dog) {
                 const myDog = dogSpec(undefined, Number.isInteger(roomAnim.inspectDogBreed) ? roomAnim.inspectDogBreed : null);
                 catLines.push(`Ваш ${myCat.coat.short} кот лениво переглянулся с другом на ковре (${myDog.breed.short}) — в комнате двойное живое тепло.`);
@@ -7309,38 +7834,33 @@ function syncContextPanels() {
         deckBar.classList.toggle('hidden', !showDeck);
         const listEl = document.getElementById('station-deck-list');
         const emptyEl = document.getElementById('station-deck-empty');
+        const activeEl = document.getElementById('station-deck-active');
         const countEl = document.getElementById('station-deck-count');
         const activeTape = tapes.find(c => c.id === roomAnim.activeCassetteId);
-        if (countEl) {
-            countEl.textContent = tapes.length
-                ? (activeTape ? `В ДЕКЕ #${formatCassetteNum(activeTape.num)} · ВСЕГО ${tapes.length}` : `${tapes.length} VHS`)
+        if (activeEl) {
+            activeEl.textContent = tapes.length
+                ? (activeTape ? `В ДЕКЕ #${formatCassetteNum(activeTape.num)}` : 'ГОТОВ К ПУСКУ')
                 : 'ЛОТОК ПУСТ';
+        }
+        if (countEl) {
+            countEl.textContent = `ВСЕГО ${tapes.length}`;
         }
         if (emptyEl && emptyEl.classList) emptyEl.classList.toggle('hidden', tapes.length > 0);
         if (listEl) {
             listEl.textContent = '';
-            if (document.createElement) {
-                if (tapes.length) {
-                    tapes.slice(0, 6).forEach(tape => {
-                        const b = document.createElement('button');
-                        b.type = 'button';
-                        b.className = 'station-vhs-chip' + (tape.fav ? ' is-fav' : '');
-                        const star = tape.fav ? '★ ' : '';
-                        b.textContent = `${star}VHS #${formatCassetteNum(tape.num)} · ${tape.date}`;
-                        b.title = tape.text;
-                        b.setAttribute('aria-pressed', String(tape.id === roomAnim.activeCassetteId));
-                        b.onclick = () => playCassette(tape.id, { openDeck: true });
-                        listEl.appendChild(b);
-                    });
-                }
-                const openBtn = document.createElement('button');
-                openBtn.type = 'button';
-                openBtn.className = 'station-vhs-open-btn';
-                openBtn.textContent = tapes.length > 6
-                    ? `▣ NEEOSOMA // VTR-90 (${tapes.length}) ↗`
-                    : '▣ NEEOSOMA // VTR-90';
-                openBtn.onclick = () => openVhsArchive(roomAnim.activeCassetteId);
-                listEl.appendChild(openBtn);
+            // Никакой дублирующей кнопки деки: каждое нажатие на кассету сразу открывает её в NEEOSOMA // VTR-90!
+            if (document.createElement && tapes.length) {
+                tapes.forEach(tape => {
+                    const b = document.createElement('button');
+                    b.type = 'button';
+                    b.className = 'station-vhs-chip' + (tape.fav ? ' is-fav' : '');
+                    const star = tape.fav ? '★ ' : '';
+                    b.textContent = `${star}VHS #${formatCassetteNum(tape.num)} · ${tape.date}`;
+                    b.title = tape.text;
+                    b.setAttribute('aria-pressed', String(tape.id === roomAnim.activeCassetteId));
+                    b.onclick = () => playCassette(tape.id, { openDeck: true });
+                    listEl.appendChild(b);
+                });
             }
         }
     }
@@ -7476,12 +7996,13 @@ function togglePtsDew() {
     renderRoom();
 }
 
-// PTS: посмотреть все 7 уникальных мастей кота (ваш родной по ID сохраняется неизменным!)
+// PTS: посмотреть все 7 базовых мастей кота + редчайшего чёрного кота 0.1% с полумесяцем во лбу!
 function cyclePtsCatCoat() {
     if (!isPtsMode()) return;
     const own = catSpec();
+    const total = CAT_COATS.length + 1; // 7 базовых + 1 ультра-редкий (RARE_MOON_CAT_INDEX = 7, шанс 0.1%)
     const cur = Number.isInteger(roomAnim.inspectCatCoat) ? roomAnim.inspectCatCoat : own.coatIdx;
-    const next = (cur + 1) % CAT_COATS.length;
+    const next = (cur + 1) % total;
     roomAnim.inspectCatCoat = next === own.coatIdx ? null : next;
     // Если кот ещё не надет — включаем его в PTS для наглядного осмотра
     if (typeof grantOwnedItem === 'function' && typeof getActiveCosmetics === 'function' && !getActiveCosmetics().cat) {
@@ -7489,10 +8010,14 @@ function cyclePtsCatCoat() {
     }
     const shown = catSpec(undefined, roomAnim.inspectCatCoat);
     roomAnim.catPetStart = typeof performance !== 'undefined' ? performance.now() : Date.now();
-    roomAnim.customMode = `PTS // КОТ ${next + 1}/7 · ${shown.coat.name.toUpperCase()}`;
-    roomAnim.customEntry = next === own.coatIdx
-        ? `Ваш родной кот по ID: ${shown.summary}.`
-        : `Осмотр масти «${shown.coat.name}» (ваш родной по ID: ${own.coat.name}).`;
+    roomAnim.customMode = shown.rare
+        ? 'PTS // ✦ КОТ 0.1% · ПОЛУНОЧНАЯ ЛУНА'
+        : `PTS // КОТ ${next + 1}/7 · ${shown.coat.name.toUpperCase()}`;
+    roomAnim.customEntry = shown.rare
+        ? 'Ультра-редкая масть (шанс 0.1%): полностью чёрный кот с сияющим золотым полумесяцем во лбу!'
+        : (next === own.coatIdx
+            ? `Ваш родной кот по ID: ${shown.summary}.`
+            : `Осмотр масти «${shown.coat.name}» (ваш родной по ID: ${own.coat.name}).`);
     playObjectTone('cat');
     renderRoom();
 }
@@ -7511,7 +8036,7 @@ function cyclePtsDogBreed() {
     const shown = dogSpec(undefined, roomAnim.inspectDogBreed);
     roomAnim.dogPetStart = typeof performance !== 'undefined' ? performance.now() : Date.now();
     roomAnim.customMode = shown.rare
-        ? `PTS // ✦ УНИКАЛЬНЫЙ ПЁС 0.1% · МАЛЬТИЙСКАЯ БОЛОНКА`
+        ? 'PTS // ✦ ПЁС 0.1% · МАЛЬТЕЗЕ'
         : `PTS // ПЁС ${next + 1}/7 · ${shown.breed.name.toUpperCase()}`;
     roomAnim.customEntry = shown.rare
         ? `Ультра-редкая порода (шанс 0.1%): белая мальтийская болонка с фиолетовыми ушами и фиолетовым хвостом!`
@@ -7681,10 +8206,10 @@ function renderRoom() {
             if (!gh.bloomed.includes(doneK)) gh.bloomed.push(doneK);
             gh.placed = doneK;
             roomAnim.customMode = gh.bloomed.length >= PLANT_KINDS.length
-                ? 'ОРАНЖЕРЕЯ // 7/7 · ОТКРЫТО ЗВЁЗДНОЕ СЕМЯ!'
+                ? 'ОРАНЖЕРЕЯ // 8/8 · ТАЙНА ПРОБУДИЛАСЬ!'
                 : 'ОРАНЖЕРЕЯ // РАСЦВЕТ';
             roomAnim.customEntry = gh.bloomed.length >= PLANT_KINDS.length
-                ? `${PLANT_NOTES[doneK][5]} Вы вырастили все 7 видов — в Оранжерее пробудилось единственное секретное внеземное семя!`
+                ? `${PLANT_NOTES[doneK][5]} Вы вырастили все 8 земных видов — в самом центре Оранжереи из звёздного света проявилось 9-е тайное семя!`
                 : PLANT_NOTES[doneK][5];
             gh.activeSeed = null;
             saveGreenhouse(gh);
@@ -7906,21 +8431,26 @@ function renderRoom() {
         }
     }
 
-    // Оранжерея игрока: открывается СТРОГО только когда выращено первое растение (gh.bloomed.includes(ownSpec.kind))!
+    // Оранжерея игрока: открывается СТРОГО только когда выращено первое растение (в Fullscreen PTS-тестер тоже сразу видит вход!)
     const hasGh = !previewing && gh.bloomed.includes(ownSpec.kind);
+    const canFsGh = hasGh || isPtsMode();
     const fsGhBtn = document.getElementById('station-fs-gh');
     if (fsGhBtn && fsGhBtn.classList) {
-        fsGhBtn.classList.toggle('hidden', !hasGh);
+        fsGhBtn.classList.toggle('hidden', !canFsGh);
+        fsGhBtn.textContent = (hasGh && gh.bloomed.length >= PLANT_KINDS.length && !gh.alienSeed)
+            ? '✦ ОРАНЖЕРЕЯ'
+            : '✿ ОРАНЖЕРЕЯ';
     }
     const ghBox = document.getElementById('station-greenhouse');
     if (ghBox && ghBox.classList) {
         ghBox.classList.toggle('hidden', !hasGh);
         const ghCount = document.getElementById('station-gh-count');
         if (ghCount) {
-            const alienBadge = (gh.alienSeed && gh.alienSeed.bloomed)
-                ? ' · ✦ ПРИШЕЛЕЦ'
-                : (gh.bloomed.length >= PLANT_KINDS.length ? ' · ✦ ТАЙНА' : '');
-            ghCount.textContent = `${gh.bloomed.length}/7 ВИДОВ${alienBadge}`;
+            const allEarthDone = gh.bloomed.length >= PLANT_KINDS.length;
+            const alienBadge = allEarthDone
+                ? ((gh.alienSeed && gh.alienSeed.bloomed) ? ' · ✦ IX' : ' · ✦ ТАЙНА')
+                : '';
+            ghCount.textContent = `${gh.bloomed.length}/${PLANT_KINDS.length} ВИДОВ${alienBadge}`;
         }
         const ghSlots = document.getElementById('station-gh-slots');
         if (ghSlots && hasGh && document.createElement) {
@@ -8059,7 +8589,7 @@ function renderRoom() {
         ptsToggle.setAttribute('aria-expanded', String(!!roomAnim.ptsOpen));
         ptsToggle.textContent = roomAnim.ptsOpen
             ? 'PTS // СКРЫТЬ ИНСПЕКТОР (ЧИСТЫЙ ВИД ИГРОКА)'
-            : 'PTS // ИНСПЕКТОР (СТАДИИ 0–6 · 7 ВИДОВ · РАССВЕТ)';
+            : 'PTS // ИНСПЕКТОР (СТАДИИ 0–6 · 8 ВИДОВ · РАССВЕТ)';
     }
     if (ptsBody && ptsBody.classList) {
         ptsBody.classList.toggle('hidden', !roomAnim.ptsOpen);
@@ -8069,7 +8599,7 @@ function renderRoom() {
     const kindsWrap = document.getElementById('station-plant-kinds');
     if (toggleBtn) {
         toggleBtn.setAttribute('aria-expanded', String(roomAnim.galleryOpen));
-        toggleBtn.textContent = roomAnim.galleryOpen ? 'СКРЫТЬ ВИДЫ' : 'ВСЕ 7 ВИДОВ';
+        toggleBtn.textContent = roomAnim.galleryOpen ? 'СКРЫТЬ ВИДЫ' : `ВСЕ ${PLANT_KINDS.length} ВИДОВ`;
     }
     if (kindsWrap && kindsWrap.classList) {
         kindsWrap.classList.toggle('hidden', !roomAnim.galleryOpen);
@@ -8115,7 +8645,9 @@ function renderRoom() {
     if (ptsCatBtn) {
         const sc = catSpec(undefined, Number.isInteger(roomAnim.inspectCatCoat) ? roomAnim.inspectCatCoat : null);
         ptsCatBtn.setAttribute('aria-pressed', String(Number.isInteger(roomAnim.inspectCatCoat)));
-        ptsCatBtn.textContent = `КОТ: ${sc.coat.name.toUpperCase()}`;
+        ptsCatBtn.textContent = sc.rare
+            ? '✦ КОТ 0.1%: ЛУНА'
+            : `КОТ: ${sc.coat.name.toUpperCase()}`;
     }
     const ptsDogBtn = document.getElementById('pts-dog-btn');
     if (ptsDogBtn) {

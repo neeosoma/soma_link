@@ -1179,6 +1179,9 @@
             const tr = currentTrack();
             if (tr) showFullscreenCaption(`♪ В эфире: «${tr.title}» · ${tr.freq || '88.4'} FM`);
         }
+        if (typeof window !== 'undefined' && typeof window.restoreSomaScroll === 'function') {
+            window.restoreSomaScroll();
+        }
     }
 
     function visibleTracks() {

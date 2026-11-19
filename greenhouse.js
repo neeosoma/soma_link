@@ -3,7 +3,7 @@
    - Открывается СТРОГО только когда выращено первое растение (6/6).
    - Любой выращенный цветок (и секретного пришельца!) можно поставить в комнату.
    - Растение растёт СТРОГО только пока стоит в комнате (в куполе ждёт на паузе).
-   - После 7/7 земных видов в центре купола пробуждается ОДНО секретное
+   - После 8/8 земных видов в центре купола пробуждается ОДНО 9-е секретное
      внеземное семя из 7 (строго 1 уникальный вид навсегда на игрока!).
    - Живая 60fps-сцена со стеклянным куполом, светом, светлячками, авророй,
      поющими стеклянными аккордами, режимом «Созерцать» и панорамной открыткой!
@@ -42,16 +42,19 @@
         }
     ];
 
-    // 7 амфитеатральных пьедесталов земных видов + 1 центральный звёздный алтарь пришельца (ни один цветок не перекрывает другой!)
+    // 8 идеально симметричных амфитеатральных пьедесталов земных видов (4 слева + 4 справа от зеркальной чаши x=480)
+    // + 9-й тайный звёздный алтарь пришельца-пасхалки (ПОЛНОСТЬЮ СКРЫТ, пока не расцветут все 8/8 земных растений!)
+    const EARTH_COUNT = 8;
     const PEDESTALS = [
-        { slot: 0, x: 96,  y: 446, scale: 0.43, tier: 'front' },
-        { slot: 1, x: 196, y: 408, scale: 0.40, tier: 'mid'   },
-        { slot: 2, x: 296, y: 384, scale: 0.39, tier: 'back'  },
-        { slot: 3, x: 392, y: 370, scale: 0.38, tier: 'back'  },
-        { slot: 4, x: 602, y: 374, scale: 0.39, tier: 'back'  },
-        { slot: 5, x: 734, y: 406, scale: 0.40, tier: 'mid'   },
-        { slot: 6, x: 856, y: 446, scale: 0.43, tier: 'front' },
-        { slot: 'alien', x: 492, y: 492, scale: 0.55, tier: 'altar' }
+        { slot: 0, x: 84,  y: 454, scale: 0.41, tier: 'front' },
+        { slot: 1, x: 176, y: 416, scale: 0.39, tier: 'mid'   },
+        { slot: 2, x: 268, y: 390, scale: 0.38, tier: 'back'  },
+        { slot: 3, x: 362, y: 374, scale: 0.37, tier: 'back'  },
+        { slot: 4, x: 598, y: 374, scale: 0.37, tier: 'back'  },
+        { slot: 5, x: 692, y: 390, scale: 0.38, tier: 'back'  },
+        { slot: 6, x: 784, y: 416, scale: 0.39, tier: 'mid'   },
+        { slot: 7, x: 876, y: 454, scale: 0.41, tier: 'front' },
+        { slot: 'alien', x: 480, y: 492, scale: 0.53, tier: 'altar' }
     ];
 
     // Звёзды, светлячки и капли на куполе (детерминированные, без дёрганья)
@@ -140,11 +143,25 @@
                 ? state.ptsDemoAlien
                 : (myAlien ? myAlien.ownAlienKind : 0);
             const demoAlien = typeof alienSpec === 'function' ? alienSpec(undefined, demoAlienKind) : myAlien;
+            // Режим 'earth' на PTS позволяет увидеть чистую Оранжерею ДО 8/8 (без малейшего намёка на 9-ю пасхалку!)
+            if (state.ptsDemo === 'earth') {
+                return {
+                    own,
+                    myAlien: demoAlien,
+                    gh: {
+                        bloomed: [0, 1, 2, 3, 4, 5, 6],
+                        activeSeed: { kind: 7, grownWarmth: 164 },
+                        alienSeed: null,
+                        placed: 7
+                    },
+                    isDemo: true
+                };
+            }
             return {
                 own,
                 myAlien: demoAlien,
                 gh: {
-                    bloomed: [0, 1, 2, 3, 4, 5, 6],
+                    bloomed: [0, 1, 2, 3, 4, 5, 6, 7],
                     activeSeed: null,
                     alienSeed: { kind: demoAlienKind, grownWarmth: 760, bloomed: true },
                     placed: 'alien'
@@ -164,14 +181,14 @@
         };
     }
 
-    // Оффскрин-спрайт конкретного растения (высокая чёткость 360×380)
+    // Оффскрин-спрайт конкретного растения (440×460 с полями безопасности — 0% обрезки лепестков и свечения!)
     function renderSpecimenCanvas(key, spec, stage, nowBucket, potSkin) {
         const cacheKey = `${key}:${stage}:${nowBucket}:${potSkin || ''}`;
         let entry = state.spriteCache.get(key);
         if (!entry) {
             const c = document.createElement('canvas');
-            c.width = 360;
-            c.height = 380;
+            c.width = 440;
+            c.height = 460;
             entry = { canvas: c, sig: '' };
             state.spriteCache.set(key, entry);
         }
@@ -495,19 +512,43 @@
         g.fillStyle = mistG;
         g.fillRect(0, 372, SCENE_W, 76);
 
-        // 7. РИСУЕМ ВСЕ 7 ЗЕМНЫХ ПЬЕДЕСТАЛОВ + 8-Й СЕКРЕТНЫЙ ЗВЁЗДНЫЙ АЛТАРЬ ПРИШЕЛЬЦА (от дальних к ближним!)
-        const order = [3, 2, 4, 1, 5, 0, 6, 7];
+        // 7. РИСУЕМ 8 ЗЕМНЫХ ПЬЕДЕСТАЛОВ + (СТРОГО ПОСЛЕ 8/8!) 9-Й СЕКРЕТНЫЙ ЗВЁЗДНЫЙ АЛТАРЬ ПРИШЕЛЬЦА
+        const allEight = gh.bloomed.length >= EARTH_COUNT;
         const nowBucket = Math.floor((Number(now) || 0) / 240);
-        const allSeven = gh.bloomed.length >= 7;
+
+        // Тихая зеркальная водная чаша в центре зала (до 8/8 в ней отражается только небо — 0% спойлеров 9-й пасхалки!)
+        if (!allEight) {
+            g.save();
+            const px = 480, py = 486;
+            const pg = g.createRadialGradient(px, py - 3, 6, px, py, 86);
+            pg.addColorStop(0, mood.id === 'dawn' ? 'rgba(255, 198, 138, 0.22)' : 'rgba(167, 243, 208, 0.16)');
+            pg.addColorStop(0.55, 'rgba(30, 22, 54, 0.55)');
+            pg.addColorStop(1, 'rgba(12, 8, 22, 0.78)');
+            g.fillStyle = pg;
+            g.beginPath(); g.ellipse(px, py, 86, 20, 0, 0, Math.PI * 2); g.fill();
+            g.strokeStyle = 'rgba(212, 175, 118, 0.34)';
+            g.lineWidth = 1.4;
+            g.stroke();
+            // Живая световая рябь на воде
+            const ripR = 24 + (t * 9) % 52;
+            const ripA = (1 - (ripR - 24) / 52) * 0.28;
+            g.strokeStyle = `rgba(226, 232, 240, ${ripA.toFixed(3)})`;
+            g.lineWidth = 0.9;
+            g.beginPath(); g.ellipse(px, py, ripR, ripR * 0.22, 0, 0, Math.PI * 2); g.stroke();
+            g.restore();
+        }
+
+        const order = allEight ? [3, 4, 2, 5, 1, 6, 0, 7, 8] : [3, 4, 2, 5, 1, 6, 0, 7];
 
         order.forEach(idx => {
             const p = PEDESTALS[idx];
             const isSel = !o.hideSelection && state.selected === p.slot;
 
             if (p.slot === 'alien') {
+                if (!allEight) return; // Настоящая тайная пасхалка: до 8/8 центрального пьедестала не существует!
                 const inRoom = gh.placed === 'alien';
-                drawPedestalBase(g, p, { selected: isSel, inRoom, isAlien: true, unlocked: allSeven });
-                if (allSeven && gh.alienSeed && myAlien) {
+                drawPedestalBase(g, p, { selected: isSel, inRoom, isAlien: true, unlocked: true });
+                if (gh.alienSeed && myAlien) {
                     const aStage = gh.alienSeed.bloomed
                         ? 5
                         : (typeof plantStage === 'function' && typeof ALIEN_WARMTH_STEPS !== 'undefined'
@@ -527,14 +568,14 @@
                         g.restore();
                     }
                     const spCanvas = renderSpecimenCanvas(`alien_${myAlien.alienKind}`, myAlien, aStage, nowBucket, 'pot_kintsugi');
-                    const dw = 360 * p.scale, dh = 380 * p.scale;
-                    g.drawImage(spCanvas, p.x - dw * 0.5, p.y - dh + 18 * p.scale, dw, dh);
+                    const dw = 440 * p.scale, dh = 460 * p.scale;
+                    g.drawImage(spCanvas, p.x - dw * 0.5, p.y - 434 * p.scale, dw, dh);
                     if (!gh.alienSeed.bloomed && !inRoom) {
                         // На паузе в оранжерее — бережно укрыто хрустальным клошем
                         drawGlassCloche(g, p.x, p.y + 2, 86, 118, 'rgba(192, 132, 252, 0.22)', true);
                     }
-                } else if (allSeven) {
-                    // 7/7 достигнуто! Парящее звёздное семя ждёт пробуждения под хрустальным куполом!
+                } else {
+                    // 8/8 достигнуто! Парящее 9-е звёздное семя впервые проявилось в центре Оранжереи под хрустальным куполом!
                     const fy = p.y - 44 + Math.sin(t * 2.1) * 5;
                     drawGlassCloche(g, p.x, p.y + 2, 78, 98, 'rgba(192, 132, 252, 0.32)', true);
                     const sg = g.createRadialGradient(p.x, fy, 2, p.x, fy, 28);
@@ -545,16 +586,6 @@
                     g.beginPath(); g.arc(p.x, fy, 28, 0, Math.PI * 2); g.fill();
                     g.fillStyle = '#fffbeb';
                     g.beginPath(); g.arc(p.x, fy, 5.5, 0, Math.PI * 2); g.fill();
-                } else {
-                    // До 7/7 — тихая запечатанная печать созвездия (7 точек вокруг центра)
-                    for (let d = 0; d < 7; d++) {
-                        const a = (d / 7) * Math.PI * 2 - Math.PI * 0.5;
-                        const dx = p.x + Math.cos(a) * 34;
-                        const dy = p.y + Math.sin(a) * 8.5;
-                        const lit = d < gh.bloomed.length;
-                        g.fillStyle = lit ? '#fde68a' : 'rgba(148, 163, 184, 0.26)';
-                        g.beginPath(); g.arc(dx, dy, lit ? 2.6 : 1.8, 0, Math.PI * 2); g.fill();
-                    }
                 }
                 return;
             }
@@ -569,22 +600,22 @@
             if (isBloomed) {
                 const spec = typeof gallerySpecForKind === 'function' ? gallerySpecForKind(kind, own) : own;
                 const spCanvas = renderSpecimenCanvas(`earth_${kind}`, spec, 5, Math.floor(nowBucket * 0.5), potSkin);
-                const dw = 360 * p.scale, dh = 380 * p.scale;
-                g.drawImage(spCanvas, p.x - dw * 0.5, p.y - dh + 18 * p.scale, dw, dh);
+                const dw = 440 * p.scale, dh = 460 * p.scale;
+                g.drawImage(spCanvas, p.x - dw * 0.5, p.y - 434 * p.scale, dw, dh);
             } else if (isActiveSeed) {
                 const spec = typeof gallerySpecForKind === 'function' ? gallerySpecForKind(kind, own) : own;
                 const sStage = typeof plantStage === 'function' && typeof GREENHOUSE_WARMTH_STEPS !== 'undefined'
                     ? plantStage(gh.activeSeed.grownWarmth || 0, { sprouted: true, steps: GREENHOUSE_WARMTH_STEPS })
                     : -1;
                 const spCanvas = renderSpecimenCanvas(`seed_${kind}`, spec, sStage, Math.floor(nowBucket * 0.5), potSkin);
-                const dw = 360 * p.scale, dh = 380 * p.scale;
-                g.drawImage(spCanvas, p.x - dw * 0.5, p.y - dh + 18 * p.scale, dw, dh);
+                const dw = 440 * p.scale, dh = 460 * p.scale;
+                g.drawImage(spCanvas, p.x - dw * 0.5, p.y - 434 * p.scale, dw, dh);
                 if (!inRoom) {
                     drawGlassCloche(g, p.x, p.y + 2, 56, 78, 'rgba(251, 191, 36, 0.14)', false);
                 }
             } else {
-                // Ещё не открытый вид спит под запотевшим ботаническим клошем с одной тихой искоркой
-                drawGlassCloche(g, p.x, p.y + 2, 50, 68, 'rgba(148, 163, 184, 0.10)', false);
+                // Ещё не открытый земной вид спит под запотевшим ботаническим клошем с одной тихой искоркой
+                drawGlassCloche(g, p.x, p.y + 2, 48, 66, 'rgba(148, 163, 184, 0.10)', false);
                 const gl = 0.3 + 0.3 * Math.sin(t * 1.4 + kind);
                 g.fillStyle = `rgba(253, 230, 138, ${gl.toFixed(3)})`;
                 g.beginPath(); g.arc(p.x, p.y - 22 + Math.sin(t + kind) * 3, 2.0, 0, Math.PI * 2); g.fill();
@@ -657,7 +688,7 @@
                 </div>
                 <div class="gh-stage" id="gh-stage">
                     <canvas class="gh-canvas" id="gh-canvas" width="${SCENE_W}" height="${SCENE_H}"></canvas>
-                    <div class="gh-stage-hint">КОСНИТЕСЬ ЛЮБОГО ПЬЕДЕСТАЛА · ЛЮБОЙ ЦВЕТОК МОЖНО ПОСТАВИТЬ В КОМНАТУ</div>
+                    <div class="gh-stage-hint">КОСНИТЕСЬ ПЬЕДЕСТАЛА · ЦВЕТОК СТАВИТСЯ В КОМНАТУ</div>
                 </div>
                 <div class="gh-strip" id="gh-strip" role="tablist" aria-label="Растения оранжереи"></div>
                 <div class="gh-inspector" id="gh-inspector">
@@ -700,13 +731,16 @@
                 playGlassHarp(Math.floor((x / SCENE_W) * 8));
                 return;
             }
-            // Находим ближайший пьедестал
+            // Находим ближайший видимый пьедестал (9-й тайный алтарь кликабелен СТРОГО после 8/8!)
+            const curSnap = getSnapshot();
+            const hasSecret = curSnap.gh.bloomed.length >= EARTH_COUNT;
             let best = null, bestD = 9999;
             PEDESTALS.forEach((p, idx) => {
+                if (p.slot === 'alien' && !hasSecret) return;
                 const dx = x - p.x;
                 const dy = (y - (p.y - 42)) * 0.85;
                 const d = Math.hypot(dx, dy);
-                if (d < 86 && d < bestD) { bestD = d; best = { p, idx }; }
+                if (d < 82 && d < bestD) { bestD = d; best = { p, idx }; }
             });
             if (best) {
                 state.selected = best.p.slot;
@@ -746,7 +780,10 @@
         const ov = ensureOverlay();
         const snap = getSnapshot();
         const { own, myAlien, gh, isDemo } = snap;
-        const allSeven = gh.bloomed.length >= 7;
+        const allEight = gh.bloomed.length >= EARTH_COUNT;
+        if (state.selected === 'alien' && !allEight) {
+            state.selected = gh.bloomed.length ? gh.bloomed[0] : 0;
+        }
         const shell = ov.querySelector('#gh-shell');
         shell.classList.toggle('is-zen', state.zen);
 
@@ -756,15 +793,16 @@
         zenBtn.setAttribute('aria-pressed', String(state.zen));
         zenBtn.textContent = state.zen ? '◈ ПАНЕЛЬ' : '◌ СОЗЕРЦАТЬ';
 
-        const alienDone = !!(gh.alienSeed && gh.alienSeed.bloomed);
+        const alienDone = allEight && !!(gh.alienSeed && gh.alienSeed.bloomed);
         ov.querySelector('#gh-counter').textContent = isDemo
-            ? 'PTS · 7/7 + ✦ ПРИШЕЛЕЦ'
-            : (alienDone ? '7/7 + ✦ 1/1 ПРИШЕЛЕЦ' : `${gh.bloomed.length}/7 ВИДОВ`);
+            ? (allEight ? 'PTS · 8/8 + ✦ IX' : `PTS · ${gh.bloomed.length}/${EARTH_COUNT}`)
+            : (alienDone ? `${EARTH_COUNT}/${EARTH_COUNT} + ✦ IX` : `${gh.bloomed.length}/${EARTH_COUNT} ВИДОВ`);
 
-        // Полоска вкладок всех 7 видов + 8-й секретный слот
+        // Аккуратная сетка 4×2 всех 8 земных пьедесталов (0% обрезки на любом телефоне!).
+        // 9-е внеземное растение — настоящая тайная пасхалка: до 8/8 ни пьедестала, ни чипа, ни подсказки не существует!
         const strip = ov.querySelector('#gh-strip');
         strip.textContent = '';
-        for (let k = 0; k < 7; k++) {
+        for (let k = 0; k < EARTH_COUNT; k++) {
             const bloomed = gh.bloomed.includes(k);
             const isSeed = !bloomed && gh.activeSeed && gh.activeSeed.kind === k;
             const inRoom = bloomed ? (gh.placed === k) : (isSeed && gh.placed === 'seed');
@@ -779,9 +817,9 @@
             } else if (isSeed) {
                 const st = plantStage(gh.activeSeed.grownWarmth || 0, { sprouted: true, steps: GREENHOUSE_WARMTH_STEPS });
                 const known = st >= PROGRESSION_RULES.SPECIES_REVEAL_STAGE;
-                btn.textContent = `🌱 ${known ? formatKindTitle(k) : 'Семя'} (${st < 0 ? 0 : st + 1}/6)`;
+                btn.textContent = `🌱 ${known ? formatKindTitle(k) : 'Семя'} ${st < 0 ? 0 : st + 1}/6`;
             } else {
-                btn.textContent = `◌ Сосуд #${k + 1}`;
+                btn.textContent = `◌ #${k + 1}`;
             }
             btn.onclick = () => {
                 state.selected = k;
@@ -791,27 +829,27 @@
             strip.appendChild(btn);
         }
 
-        // 8-я вкладка: Секретное внеземное семя (1 из 7 навсегда после 7/7!)
-        const aChip = document.createElement('button');
-        aChip.type = 'button';
-        aChip.className = 'gh-chip is-alien' + (!allSeven ? ' is-locked' : '') + (gh.placed === 'alien' ? ' is-in-room' : '');
-        aChip.setAttribute('aria-selected', String(state.selected === 'alien'));
-        if (!allSeven) {
-            aChip.textContent = `✦ Тайна (${gh.bloomed.length}/7)`;
-        } else if (gh.alienSeed && gh.alienSeed.bloomed && myAlien) {
-            aChip.textContent = `✦ ${myAlien.kindName}`;
-        } else if (gh.alienSeed) {
-            const ast = plantStage(gh.alienSeed.grownWarmth || 0, { sprouted: true, steps: ALIEN_WARMTH_STEPS });
-            aChip.textContent = `✦ Звёздное семя (${ast < 0 ? 0 : ast + 1}/6)`;
-        } else {
-            aChip.textContent = '✦ Тайное семя!';
+        // 9-я тайная вкладка-пасхалка: появляется СТРОГО после расцвета всех 8/8 земных видов!
+        if (allEight) {
+            const aChip = document.createElement('button');
+            aChip.type = 'button';
+            aChip.className = 'gh-chip is-alien' + (gh.placed === 'alien' ? ' is-in-room' : '');
+            aChip.setAttribute('aria-selected', String(state.selected === 'alien'));
+            if (gh.alienSeed && gh.alienSeed.bloomed && myAlien) {
+                aChip.textContent = `✦ IX · ${myAlien.kindName}`;
+            } else if (gh.alienSeed) {
+                const ast = plantStage(gh.alienSeed.grownWarmth || 0, { sprouted: true, steps: ALIEN_WARMTH_STEPS });
+                aChip.textContent = `✦ IX · ЗВЁЗДНОЕ СЕМЯ (${ast < 0 ? 0 : ast + 1}/6)`;
+            } else {
+                aChip.textContent = '✦ IX · ТАЙНОЕ СЕМЯ ПРОБУДИЛОСЬ';
+            }
+            aChip.onclick = () => {
+                state.selected = 'alien';
+                playGlassHarp(8);
+                renderControls();
+            };
+            strip.appendChild(aChip);
         }
-        aChip.onclick = () => {
-            state.selected = 'alien';
-            playGlassHarp(7);
-            renderControls();
-        };
-        strip.appendChild(aChip);
 
         // Инспектор выбранного растения
         const nameEl = ov.querySelector('#gh-insp-name');
@@ -834,17 +872,12 @@
             actEl.appendChild(b);
         };
 
-        if (state.selected === 'alien') {
-            if (!allSeven) {
-                nameEl.textContent = '✦ ЗАПЕЧАТАННЫЙ ЗВЁЗДНЫЙ АЛТАРЬ';
-                statusEl.textContent = `НУЖНО 7/7 ВИДОВ (СЕЙЧАС ${gh.bloomed.length}/7)`;
+        if (state.selected === 'alien' && allEight) {
+            if (!gh.alienSeed) {
+                nameEl.textContent = '✦ IX · ТАЙНОЕ ВНЕЗЕМНОЕ СЕМЯ (1 ИЗ 7)';
+                statusEl.textContent = 'СЕКРЕТНАЯ ПАСХАЛКА 8/8';
                 statusEl.classList.add('is-alien');
-                noteEl.textContent = 'Когда под куполом расцветут все 7 земных растений, Оранжерея подарит вам одно-единственное секретное семя из 7 неземных видов. Ему потребуется долгий бережный уход в комнате — и второго такого не будет.';
-            } else if (!gh.alienSeed) {
-                nameEl.textContent = '✦ БОНУСНОЕ СЕКРЕТНОЕ СЕМЯ (1 ИЗ 7)';
-                statusEl.textContent = 'ОТКРЫТО ЗА КОЛЛЕКЦИЮ 7/7';
-                statusEl.classList.add('is-alien');
-                noteEl.textContent = 'Вы вырастили все 7 земных видов! В центре купола пробудилось ваше единственное внеземное семя из 7 возможных. Оно требует гораздо больше тепла (760) и растёт только стоя в комнате — из него расцветёт пришелец неземной красоты.';
+                noteEl.textContent = 'Вы вырастили все 8 земных видов — и в центре зеркальной чаши из звёздного света проявилось ваше единственное 9-е внеземное семя! Оно требует долгого ухода (760 тепла) и растёт только стоя в комнате.';
                 addBtn('✦ ПОСАДИТЬ В КОМНАТУ', 'gh-btn--alien', false, () => {
                     if (typeof plantSecretAlienSeed === 'function') plantSecretAlienSeed();
                     playGlassHarp(7);
@@ -951,8 +984,24 @@
             }
         }
 
-        // Если ещё нет активного семени и коллекция < 7/7 — удобная кнопка посадки прямо рядом
-        if (!isDemo && !gh.activeSeed && gh.bloomed.length < 7 && gh.bloomed.includes(state.selected)) {
+        // На PTS — удобный переключатель между чистым видом игрока ДО 8/8 (без спойлера!) и пасхалкой 8/8 + IX!
+        if (isDemo) {
+            addBtn(
+                state.ptsDemo === 'earth' ? 'PTS: ОТКРЫТЬ 8/8 + ПАСХАЛКУ IX' : 'PTS: ВИД ДО 8/8 (БЕЗ СПОЙЛЕРА)',
+                '',
+                false,
+                () => {
+                    state.ptsDemo = state.ptsDemo === 'earth' ? 'full' : 'earth';
+                    state.selected = state.ptsDemo === 'full' ? 'alien' : 7;
+                    playGlassHarp(6);
+                    renderControls();
+                    drawFrame(performance.now());
+                }
+            );
+        }
+
+        // Если ещё нет активного семени и коллекция < 8/8 — удобная кнопка посадки прямо рядом
+        if (!isDemo && !gh.activeSeed && gh.bloomed.length < EARTH_COUNT && gh.bloomed.includes(state.selected)) {
             addBtn('+ НОВОЕ СЕМЯ', '', false, () => {
                 const curW = (typeof player !== 'undefined' && player.warmth) || 0;
                 const planted = plantNewGreenhouseSeed(curW, own);
@@ -1021,6 +1070,7 @@
         if (state.raf) { cancelAnimationFrame(state.raf); state.raf = 0; }
         if (state.overlay) state.overlay.classList.remove('is-open');
         if (typeof renderRoom === 'function') renderRoom();
+        if (typeof window.restoreSomaScroll === 'function') window.restoreSomaScroll();
     }
 
     document.addEventListener('fullscreenchange', () => {

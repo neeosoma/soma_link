@@ -327,8 +327,8 @@
             const filters = [
                 'brightness(1.04) contrast(1.05)',
                 'brightness(1.07) contrast(1.05) saturate(1.04)',
-                'brightness(1.1) contrast(1.05) saturate(1.06)',
-                'brightness(1.13) contrast(1.05) saturate(1.08)'
+                'brightness(1.08) contrast(1.06) saturate(1.10)',
+                'brightness(0.99) contrast(1.08) saturate(1.10)'
             ];
             try { g.filter = filters[phase] || filters[0]; } catch (_) {}
             g.drawImage(bg, 0, 0, rw, rh);
@@ -350,13 +350,17 @@
         try { if (typeof drawRoomCosmetics === 'function') drawRoomCosmetics(g, now, phase); } catch (_) {}
         try { if (typeof drawWindowLightBeams === 'function') drawWindowLightBeams(g, now, phase, 0); } catch (_) {}
 
-        // Живое растение игрока на ковре
+        // Живое растение игрока на ковре (440×460 с полями безопасности — 0% обрезки лепестков и свечения!)
         try {
             if (typeof drawPlantSprite === 'function' && typeof plantSpec === 'function') {
-                const pcv = makeCanvas(360, 380);
+                const pcv = makeCanvas(440, 460);
                 const pg = pcv.getContext('2d');
-                const baseSpec = plantSpec();
-                const spec = Number.isInteger(plantKindOverride) ? { ...baseSpec, kind: plantKindOverride } : baseSpec;
+                const baseSpec = (typeof activeRoomPlantSpec === 'function' && !Number.isInteger(plantKindOverride))
+                    ? activeRoomPlantSpec()
+                    : plantSpec();
+                const spec = Number.isInteger(plantKindOverride)
+                    ? (typeof gallerySpecForKind === 'function' ? gallerySpecForKind(plantKindOverride, plantSpec()) : { ...baseSpec, kind: plantKindOverride })
+                    : baseSpec;
                 let stg = -1;
                 if (typeof currentPlantStage === 'function') {
                     stg = currentPlantStage();
@@ -371,10 +375,10 @@
                 drawPlantSprite(pg, spec, stg, {
                     phase,
                     now,
-                    potSkin: cosm.pot || '',
+                    potSkin: spec && spec.isAlien ? 'pot_kintsugi' : (cosm.pot || ''),
                     fireflies: flies
                 });
-                g.drawImage(pcv, 0.38 * rw, 0.552 * rh, 0.24 * rw, 0.408 * rh);
+                g.drawImage(pcv, 0.35333 * rw, 0.47488 * rh, 0.29333 * rw, 0.4939 * rh);
             }
         } catch (_) {}
 
@@ -481,17 +485,18 @@
         g.fillText(badgeText, 62, curY + 20);
         curY += 48;
 
-        // Личная эпитафия (или тихая строка протокола)
+        // Личная эпитафия до 66 символов (или тихая строка протокола)
         const quote = snap.epitaph
             ? `«${snap.epitaph}»`
             : '«Тишина слышит тех, мимо кого прошли остальные.»';
-        g.font = `400 15.5px ${SANS}`;
+        g.font = `400 ${quote.length > 52 ? 14.5 : 15.5}px ${SANS}`;
         g.fillStyle = 'rgba(244, 214, 218, 0.84)';
-        const qLines = wrapLines(g, quote, 420, 2);
+        const qLines = wrapLines(g, quote, 428, 3);
+        const qLh = qLines.length > 2 ? 20 : 23;
         qLines.forEach((ln, idx) => {
-            g.fillText(ln, 50, curY + 16 + idx * 23);
+            g.fillText(ln, 50, curY + 15 + idx * qLh);
         });
-        curY += qLines.length * 23 + 26;
+        curY += qLines.length * qLh + (qLines.length > 2 ? 18 : 26);
 
         // Сетка 2×2 живых метрик Свидетеля
         const stats = [
@@ -744,11 +749,13 @@
         g.fillStyle = tier.main;
         g.fillRect(54, y + 14, 3, 64);
 
-        g.font = `400 18px ${SANS}`;
+        g.font = `400 ${epText.length > 54 ? 16 : 18}px ${SANS}`;
         g.fillStyle = '#fff0ea';
-        const epLines = wrapLines(g, epText, 476, 2);
+        const epLines = wrapLines(g, epText, 480, 3);
+        const epLh = epLines.length > 2 ? 22 : 26;
+        const epStartY = epLines.length > 2 ? (y + 30) : (y + 40);
         epLines.forEach((ln, idx) => {
-            g.fillText(ln, 74, y + 40 + idx * 26);
+            g.fillText(ln, 74, epStartY + idx * epLh);
         });
         y += 116;
 
@@ -1246,9 +1253,9 @@
         g.drawImage(roomCv, 0, 0, roomCv.width, roomCv.height, 210, 22, 972, 608);
 
         if (isAlienCard && typeof drawPlantSprite === 'function') {
-            const spCv = makeCanvas(360, 380);
+            const spCv = makeCanvas(440, 460);
             drawPlantSprite(spCv.getContext('2d'), useSpec, 5, { phase: snap.phaseIdx, glow: 0.72, now: 2400, potSkin: 'pot_kintsugi' });
-            g.drawImage(spCv, 680, 148, 360, 380);
+            g.drawImage(spCv, 640, 86, 440, 460);
         }
 
         const fade = g.createLinearGradient(0, 0, 620, 0);
@@ -1331,7 +1338,8 @@
         const ghData = (o.snapshot && o.snapshot.gh)
             ? o.snapshot.gh
             : (typeof loadGreenhouse === 'function' ? loadGreenhouse() : { bloomed: [] });
-        const hasAlien = !!(ghData.alienSeed && ghData.alienSeed.bloomed);
+        const earthTotal = (typeof PLANT_KINDS !== 'undefined' && PLANT_KINDS.length) ? PLANT_KINDS.length : 8;
+        const hasAlien = ghData.bloomed.length >= earthTotal && !!(ghData.alienSeed && ghData.alienSeed.bloomed);
         const accent = hasAlien ? '#e9d5ff' : '#fde68a';
 
         g.strokeStyle = hasAlien ? 'rgba(216, 180, 254, 0.44)' : 'rgba(253, 230, 138, 0.36)';
@@ -1340,8 +1348,8 @@
         g.stroke();
         drawCornerBrackets(g, 30, 30, CARD_W - 60, CARD_H - 60, 20, accent, 0.85);
 
-        // Верхний шильдик купола
-        rr(g, 46, 42, hasAlien ? 420 : 340, 34, 17);
+        // Верхний шильдик купола (до 8/8 — 0% спойлера 9-го секретного цветка!)
+        rr(g, 46, 42, hasAlien ? 430 : 344, 34, 17);
         g.fillStyle = 'rgba(10, 5, 22, 0.76)';
         g.fill();
         g.strokeStyle = hasAlien ? 'rgba(216, 180, 254, 0.45)' : 'rgba(110, 231, 183, 0.4)';
@@ -1350,8 +1358,8 @@
         g.fillStyle = accent;
         g.fillText(
             hasAlien
-                ? `NEEOSOMA // ОРАНЖЕРЕЯ · 7/7 + ✦ ПРИШЕЛЕЦ`
-                : `NEEOSOMA // ОРАНЖЕРЕЯ · ${ghData.bloomed.length}/7 ВИДОВ`,
+                ? `NEEOSOMA // ОРАНЖЕРЕЯ · ${earthTotal}/${earthTotal} + ✦ IX`
+                : `NEEOSOMA // ОРАНЖЕРЕЯ · ${ghData.bloomed.length}/${earthTotal} ВИДОВ`,
             64,
             63
         );
@@ -1629,6 +1637,9 @@
         state.open = false;
         const ov = typeof document !== 'undefined' && document.getElementById('soma-share-overlay');
         if (ov) ov.classList.add('hidden');
+        if (typeof window !== 'undefined' && typeof window.restoreSomaScroll === 'function') {
+            window.restoreSomaScroll();
+        }
     }
 
     if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {

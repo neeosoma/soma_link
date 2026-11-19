@@ -21,7 +21,7 @@ function makeStorage(initial = {}) {
 function loadRoom(env = {}) {
     const localStorage = env.localStorage || makeStorage();
     return runInNewContext(
-        roomCode + ';({ stationPhases, PROGRESSION_RULES, GREENHOUSE_WARMTH_STEPS, ALIEN_WARMTH_STEPS, ALIEN_KINDS, alienSpec, isGreenhouseUnlocked, plantSecretAlienSeed, feedActiveRoomPlant, openGreenhouse, cyclePtsAlienKind, getWhisperBreachCount, recordWhisperSent, syncWhisperBreachCounter, RARE_MALTESE_INDEX, RARE_MALTESE_BREED, NEEO_SKY_POLY, stationState, indifferenceIndex, equipStationPhase, inspectPlantStage, togglePlantGallery, inspectPlantKind, togglePtsDrawer, togglePtsDew, cyclePtsCatCoat, cyclePtsDogBreed, togglePtsDemoCassette, loadWarmthLedger, claimDailyWarmth, fireflyState, recordWhisperEcho, daysSinceLastWarmth, whisperAdmission, loadGreenhouse, plantNewGreenhouseSeed, selectGreenhouseSlot, formatCassetteDate, formatCassetteNum, loadCassettes, saveWhisperCassette, toggleCassetteFav, ejectCassette, playCassette, openVhsArchive, pressPagerScan, pressPagerInfo, renderPager, PLANT_KINDS, PLANT_STAGES, PLANT_WARMTH_STEPS, PLANT_LEAF, PLANT_BLOOM, PLANT_POTS, CAT_COATS, catSpec, DOG_BREEDS, dogSpec, drawCompanionCat, drawCompanionDog, CITY_WINDOWS, hashStr, rng, plantSpec, plantStage, drawPlantSprite, drawCrtMonitor, drawRoomCosmetics, drawWindowWorld, drawWindowLightBeams, drawStationFx, drawCassetteDeck, paintPlantFrame, isRealTelegramMiniApp, getNativeFullscreenElement, requestNativeRoomFullscreen, getFullscreenViewport, computeFullscreenSceneBox, toggleRoomFullscreen, enterRoomFullscreen, exitRoomFullscreen, flipRoomFullscreen, renderRoom, touchRoomObject, activateRoomObject, resetStationPreview, roomAnim });',
+        roomCode + ';({ stationPhases, PROGRESSION_RULES, GREENHOUSE_WARMTH_STEPS, ALIEN_WARMTH_STEPS, ALIEN_KINDS, alienSpec, gallerySpecForKind, isGreenhouseUnlocked, plantSecretAlienSeed, feedActiveRoomPlant, openGreenhouse, openGreenhouseFromFullscreen, cyclePtsAlienKind, getWhisperBreachCount, recordWhisperSent, syncWhisperBreachCounter, RARE_MALTESE_INDEX, RARE_MALTESE_BREED, RARE_MOON_CAT_INDEX, RARE_MOON_CAT_COAT, NEEO_SKY_POLY, HEARTH_LANTERNS, COSMIC_DAWN_STARS, stationState, indifferenceIndex, equipStationPhase, inspectPlantStage, togglePlantGallery, inspectPlantKind, togglePtsDrawer, togglePtsDew, cyclePtsCatCoat, cyclePtsDogBreed, togglePtsDemoCassette, loadWarmthLedger, claimDailyWarmth, fireflyState, recordWhisperEcho, daysSinceLastWarmth, whisperAdmission, loadGreenhouse, plantNewGreenhouseSeed, selectGreenhouseSlot, formatCassetteDate, formatCassetteNum, loadCassettes, saveWhisperCassette, toggleCassetteFav, ejectCassette, playCassette, openVhsArchive, pressPagerScan, pressPagerInfo, renderPager, PLANT_KINDS, PLANT_NOTES, PLANT_STAGES, PLANT_WARMTH_STEPS, PLANT_LEAF, PLANT_BLOOM, PLANT_POTS, CAT_COATS, catSpec, DOG_BREEDS, dogSpec, drawCompanionCat, drawCompanionDog, CITY_WINDOWS, hashStr, rng, plantSpec, plantStage, drawPlantSprite, drawCrtMonitor, drawRoomCosmetics, drawWindowWorld, drawWindowLightBeams, drawStationFx, drawCassetteDeck, paintPlantFrame, isRealTelegramMiniApp, getNativeFullscreenElement, requestNativeRoomFullscreen, getFullscreenViewport, computeFullscreenSceneBox, toggleRoomFullscreen, enterRoomFullscreen, exitRoomFullscreen, flipRoomFullscreen, renderRoom, touchRoomObject, activateRoomObject, resetStationPreview, roomAnim });',
         { player: { uid: 'u_0123456789abcdef', name: 'AGENT_1001', warmth: 0 }, roomPreview: false, localStorage, ...env }
     );
 }
@@ -153,7 +153,7 @@ test('unique plant binding matches legacy anonymous ID formula identically', () 
         };
     }
 
-    assert.deepEqual(Array.from(PLANT_KINDS), LEGACY_KINDS);
+    assert.deepEqual(Array.from(PLANT_KINDS), [...LEGACY_KINDS, 'ОРХИДЕЯ']);
     assert.equal(PLANT_LEAF.length, 6);
     assert.equal(PLANT_BLOOM.length, 6);
     assert.equal(PLANT_POTS.length, 5);
@@ -182,13 +182,13 @@ test('unique plant binding matches legacy anonymous ID formula identically', () 
     assert.equal(emptyRoom.plantSpec().seed, legacySpec('', '').seed);
 });
 
-test('empty pot (-1) and all 7 species across all 6 stages grow visibly and cactus never sways side to side', () => {
-    const { plantSpec, drawPlantSprite } = loadRoom();
+test('empty pot (-1) and all 8 species (including Orchid) across all 6 stages grow visibly on 440x460 and cactus never sways', () => {
+    const { plantSpec, gallerySpecForKind, drawPlantSprite } = loadRoom();
 
     function tracePlant(spec, stage, sway) {
         let m = [1, 0, 0, 1, 0, 0];
         const stack = [];
-        let minY = 380, ops = 0;
+        let minY = 460, ops = 0;
         const log = [];
         const record = (x, y) => {
             const wx = m[0] * x + m[2] * y + m[4];
@@ -199,7 +199,7 @@ test('empty pot (-1) and all 7 species across all 6 stages grow visibly and cact
         };
         const dummyGrad = { addColorStop() {} };
         const ctx = {
-            canvas: { width: 360, height: 380 },
+            canvas: { width: 440, height: 460 },
             fillStyle: '#000', strokeStyle: '#000', lineWidth: 1, lineCap: 'butt', lineJoin: 'miter', imageSmoothingEnabled: true,
             clearRect() {},
             save() { stack.push(m.slice()); },
@@ -222,14 +222,19 @@ test('empty pot (-1) and all 7 species across all 6 stages grow visibly and cact
             ellipse(x, y, rx, ry) { record(x, y - ry); }
         };
         drawPlantSprite(ctx, spec, stage, { sway, glow: 0, phase: 2 });
-        return { height: 348 - minY, ops, sig: log.join('|') };
+        return { height: 420 - minY, ops, sig: log.join('|') };
     }
 
-    for (let kind = 0; kind < 7; kind++) {
+    const baseOwn = plantSpec('u_growth_0');
+    for (let kind = 0; kind < 8; kind++) {
         let spec = null;
-        for (let n = 0; n < 500; n++) {
-            const c = plantSpec('u_growth_' + n);
-            if (c.kind === kind) { spec = c; break; }
+        if (kind === 7) {
+            spec = gallerySpecForKind(7, baseOwn);
+        } else {
+            for (let n = 0; n < 500; n++) {
+                const c = plantSpec('u_growth_' + n);
+                if (c.kind === kind) { spec = c; break; }
+            }
         }
         assert.ok(spec);
         const emptyPot = tracePlant(spec, -1, 0);
@@ -271,10 +276,10 @@ test('release UI hides spoilers, pager replaces NEEO_PHONE, window picks unlocke
     const stageBtns = [...indexHtml.matchAll(/data-stage-btn="(-?\d)"/g)].map(m => Number(m[1]));
     assert.deepEqual(stageBtns, [-1, 0, 1, 2, 3, 4, 5], 'PTS inspector must expose empty pot (-1) + all 6 stages (0..5)');
     const kindBtns = [...indexHtml.matchAll(/data-kind-btn="(\d)"/g)].map(m => Number(m[1]));
-    assert.deepEqual(kindBtns, [0, 1, 2, 3, 4, 5, 6], 'PTS inspector must allow inspecting all 7 plant species');
+    assert.deepEqual(kindBtns, [0, 1, 2, 3, 4, 5, 6, 7], 'PTS inspector must allow inspecting all 8 Earth plant species including Orchid');
     assert.ok(indexHtml.includes('id="station-lamp"') && indexHtml.includes('assets/lamp.png'), 'lamp must be a dedicated cutout layer');
     assert.ok(!roomCode.includes('getLampSprite'), 'must not slice background image at runtime');
-    assert.ok(roomCss.includes('.station[data-phase="3"] .station-sky') && /data-phase="3"\]\s*\.station-sky\s*\{\s*opacity:\s*0/.test(roomCss), 'constellation must fade out in dawn light');
+    assert.ok(roomCss.includes('.station[data-phase="3"] .station-sky'), 'phase 3 tunes cosmic warm-violet sky constellation layer');
 
     // Trainer expanded to 60 nuanced scenarios in scenarios.js, and bottom #view-profile safety button removed
     const p = require('path'), vm = require('vm'), fs = require('fs');
@@ -727,17 +732,17 @@ test('v8: body-portal FLIP fullscreen + 180 flip + rotated pointer mapping, Dawn
         assert.doesNotThrow(() => r.drawPlantSprite(g, r.plantSpec('u_pot'), 5, { phase: 3, now: 2500, potSkin, fireflies: 5 }));
     }
 
-    // 3. Pain Feed CTA visibility hooks present and cache-busted to v12
+    // 3. Pain Feed CTA visibility hooks present and cache-busted to v13
     assert.ok(indexHtml.includes('soma-post-cta') && indexHtml.includes('soma-post-beacon') && indexHtml.includes('soma-post-arrow'));
     assert.ok(
         indexHtml.includes('id="station-fs-flip"')
-        && indexHtml.includes('room.js?v=12')
-        && indexHtml.includes('cosmetics.css?v=12')
-        && indexHtml.includes('receiver.js?v=12')
-        && indexHtml.includes('vhs.js?v=12')
-        && indexHtml.includes('greenhouse.js?v=12')
-        && indexHtml.includes('blimp.js?v=12')
-        && indexHtml.includes('share.js?v=12')
+        && indexHtml.includes('room.js?v=13')
+        && indexHtml.includes('cosmetics.css?v=13')
+        && indexHtml.includes('receiver.js?v=13')
+        && indexHtml.includes('vhs.js?v=13')
+        && indexHtml.includes('greenhouse.js?v=13')
+        && indexHtml.includes('blimp.js?v=13')
+        && indexHtml.includes('share.js?v=13')
     );
 
     // 4. Flagship cosmetics + collectible 7" vinyl pressings: equalized peer pricing + 1:1 Edge Function parity
@@ -895,8 +900,8 @@ test('v9: true native browser fullscreen (even with Telegram SDK loaded), fixed-
         seenDogBreeds.add(ds.breedIdx);
         if (cs.coatIdx !== ds.breedIdx) diffPetPairs++;
     }
-    assert.equal(seenCatCoats.size, 7, 'all 7 cat coats reachable');
-    assert.equal(seenDogBreeds.size, 7, 'all 7 dog breeds reachable');
+    assert.equal([...seenCatCoats].filter(c => c < 7).length, 7, 'all 7 regular cat coats reachable (plus 0.1% rare Moon Cat #7)');
+    assert.equal([...seenDogBreeds].filter(b => b < 7).length, 7, 'all 7 regular dog breeds reachable (plus 0.1% rare Maltese #7)');
     assert.ok(diffPetPairs > 250, 'dog breed hash is statistically independent from cat coat hash');
 
     // 4. Simultaneous cat + dog ownership, equipping, petting, duet journal line, PTS dog cycler, and SQL trigger protection!
@@ -1274,8 +1279,9 @@ test('v12: top-left fullscreen vinyl bar, unified NEEOSOMA/NEEO~CITY/SOMA~LINK b
     gPlayer.warmth = 360;
     assert.equal(gRoom.isGreenhouseUnlocked(), true, 'Greenhouse unlocks the moment the first plant finishes blooming (6/6)');
 
-    // Grow all remaining 6 Earth species strictly via room-only feedActiveRoomPlant
-    for (let step = 0; step < 6; step++) {
+    // Grow all remaining 7 Earth species (including Orchid #7) strictly via room-only feedActiveRoomPlant
+    for (let step = 0; step < 7; step++) {
+        assert.equal(gRoom.plantSecretAlienSeed(), null, `secret 9th alien stays 100% locked at ${step + 1}/8 Earth plants`);
         const planted = gRoom.plantNewGreenhouseSeed(gPlayer.warmth, gRoom.plantSpec('botanist_42'));
         assert.ok(planted, `can plant unseen Earth seed #${step + 1}`);
         const k = planted.kind;
@@ -1297,12 +1303,12 @@ test('v12: top-left fullscreen vinyl bar, unified NEEOSOMA/NEEO~CITY/SOMA~LINK b
         assert.equal(gRoom.loadGreenhouse().placed, k, 'freshly bloomed flower stays displayed in the room');
     }
 
-    assert.equal(gRoom.loadGreenhouse().bloomed.length, 7, 'all 7/7 Earth species collected in Conservatory');
+    assert.equal(gRoom.loadGreenhouse().bloomed.length, 8, 'all 8/8 Earth species (including Orchid) collected in Conservatory');
 
-    // Secret bonus alien plant: longer scale (760 warmth), strictly room-only growth, strictly 1 permanent species out of 7!
+    // Secret 9th bonus alien plant: longer scale (760 warmth), strictly room-only growth, strictly 1 permanent species out of 7!
     assert.equal(gRoom.ALIEN_KINDS.length, 7, '7 distinct alien species exist in the universe');
     assert.equal(gRoom.ALIEN_WARMTH_STEPS[5], 760, 'secret alien plant takes longer than normal seeds (760 vs 300/360)');
-    assert.ok(gRoom.plantSecretAlienSeed(), 'can plant secret alien seed at 7/7');
+    assert.ok(gRoom.plantSecretAlienSeed(), 'can plant secret 9th alien seed ONLY after 8/8 Earth species bloom');
     const assignedAlien = gRoom.loadGreenhouse().alienSeed.kind;
     assert.equal(assignedAlien, gRoom.alienSpec('botanist_42').ownAlienKind, 'matches player deterministic 1-of-7 alien species');
 
@@ -1323,8 +1329,8 @@ test('v12: top-left fullscreen vinyl bar, unified NEEOSOMA/NEEO~CITY/SOMA~LINK b
     assert.deepEqual(JSON.parse(JSON.stringify(gRoom.plantSecretAlienSeed())), { kind: assignedAlien, grownWarmth: 760, bloomed: true },
         'player can NEVER grow a 2nd alien species — strictly 1 of 7 forever');
 
-    // Any of the 7 Earth flowers + the bloomed secret alien can be placed in the room at will!
-    for (const target of [0, 1, 2, 3, 4, 5, 6, 'alien']) {
+    // Any of the 8 Earth flowers (incl. Orchid #7) + the bloomed 9th secret alien can be placed in the room at will!
+    for (const target of [0, 1, 2, 3, 4, 5, 6, 7, 'alien']) {
         assert.equal(gRoom.selectGreenhouseSlot(target), true, `can showcase "${target}" on the live room table`);
         assert.equal(gRoom.loadGreenhouse().placed, target);
     }
@@ -1433,4 +1439,96 @@ test('v12: top-left fullscreen vinyl bar, unified NEEOSOMA/NEEO~CITY/SOMA~LINK b
 
     // Fullscreen layering: Greenhouse (68) < Blimp modal (70) < Share Studio (82), all mount inside #station-scene
     assert.ok(ghCss.includes('z-index: 68') && blimpCss.includes('z-index: 70'), 'fullscreen z-index hierarchy stays clean and conflict-free');
+});
+
+test('v13: scroll freedom, 66-char epitaph, 13..666 Call, 8 Earth + hidden 9th alien, 0.1% Moon Cat, Hearth lanterns & cosmic violet Dawn, FS Greenhouse pill, enlarged blimp, and clean 2x2 VHS bar', () => {
+    const vm = require('node:vm');
+    const fs = require('node:fs');
+    const path = require('path');
+    const cosmCode = fs.readFileSync(path.join(__dirname, '..', 'cosmetics.js'), 'utf8');
+    const ghCode = fs.readFileSync(path.join(__dirname, '..', 'greenhouse.js'), 'utf8');
+    const ghCss = fs.readFileSync(path.join(__dirname, '..', 'greenhouse.css'), 'utf8');
+    const blimpCode = fs.readFileSync(path.join(__dirname, '..', 'blimp.js'), 'utf8');
+    const blimpCss = fs.readFileSync(path.join(__dirname, '..', 'blimp.css'), 'utf8');
+    const sqlCode = fs.readFileSync(path.join(__dirname, '..', 'billing', 'setup_stars.sql'), 'utf8');
+
+    // 1. Mobile scroll freedom & restoreSomaScroll safety hooks
+    assert.ok(indexHtml.includes('window.restoreSomaScroll = restoreSomaScroll'), 'restoreSomaScroll helper registered globally');
+    assert.ok(indexHtml.includes('overflow-y: auto') && indexHtml.includes('-webkit-overflow-scrolling: touch') && indexHtml.includes('overscroll-behavior-y: contain'), 'native smooth iOS/WKWebView touch scrolling enabled on #app-scroll');
+    assert.ok(ghCss.includes('visibility: hidden') && blimpCss.includes('visibility: hidden'), 'closed Greenhouse and Blimp overlays use visibility:hidden + pointer-events:none');
+
+    // 2. Epitaph max length = 66 chars (JS + SQL trigger) & Pain Feed Call = 13..666 chars
+    const ep66 = 'Тишина NEEO~CITY хранит каждый шёпот, который не услышал весь мир!'; // 66 chars
+    assert.equal(ep66.length, 66);
+    const fakeInput = { value: ep66 + 'EXTRA_TRUNCATED' };
+    const cEnv = {
+        window: {},
+        document: { getElementById: id => (id === 'shop-epitaph-input' ? fakeInput : null) },
+        localStorage: makeStorage(),
+        player: { uid: 'ep_66', warmth: 50, xp: 900 },
+        esc: s => String(s), notify() {}, SFX: { tap(){} }, renderLeaderboard() {}
+    };
+    vm.runInNewContext(cosmCode + ';globalThis.C = { EPITAPH_MAX_LEN, sanitizeEpitaph, grantOwnedItem, saveMyEpitaph, getActiveCosmetics, SOMA_ITEM_MAP };', cEnv);
+    assert.equal(cEnv.C.EPITAPH_MAX_LEN, 66, 'epitaph limit is exactly 66 chars');
+    const san = cEnv.C.sanitizeEpitaph(ep66 + 'EXTRA_TRUNCATED');
+    assert.equal(san.ok, true);
+    assert.equal(san.value, ep66, 'sanitizeEpitaph preserves full 66 chars and trims beyond 66');
+    cEnv.C.grantOwnedItem('perk_epitaph');
+    cEnv.C.saveMyEpitaph();
+    assert.equal(cEnv.C.getActiveCosmetics().epitaph, ep66, 'saveMyEpitaph persists full 66-char epitaph cleanly');
+    assert.ok(sqlCode.includes("length(coalesce(new.cosmetics ->> 'epitaph', '')) > 66") && sqlCode.includes("left(new.cosmetics ->> 'epitaph', 66)"), 'Supabase SQL trigger updated to 66 chars');
+    assert.ok(cEnv.C.SOMA_ITEM_MAP.room_cat.desc.includes('0.1%') && cEnv.C.SOMA_ITEM_MAP.room_cat.desc.includes('полумесяцем'), 'cat shop card notes 0.1% black crescent-moon cat');
+
+    assert.ok(
+        indexHtml.includes('minlength="13" maxlength="666"')
+        && indexHtml.includes('0 / 666 (мин. 13)')
+        && indexHtml.includes('const POST_MIN_LEN = 13;')
+        && indexHtml.includes('.slice(0, 666)'),
+        'Pain Feed («Зов») enforces exact 13..666 character bounds with live 0 / 666 counter'
+    );
+
+    // 3. 0.1% ultra-rare black crescent-moon cat («Полуночная Луна»)
+    const r = loadRoom();
+    assert.equal(r.RARE_MOON_CAT_INDEX, 7);
+    assert.equal(r.RARE_MOON_CAT_COAT.name, 'Полуночная Луна');
+    let rareCount = 0;
+    let rareUid = null;
+    for (let i = 0; i < 50000; i++) {
+        const uid = 'moon_cat_check_' + i;
+        const cs = r.catSpec(uid);
+        if (cs.rare) {
+            rareCount++;
+            if (!rareUid) rareUid = uid;
+            assert.equal(cs.coatIdx, 7);
+            assert.equal(cs.rarity, '0.1%');
+            assert.equal(cs.socks, false, 'Moon Cat is 100% obsidian black down to every paw');
+            assert.equal(cs.coat.pattern, 'luna');
+            assert.equal(cs.coat.id, 'midnight_luna');
+        }
+    }
+    assert.ok(rareCount >= 30 && rareCount <= 75, `Moon Cat rarity stays tightly around 0.1% (got ${rareCount}/50000 = ${(rareCount / 500).toFixed(3)}%)`);
+    assert.equal(r.catSpec(rareUid).rare, true, 'Moon Cat is 100% deterministic for lucky UID');
+    const overrideMoon = r.catSpec('ordinary_user', 7);
+    assert.equal(overrideMoon.rare, true, 'PTS can inspect rare Moon Cat via index 7 without changing player UID');
+
+    // 4. Unclipped 440x460 plant canvas + Orchid #7 + Hearth lanterns/crescent + Cosmic Violet Dawn + untouched NEEO_SKY_POLY
+    assert.ok(indexHtml.includes('id="station-plant" class="station-plant" width="440" height="460"'), 'room plant canvas upgraded to unclipped 440x460');
+    assert.equal(r.PLANT_NOTES.length, 8, 'all 8 Earth species including Orchid have full 6-stage botanical notes');
+    assert.equal(r.HEARTH_LANTERNS.length, 28, 'Hearth phase releases 28 glowing golden sky lanterns');
+    assert.ok(r.COSMIC_DAWN_STARS.length >= 30, 'Cosmic Violet Dawn paints starfield above untouched skyline');
+    assert.ok(r.NEEO_SKY_POLY.length >= 85, 'pixel-exact NEEO_SKY_POLY preserves every building roof and antenna spire');
+    assert.ok(r.stationPhases[2].entry.includes('серпом луны') && r.stationPhases[2].entry.includes('фонарики'), 'Phase 2 describes crescent moon and sky lanterns');
+    assert.ok(r.stationPhases[3].entry.includes('фиалково-космический'), 'Phase 3 describes warm-violet cosmic Dawn');
+
+    // 5. Fullscreen Greenhouse pill, zero pre-8/8 spoiler of 9th Easter egg, clean 2x2 VHS bar, and enlarged readable Blimp
+    assert.ok(indexHtml.includes('id="station-fs-gh"') && indexHtml.includes('openGreenhouseFromFullscreen(event)') && indexHtml.includes('✿ ОРАНЖЕРЕЯ'),
+        'Fullscreen HUD provides direct ✿ ОРАНЖЕРЕЯ button');
+    assert.equal(typeof r.openGreenhouseFromFullscreen, 'function');
+    assert.ok(indexHtml.includes('station-ctx-head--deck') && indexHtml.includes('id="station-deck-active"') && indexHtml.includes('id="station-deck-count"'),
+        'VHS deck bar uses structured 2x2 non-overlapping header');
+    assert.ok(!roomCode.includes('▣ NEEOSOMA // VTR-90'), 'redundant extra VTR-90 button removed from VHS tape list');
+    assert.ok(ghCode.includes('const EARTH_COUNT = 8') && !ghCode.includes('✦ Тайна (') && ghCss.includes('grid-template-columns: repeat(4, minmax(0, 1fr))'),
+        'Conservatory shows 4x2 symmetric 8 Earth slots with ZERO pre-8/8 spoiler of the 9th secret alien');
+    assert.ok(blimpCode.includes('const bw = 86, bh = 21.4') && blimpCode.includes('flightDurationSec: 26'),
+        'Blimp enlarged with double-framed 86x21.4 readable signboard and graceful 26s crossing');
 });

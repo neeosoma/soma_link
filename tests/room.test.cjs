@@ -21,7 +21,7 @@ function makeStorage(initial = {}) {
 function loadRoom(env = {}) {
     const localStorage = env.localStorage || makeStorage();
     return runInNewContext(
-        roomCode + ';({ stationPhases, PROGRESSION_RULES, GREENHOUSE_WARMTH_STEPS, stationState, indifferenceIndex, equipStationPhase, inspectPlantStage, togglePlantGallery, inspectPlantKind, togglePtsDrawer, togglePtsDew, togglePtsDemoCassette, loadWarmthLedger, claimDailyWarmth, recordWhisperEcho, daysSinceLastWarmth, whisperAdmission, loadGreenhouse, plantNewGreenhouseSeed, selectGreenhouseSlot, loadCassettes, saveWhisperCassette, playCassette, pressPagerScan, pressPagerInfo, renderPager, PLANT_KINDS, PLANT_STAGES, PLANT_WARMTH_STEPS, PLANT_LEAF, PLANT_BLOOM, PLANT_POTS, CITY_WINDOWS, hashStr, rng, plantSpec, plantStage, drawPlantSprite, drawStationFx, drawCassetteDeck, paintPlantFrame, renderRoom, touchRoomObject, activateRoomObject, resetStationPreview, roomAnim });',
+        roomCode + ';({ stationPhases, PROGRESSION_RULES, GREENHOUSE_WARMTH_STEPS, stationState, indifferenceIndex, equipStationPhase, inspectPlantStage, togglePlantGallery, inspectPlantKind, togglePtsDrawer, togglePtsDew, cyclePtsCatCoat, togglePtsDemoCassette, loadWarmthLedger, claimDailyWarmth, fireflyState, recordWhisperEcho, daysSinceLastWarmth, whisperAdmission, loadGreenhouse, plantNewGreenhouseSeed, selectGreenhouseSlot, loadCassettes, saveWhisperCassette, playCassette, pressPagerScan, pressPagerInfo, renderPager, PLANT_KINDS, PLANT_STAGES, PLANT_WARMTH_STEPS, PLANT_LEAF, PLANT_BLOOM, PLANT_POTS, CAT_COATS, catSpec, CITY_WINDOWS, hashStr, rng, plantSpec, plantStage, drawPlantSprite, drawCrtMonitor, drawRoomCosmetics, drawWindowWorld, drawStationFx, drawCassetteDeck, paintPlantFrame, toggleRoomFullscreen, exitRoomFullscreen, renderRoom, touchRoomObject, activateRoomObject, resetStationPreview, roomAnim });',
         { player: { uid: 'u_0123456789abcdef', name: 'AGENT_1001', warmth: 0 }, roomPreview: false, localStorage, ...env }
     );
 }
@@ -263,7 +263,10 @@ test('release UI hides spoilers, pager replaces NEEO_PHONE, window picks unlocke
 
     const sceneMatch = indexHtml.match(/<div id="station-scene" class="station-scene">([\s\S]*?)<\/div>\s*<div class="station-log">/);
     assert.ok(sceneMatch);
-    assert.equal(sceneMatch[1].replace(/<[^>]+>/g, '').trim(), '', 'scene must contain zero overlaid text');
+    // Strip the fullscreen-only HUD (display:none outside .is-fullscreen) to verify default room scene has zero overlaid text
+    const defaultScene = sceneMatch[1].replace(/<div class="station-fs-hud"[\s\S]*$/, '');
+    assert.equal(defaultScene.replace(/<[^>]+>/g, '').trim(), '', 'default scene must contain zero overlaid text');
+    assert.ok(!indexHtml.includes('station-crt-beam') && !roomCss.includes('station-crt-beam'), 'cheap moving CRT scan bar must be completely removed');
 
     const stageBtns = [...indexHtml.matchAll(/data-stage-btn="(-?\d)"/g)].map(m => Number(m[1]));
     assert.deepEqual(stageBtns, [-1, 0, 1, 2, 3, 4, 5], 'PTS inspector must expose empty pot (-1) + all 6 stages (0..5)');
@@ -476,4 +479,85 @@ test('mobile hotspots never overlap and main targets stay >=44px down to 320px w
             }
         }
     }
+});
+
+test('v7: unique 7-coat cat, Fireflies of Silence retention, live CRT + all 8 room attributes, landscape fullscreen, and 1/day Pain Feed', () => {
+    const p = require('path'), fs = require('fs');
+    const sqlCode = fs.readFileSync(p.join(__dirname, '..', 'billing', 'setup_stars.sql'), 'utf8');
+    const cosmCode = fs.readFileSync(p.join(__dirname, '..', 'cosmetics.js'), 'utf8');
+    assert.ok(sqlCode.includes('room_garland') && sqlCode.includes('room_candles'), 'SQL trigger must guard new garland and candles attributes');
+    assert.ok(cosmCode.includes('room_garland') && cosmCode.includes('room_candles'), 'catalog must include garland and candles');
+
+    // 1. Unique deterministic per-player cat (7 coats, independent of plant species)
+    const ls = makeStorage();
+    let vw = 390, vh = 844, trainerOpened = 0;
+    const clsSet = new Set();
+    const roomNode = {
+        dataset: {},
+        classList: {
+            add: c => clsSet.add(c),
+            remove: (...cs) => cs.forEach(c => clsSet.delete(c)),
+            toggle: (c, f) => (f === undefined ? (clsSet.has(c) ? clsSet.delete(c) : clsSet.add(c)) : (f ? clsSet.add(c) : clsSet.delete(c))),
+            contains: c => clsSet.has(c)
+        },
+        querySelector: () => null,
+        querySelectorAll: () => []
+    };
+    const r = loadRoom({
+        localStorage: ls,
+        window: { innerWidth: 390, innerHeight: 844, addEventListener: () => {} },
+        document: { hidden: false, addEventListener: () => {}, getElementById: id => (id === 'station' ? roomNode : null) },
+        openTrainer: () => { trainerOpened++; },
+        getActiveCosmetics: () => ({ cat: true, steam: true, tape: true, garland: true, candles: true, pot: 'pot_kintsugi' })
+    });
+    Object.defineProperty(r, '_vw', { value: () => vw });
+
+    const seenCoats = new Set();
+    const seenPairs = new Set();
+    for (let i = 0; i < 120; i++) {
+        const uid = 'u_' + createHash('sha256').update('witness_' + i).digest('hex').slice(0, 16);
+        const c1 = r.catSpec(uid);
+        const c2 = r.catSpec(uid);
+        assert.equal(c1.coatIdx, c2.coatIdx, 'cat coat must be 100% deterministic per uid');
+        assert.equal(c1.summary, c2.summary);
+        seenCoats.add(c1.coatIdx);
+        seenPairs.add(`${r.plantSpec(uid).kind}:${c1.coatIdx}`);
+    }
+    assert.equal(seenCoats.size, 7, 'all 7 unique cat coats must appear across player IDs');
+    assert.ok(seenPairs.size >= 25, 'cat coat and plant species must distribute independently');
+
+    // 2. Fireflies of Silence: builds 1..7 over consecutive warm evenings, cools gently (-1 per extra missed day), never harshly wipes!
+    for (let d = 1; d <= 8; d++) {
+        const day = `2026-11-${String(d).padStart(2, '0')}`;
+        const res = r.claimDailyWarmth('hold', day);
+        assert.equal(res.granted, 1);
+        const ff = r.fireflyState(res.ledger, day);
+        assert.equal(ff.active, true);
+        assert.equal(ff.drowsy, false);
+        assert.equal(ff.count, Math.min(7, d), `day ${d} must light ${Math.min(7, d)}/7 fireflies`);
+        // Second warmth on same day does not double-increment streak
+        const same = r.claimDailyWarmth('trainer', day);
+        assert.equal(r.fireflyState(same.ledger, day).count, Math.min(7, d));
+    }
+    // Next day before warming: all 7 fireflies wait as drowsy embers (0 lost!)
+    const nextDay = r.fireflyState(r.loadWarmthLedger('2026-11-09'), '2026-11-09');
+    assert.deepEqual({ count: nextDay.count, active: nextDay.active, drowsy: nextDay.drowsy }, { count: 7, active: false, drowsy: true });
+    // Skip 2 full days (Nov 9 & Nov 10 -> check Nov 11): gently cools by 2 (7 -> 5), NOT wiped to 0!
+    const afterPause = r.fireflyState(r.loadWarmthLedger('2026-11-11'), '2026-11-11');
+    assert.deepEqual({ count: afterPause.count, active: afterPause.active, drowsy: afterPause.drowsy }, { count: 5, active: false, drowsy: true });
+    // Warming on Nov 11 re-ignites from 5 -> 6 immediately!
+    const reignite = r.claimDailyWarmth('hold', '2026-11-11');
+    assert.deepEqual({ count: r.fireflyState(reignite.ledger, '2026-11-11').count, active: true }, { count: 6, active: true });
+
+    // 3. Fullscreen horizontal mode: rotates 90deg on portrait phones, auto-exits cleanly before opening Terminal modal
+    r.toggleRoomFullscreen();
+    assert.equal(clsSet.has('is-fullscreen'), true);
+    assert.equal(clsSet.has('is-rotated'), true, 'portrait phone must rotate room into horizontal landscape');
+    r.activateRoomObject('terminal');
+    assert.equal(clsSet.has('is-fullscreen'), false, 'opening terminal must exit fullscreen cleanly first');
+    assert.equal(trainerOpened, 1);
+
+    // 4. Pain Feed 1-signal-per-day quota + meaningful text + anti-self-dox rules exist in index.html
+    assert.ok(indexHtml.includes("POST_DAY_KEY = 'soma_post_day'") && indexHtml.includes('hasSentPainToday'), '1 post/day gate must be enforced');
+    assert.ok(indexHtml.includes('validatePainPost') && indexHtml.includes('formatUntilNextSignal'), 'post validator and countdown must be wired');
 });

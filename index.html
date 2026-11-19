@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="room.css?v=4">
+    <link rel="stylesheet" href="room.css?v=5">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@300;400;500;600;700&display=swap');
         .font-mono-tech { font-family: 'Share Tech Mono', monospace; }
@@ -160,14 +160,19 @@
         </div>
     </div>
 
-    <!-- ТРЕНАЖЁР «СЛУШАТЕЛЬ» -->
+    <!-- ТРЕНАЖЁР «СЛУШАТЕЛЬ» (ТЕРМИНАЛ СТАНЦИИ) -->
     <div id="trainer-modal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-[2px] flex items-center justify-center p-4">
         <div class="w-full max-w-md max-h-[88vh] overflow-y-auto bg-[#0b0708] border border-red-500/40 p-5 rounded-2xl space-y-3 shadow-2xl">
             <div class="flex justify-between items-center">
-                <span class="text-xs font-mono-tech text-red-400 uppercase">// ТРЕНАЖЁР «СЛУШАТЕЛЬ»</span>
+                <span class="text-xs font-mono-tech text-red-400 uppercase">// ТЕРМИНАЛ «СЛУШАТЕЛЬ»</span>
                 <button onclick="closeTrainer()" class="text-gray-500 hover:text-white text-sm">✕</button>
             </div>
+            <div id="trainer-meta" class="flex justify-between items-center text-[10px] font-mono-tech text-gray-500 border-b border-red-500/15 pb-2"></div>
             <div id="trainer-body" class="space-y-3"></div>
+            <div class="pt-2 border-t border-red-500/15 flex justify-between items-center">
+                <button type="button" onclick="closeTrainer(); openSafety()" class="text-[10px] font-mono-tech text-gray-500 hover:text-red-300 transition">🛟 ОПОРА — ДЫХАНИЕ И ЛИНИИ ПОМОЩИ</button>
+                <button type="button" onclick="closeTrainer()" class="text-[10px] font-mono-tech text-gray-600 hover:text-gray-300 transition">ВЫЙТИ</button>
+            </div>
         </div>
     </div>
 
@@ -226,8 +231,8 @@
         <div id="view-profile" class="hidden flex-1 overflow-y-auto p-3.5 sm:p-4 pb-24 space-y-4">
             <section id="station" class="station" aria-label="Моя комната">
                 <div id="station-scene" class="station-scene">
-                    <img id="station-bg" src="assets/quiet-station.jpg?v=4" width="1586" height="992" alt="Тёмная комната над ночным городом: слева кассетный магнитофон, ночник и ЭЛТ-терминал под висячей лампой, по центру круглое окно и живое растение на ковре, справа приёмник, кушетка и ночник">
-                    <img id="station-lamp" class="station-lamp" src="assets/lamp.png?v=4" width="112" height="348" alt="" aria-hidden="true">
+                    <img id="station-bg" src="assets/quiet-station.jpg?v=5" width="1586" height="992" alt="Тёмная комната над ночным городом: слева кассетный магнитофон, ночник и ЭЛТ-терминал под висячей лампой, по центру круглое окно и керамический горшок на ковре, справа приёмник, кушетка и ночник">
+                    <img id="station-lamp" class="station-lamp" src="assets/lamp.png?v=5" width="112" height="348" alt="" aria-hidden="true">
                     <div class="station-nightlight station-nightlight--l" id="station-nl" aria-hidden="true"></div>
                     <div class="station-nightlight station-nightlight--r" id="station-nr" aria-hidden="true"></div>
                     <div class="station-light" aria-hidden="true"></div>
@@ -266,52 +271,113 @@
                         <span class="station-meta station-heat">ТЕПЛО <b id="warmth-val">0</b></span>
                     </div>
                     <p class="station-line" aria-live="polite"><strong id="station-entry"></strong></p>
+
+                    <!-- Диегетический выбор открытых атмосфер при касании круглого окна -->
+                    <div id="station-window-bar" class="station-ctx hidden" role="group" aria-label="Состояние за круглым окном">
+                        <div class="station-ctx-head">
+                            <span>КРУГЛОЕ ОКНО // ОТКРЫТЫЕ АТМОСФЕРЫ</span>
+                        </div>
+                        <div class="station-ctx-row">
+                            <button type="button" data-win-phase="0" onclick="equipStationPhase(0, true)">Дождь</button>
+                            <button type="button" data-win-phase="1" onclick="equipStationPhase(1, true)">Оттепель</button>
+                            <button type="button" data-win-phase="2" onclick="equipStationPhase(2, true)">Очаг</button>
+                            <button type="button" data-win-phase="3" onclick="equipStationPhase(3, true)">Рассвет</button>
+                        </div>
+                    </div>
+
+                    <!-- Диегетический архив кассет входящих «Шёпотов» при касании магнитофона -->
+                    <div id="station-deck-bar" class="station-ctx hidden" aria-label="Кассетный архив">
+                        <div class="station-ctx-head">
+                            <span>КАССЕТНАЯ ДЕКА // АРХИВ ШЁПОТОВ</span>
+                            <span id="station-deck-count">ЛОТОК ПУСТ</span>
+                        </div>
+                        <p id="station-deck-empty" class="station-ctx-empty">Плёнка чиста. Когда оживёт «Шёпот», здесь останутся кассеты с тёплыми словами, написанными лично вам.</p>
+                        <div id="station-deck-list" class="station-ctx-row"></div>
+                    </div>
+
+                    <!-- Чистая релизная карточка горшка, сезонного роста и Оранжереи -->
                     <div class="station-plant-box">
                         <div class="station-plant-row">
                             <span id="station-plant-info" class="station-meta"></span>
-                            <button type="button" id="station-kinds-toggle" class="station-kinds-toggle" aria-expanded="false" onclick="togglePlantGallery()">ВСЕ 7 ВИДОВ</button>
                         </div>
                         <span id="station-plant-sub" class="station-plant-sub"></span>
-                        <div id="station-plant-pips" class="station-stages" role="group" aria-label="Прогрессия 6 стадий роста растения">
-                            <button type="button" data-stage-btn="0" onclick="inspectPlantStage(0)"><b>1</b><span>росток</span></button>
-                            <button type="button" data-stage-btn="1" onclick="inspectPlantStage(1)"><b>2</b><span>всходы</span></button>
-                            <button type="button" data-stage-btn="2" onclick="inspectPlantStage(2)"><b>3</b><span>побеги</span></button>
-                            <button type="button" data-stage-btn="3" onclick="inspectPlantStage(3)"><b>4</b><span>крона</span></button>
-                            <button type="button" data-stage-btn="4" onclick="inspectPlantStage(4)"><b>5</b><span>бутоны</span></button>
-                            <button type="button" data-stage-btn="5" onclick="inspectPlantStage(5)"><b>6</b><span>цвет</span></button>
+                        <div id="station-growth-track" class="station-growth-track hidden" aria-hidden="true">
+                            <i></i><i></i><i></i><i></i><i></i><i></i>
                         </div>
-                        <div id="station-plant-kinds" class="station-kinds hidden" role="group" aria-label="Осмотр всех 7 видов растений">
-                            <button type="button" data-kind-btn="0" onclick="inspectPlantKind(0)">Папоротник</button>
-                            <button type="button" data-kind-btn="1" onclick="inspectPlantKind(1)">Кактус</button>
-                            <button type="button" data-kind-btn="2" onclick="inspectPlantKind(2)">Суккулент</button>
-                            <button type="button" data-kind-btn="3" onclick="inspectPlantKind(3)">Бамбук</button>
-                            <button type="button" data-kind-btn="4" onclick="inspectPlantKind(4)">Лиана</button>
-                            <button type="button" data-kind-btn="5" onclick="inspectPlantKind(5)">Цветок</button>
-                            <button type="button" data-kind-btn="6" onclick="inspectPlantKind(6)">Бонсай</button>
+                        <div id="station-greenhouse" class="station-gh hidden" aria-label="Оранжерея станции">
+                            <div class="station-gh-head">
+                                <span>ОРАНЖЕРЕЯ СТАНЦИИ</span>
+                                <span id="station-gh-count">1/7 ВИДОВ</span>
+                            </div>
+                            <div id="station-gh-slots" class="station-gh-slots"></div>
                         </div>
                     </div>
+
                     <p id="station-next"></p>
-                    <progress id="station-meter" aria-label="Прогресс до следующей атмосферы"></progress>
-                    <div class="station-presets" role="group" aria-label="Атмосфера комнаты">
-                        <button type="button" data-preset onclick="equipStationPhase(0)">Дождь<span></span></button>
-                        <button type="button" data-preset onclick="equipStationPhase(1)">Оттепель<span></span></button>
-                        <button type="button" data-preset onclick="equipStationPhase(2)">Очаг<span></span></button>
-                        <button type="button" data-preset onclick="equipStationPhase(3)">Рассвет<span></span></button>
-                    </div>
+                    <progress id="station-meter" aria-label="Прогресс до следующей перемены за окном"></progress>
                     <p id="station-stars"></p>
-                    <p class="station-note">Тепло не тратится. Его можно получить за внимательное чтение и удачные ответы в тренажёре.</p>
-                    <button id="pts-preview" type="button" onclick="togglePreview()" class="hidden station-pts">PTS: ПОКАЗАТЬ / СКРЫТЬ МАКС. УРОВЕНЬ</button>
+                    <p class="station-note">Тепло рождается в тишине — от дочитанных историй и тренажёра в терминале (до 4 в день). Пустые реакции его не дают.</p>
+
+                    <!-- Сворачиваемый PTS-инспектор (строго скрыт для обычных игроков в релизе) -->
+                    <div id="pts-panel" class="station-pts-wrap hidden">
+                        <button id="pts-drawer-toggle" type="button" class="station-pts" aria-expanded="false" onclick="togglePtsDrawer()">PTS // ИНСПЕКТОР (СТАДИИ 0–6 · 7 ВИДОВ · РАССВЕТ)</button>
+                        <div id="pts-body" class="station-pts-body hidden">
+                            <button id="pts-preview" type="button" onclick="togglePreview()" class="station-pts">PTS: ВКЛЮЧИТЬ МАКС. УРОВЕНЬ (СЕЗОН 90 ДН.)</button>
+                            <div class="station-pts-row">
+                                <button type="button" id="station-kinds-toggle" class="station-pts-mini" aria-expanded="false" onclick="togglePlantGallery()">ВСЕ 7 ВИДОВ</button>
+                                <button type="button" id="pts-dew-btn" class="station-pts-mini" aria-pressed="false" onclick="togglePtsDew()">РОСА НА ЛИСТЬЯХ</button>
+                                <button type="button" class="station-pts-mini" onclick="togglePtsDemoCassette()">ДЕМО-КАССЕТА</button>
+                            </div>
+                            <div id="station-plant-pips" class="station-stages" role="group" aria-label="PTS: пустой горшок и 6 стадий роста">
+                                <button type="button" data-stage-btn="-1" onclick="inspectPlantStage(-1)"><b>0</b><span>пусто</span></button>
+                                <button type="button" data-stage-btn="0" onclick="inspectPlantStage(0)"><b>1</b><span>росток</span></button>
+                                <button type="button" data-stage-btn="1" onclick="inspectPlantStage(1)"><b>2</b><span>всходы</span></button>
+                                <button type="button" data-stage-btn="2" onclick="inspectPlantStage(2)"><b>3</b><span>побеги</span></button>
+                                <button type="button" data-stage-btn="3" onclick="inspectPlantStage(3)"><b>4</b><span>крона</span></button>
+                                <button type="button" data-stage-btn="4" onclick="inspectPlantStage(4)"><b>5</b><span>бутоны</span></button>
+                                <button type="button" data-stage-btn="5" onclick="inspectPlantStage(5)"><b>6</b><span>цвет</span></button>
+                            </div>
+                            <div id="station-plant-kinds" class="station-kinds hidden" role="group" aria-label="PTS: осмотр всех 7 видов растений">
+                                <button type="button" data-kind-btn="0" onclick="inspectPlantKind(0)">Папоротник</button>
+                                <button type="button" data-kind-btn="1" onclick="inspectPlantKind(1)">Кактус</button>
+                                <button type="button" data-kind-btn="2" onclick="inspectPlantKind(2)">Суккулент</button>
+                                <button type="button" data-kind-btn="3" onclick="inspectPlantKind(3)">Бамбук</button>
+                                <button type="button" data-kind-btn="4" onclick="inspectPlantKind(4)">Лиана</button>
+                                <button type="button" data-kind-btn="5" onclick="inspectPlantKind(5)">Цветок</button>
+                                <button type="button" data-kind-btn="6" onclick="inspectPlantKind(6)">Бонсай</button>
+                            </div>
+                            <div class="station-presets" role="group" aria-label="PTS: атмосферы комнаты">
+                                <button type="button" data-preset onclick="equipStationPhase(0)">Дождь<span></span></button>
+                                <button type="button" data-preset onclick="equipStationPhase(1)">Оттепель<span></span></button>
+                                <button type="button" data-preset onclick="equipStationPhase(2)">Очаг<span></span></button>
+                                <button type="button" data-preset onclick="equipStationPhase(3)">Рассвет<span></span></button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
-            <div class="mx-auto w-60 bg-black border-2 border-red-900/60 rounded-3xl p-3 space-y-2 shadow-lg">
-                <div class="text-center text-[9px] font-mono-tech text-gray-600">NEEO_PHONE</div>
-                <div class="grid grid-cols-4 gap-2 text-center">
-                    <button onclick="openTrainer()" class="flex flex-col items-center text-xl">🎧<span class="text-[8px] font-mono-tech text-gray-400">ТРЕНЕР</span></button>
-                    <button id="app-radio" onclick="openRadio()" class="flex flex-col items-center text-xl">📻<span class="text-[8px] font-mono-tech text-gray-400">РАДИО</span></button>
-                    <button onclick="openSafety()" class="flex flex-col items-center text-xl">🛟<span class="text-[8px] font-mono-tech text-gray-400">ПОМОЩЬ</span></button>
-                    <button onclick="openWhisper()" class="flex flex-col items-center text-xl">🔒<span class="text-[8px] font-mono-tech text-gray-400">ШЁПОТ</span></button>
+
+            <!-- РЕТРО-ПЕЙДЖЕР «ШЁПОТА» (ВРЕМЕННО ВНЕ ЭФИРА) -->
+            <section id="soma-pager" class="soma-pager" data-state="offline" data-admitted="0" aria-label="Пейджер частоты «Шёпот»">
+                <div class="pager-top">
+                    <span class="pager-brand"><i id="pager-led" class="pager-led" aria-hidden="true"></i>SOMA // PGR-04</span>
+                    <span class="pager-sig">CH·04 ШЁПОТ<span class="pager-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span></span>
                 </div>
-            </div>
+                <div class="pager-bezel">
+                    <div class="pager-lcd" aria-live="polite">
+                        <div class="pager-lcd-meta">
+                            <span id="pager-carrier" class="pager-carrier">НЕТ НЕСУЩЕЙ</span>
+                            <span id="pager-gate">ДОПУСК 0/20 · ТРН 0/5</span>
+                        </div>
+                        <p id="pager-msg" class="pager-lcd-main">ЧАСТОТА «ШЁПОТ» ОТКЛЮЧЕНА</p>
+                        <p id="pager-sub" class="pager-lcd-sub">линия временно молчит · готовьте допуск в тишине и терминале</p>
+                    </div>
+                </div>
+                <div class="pager-keys">
+                    <button type="button" class="pager-key" onclick="pressPagerScan()">◈ ПРОВЕРИТЬ ЧАСТОТУ</button>
+                    <button type="button" class="pager-key pager-key--alt" onclick="pressPagerInfo()">◌ ПАМЯТКА</button>
+                </div>
+            </section>
             <div class="bg-[#12080a] border border-red-500/40 p-5 rounded-2xl space-y-4 relative overflow-hidden">
                 <div class="flex justify-between items-center text-[10px] font-mono-tech text-gray-500">
                     <span>NEEOSOMA // SOMA_LINK</span>
@@ -344,11 +410,14 @@
             <button onclick="copyShareText()" class="w-full py-3.5 bg-red-950 hover:bg-red-900 border border-red-500/50 text-red-200 font-bold text-xs font-mono-tech uppercase tracking-wider rounded-xl transition">
                 ПОДЕЛИТЬСЯ ОТЧЁТОМ СОУЧАСТИЯ
             </button>
+            <button type="button" onclick="openSafety()" class="w-full py-2 text-[10px] font-mono-tech text-gray-500 hover:text-red-300 transition">
+                🛟 ОПОРА — ДЫХАНИЕ И КОНТАКТЫ КРИЗИСНОЙ ПОМОЩИ
+            </button>
         </div>
     </div>
 
 <script src="config.js"></script>
-<script src="room.js?v=4"></script>
+<script src="room.js?v=5"></script>
 <script src="music.js"></script>
 <script>
     const cfg = window.SOMA_CONFIG || {};
@@ -438,7 +507,6 @@
         try { supabaseClient.from('soma_users').update({ warmth: player.warmth }).eq('username', player.uid).then(() => {}, () => {}); } catch (e) {}
     }
     function openRadio() { if (musicFound()) openMusic(); else { SFX.block(); notify('Приёмник молчит. Найдите частоту.'); } }
-    function openWhisper() { SFX.block(); notify('Шёпот пока закрыт. Тепло открывает только атмосферы комнаты.'); }
     let roomPreview = false;
     function showPts() {
         const b = document.createElement('div');
@@ -446,84 +514,201 @@
         b.className = 'shrink-0 bg-amber-400 text-black text-[10px] font-mono-tech text-center py-0.5';
         const app = document.querySelector('.app-h'); if (app) app.prepend(b);
         document.title = 'PTS ' + document.title;
-        document.getElementById('pts-preview').classList.remove('hidden');
+        const ptsPanel = document.getElementById('pts-panel');
+        if (ptsPanel) ptsPanel.classList.remove('hidden');
         if (/[?&]room=max/.test(location.search)) { roomPreview = true; resetStationPreview(); renderRoom(); }
     }
     function togglePreview() { roomPreview = !roomPreview; resetStationPreview(); renderRoom(); }
 
-    // Удержание взгляда: 3 секунды внимания к чужой боли
-    let held = {}, holding = false, holdT = null, holdRAF = null;
+    // Удержание взгляда: 3 секунды живого внимания (тепло — до 2 постов в день, без бездумного фарма)
+    let held = {}, holding = false, holdT = null, holdRAF = null, feedShownAt = 0;
     try { held = JSON.parse(localStorage.getItem('soma_held') || '{}'); } catch (e) {}
     function holdStart(id, el) {
-        if (held[id]) return; holding = true; SFX.beat();
+        if (held[id]) return;
+        // Мягкая защита от мгновенного прокликивания ленты не читая
+        const dwell = performance.now() - feedShownAt;
+        const holdMs = dwell < 1500 ? 3800 : 3000;
+        holding = true; SFX.beat();
         const fill = el.querySelector('.hold-fill'), t0 = performance.now();
-        const step = () => { const p = Math.min(1, (performance.now() - t0) / 3000); fill.style.transform = `scaleX(${p})`; if (p < 1) holdRAF = requestAnimationFrame(step); };
+        const step = () => { const p = Math.min(1, (performance.now() - t0) / holdMs); fill.style.transform = `scaleX(${p})`; if (p < 1) holdRAF = requestAnimationFrame(step); };
         holdRAF = requestAnimationFrame(step);
-        holdT = setTimeout(() => holdDone(id), 3000);
+        holdT = setTimeout(() => holdDone(id), holdMs);
     }
     function holdCancel() {
         clearTimeout(holdT); cancelAnimationFrame(holdRAF); holding = false;
         document.querySelectorAll('.hold-fill').forEach(f => { f.style.transform = 'scaleX(0)'; });
     }
     function holdDone(id) {
-        holding = false; held[id] = 1;
+        holding = false;
+        const res = typeof claimDailyWarmth === 'function' ? claimDailyWarmth('hold') : { granted: 1 };
+        held[id] = res.granted ? 2 : 1;
         try { localStorage.setItem('soma_held', JSON.stringify(held)); } catch (e) {}
         try { Telegram.WebApp.HapticFeedback.notificationOccurred('success'); } catch (e) {}
-        SFX.react(); player.xp += 15; addWarmth(1);
+        SFX.react();
+        player.xp += 15;
+        if (res.granted) addWarmth(res.granted);
         updateCloudProfile(); updateHeader(); renderFeed();
     }
 
-    // Тренажёр: слушать, а не советовать
+    // Тренажёр «Слушатель» в терминале: 24 жизненные ситуации на сезон (до +2 тепла и 4 разборов в день)
+    const DAILY_TRAINER_SESSIONS = 4;
     const SCEN = [
         { t: 'Мне 34, и полгода никто не звонил просто так.', o: [
-            ['Держись, всё наладится!', 0, 'Торопит к «хорошему» и не замечает одиночества.'],
-            ['Это звучит очень одиноко. Каково это, когда телефон молчит?', 1, 'Называет чувство и приглашает рассказать.'],
+            ['Держись, всё наладится!', 0, 'Торопит к «хорошему» и оставляет одиночество незамеченным.'],
+            ['Это звучит очень одиноко. Каково это, когда телефон молчит?', 1, 'Называет чувство и открывает место для разговора.'],
             ['Позвони кому-нибудь сам, делов-то.', 0, 'Совет-давление: человек и так это знает.'] ] },
         { t: 'Меня уволили, а жене я до сих пор не сказал.', o: [
-            ['Надо было сразу сказать, она же жена.', 0, 'Осуждение добавляет стыда.'],
-            ['Сколько ты носишь это в себе? Звучит очень тяжело.', 1, 'Видит усилие человека и не оценивает его.'],
+            ['Надо было сразу сказать, она же жена.', 0, 'Осуждение только добавляет стыда.'],
+            ['Сколько ты носишь это в себе? Звучит очень тяжело.', 1, 'Видит тяжесть ноши и не оценивает человека.'],
             ['Другие и не такое переживают.', 0, 'Сравнение обесценивает его боль.'] ] },
         { t: 'Мама сказала, что я её разочаровал.', o: [
-            ['Ты, наверное, преувеличиваешь.', 0, 'Ставит под сомнение чувства.'],
-            ['Услышать такое от мамы больно. Что именно она сказала?', 1, 'Признаёт боль и просит рассказать больше.'],
+            ['Ты, наверное, преувеличиваешь.', 0, 'Ставит под сомнение живое чувство.'],
+            ['Услышать такое от мамы больно. Что именно тебя задело сильнее всего?', 1, 'Признаёт боль и бережно даёт выговориться.'],
             ['Не обращай внимания, все родители так.', 0, 'Отмахивается и закрывает разговор.'] ] },
         { t: 'Боюсь, что проживу жизнь зря.', o: [
-            ['Не думай об этом, займись делом.', 0, 'Запрещает чувство вместо того, чтобы его услышать.'],
-            ['Этот страх говорит, что тебе важно, как ты живёшь. Что бы ты хотел успеть?', 1, 'Уважает страх и мягко направляет к смыслу.'],
-            ['Всем так кажется, это возрастное.', 0, 'Объясняет, а не слушает.'] ] },
+            ['Не думай об этом, займись делом.', 0, 'Запрещает чувство вместо того, чтобы услышать.'],
+            ['Этот страх говорит, что тебе не всё равно, как ты живёшь. О чём ты тоскуешь?', 1, 'Уважает страх и мягко касается смысла.'],
+            ['Всем так кажется, это возрастное.', 0, 'Навешивает ярлык вместо присутствия.'] ] },
         { t: 'Врач сказал ждать результатов неделю. Седьмой день, не сплю.', o: [
-            ['Всё будет хорошо, не накручивай!', 0, 'Обещание, которое нельзя выполнить.'],
-            ['Ждать такое мучительно. Что сейчас тревожит сильнее всего?', 1, 'Признаёт тяжесть и даёт выговориться.'],
-            ['Перестань гуглить симптомы.', 0, 'Критика вместо поддержки.'] ] }
+            ['Всё будет хорошо, не накручивай!', 0, 'Пустое обещание, в которое тревога не верит.'],
+            ['Ждать такое мучительно. Как ты держишься в эту последнюю ночь?', 1, 'Признаёт тяжесть ожидания и остаётся рядом.'],
+            ['Перестань гуглить симптомы.', 0, 'Упрёк вместо тепла.'] ] },
+        { t: 'После ухода пса прошло три месяца, а я всё ещё ставлю миску с водой.', o: [
+            ['Заведи нового щенка — сразу отпустит.', 0, 'Пытается заменить незаменимую привязанность.'],
+            ['Руки всё ещё помнят его. Каким он был?', 1, 'Принимает горе без спешки и даёт вспомнить с теплом.'],
+            ['Пора уже отпустить, три месяца прошло.', 0, 'Ставит таймер на чужую скорбь.'] ] },
+        { t: 'Сегодня мой день рождения. Купил маленький торт и ем один на кухне.', o: [
+            ['Да ладно, день рождения — обычный день, забей.', 0, 'Обесценивает важный для человека вечер.'],
+            ['Тихий и грустный вечер. Я рад, что ты написал сюда — с днём рождения тебя.', 1, 'Не прячется от грусти и дарит живое присутствие.'],
+            ['Надо было заранее позвать друзей.', 0, 'Перекладывает вину на того, кому и так больно.'] ] },
+        { t: 'Я так устала работать, что утром плачу в лифте, но уйти не могу — кредиты.', o: [
+            ['Просто смени работу, здоровье дороже!', 0, 'Игнорирует реальную ловушку, о которой человек прямо сказал.'],
+            ['Как будто зажата между усталостью и долгом, без передышки. Давно так?', 1, 'Точно отражает тупик, не требуя невозможного.'],
+            ['Сейчас всем тяжело с деньгами.', 0, 'Растворяет личную боль в общей статистике.'] ] },
+        { t: 'Лучший друг перестал отвечать, хотя каждый день в сети.', o: [
+            ['Значит, не такой уж и друг — вычеркни.', 0, 'Рубит сплеча по живой привязанности.'],
+            ['Горько видеть «в сети» и оставаться в тишине. Ты скучаешь по нему?', 1, 'Замечает тихую обиду и растерянность.'],
+            ['Может, он просто занят, не выдумывай.', 0, 'Защищает отсутствующего вместо того, кто рядом.'] ] },
+        { t: 'Кажется, на новой работе скоро поймут, что я ничего не умею.', o: [
+            ['Глупости, тебя же взяли — значит умный!', 0, 'Спор с чувством редко его успокаивает.'],
+            ['Страшно всё время ждать разоблачения. В какие моменты это накрывает сильнее?', 1, 'Принимает тревогу всерьёз и помогает её разглядеть.'],
+            ['Почитай про синдром самозванца.', 0, 'Отправляет к статье вместо человеческого контакта.'] ] },
+        { t: 'Ухаживаю за больным отцом второй год. Иногда злюсь на него — и ненавижу себя за это.', o: [
+            ['Нельзя злиться, он же не виноват, что болеет.', 0, 'Бьёт по самому больному — чувству вины.'],
+            ['Два года без выдоха вымотают любого. Злость здесь — от усталости, а не от нелюбви.', 1, 'Снимает стыд и видит за злостью истощение.'],
+            ['Найми сиделку и отдохни.', 0, 'Холодная инструкция вместо сочувствия.'] ] },
+        { t: 'Переехал в другой город ради мечты, а вечерами вою от пустых стен.', o: [
+            ['Сам же хотел переехать, чего теперь жалеть.', 0, 'Запрещает грустить о своём же выборе.'],
+            ['Даже правильный шаг бывает очень одиноким поначалу. Чего из дома не хватает больше всего?', 1, 'Разрешает одновременно идти к мечте и скучать.'],
+            ['Запишись в спортзал, найдёшь компанию.', 0, 'Быстрый рецепт, когда человеку нужно быть услышанным.'] ] },
+        { t: 'Расстались полгода назад, а я до сих пор мысленно рассказываю ей, как прошёл день.', o: [
+            ['Удали фото и начни ходить на свидания.', 0, 'Механический совет не лечит привычку любить.'],
+            ['Трудно отучиться делиться жизнью с тем, кто был самым близким. О чём сегодня хотелось ей сказать?', 1, 'Бережно встречает невысказанную нежность.'],
+            ['Она уже давно о тебе забыла, очнись.', 0, 'Жестокая «встряска» только закрывает человека.'] ] },
+        { t: 'Когда у меня выходной, я лежу и грызу себя за то, что ничего полезного не делаю.', o: [
+            ['Составь расписание отдыха, очень помогает!', 0, 'Превращает даже отдых в очередной отчёт.'],
+            ['Выходит, даже лёжа ты не отдыхаешь, потому что внутри идёт суд. Откуда этот строгий голос?', 1, 'Точно замечает внутреннее напряжение без нравоучений.'],
+            ['Мне бы твои проблемы — целый выходной!', 0, 'Обесценивание через иронию.'] ] },
+        { t: 'В компании все смеются, я тоже улыбаюсь, а внутри — как за толстым стеклом.', o: [
+            ['Будь проще, вливайся в разговор!', 0, 'Просит надеть ещё одну маску.'],
+            ['Одиночество среди людей переносится особенно остро. Утомительно всё время держать улыбку?', 1, 'Видит человека по ту сторону «стекла».'],
+            ['Не ходи туда, если не нравится.', 0, 'Упрощает сложное чувство до бытового действия.'] ] },
+        { t: 'Раньше писал музыку каждую ночь, а уже год не могу подойти к инструменту.', o: [
+            ['Нужна дисциплина: садись хотя бы на 15 минут в день.', 0, 'Давит там, где внутри и так выжжено.'],
+            ['Больно, когда замолкает то, чем ты дышал. Что чувствуешь, когда проходишь мимо инструмента?', 1, 'Слышит тоску по себе прежнему без давления.'],
+            ['Значит, перегорел, найди другое хобби.', 0, 'Легко списывает то, что человеку дорого.'] ] },
+        { t: 'Не успел попросить прощения у бабушки. Думал, приеду на выходных.', o: [
+            ['Не казни себя, она бы всё равно простила.', 0, 'Спешит утешить, не дав прожить слова.'],
+            ['Эти несказанные слова так тяжело носить внутри. Что бы ты сказал ей, если бы успел?', 1, 'Даёт безопасное место произнести главное.'],
+            ['Прошлого не вернёшь, надо жить дальше.', 0, 'Захлопывает дверь перед живым горем.'] ] },
+        { t: 'У всех ровесников семьи и квартиры, а я в съёмной комнате начинаю всё с нуля.', o: [
+            ['Не сравнивай себя с другими, у каждого свой путь.', 0, 'Правильный лозунг, но звучит как отписка.'],
+            ['Начинать заново страшно, особенно когда кажется, что все ушли вперёд. Что тебя сейчас держит?', 1, 'Признаёт уязвимость и ищет опору вместе с человеком.'],
+            ['Зато свободен, никаких обязательств!', 0, 'Фальшивый позитив мимо чужой боли.'] ] },
+        { t: 'Вчера в метро накрыла паника — думал, сердце остановится. Теперь боюсь спускаться.', o: [
+            ['От панической атаки не умирают, это всё в голове.', 0, 'Сухой факт обесценивает пережитый ужас.'],
+            ['Пережить такое одному в толпе очень страшно. Как ты сейчас себя чувствуешь?', 1, 'Сначала признаёт пережитый страх и возвращает в «сейчас».'],
+            ['Пересиль себя и поезжай снова, иначе закрепится.', 0, 'Толкает в страх без поддержки.'] ] },
+        { t: 'Сын-подросток закрыл дверь и крикнул, чтобы я оставила его в покое. Сижу в коридоре.', o: [
+            ['Это гормоны, перебесится — не бери в голову.', 0, 'Стирает живую растерянность матери.'],
+            ['Обидно и тревожно остаться перед закрытой дверью, когда хочется быть рядом. Тебе сейчас одиноко?', 1, 'Слышит любовь и бессилие за этой сценой.'],
+            ['Надо строже с ним, распустила.', 0, 'Осуждение и призыв к войне вместо понимания.'] ] },
+        { t: 'Спина болит почти каждый день. Я перестал жаловаться — вижу, что близкие устали слушать.', o: [
+            ['А ты пробовал бассейн или остеопата?', 0, 'Человек с хронической болью слышал этот совет сотню раз.'],
+            ['Тяжело терпеть боль и ещё тяжелее — молчать о ней, чтобы никого не обременять. Здесь можно не скрывать.', 1, 'Снимает одиночество молчания без непрошеных рецептов.'],
+            ['Главное — настрой, мысли материальны!', 0, 'Делает человека «виноватым» в собственной боли.'] ] },
+        { t: 'Завидую подруге, у которой всё получается легко, и мне противно от самой себя.', o: [
+            ['Фу, зависть разрушает — порадуйся за неё искренне.', 0, 'Стыдит за честное признание.'],
+            ['Нужна смелость, чтобы в этом признаться. Похоже, тебе самой сейчас очень не хватает лёгкости и отдачи.', 1, 'Переводит стыдную зависть на язык живой потребности.'],
+            ['Ты просто не видишь её проблем.', 0, 'Спорит вместо того, чтобы услышать усталость.'] ] },
+        { t: 'Приезжаю к родителям и каждый раз замечаю, как сильно они постарели за полгода.', o: [
+            ['Ну а что ты хотел, все мы не молодеем.', 0, 'Холодная банальность там, где щемит сердце.'],
+            ['От этого так тихо сжимается внутри — время вдруг становится видимым. Как прошла ваша встреча?', 1, 'Разделяет хрупкую нежность момента.'],
+            ['Чаще приезжай, потом жалеть будешь.', 0, 'Превращает светлую грусть в упрёк.'] ] },
+        { t: 'Третью ночь лежу без сна до утра. В темноте любая мелочь вырастает в катастрофу.', o: [
+            ['Убери телефон за час до сна и выпей ромашку.', 0, 'Совет из памятки, когда человеку тревожно прямо сейчас.'],
+            ['Ночью мысли правда кажутся вдесятеро тяжелее. Какая из них не отпускает тебя сегодня?', 1, 'Присоединяется в ночной тишине и помогает выдохнуть.'],
+            ['Просто закрой глаза и ни о чём не думай.', 0, 'Если бы это работало, человек бы уже спал.'] ] }
     ];
     let trSc = 0;
+    function updateTrainerMeta() {
+        const el = document.getElementById('trainer-meta');
+        if (!el || typeof loadWarmthLedger !== 'function') return;
+        const l = loadWarmthLedger();
+        const adm = whisperAdmission(player.warmth || 0, l);
+        const gateTxt = adm.admitted ? 'ДОПУСК: ГОТОВ' : `ДОПУСК: ${adm.trained}/${adm.trainedNeed}`;
+        el.innerHTML = `<span>ТЕПЛО СЕГОДНЯ: <b class="text-red-300">${l.trainer}/${PROGRESSION_RULES.DAILY_TRAINER_CAP}</b></span><span>${gateTxt}</span>`;
+    }
     function openTrainer() { SFX.tap(); renderTrainer(); document.getElementById('trainer-modal').classList.remove('hidden'); }
     function closeTrainer() { document.getElementById('trainer-modal').classList.add('hidden'); }
     function renderTrainer() {
+        updateTrainerMeta();
         let done = {}; try { done = JSON.parse(localStorage.getItem('soma_trained') || '{}'); } catch (e) {}
-        const today = new Date().toISOString().slice(0, 10);
+        const today = typeof localDayKey === 'function' ? localDayKey() : new Date().toISOString().slice(0, 10);
+        const todayCount = Object.values(done).filter(d => d === today).length;
         const left = SCEN.map((s, i) => i).filter(i => done[i] !== today);
         const body = document.getElementById('trainer-body');
-        if (!left.length) { body.innerHTML = '<p class="text-xs text-gray-300 leading-relaxed">На сегодня всё. Возвращайтесь завтра: слушать — это мышца, ей нужен отдых.</p>'; return; }
-        trSc = left[Math.floor(Math.random() * left.length)];
+        if (!left.length || todayCount >= DAILY_TRAINER_SESSIONS) {
+            body.innerHTML = '<p class="text-xs text-gray-300 leading-relaxed font-mono-tech">Сеанс на сегодня завершён. Тепло впитывается неспешно: слушать — это мышца, ей нужна ночная тишина. Возвращайтесь завтра.</p>';
+            return;
+        }
+        // Сначала предлагаем ещё не встречавшиеся истории, затем давно пройденные
+        const unseen = left.filter(i => !done[i]);
+        const pool = unseen.length ? unseen : left;
+        trSc = pool[Math.floor(Math.random() * pool.length)];
         const order = SCEN[trSc].o.map((x, k) => k).sort(() => Math.random() - 0.5);
-        body.innerHTML = `<p class="text-[11px] font-mono-tech text-gray-500">Человек пишет:</p>
-            <div class="bg-[#12080a] border border-red-500/20 rounded-xl p-3 text-sm text-gray-200 font-mono-tech">«${esc(SCEN[trSc].t)}»</div>
-            <p class="text-[11px] font-mono-tech text-gray-500">Что вы ответите?</p>
-            ${order.map(k => `<button onclick="trainerPick(${k})" class="w-full text-left px-3 py-2 bg-[#180a0d] hover:bg-red-950/40 text-xs text-gray-200 rounded-lg border border-red-500/20">${esc(SCEN[trSc].o[k][0])}</button>`).join('')}`;
+        body.innerHTML = `<p class="text-[11px] font-mono-tech text-gray-500">Сигнал из сети (${todayCount + 1}/${DAILY_TRAINER_SESSIONS}):</p>
+            <div class="bg-[#12080a] border border-red-500/20 rounded-xl p-3 text-sm text-gray-200 font-mono-tech leading-relaxed">«${esc(SCEN[trSc].t)}»</div>
+            <p class="text-[11px] font-mono-tech text-gray-500">Как откликнуться, не раня?</p>
+            ${order.map(k => `<button onclick="trainerPick(${k})" class="w-full text-left px-3 py-2.5 bg-[#180a0d] hover:bg-red-950/40 text-xs text-gray-200 rounded-lg border border-red-500/20 leading-relaxed">${esc(SCEN[trSc].o[k][0])}</button>`).join('')}`;
     }
     function trainerPick(k) {
         const s = SCEN[trSc], o = s.o[k], best = s.o.find(x => x[1]);
         let done = {}; try { done = JSON.parse(localStorage.getItem('soma_trained') || '{}'); } catch (e) {}
-        done[trSc] = new Date().toISOString().slice(0, 10);
+        const today = typeof localDayKey === 'function' ? localDayKey() : new Date().toISOString().slice(0, 10);
+        done[trSc] = today;
         try { localStorage.setItem('soma_trained', JSON.stringify(done)); } catch (e) {}
-        if (o[1]) { SFX.react(); player.xp += 20; addWarmth(1); updateCloudProfile(); updateHeader(); }
-        else SFX.block();
+        let gainedWarmth = 0;
+        if (o[1]) {
+            SFX.react();
+            player.xp += 20;
+            const res = typeof claimDailyWarmth === 'function' ? claimDailyWarmth('trainer') : { granted: 1 };
+            gainedWarmth = res.granted;
+            if (gainedWarmth) addWarmth(gainedWarmth);
+            updateCloudProfile();
+            updateHeader();
+        } else {
+            SFX.block();
+        }
+        updateTrainerMeta();
+        const okBadge = gainedWarmth
+            ? '✓ Это живое слушание // +20 XP · +1 ТЕПЛО'
+            : '✓ Это живое слушание // +20 XP (тепло дня уже впиталось)';
         document.getElementById('trainer-body').innerHTML = `
-            <div class="text-sm font-bold ${o[1] ? 'text-amber-300' : 'text-red-400'}">${o[1] ? '✓ Это слушание // +20 XP, +1 ТЕПЛО' : '✕ Это совет или защита'}</div>
+            <div class="text-xs font-mono-tech font-bold ${o[1] ? 'text-amber-300' : 'text-red-400'}">${o[1] ? okBadge : '✕ Это совет, оценка или защита'}</div>
             <p class="text-xs text-gray-300 leading-relaxed">${esc(o[2])}</p>
-            ${o[1] ? '' : `<p class="text-xs text-gray-400 leading-relaxed">Лучше: «${esc(best[0])}». ${esc(best[2])}</p>`}
-            <button onclick="renderTrainer()" class="w-full py-2 bg-red-950/60 border border-red-500/50 text-red-200 text-xs font-mono-tech rounded-xl">ДАЛЬШЕ</button>`;
+            ${o[1] ? '' : `<p class="text-xs text-gray-400 leading-relaxed">Теплее звучит: «${esc(best[0])}» — ${esc(best[2].toLowerCase())}</p>`}
+            <button onclick="renderTrainer()" class="w-full py-2 bg-red-950/60 border border-red-500/50 text-red-200 text-xs font-mono-tech rounded-xl">СЛЕДУЮЩИЙ СИГНАЛ</button>`;
     }
 
     // ===== ТЕГИ =====
@@ -709,15 +894,30 @@
         document.getElementById('stat-seen').innerText = player.seen;
         document.getElementById('stat-reacts').innerText = player.reacts;
         document.getElementById('stat-attempts').innerText = player.helpAttempts;
+        if (typeof indifferenceIndex === 'function') {
+            document.getElementById('indiff-val').innerText = `${indifferenceIndex(player.warmth || 0)}%`;
+        }
         renderRoom();
     }
 
     function renderFeed() {
         const container = document.getElementById('posts-container');
         container.innerHTML = '';
+        feedShownAt = performance.now();
+        const todayLedger = typeof loadWarmthLedger === 'function' ? loadWarmthLedger() : { hold: 0, total: 0 };
+        const holdHasWarmth = typeof PROGRESSION_RULES !== 'undefined'
+            ? (todayLedger.hold < PROGRESSION_RULES.DAILY_HOLD_CAP && todayLedger.total < PROGRESSION_RULES.DAILY_WARMTH_CAP)
+            : true;
 
         feedPosts.forEach(post => {
             const isReacted = player.reactedPosts[post.id];
+            const heldState = held[post.id];
+            const heldLabel = heldState === 2
+                ? '👁 Дочитано в тишине // +15 XP · +1 ТЕПЛО'
+                : '👁 Вы побыли рядом // +15 XP';
+            const holdBtnLabel = holdHasWarmth
+                ? '👁 УДЕРЖАТЬ ВЗГЛЯД (3 с)'
+                : '👁 ПОБЫТЬ РЯДОМ В ТИШИНЕ (3 с)';
             const card = document.createElement('div');
             card.className = "bg-[#12080a] border border-red-500/20 rounded-2xl p-4 space-y-3 transition";
             card.innerHTML = `
@@ -729,7 +929,7 @@
                 <button onclick="triggerHelpBlock()" class="w-full py-2 bg-red-950/40 hover:bg-red-900/50 border border-red-500/40 rounded-xl text-[11px] font-mono-tech text-red-400 flex items-center justify-center space-x-2 transition">
                     <span>⛔ ПОМОЧЬ РЕАЛЬНО / НАПИСАТЬ В ЛС</span>
                 </button>
-                ${held[post.id] ? `<div class="text-center text-[11px] font-mono-tech text-amber-300/80">👁 Дочитано до конца // +15 XP</div>` : `<button onpointerdown="holdStart('${safeId(post.id)}', this)" onpointerup="holdCancel()" onpointerleave="holdCancel()" onpointercancel="holdCancel()" oncontextmenu="return false" class="relative overflow-hidden w-full py-2 bg-amber-950/20 border border-amber-400/30 rounded-xl text-[11px] font-mono-tech text-amber-300 select-none touch-none"><span class="hold-fill absolute inset-0 bg-amber-500/25" style="transform:scaleX(0);transform-origin:left"></span><span class="relative">👁 УДЕРЖАТЬ ВЗГЛЯД (3 с)</span></button>`}
+                ${heldState ? `<div class="text-center text-[11px] font-mono-tech text-amber-300/80">${heldLabel}</div>` : `<button onpointerdown="holdStart('${safeId(post.id)}', this)" onpointerup="holdCancel()" onpointerleave="holdCancel()" onpointercancel="holdCancel()" oncontextmenu="return false" class="relative overflow-hidden w-full py-2 bg-amber-950/20 border border-amber-400/30 rounded-xl text-[11px] font-mono-tech text-amber-300 select-none touch-none"><span class="hold-fill absolute inset-0 bg-amber-500/25" style="transform:scaleX(0);transform-origin:left"></span><span class="relative">${holdBtnLabel}</span></button>`}
                 <div class="pt-2 border-t border-red-500/10 space-y-2">
                     ${isReacted ? `
                         <div class="text-[11px] font-mono-tech text-red-400 flex justify-between items-center">

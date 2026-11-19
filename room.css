@@ -601,10 +601,171 @@
     box-shadow: inset 0 0 8px rgba(255, 68, 88, 0.2);
 }
 
-.station-stages {
+/* Тихая 6-точечная шкала роста в релизе (без спойлеров будущих стадий) */
+.station-growth-track {
     display: grid;
     grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 4px;
+    gap: 5px;
+    padding-top: 2px;
+}
+
+.station-growth-track.hidden,
+.station-ctx.hidden,
+.station-gh.hidden,
+.station-pts-wrap.hidden,
+.station-pts-body.hidden,
+.hidden {
+    display: none;
+}
+
+.station-growth-track i {
+    display: block;
+    height: 4px;
+    border-radius: 999px;
+    background: #260c12;
+    border: 1px solid #3f151e;
+    transition: background-color 0.45s ease, border-color 0.45s ease, box-shadow 0.45s ease;
+}
+
+.station-growth-track i.is-lit {
+    background: linear-gradient(90deg, #8f1a2b, var(--signal));
+    border-color: #b82d42;
+}
+
+.station-growth-track i.is-now {
+    box-shadow: 0 0 7px rgba(255, 82, 100, 0.55);
+}
+
+/* Оранжерея (Гербарий всех 7 видов после первого расцвета 6/6) */
+.station-gh {
+    display: grid;
+    gap: 5px;
+    margin-top: 3px;
+    padding-top: 6px;
+    border-top: 1px dashed #471822;
+}
+
+.station-gh-head,
+.station-ctx-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    font: 9.5px 'Share Tech Mono', monospace;
+    letter-spacing: 0.06em;
+    color: #cf9ea6;
+}
+
+.station-gh-slots,
+.station-ctx-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.station-gh-slots button,
+.station-ctx-row button {
+    min-height: 30px;
+    padding: 4px 9px;
+    font: 10px 'Share Tech Mono', monospace;
+    letter-spacing: 0.04em;
+    background: #120508;
+    border: 1px solid #4d1b25;
+    border-radius: 7px;
+    color: #e4bcc3;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.station-gh-slots button:hover,
+.station-ctx-row button:hover {
+    background: #230910;
+    border-color: var(--signal);
+    color: #fff2f4;
+}
+
+.station-gh-slots button[aria-pressed="true"],
+.station-ctx-row button[aria-pressed="true"] {
+    background: #2e0c14;
+    border-color: var(--signal);
+    color: #fff2f4;
+    box-shadow: inset 0 0 9px rgba(255, 68, 88, 0.22);
+}
+
+.station-gh-slots button.is-seed-action {
+    border-style: dashed;
+    border-color: #7d2939;
+    color: #ffb8c2;
+}
+
+/* Диегетические панели круглого окна (выбор открытых атмосфер) и кассетной деки */
+.station-ctx {
+    display: grid;
+    gap: 6px;
+    padding: 8px 9px;
+    background: #140609;
+    border: 1px solid #521c27;
+    border-radius: 10px;
+}
+
+.station-ctx-empty {
+    font: 10px 'Share Tech Mono', monospace;
+    line-height: 1.4;
+    color: #a97e86 !important;
+}
+
+/* Сворачиваемый PTS-инспектор (виден только при ENV === 'pts') */
+.station-pts-wrap {
+    display: grid;
+    gap: 7px;
+    margin-top: 2px;
+    padding-top: 8px;
+    border-top: 1px dashed rgba(239, 68, 68, 0.28);
+}
+
+.station-pts-body {
+    display: grid;
+    gap: 7px;
+    padding: 8px;
+    background: #120508;
+    border: 1px solid #471821;
+    border-radius: 10px;
+}
+
+.station-pts-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.station-pts-mini {
+    flex: 1 1 auto;
+    min-height: 30px;
+    padding: 4px 8px;
+    font: 9.5px 'Share Tech Mono', monospace;
+    letter-spacing: 0.04em;
+    color: #f3bfc7;
+    background: #1c070c;
+    border: 1px solid #5a1f2b;
+    border-radius: 7px;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background-color 0.25s ease, border-color 0.25s ease;
+}
+
+.station-pts-mini:hover,
+.station-pts-mini[aria-pressed="true"] {
+    background: #2f0c14;
+    border-color: var(--signal);
+    color: #fff2f4;
+}
+
+.station-stages {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 3px;
 }
 
 .station-stages button {
@@ -634,7 +795,7 @@
 }
 
 .station-stages button span {
-    font-size: 8px;
+    font-size: 7.5px;
     line-height: 1.05;
     letter-spacing: 0;
     opacity: 0.88;
@@ -777,10 +938,225 @@
     border-color: var(--signal);
 }
 
+/* ===== SOMA // PGR-04 — ТАКТИЛЬНЫЙ ЧЁРНО-КРАСНЫЙ РЕТРО-ПЕЙДЖЕР «ШЁПОТА» ===== */
+.soma-pager {
+    position: relative;
+    background:
+        radial-gradient(circle at 10px 10px, #2c0f16 0 1.6px, #090304 1.8px 3px, transparent 3.2px),
+        radial-gradient(circle at calc(100% - 10px) 10px, #2c0f16 0 1.6px, #090304 1.8px 3px, transparent 3.2px),
+        radial-gradient(circle at 10px calc(100% - 10px), #2c0f16 0 1.6px, #090304 1.8px 3px, transparent 3.2px),
+        radial-gradient(circle at calc(100% - 10px) calc(100% - 10px), #2c0f16 0 1.6px, #090304 1.8px 3px, transparent 3.2px),
+        linear-gradient(180deg, #19070b 0%, #100507 52%, #0a0305 100%);
+    border: 1px solid #531b26;
+    border-top-color: #752636;
+    border-radius: 16px;
+    padding: 12px 13px 13px;
+    display: grid;
+    gap: 9px;
+    box-shadow:
+        0 12px 28px rgba(0, 0, 0, 0.62),
+        inset 0 1px 0 rgba(255, 118, 134, 0.14),
+        inset 0 -2px 0 rgba(0, 0, 0, 0.72);
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.pager-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 0 3px;
+    font: 9.5px 'Share Tech Mono', monospace;
+    letter-spacing: 0.1em;
+    color: #9e727a;
+}
+
+.pager-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: #d6a4ad;
+}
+
+.pager-led {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #5b1824, #22060b 75%);
+    border: 1px solid #47141e;
+    box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.8);
+    transition: background-color 0.35s ease, box-shadow 0.35s ease;
+}
+
+.soma-pager[data-admitted="1"] .pager-led {
+    background: radial-gradient(circle at 35% 35%, #a82b3e, #3a0b13 75%);
+    border-color: #7c2434;
+}
+
+.soma-pager.is-ping .pager-led {
+    background: #ff586c;
+    box-shadow: 0 0 8px rgba(255, 72, 94, 0.82);
+}
+
+.pager-sig {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pager-bars {
+    display: inline-flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 10px;
+}
+
+.pager-bars i {
+    display: block;
+    width: 2.5px;
+    border-radius: 1px;
+    background: #2f0e15;
+    transition: background-color 0.3s ease;
+}
+
+.pager-bars i:nth-child(1) { height: 3px; }
+.pager-bars i:nth-child(2) { height: 5px; }
+.pager-bars i:nth-child(3) { height: 7.5px; }
+.pager-bars i:nth-child(4) { height: 10px; }
+
+.soma-pager.is-ping .pager-bars i:nth-child(1) {
+    background: #c9384c;
+}
+
+/* Утопленный матричный багровый ЖК-дисплей пейджера */
+.pager-bezel {
+    padding: 3px;
+    border-radius: 10px;
+    background: #060203;
+    border: 1px solid #351119;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.9);
+}
+
+.pager-lcd {
+    position: relative;
+    overflow: hidden;
+    border-radius: 7px;
+    padding: 8px 10px 9px;
+    display: grid;
+    gap: 4px;
+    background:
+        repeating-linear-gradient(
+            180deg,
+            rgba(255, 58, 78, 0.045) 0 1px,
+            rgba(5, 1, 3, 0.28) 1px 2.5px
+        ),
+        radial-gradient(ellipse 90% 100% at 50% 0%, #21070d 0%, #0d0306 68%, #090204 100%);
+    border: 1px solid #491620;
+    box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.82);
+    font-family: 'Share Tech Mono', monospace;
+    transition: border-color 0.35s ease, box-shadow 0.35s ease;
+}
+
+.soma-pager.is-ping .pager-lcd {
+    border-color: #8f2c3f;
+    box-shadow:
+        inset 0 0 18px rgba(210, 38, 62, 0.22),
+        0 0 10px rgba(190, 32, 54, 0.16);
+}
+
+.pager-lcd-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 2px 8px;
+    font-size: 9px;
+    letter-spacing: 0.06em;
+    color: #9b606a;
+    border-bottom: 1px solid rgba(138, 38, 54, 0.24);
+    padding-bottom: 4px;
+}
+
+.pager-carrier {
+    color: #c95869;
+}
+
+.pager-lcd-main {
+    margin: 2px 0 0;
+    font-size: 11.5px;
+    line-height: 1.3;
+    letter-spacing: 0.06em;
+    color: #ff98a4;
+    text-shadow: 0 0 8px rgba(255, 64, 86, 0.32);
+}
+
+.pager-lcd-sub {
+    margin: 0;
+    font-size: 9.8px;
+    line-height: 1.35;
+    letter-spacing: 0.02em;
+    color: #b4818a;
+    min-height: 2.5em;
+}
+
+/* Физические аппаратные кнопки пейджера */
+.pager-keys {
+    display: grid;
+    grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
+    gap: 7px;
+}
+
+.pager-key {
+    min-height: 42px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    font: 10px 'Share Tech Mono', monospace;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #f2ccd2;
+    background: linear-gradient(180deg, #240910 0%, #150509 100%);
+    border: 1px solid #5e1f2c;
+    box-shadow:
+        0 2px 0 #050102,
+        inset 0 1px 0 rgba(255, 132, 146, 0.16);
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.08s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.08s ease;
+}
+
+.pager-key--alt {
+    color: #c798a0;
+    background: linear-gradient(180deg, #19060b 0%, #100407 100%);
+    border-color: #451721;
+}
+
+.pager-key:hover {
+    border-color: #993246;
+    color: #fff0f2;
+}
+
+.pager-key:active {
+    transform: translateY(1.5px);
+    box-shadow:
+        0 0 0 #050102,
+        inset 0 1px 3px rgba(0, 0, 0, 0.65);
+}
+
+.pager-key:focus-visible,
+.station-ctx-row button:focus-visible,
+.station-gh-slots button:focus-visible {
+    outline: 2px solid #fff1f2;
+    outline-offset: 2px;
+}
+
 @media (prefers-reduced-motion: reduce) {
     .station *,
     .station *::before,
-    .station *::after {
+    .station *::after,
+    .soma-pager,
+    .soma-pager * {
         animation: none !important;
         transition: none !important;
     }

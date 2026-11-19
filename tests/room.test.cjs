@@ -21,7 +21,7 @@ function makeStorage(initial = {}) {
 function loadRoom(env = {}) {
     const localStorage = env.localStorage || makeStorage();
     return runInNewContext(
-        roomCode + ';({ stationPhases, PROGRESSION_RULES, GREENHOUSE_WARMTH_STEPS, stationState, indifferenceIndex, equipStationPhase, inspectPlantStage, togglePlantGallery, inspectPlantKind, togglePtsDrawer, togglePtsDew, cyclePtsCatCoat, cyclePtsDogBreed, togglePtsDemoCassette, loadWarmthLedger, claimDailyWarmth, fireflyState, recordWhisperEcho, daysSinceLastWarmth, whisperAdmission, loadGreenhouse, plantNewGreenhouseSeed, selectGreenhouseSlot, loadCassettes, saveWhisperCassette, playCassette, pressPagerScan, pressPagerInfo, renderPager, PLANT_KINDS, PLANT_STAGES, PLANT_WARMTH_STEPS, PLANT_LEAF, PLANT_BLOOM, PLANT_POTS, CAT_COATS, catSpec, DOG_BREEDS, dogSpec, drawCompanionCat, drawCompanionDog, CITY_WINDOWS, hashStr, rng, plantSpec, plantStage, drawPlantSprite, drawCrtMonitor, drawRoomCosmetics, drawWindowWorld, drawWindowLightBeams, drawStationFx, drawCassetteDeck, paintPlantFrame, isRealTelegramMiniApp, getNativeFullscreenElement, requestNativeRoomFullscreen, getFullscreenViewport, computeFullscreenSceneBox, toggleRoomFullscreen, enterRoomFullscreen, exitRoomFullscreen, flipRoomFullscreen, renderRoom, touchRoomObject, activateRoomObject, resetStationPreview, roomAnim });',
+        roomCode + ';({ stationPhases, PROGRESSION_RULES, GREENHOUSE_WARMTH_STEPS, stationState, indifferenceIndex, equipStationPhase, inspectPlantStage, togglePlantGallery, inspectPlantKind, togglePtsDrawer, togglePtsDew, cyclePtsCatCoat, cyclePtsDogBreed, togglePtsDemoCassette, loadWarmthLedger, claimDailyWarmth, fireflyState, recordWhisperEcho, daysSinceLastWarmth, whisperAdmission, loadGreenhouse, plantNewGreenhouseSeed, selectGreenhouseSlot, formatCassetteDate, formatCassetteNum, loadCassettes, saveWhisperCassette, toggleCassetteFav, ejectCassette, playCassette, openVhsArchive, pressPagerScan, pressPagerInfo, renderPager, PLANT_KINDS, PLANT_STAGES, PLANT_WARMTH_STEPS, PLANT_LEAF, PLANT_BLOOM, PLANT_POTS, CAT_COATS, catSpec, DOG_BREEDS, dogSpec, drawCompanionCat, drawCompanionDog, CITY_WINDOWS, hashStr, rng, plantSpec, plantStage, drawPlantSprite, drawCrtMonitor, drawRoomCosmetics, drawWindowWorld, drawWindowLightBeams, drawStationFx, drawCassetteDeck, paintPlantFrame, isRealTelegramMiniApp, getNativeFullscreenElement, requestNativeRoomFullscreen, getFullscreenViewport, computeFullscreenSceneBox, toggleRoomFullscreen, enterRoomFullscreen, exitRoomFullscreen, flipRoomFullscreen, renderRoom, touchRoomObject, activateRoomObject, resetStationPreview, roomAnim });',
         { player: { uid: 'u_0123456789abcdef', name: 'AGENT_1001', warmth: 0 }, roomPreview: false, localStorage, ...env }
     );
 }
@@ -727,9 +727,16 @@ test('v8: body-portal FLIP fullscreen + 180 flip + rotated pointer mapping, Dawn
         assert.doesNotThrow(() => r.drawPlantSprite(g, r.plantSpec('u_pot'), 5, { phase: 3, now: 2500, potSkin, fireflies: 5 }));
     }
 
-    // 3. Pain Feed CTA visibility hooks present and cache-busted to v10
+    // 3. Pain Feed CTA visibility hooks present and cache-busted to v11
     assert.ok(indexHtml.includes('soma-post-cta') && indexHtml.includes('soma-post-beacon') && indexHtml.includes('soma-post-arrow'));
-    assert.ok(indexHtml.includes('id="station-fs-flip"') && indexHtml.includes('room.js?v=10') && indexHtml.includes('cosmetics.css?v=10') && indexHtml.includes('receiver.js?v=10'));
+    assert.ok(
+        indexHtml.includes('id="station-fs-flip"')
+        && indexHtml.includes('room.js?v=11')
+        && indexHtml.includes('cosmetics.css?v=11')
+        && indexHtml.includes('receiver.js?v=11')
+        && indexHtml.includes('vhs.js?v=11')
+        && indexHtml.includes('share.js?v=11')
+    );
 
     // 4. Flagship cosmetics + collectible 7" vinyl pressings: equalized peer pricing + 1:1 Edge Function parity
     const musicCode = require('fs').readFileSync(require('path').join(__dirname, '..', 'music.js'), 'utf8');
@@ -940,7 +947,7 @@ test('v10: realistic dogs on Persian rug by bed blanket next to untouched cat, N
     // 1. Cat stays untouched at (618, 333); dog sits on its own mini Persian rug beside the bed's blanket right below the cat!
     assert.ok(roomCode.includes('const cx = 618, cy = 333;'), 'cat couch position (618, 333) must stay completely untouched');
     assert.ok(roomCode.includes('function drawDogPersianRug(') && roomCode.includes('const rugX = 622, rugY = 433;'), 'dog has its own isometric Persian rug beside the draped blanket');
-    assert.ok(roomCode.includes('const cx = 621, cy = 423;'), 'dog rests right next to the cat below the couch and blanket');
+    assert.ok(roomCode.includes('const cx = 613, cy = 425;'), 'enlarged sleeping dog rests right next to the cat below the couch and blanket');
     const dogHit = roomCss.match(/\.station-hit--dog\s*\{([^}]+)\}/)[1];
     const bedHit = roomCss.match(/\.station-hit--bed\s*\{([^}]+)\}/)[1];
     assert.ok(parseFloat(dogHit.match(/left:\s*([\d.]+)%/)[1]) >= 65 && parseFloat(dogHit.match(/top:\s*([\d.]+)%/)[1]) >= 77, 'dog hotspot aligned with floor by bed blanket');
@@ -1029,4 +1036,147 @@ test('v10: realistic dogs on Persian rug by bed blanket next to untouched cat, N
     assert.ok(JSON.parse(rxEnv.localStorage.getItem('soma_owned')).includes('track_aurora'), 'persisted in soma_owned');
     assert.equal(rxEnv.player.warmth, 25, 'buying collectible music grants 0 gameplay warmth (zero pay-to-win)');
     assert.equal(rxEnv.player.xp, 400, 'buying collectible music grants 0 gameplay XP (zero pay-to-win)');
+});
+
+test('v11: enlarged sleeping dogs with tucked front paws, clean RX-88 header, fullscreen-safe VHS archive (DD.MM.YYYY + #num + search/fav), and atmospheric canvas achievement share cards', async () => {
+    const p = require('path'), fs = require('fs'), vm = require('vm');
+    const rxCode = fs.readFileSync(p.join(__dirname, '..', 'receiver.js'), 'utf8');
+    const rxCss = fs.readFileSync(p.join(__dirname, '..', 'receiver.css'), 'utf8');
+    const vhsCode = fs.readFileSync(p.join(__dirname, '..', 'vhs.js'), 'utf8');
+    const vhsCss = fs.readFileSync(p.join(__dirname, '..', 'vhs.css'), 'utf8');
+    const shareCode = fs.readFileSync(p.join(__dirname, '..', 'share.js'), 'utf8');
+    const shareCss = fs.readFileSync(p.join(__dirname, '..', 'share.css'), 'utf8');
+    const cosmCode = fs.readFileSync(p.join(__dirname, '..', 'cosmetics.js'), 'utf8');
+
+    // 1. RX-88 header: «ЛАМПОВАЯ ФОНОТЕКА» removed completely so it never collides with STEREO badge
+    assert.ok(!/ламповая фонотека/i.test(rxCode) && !rxCode.includes('rx-model-sub'), 'RX-88 header has no ламповая фонотека subtitle');
+    assert.ok(!rxCss.includes('rx-model-sub'), 'rx-model-sub style cleaned from receiver.css');
+    assert.ok(rxCode.includes('rx-stereo-lamp') && rxCode.includes('SOMA // RX-88'), 'RX-88 brand and STEREO indicator remain crisp');
+
+    // 2. All 7 dog breeds are noticeably larger than the cat (sx >= 1.28, up to 1.52x) and sleep with tucked front paws + closed eyelids
+    const r = loadRoom({ getActiveCosmetics: () => ({ cat: true, dog: true, pot: 'pot_kintsugi' }) });
+    assert.equal(r.DOG_BREEDS.length, 7);
+    for (const b of r.DOG_BREEDS) {
+        assert.ok(b.sx >= 1.28 && b.sy >= 1.18, `${b.name} must be noticeably larger than the cat (got ${b.sx}x${b.sy})`);
+    }
+    const bigFour = r.DOG_BREEDS.filter(b => b.sx >= 1.44);
+    assert.equal(bigFour.length, 4, 'Golden Retriever, Samoyed, Husky, and Border Collie are >=1.44x large dogs');
+    assert.ok(roomCode.includes('const headLift = petK * 6.2;') && roomCode.includes('const peekAwake ='), 'dogs sleep with lowered head, tucked front paws, and closed eyelids that wake on petting');
+
+    // 3. VHS archive: full DD.MM.YYYY stamps, legacy DD.MM migration, permanent #001..#NNN numbering, favorites, PTS demo pack, zero NEEOSOMA leak
+    assert.ok(!/neeosoma/i.test(vhsCode) && !/neeosoma/i.test(vhsCss) && !/neeosoma/i.test(shareCode) && !/neeosoma/i.test(shareCss));
+    const store = makeStorage();
+    store.setItem('soma_cassettes', JSON.stringify([
+        { id: 'cas_1762000000000', date: '07.03', text: 'Старая тёплая кассета без года — должна обрести полный год.' }
+    ]));
+    const vRoom = loadRoom({ localStorage: store });
+    const migrated = vRoom.loadCassettes();
+    assert.equal(migrated.length, 1);
+    assert.match(migrated[0].date, /^07\.03\.\d{4}$/, 'legacy DD.MM cassette migrated seamlessly to full DD.MM.YYYY');
+    assert.equal(migrated[0].num, 1, 'oldest cassette gets permanent #001');
+
+    const added1 = vRoom.saveWhisperCassette('Пусть эта ночь будет к тебе бережной.');
+    assert.match(added1.date, /^\d{2}\.\d{2}\.\d{4}$/, 'new whisper cassette stamped with full DD.MM.YYYY');
+    assert.equal(added1.num, 2, 'next cassette gets permanent sequential #002');
+    const added2 = vRoom.saveWhisperCassette('Тепло дошло сквозь тишину.', '5.9.2026');
+    assert.equal(added2.date, '05.09.2026', 'normalizes single-digit D.M.YYYY to DD.MM.YYYY');
+    assert.equal(added2.num, 3);
+
+    assert.equal(vRoom.toggleCassetteFav(added1.id), true, 'cassette marked favorite');
+    assert.equal(vRoom.loadCassettes().find(c => c.id === added1.id).fav, true, 'favorite flag persisted in localStorage');
+    assert.equal(vRoom.toggleCassetteFav(added1.id), false, 'cassette unfavorited cleanly');
+
+    // Opening VHS archive from room shelf inside fullscreen NEVER exits fullscreen
+    let vhsOpenedWith = null;
+    const fsVhs = loadRoom({
+        localStorage: store,
+        window: { SOMA_CONFIG: { ENV: 'pts' }, SOMA_VHS: { open: id => { vhsOpenedWith = id; }, refresh() {}, syncMount() {} } },
+        document: {
+            hidden: false,
+            documentElement: { classList: { add() {}, remove() {} } },
+            getElementById: id => id === 'station' ? { dataset: {}, querySelector: () => null, querySelectorAll: () => [], classList: { remove() {}, toggle() {}, contains: () => true } } : null
+        }
+    });
+    fsVhs.roomAnim.isFullscreen = true;
+    fsVhs.activateRoomObject('shelf');
+    assert.equal(vhsOpenedWith, added2.id, 'tapping room deck inserts active/latest VHS tape and opens SOMA // VTR-90');
+    assert.equal(fsVhs.roomAnim.isFullscreen, true, 'opening VHS archive MUST NEVER exit fullscreen!');
+
+    // PTS demo pack inserts 4 full-date VHS cassettes and cleanly removes only demo cassettes on second toggle
+    fsVhs.togglePtsDemoCassette();
+    const withDemo = fsVhs.loadCassettes();
+    assert.equal(withDemo.length, 7, '3 user tapes + 4 PTS demo VHS tapes');
+    assert.ok(withDemo.every(t => /^\d{2}\.\d{2}\.\d{4}$/.test(t.date)), 'every cassette has full DD.MM.YYYY date');
+    fsVhs.togglePtsDemoCassette();
+    assert.equal(fsVhs.loadCassettes().length, 3, 'second toggle removes only demo tapes, preserving user archive');
+
+    // 4. Atmospheric canvas share cards: all 6 poster types render 1200x675 cleanly and all share buttons route through SOMA_SHARE
+    assert.ok(/function copyShareText\(\)[\s\S]{0,140}SOMA_SHARE\.shareWitness\(\)/.test(indexHtml), 'Witness report shares illustrated live room card');
+    assert.ok(/function shareEgg\(\)[\s\S]{0,140}SOMA_SHARE\.shareEgg\(\)/.test(indexHtml), 'Protocol Breaker egg shares illustrated card');
+    assert.ok(/function shareMusic\(\)[\s\S]{0,140}SOMA_SHARE\.shareSignal\(\)/.test(indexHtml), 'Secret frequency egg shares illustrated card');
+    assert.ok(/function shareTopFlex\(place, xpVal\)[\s\S]{0,160}SOMA_SHARE\.shareRank\(place, xpVal\)/.test(cosmCode), 'Top Cynics dossier shares illustrated rank card');
+    assert.ok(vhsCode.includes('SOMA_SHARE.shareVhs(cur)'), 'VTR-90 deck shares illustrated VHS CRT card');
+
+    const makeMockCanvas = (w, h) => {
+        let ops = 0;
+        const grad = { addColorStop() {} };
+        const ctx = {
+            canvas: { width: w, height: h },
+            fillStyle: '', strokeStyle: '', font: '', textAlign: 'left', textBaseline: 'alphabetic',
+            lineWidth: 1, lineCap: 'butt', globalAlpha: 1, globalCompositeOperation: 'source-over',
+            shadowColor: '', shadowBlur: 0, filter: 'none',
+            save() {}, restore() {}, translate() {}, scale() {}, rotate() {}, setLineDash() {},
+            beginPath() {}, closePath() {}, clip() {},
+            moveTo() {}, lineTo() {}, arcTo() {}, quadraticCurveTo() {}, bezierCurveTo() {}, arc() {}, ellipse() {},
+            fill() { ops++; }, stroke() { ops++; }, fillRect() { ops++; }, clearRect() {},
+            drawImage() { ops++; },
+            fillText() { ops++; },
+            measureText: txt => ({ width: String(txt).length * 7.5 }),
+            createLinearGradient: () => grad,
+            createRadialGradient: () => grad
+        };
+        return {
+            width: w, height: h,
+            get ops() { return ops; },
+            getContext: () => ctx,
+            toDataURL: () => 'data:image/png;base64,iVBORw0KGgo=',
+            toBlob: cb => cb(new Blob(['png'], { type: 'image/png' }))
+        };
+    };
+
+    const sEnv = {
+        Math, Number, String, Array, Object, Set, Map, Date, JSON, RegExp, Promise, Blob,
+        parseInt, parseFloat, isNaN, isFinite, setTimeout, clearTimeout,
+        performance: { now: () => 4200 },
+        player: { uid: 'u_99', name: 'Аноним #7712', xp: 3200, seen: 42, reacts: 11, attempts: 10, warmth: 260, trained: 9 },
+        rankOf: () => 'АРХИТЕКТОР',
+        BOT_LINK: 'https://t.me/soma_link_bot',
+        localStorage: makeStorage(),
+        __somaCreateCanvas: makeMockCanvas,
+        __somaLoadImage: async () => ({ width: 1586, height: 992 })
+    };
+    sEnv.window = sEnv;
+    sEnv.globalThis = sEnv;
+    sEnv.SOMA_CONFIG = { ENV: 'prod', BOT_LINK: 'https://t.me/soma_link_bot' };
+    sEnv.matchMedia = () => ({ matches: false });
+    sEnv.addEventListener = () => {};
+    vm.createContext(sEnv);
+    vm.runInContext(roomCode, sEnv);
+    vm.runInContext(cosmCode, sEnv);
+    vm.runInContext(shareCode, sEnv);
+
+    for (const [kind, payload] of [
+        ['witness', null],
+        ['rank', { place: 1, xp: 3200 }],
+        ['rank', { place: 7, xp: 850 }],
+        ['egg', null],
+        ['signal', null],
+        ['vhs', { num: 12, date: '18.11.2026', text: 'Тихое тепло сквозь ночной эфир.' }],
+        ['plant', { kind: 6 }]
+    ]) {
+        const cv = await sEnv.SOMA_SHARE.renderCard(kind, payload);
+        assert.equal(cv.width, 1200);
+        assert.equal(cv.height, 675);
+        assert.ok(cv.ops > 40, `share card "${kind}" rendered rich layered illustration (${cv.ops} draw ops)`);
+    }
 });

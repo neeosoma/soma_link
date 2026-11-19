@@ -135,14 +135,6 @@
     white-space: nowrap;
 }
 
-.rx-model-sub {
-    font: 9px/1 'Share Tech Mono', monospace;
-    letter-spacing: 0.1em;
-    color: rgba(255, 178, 152, 0.55);
-    text-transform: uppercase;
-    white-space: nowrap;
-}
-
 .rx-head-right {
     display: flex;
     align-items: center;
@@ -1134,7 +1126,6 @@
         margin-top: 4px;
         height: 14px;
     }
-    .rx-model-sub,
     .rx-note {
         display: none;
     }

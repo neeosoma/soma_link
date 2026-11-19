@@ -1,0 +1,965 @@
+/* ==========================================================================
+   SOMA // VTR-90 — ЛАМПОВЫЙ ВИДЕОМАГНИТОФОН И АРХИВ ТЁПЛЫХ VHS-КАССЕТ
+   Вставляешь кассету с номером и полной датой ДД.ММ.ГГГГ — послание оживает
+   на фосфорном ЭЛТ-экране. Работает внутри #station-scene без выхода из Fullscreen.
+   ========================================================================== */
+
+.vhs-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9520;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+    background: radial-gradient(ellipse at 50% 44%, rgba(28, 7, 12, 0.72), rgba(4, 1, 3, 0.9));
+    -webkit-backdrop-filter: blur(8px) saturate(1.12);
+    backdrop-filter: blur(8px) saturate(1.12);
+    opacity: 1;
+    transition: opacity 0.24s ease;
+    touch-action: manipulation;
+}
+
+.vhs-overlay.hidden {
+    display: none !important;
+}
+
+.vhs-overlay.is-in-scene {
+    position: absolute;
+    inset: 0;
+    z-index: 42;
+    padding: clamp(8px, 2vw, 18px);
+    background: radial-gradient(ellipse at 50% 48%, rgba(20, 5, 9, 0.62), rgba(4, 1, 3, 0.84));
+    -webkit-backdrop-filter: blur(6px) saturate(1.1);
+    backdrop-filter: blur(6px) saturate(1.1);
+}
+
+/* КОРПУС ВИДЕОМАГНИТОФОНА SOMA // VTR-90 */
+.vhs-chassis {
+    position: relative;
+    width: min(100%, 452px);
+    max-height: min(92dvh, 760px);
+    display: flex;
+    flex-direction: column;
+    border-radius: 20px;
+    color: #f8ecef;
+    background:
+        radial-gradient(115% 75% at 16% 0%, rgba(255, 182, 126, 0.1), transparent 56%),
+        radial-gradient(95% 70% at 86% 14%, rgba(232, 68, 92, 0.18), transparent 62%),
+        linear-gradient(170deg, rgba(25, 10, 14, 0.97) 0%, rgba(13, 5, 8, 0.98) 54%, rgba(7, 3, 5, 0.99) 100%);
+    border: 1px solid rgba(255, 178, 146, 0.25);
+    box-shadow:
+        0 28px 80px rgba(0, 0, 0, 0.9),
+        0 0 46px rgba(214, 54, 78, 0.18),
+        inset 0 1px 0 rgba(255, 228, 206, 0.17),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.8);
+    overflow: hidden;
+    animation: vhs-rise 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes vhs-rise {
+    0% { opacity: 0; transform: translateY(10px) scale(0.968); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.vhs-chassis::before,
+.vhs-chassis::after {
+    content: '';
+    position: absolute;
+    top: 9px;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, rgba(255, 214, 178, 0.55), rgba(62, 24, 30, 0.9));
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.7);
+    pointer-events: none;
+    z-index: 3;
+}
+.vhs-chassis::before { left: 10px; }
+.vhs-chassis::after { right: 10px; }
+
+/* ВЕРХНЯЯ ПАНЕЛЬ ДЕКИ С VFD-СЧЁТЧИКОМ ЛЕНТЫ */
+.vhs-head {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 11px 14px 9px;
+    background: linear-gradient(180deg, rgba(36, 12, 17, 0.82), rgba(14, 5, 8, 0.68));
+    border-bottom: 1px solid rgba(255, 152, 134, 0.15);
+}
+
+.vhs-brand {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+}
+
+.vhs-pilot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: #5a222c;
+    box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.8);
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.vhs-chassis.has-tape .vhs-pilot {
+    background: #ffc874;
+    box-shadow: 0 0 8px #ffa64c, 0 0 16px rgba(255, 96, 92, 0.68);
+}
+
+.vhs-model {
+    font: 700 10.5px/1 'Share Tech Mono', monospace;
+    letter-spacing: 0.16em;
+    color: rgba(255, 228, 214, 0.94);
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.vhs-head-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.vhs-mode-lamp {
+    padding: 2px 5px;
+    border-radius: 4px;
+    font: 700 8px/1 'Share Tech Mono', monospace;
+    letter-spacing: 0.12em;
+    color: rgba(255, 188, 148, 0.36);
+    border: 1px solid rgba(255, 172, 132, 0.14);
+    background: rgba(8, 2, 4, 0.72);
+    transition: color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.vhs-chassis.has-tape .vhs-mode-lamp {
+    color: #ffd089;
+    border-color: rgba(255, 196, 122, 0.5);
+    box-shadow: 0 0 10px rgba(255, 168, 96, 0.24);
+    text-shadow: 0 0 6px rgba(255, 184, 112, 0.55);
+}
+
+.vhs-counter {
+    padding: 3px 7px;
+    border-radius: 6px;
+    background: rgba(5, 2, 3, 0.9);
+    border: 1px solid rgba(255, 152, 132, 0.22);
+    font: 700 10.5px/1 'Share Tech Mono', monospace;
+    letter-spacing: 0.1em;
+    color: #ffb894;
+    text-shadow: 0 0 8px rgba(255, 128, 96, 0.45);
+    white-space: nowrap;
+}
+
+.vhs-close-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 156, 148, 0.18);
+    color: rgba(255, 214, 214, 0.78);
+    font: 13px/1 'Inter', sans-serif;
+    cursor: pointer;
+    transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+
+.vhs-close-btn:hover {
+    background: rgba(255, 88, 104, 0.18);
+    border-color: rgba(255, 148, 156, 0.5);
+    color: #fff;
+}
+
+/* ОСНОВНОЕ ТЕЛО: ВЕРХНЯЯ СЦЕНА (ЭЛТ + ЩЕЛЬ VHS) И НИЖНЯЯ ПОЛКА КАССЕТ */
+.vhs-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.vhs-deck-stage {
+    flex-shrink: 0;
+    padding: 11px 13px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    border-bottom: 1px solid rgba(255, 148, 134, 0.14);
+    background: linear-gradient(180deg, rgba(18, 6, 10, 0.52), rgba(9, 3, 6, 0.72));
+}
+
+/* ВЫПУКЛЫЙ ФОСФОРНЫЙ ЭЛТ-ЭКРАН (CRT MONITOR) */
+.vhs-crt-bezel {
+    position: relative;
+    padding: 6px;
+    border-radius: 15px;
+    background: linear-gradient(180deg, #16080c 0%, #090305 100%);
+    border: 1px solid rgba(255, 166, 144, 0.2);
+    box-shadow:
+        inset 0 2px 6px rgba(0, 0, 0, 0.92),
+        0 6px 18px rgba(0, 0, 0, 0.55);
+}
+
+.vhs-crt {
+    position: relative;
+    min-height: 136px;
+    max-height: 176px;
+    border-radius: 11px;
+    padding: 9px 12px 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 7px;
+    background:
+        radial-gradient(92% 88% at 50% 44%, rgba(56, 16, 24, 0.86) 0%, rgba(22, 6, 11, 0.95) 62%, rgba(8, 2, 5, 0.99) 100%);
+    border: 1px solid rgba(255, 152, 132, 0.18);
+    box-shadow:
+        inset 0 0 32px rgba(0, 0, 0, 0.78),
+        inset 0 1px 0 rgba(255, 224, 204, 0.12);
+    overflow: hidden;
+}
+
+.vhs-chassis.has-tape .vhs-crt {
+    background:
+        radial-gradient(92% 86% at 50% 42%, rgba(76, 22, 30, 0.88) 0%, rgba(28, 8, 13, 0.95) 60%, rgba(9, 3, 5, 0.99) 100%);
+    border-color: rgba(255, 186, 138, 0.3);
+    box-shadow:
+        inset 0 0 28px rgba(0, 0, 0, 0.72),
+        0 0 24px rgba(255, 102, 88, 0.12);
+}
+
+/* Тонкие аналоговые строки развёртки + стеклянный блик кинескопа */
+.vhs-crt::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        repeating-linear-gradient(
+            180deg,
+            rgba(255, 220, 200, 0.024) 0px,
+            rgba(255, 220, 200, 0.024) 1px,
+            rgba(0, 0, 0, 0.22) 1px,
+            rgba(0, 0, 0, 0.22) 3px
+        );
+    pointer-events: none;
+    z-index: 2;
+}
+
+.vhs-crt::after {
+    content: '';
+    position: absolute;
+    top: -28%;
+    left: -12%;
+    width: 68%;
+    height: 56%;
+    border-radius: 50%;
+    background: radial-gradient(ellipse at center, rgba(255, 232, 218, 0.07), transparent 70%);
+    transform: rotate(-8deg);
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* Полоса VHS-трекинга при вставке кассеты */
+.vhs-tracking-layer {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 3;
+    background:
+        linear-gradient(180deg,
+            transparent 14%,
+            rgba(255, 214, 186, 0.22) 16%,
+            rgba(255, 118, 128, 0.14) 18%,
+            transparent 22%,
+            transparent 66%,
+            rgba(255, 224, 192, 0.28) 69%,
+            rgba(255, 146, 118, 0.12) 72%,
+            transparent 76%);
+}
+
+.vhs-crt.is-tracking .vhs-tracking-layer {
+    animation: vhs-track-lock 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.vhs-crt.is-tracking .vhs-crt-text {
+    animation: vhs-text-lock 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes vhs-track-lock {
+    0%   { opacity: 0.95; transform: translateY(-18px) scaleX(1.02); }
+    45%  { opacity: 0.72; transform: translateY(12px) skewX(-2deg); }
+    78%  { opacity: 0.28; transform: translateY(-3px); }
+    100% { opacity: 0; transform: translateY(0); }
+}
+
+@keyframes vhs-text-lock {
+    0%   { opacity: 0.12; transform: translateX(4px); filter: blur(2.2px); }
+    50%  { opacity: 0.78; transform: translateX(-1.5px); filter: blur(0.6px); }
+    100% { opacity: 1; transform: translateX(0); filter: blur(0); }
+}
+
+/* OSD — верхняя и нижняя служебные строки видеомагнитофона */
+.vhs-osd-top,
+.vhs-osd-bot {
+    position: relative;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font: 700 10px/1.1 'Share Tech Mono', monospace;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+}
+
+.vhs-osd-play {
+    color: #ffd58e;
+    text-shadow: 0 0 8px rgba(255, 184, 96, 0.55);
+    white-space: nowrap;
+}
+
+.vhs-chassis:not(.has-tape) .vhs-osd-play {
+    color: rgba(255, 178, 178, 0.62);
+    text-shadow: none;
+}
+
+.vhs-osd-date {
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(8, 2, 4, 0.58);
+    border: 1px solid rgba(255, 206, 148, 0.24);
+    color: #ffe6c4;
+    text-shadow: 0 0 7px rgba(255, 176, 112, 0.42);
+    white-space: nowrap;
+}
+
+.vhs-osd-bot {
+    font-size: 8.8px;
+    font-weight: 400;
+    color: rgba(255, 198, 192, 0.54);
+}
+
+/* Текст анонимного тёплого послания на экране */
+.vhs-crt-scroll {
+    position: relative;
+    z-index: 4;
+    flex: 1 1 auto;
+    min-height: 68px;
+    max-height: 112px;
+    overflow-y: auto;
+    display: flex;
+    align-items: center;
+    padding: 2px 1px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 152, 136, 0.35) transparent;
+}
+
+.vhs-crt-text {
+    margin: 0;
+    width: 100%;
+    font: 400 13px/1.55 'Inter', system-ui, sans-serif;
+    color: #fff3ee;
+    text-shadow: 0 0 12px rgba(255, 164, 136, 0.28), 0 1px 2px rgba(0, 0, 0, 0.8);
+    word-break: break-word;
+}
+
+.vhs-crt-empty {
+    width: 100%;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 6px;
+}
+
+.vhs-crt-empty-title {
+    font: 700 11px/1.2 'Share Tech Mono', monospace;
+    letter-spacing: 0.14em;
+    color: rgba(255, 206, 178, 0.84);
+    text-transform: uppercase;
+}
+
+.vhs-crt-empty-sub {
+    font: 400 11.2px/1.45 'Inter', sans-serif;
+    color: rgba(235, 196, 200, 0.66);
+    max-width: 34ch;
+}
+
+.vhs-crt-insert-cta {
+    margin-top: 2px;
+    padding: 5px 11px;
+    border-radius: 7px;
+    background: rgba(255, 176, 122, 0.14);
+    border: 1px solid rgba(255, 192, 132, 0.44);
+    color: #ffe5be;
+    font: 700 9.5px/1 'Share Tech Mono', monospace;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.vhs-crt-insert-cta:hover {
+    background: rgba(255, 176, 122, 0.25);
+    border-color: rgba(255, 212, 152, 0.72);
+}
+
+/* МОТОРИЗОВАННАЯ ЩЕЛЬ ПРИЁМА VHS-КАССЕТЫ С ВРАЩАЮЩИМИСЯ БОБИНКАМИ */
+.vhs-slot-bay {
+    position: relative;
+    height: 46px;
+    border-radius: 10px;
+    padding: 5px 8px;
+    background: linear-gradient(180deg, #060203 0%, #110508 55%, #070204 100%);
+    border: 1px solid rgba(255, 162, 140, 0.22);
+    box-shadow:
+        inset 0 4px 10px rgba(0, 0, 0, 0.95),
+        inset 0 -1px 0 rgba(255, 200, 176, 0.1);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Шторка кассетоприёмника (когда кассета не вставлена) */
+.vhs-slot-flap {
+    position: absolute;
+    inset: 5px 8px;
+    border-radius: 6px;
+    background: linear-gradient(180deg, rgba(38, 15, 21, 0.92), rgba(20, 7, 11, 0.96));
+    border: 1px solid rgba(255, 162, 146, 0.14);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font: 700 9px/1 'Share Tech Mono', monospace;
+    letter-spacing: 0.18em;
+    color: rgba(255, 198, 184, 0.42);
+    text-transform: uppercase;
+    transform-origin: top center;
+    transition: transform 0.34s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.28s ease;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.vhs-chassis.has-tape .vhs-slot-flap {
+    transform: perspective(260px) rotateX(76deg) translateY(-8px);
+    opacity: 0;
+}
+
+/* Физическая VHS-кассета внутри шахты с двумя окошками катушек и бумажной наклейкой */
+.vhs-carriage {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 34px;
+    border-radius: 6px;
+    padding: 3px 8px;
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr) 38px;
+    align-items: center;
+    gap: 7px;
+    background: linear-gradient(180deg, #241218 0%, #14080c 52%, #0c0407 100%);
+    border: 1px solid rgba(255, 186, 152, 0.28);
+    box-shadow:
+        0 3px 10px rgba(0, 0, 0, 0.85),
+        inset 0 1px 0 rgba(255, 232, 212, 0.14);
+    transform: translateY(36px) scale(0.96);
+    opacity: 0;
+    transition: transform 0.38s cubic-bezier(0.18, 0.95, 0.3, 1), opacity 0.26s ease;
+}
+
+.vhs-chassis.has-tape .vhs-carriage {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+}
+
+.vhs-carriage.is-loading {
+    animation: vhs-cassette-insert 0.44s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes vhs-cassette-insert {
+    0%   { transform: translateY(32px) scale(1.03); opacity: 0.35; }
+    58%  { transform: translateY(-2px) scale(0.992); opacity: 1; }
+    80%  { transform: translateY(1px) scale(1); }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.vhs-reel-win {
+    height: 22px;
+    border-radius: 11px;
+    background: radial-gradient(circle at 50% 50%, rgba(52, 18, 24, 0.9), rgba(8, 2, 4, 0.98));
+    border: 1px solid rgba(255, 166, 138, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.9);
+}
+
+.vhs-reel {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background:
+        radial-gradient(circle, #140609 0 24%, #f2d7c2 25% 42%, transparent 43%),
+        conic-gradient(
+            rgba(255, 220, 194, 0.78) 0deg 24deg,
+            rgba(42, 16, 22, 0.85) 24deg 60deg,
+            rgba(255, 220, 194, 0.78) 60deg 84deg,
+            rgba(42, 16, 22, 0.85) 84deg 120deg,
+            rgba(255, 220, 194, 0.78) 120deg 144deg,
+            rgba(42, 16, 22, 0.85) 144deg 180deg,
+            rgba(255, 220, 194, 0.78) 180deg 204deg,
+            rgba(42, 16, 22, 0.85) 204deg 240deg,
+            rgba(255, 220, 194, 0.78) 240deg 264deg,
+            rgba(42, 16, 22, 0.85) 264deg 300deg,
+            rgba(255, 220, 194, 0.78) 300deg 324deg,
+            rgba(42, 16, 22, 0.85) 324deg 360deg
+        );
+    border: 1px solid rgba(255, 206, 174, 0.35);
+}
+
+.vhs-chassis.has-tape .vhs-reel {
+    animation: vhs-reel-spin 5.4s linear infinite;
+}
+
+.vhs-chassis.has-tape .vhs-reel--right {
+    animation-duration: 4.6s;
+}
+
+@keyframes vhs-reel-spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+/* Кремовая архивная наклейка на торце вставленной VHS-кассеты */
+.vhs-slot-sticker {
+    height: 24px;
+    border-radius: 4px;
+    padding: 0 9px;
+    background:
+        linear-gradient(180deg, #b8293d 0 4px, #f4e4cf 4px 100%);
+    box-shadow: inset 0 -1px 0 rgba(120, 74, 48, 0.35), 0 1px 3px rgba(0, 0, 0, 0.65);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding-top: 3px;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.vhs-slot-num {
+    font: 700 10px/1 'Share Tech Mono', monospace;
+    letter-spacing: 0.08em;
+    color: #24090e;
+    white-space: nowrap;
+}
+
+.vhs-slot-date {
+    font: 700 9.5px/1 'Share Tech Mono', monospace;
+    letter-spacing: 0.06em;
+    color: #6b1d2b;
+    white-space: nowrap;
+}
+
+/* КЛАВИШИ ТРАНСПОРТА ВИДЕОМАГНИТОФОНА */
+.vhs-transport {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.vhs-tbtn {
+    min-height: 31px;
+    padding: 0 9px;
+    border-radius: 8px;
+    background: linear-gradient(180deg, rgba(38, 14, 20, 0.9), rgba(18, 6, 10, 0.95));
+    border: 1px solid rgba(255, 162, 146, 0.22);
+    box-shadow: inset 0 1px 0 rgba(255, 224, 206, 0.1), 0 2px 5px rgba(0, 0, 0, 0.5);
+    color: rgba(255, 222, 216, 0.88);
+    font: 700 9.5px/1 'Share Tech Mono', monospace;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.1s ease;
+}
+
+.vhs-tbtn:hover:not(:disabled) {
+    background: linear-gradient(180deg, rgba(64, 20, 30, 0.94), rgba(28, 9, 15, 0.98));
+    border-color: rgba(255, 186, 152, 0.52);
+    color: #fff;
+}
+
+.vhs-tbtn:active:not(:disabled) {
+    transform: translateY(1px);
+}
+
+.vhs-tbtn:disabled {
+    opacity: 0.36;
+    cursor: default;
+}
+
+.vhs-tbtn--eject {
+    flex: 1 1 auto;
+}
+
+.vhs-tbtn--fav.is-active {
+    background: linear-gradient(180deg, rgba(84, 46, 16, 0.88), rgba(42, 20, 8, 0.94));
+    border-color: rgba(255, 204, 118, 0.62);
+    color: #ffe29e;
+}
+
+.vhs-tbtn--share {
+    background: linear-gradient(180deg, rgba(72, 18, 30, 0.92), rgba(34, 8, 15, 0.96));
+    border-color: rgba(255, 154, 138, 0.38);
+    color: #ffdcd2;
+}
+
+/* ПОЛКА VHS-КАССЕТ: ПОИСК, ФИЛЬТРЫ И СПИСОК КОРЕШКОВ */
+.vhs-shelf {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 9px 13px 12px;
+    gap: 7px;
+}
+
+.vhs-tools {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.vhs-search-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.vhs-search-ico {
+    position: absolute;
+    left: 9px;
+    color: rgba(255, 182, 168, 0.5);
+    pointer-events: none;
+    display: inline-flex;
+}
+
+.vhs-search {
+    width: 100%;
+    height: 31px;
+    padding: 0 28px 0 28px;
+    border-radius: 8px;
+    background: rgba(7, 2, 4, 0.82);
+    border: 1px solid rgba(255, 152, 142, 0.2);
+    color: #fff0f2;
+    font: 400 11.5px/1 'Inter', sans-serif;
+    outline: none;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.vhs-search::placeholder {
+    color: rgba(224, 178, 184, 0.44);
+    font-size: 11px;
+}
+
+.vhs-search:focus {
+    border-color: rgba(255, 184, 142, 0.55);
+    box-shadow: 0 0 0 2px rgba(255, 128, 112, 0.14);
+}
+
+.vhs-search-clear {
+    position: absolute;
+    right: 5px;
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
+    background: transparent;
+    border: 0;
+    color: rgba(255, 192, 192, 0.62);
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.vhs-search-clear.hidden {
+    display: none;
+}
+
+.vhs-filter-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.vhs-pills {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.vhs-pill,
+.vhs-sort-btn {
+    height: 24px;
+    padding: 0 8px;
+    border-radius: 6px;
+    background: rgba(18, 6, 10, 0.78);
+    border: 1px solid rgba(255, 152, 142, 0.18);
+    color: rgba(238, 196, 200, 0.74);
+    font: 700 9px/1 'Share Tech Mono', monospace;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+.vhs-pill:hover,
+.vhs-sort-btn:hover {
+    border-color: rgba(255, 178, 148, 0.45);
+    color: #fff2ee;
+}
+
+.vhs-pill.is-active {
+    background: rgba(82, 20, 32, 0.85);
+    border-color: rgba(255, 176, 142, 0.58);
+    color: #fff2ea;
+}
+
+/* КАССЕТНИЦА — ПРОКРУЧИВАЕМАЯ СТОПКА ФИЗИЧЕСКИХ VHS-КОРЕШКОВ */
+.vhs-list {
+    flex: 1 1 auto;
+    min-height: 92px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-right: 2px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 146, 136, 0.3) transparent;
+}
+
+.vhs-tape {
+    position: relative;
+    display: grid;
+    grid-template-columns: 88px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 9px;
+    padding: 6px 8px 6px 7px;
+    border-radius: 10px;
+    background: linear-gradient(180deg, rgba(28, 11, 16, 0.92), rgba(15, 5, 9, 0.96));
+    border: 1px solid rgba(255, 156, 144, 0.17);
+    box-shadow: 0 2px 7px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 224, 210, 0.06);
+    cursor: pointer;
+    text-align: left;
+    transition: transform 0.16s ease, border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.vhs-tape:hover {
+    border-color: rgba(255, 186, 148, 0.46);
+    background: linear-gradient(180deg, rgba(40, 15, 22, 0.95), rgba(20, 7, 12, 0.98));
+}
+
+.vhs-tape.is-loaded {
+    background: linear-gradient(180deg, rgba(58, 18, 27, 0.95), rgba(26, 8, 13, 0.98));
+    border-color: rgba(255, 198, 136, 0.62);
+    box-shadow:
+        0 4px 14px rgba(0, 0, 0, 0.6),
+        0 0 16px rgba(255, 128, 96, 0.16),
+        inset 0 1px 0 rgba(255, 232, 202, 0.15);
+}
+
+/* Бумажная этикетка на корешке VHS с номером и полной датой ДД.ММ.ГГГГ */
+.vhs-spine-label {
+    border-radius: 5px;
+    padding: 6px 6px 4px;
+    background: linear-gradient(180deg, #b5283c 0 4px, #f3e2cc 4px 100%);
+    box-shadow: inset 0 -1px 0 rgba(110, 66, 42, 0.35), 0 1px 3px rgba(0, 0, 0, 0.6);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.vhs-tape.is-loaded .vhs-spine-label {
+    background: linear-gradient(180deg, #e0553e 0 4px, #fff1dc 4px 100%);
+}
+
+.vhs-spine-num {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font: 700 10.5px/1.05 'Share Tech Mono', monospace;
+    letter-spacing: 0.06em;
+    color: #21070c;
+}
+
+.vhs-spine-tag {
+    font-size: 7.5px;
+    letter-spacing: 0.08em;
+    color: #8f2234;
+}
+
+.vhs-spine-date {
+    font: 700 9.5px/1.1 'Share Tech Mono', monospace;
+    letter-spacing: 0.04em;
+    color: #5c1a26;
+}
+
+.vhs-tape-preview {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.vhs-tape-snippet {
+    font: 400 11.5px/1.35 'Inter', sans-serif;
+    color: rgba(248, 226, 228, 0.88);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-break: break-word;
+}
+
+.vhs-tape-snippet mark {
+    background: rgba(255, 194, 112, 0.28);
+    color: #fff4d8;
+    border-radius: 3px;
+    padding: 0 2px;
+}
+
+.vhs-tape-status {
+    font: 700 8.5px/1 'Share Tech Mono', monospace;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: rgba(255, 186, 174, 0.48);
+}
+
+.vhs-tape.is-loaded .vhs-tape-status {
+    color: #ffd38c;
+}
+
+.vhs-tape-actions {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.vhs-star-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 166, 152, 0.14);
+    color: rgba(255, 206, 186, 0.42);
+    font-size: 13px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: color 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+}
+
+.vhs-star-btn:hover {
+    color: #ffd98a;
+    border-color: rgba(255, 206, 132, 0.42);
+}
+
+.vhs-star-btn.is-fav {
+    color: #ffd26e;
+    background: rgba(255, 192, 92, 0.12);
+    border-color: rgba(255, 204, 118, 0.48);
+    text-shadow: 0 0 8px rgba(255, 188, 86, 0.5);
+}
+
+.vhs-list-empty {
+    padding: 16px 10px;
+    text-align: center;
+    font: 10.5px/1.5 'Share Tech Mono', monospace;
+    color: rgba(224, 180, 186, 0.58);
+    border: 1px dashed rgba(255, 152, 146, 0.16);
+    border-radius: 10px;
+}
+
+/* АДАПТИВ: КОМПАКТНЫЙ СТУДИЙНЫЙ ДВУХКОЛОНОЧНЫЙ РЕЖИМ В АЛЬБОМНОМ FULLSCREEN */
+@media (max-height: 520px) and (min-width: 560px) {
+    .vhs-chassis {
+        width: min(96%, 760px);
+        max-height: 94%;
+    }
+    .vhs-head {
+        padding: 7px 12px 6px;
+    }
+    .vhs-body {
+        flex-direction: row;
+    }
+    .vhs-deck-stage {
+        width: 52%;
+        border-bottom: 0;
+        border-right: 1px solid rgba(255, 148, 134, 0.15);
+        padding: 9px 11px;
+        justify-content: space-between;
+    }
+    .vhs-crt {
+        min-height: 112px;
+        max-height: 168px;
+    }
+    .vhs-shelf {
+        width: 48%;
+        padding: 8px 11px 10px;
+    }
+}
+
+/* УЗКИЕ ЭКРАНЫ (320px — iPhone SE) */
+@media (max-width: 360px) {
+    .vhs-head {
+        padding: 9px 10px 8px;
+    }
+    .vhs-deck-stage {
+        padding: 9px 10px 8px;
+    }
+    .vhs-shelf {
+        padding: 8px 10px 10px;
+    }
+    .vhs-mode-lamp {
+        display: none;
+    }
+    .vhs-tape {
+        grid-template-columns: 80px minmax(0, 1fr) auto;
+        gap: 7px;
+    }
+    .vhs-tbtn--share span {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .vhs-chassis,
+    .vhs-carriage.is-loading,
+    .vhs-crt.is-tracking .vhs-tracking-layer,
+    .vhs-crt.is-tracking .vhs-crt-text,
+    .vhs-chassis.has-tape .vhs-reel {
+        animation: none !important;
+    }
+}

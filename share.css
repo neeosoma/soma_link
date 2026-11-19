@@ -1,0 +1,242 @@
+/* ==========================================================================
+   SOMA_LINK // ФОТОЛАБОРАТОРИЯ ДОСТИЖЕНИЙ (share.css)
+   Атмосферные иллюстрированные открытки для отправки в Telegram и соцсети.
+   Работает и в обычном режиме, и внутри #station-scene без выхода из Fullscreen.
+   ========================================================================== */
+
+.soma-share-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9650;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+    background: radial-gradient(ellipse at 50% 45%, rgba(28, 7, 13, 0.78), rgba(4, 1, 3, 0.94));
+    -webkit-backdrop-filter: blur(10px) saturate(1.12);
+    backdrop-filter: blur(10px) saturate(1.12);
+    touch-action: manipulation;
+}
+
+.soma-share-overlay.hidden {
+    display: none !important;
+}
+
+.soma-share-overlay.is-in-scene {
+    position: absolute;
+    inset: 0;
+    z-index: 48;
+    padding: clamp(8px, 2vw, 18px);
+}
+
+.soma-share-card {
+    position: relative;
+    width: min(100%, 468px);
+    max-height: min(92dvh, 720px);
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+    padding: 13px 14px 14px;
+    border-radius: 20px;
+    color: #f8ecef;
+    background:
+        radial-gradient(120% 80% at 15% 0%, rgba(255, 186, 132, 0.1), transparent 55%),
+        linear-gradient(168deg, rgba(24, 9, 13, 0.97) 0%, rgba(12, 4, 7, 0.98) 55%, rgba(7, 2, 4, 0.99) 100%);
+    border: 1px solid rgba(255, 178, 146, 0.26);
+    box-shadow:
+        0 28px 80px rgba(0, 0, 0, 0.92),
+        0 0 46px rgba(214, 52, 78, 0.18),
+        inset 0 1px 0 rgba(255, 230, 208, 0.16);
+    overflow-y: auto;
+    animation: soma-share-in 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes soma-share-in {
+    0% { opacity: 0; transform: translateY(10px) scale(0.968); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.soma-share-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.soma-share-kicker {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font: 700 10.5px/1 'Share Tech Mono', monospace;
+    letter-spacing: 0.15em;
+    color: rgba(255, 224, 206, 0.92);
+    text-transform: uppercase;
+}
+
+.soma-share-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #ffc876;
+    box-shadow: 0 0 8px #ffa64c, 0 0 14px rgba(255, 92, 92, 0.6);
+    flex-shrink: 0;
+}
+
+.soma-share-close {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 156, 148, 0.18);
+    color: rgba(255, 214, 214, 0.8);
+    font: 13px/1 'Inter', sans-serif;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+
+.soma-share-close:hover {
+    background: rgba(255, 88, 104, 0.18);
+    border-color: rgba(255, 148, 156, 0.5);
+    color: #fff;
+}
+
+/* РАМА С ГОТОВЫМ АТМОСФЕРНЫМ СНИМКОМ 16:9 */
+.soma-share-frame {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 13px;
+    overflow: hidden;
+    background: #090305;
+    border: 1px solid rgba(255, 186, 148, 0.28);
+    box-shadow:
+        0 14px 34px rgba(0, 0, 0, 0.78),
+        0 0 24px rgba(214, 58, 78, 0.14);
+}
+
+.soma-share-img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    -webkit-user-drag: element;
+    user-select: auto;
+}
+
+.soma-share-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(9, 3, 5, 0.86);
+    font: 700 10px/1 'Share Tech Mono', monospace;
+    letter-spacing: 0.16em;
+    color: rgba(255, 212, 184, 0.82);
+    text-transform: uppercase;
+}
+
+.soma-share-loading.hidden {
+    display: none;
+}
+
+.soma-share-status {
+    min-height: 16px;
+    text-align: center;
+    font: 400 10.5px/1.35 'Share Tech Mono', monospace;
+    letter-spacing: 0.04em;
+    color: rgba(235, 196, 200, 0.72);
+}
+
+.soma-share-status.is-ok {
+    color: #ffd992;
+}
+
+/* ГЛАВНАЯ КНОПКА ОТПРАВКИ СНИМКА И ДОП. ДЕЙСТВИЯ */
+.soma-share-primary {
+    width: 100%;
+    min-height: 42px;
+    padding: 0 14px;
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgba(142, 26, 44, 0.96), rgba(86, 14, 28, 0.98));
+    border: 1px solid rgba(255, 186, 146, 0.56);
+    box-shadow:
+        0 8px 22px rgba(140, 18, 38, 0.36),
+        inset 0 1px 0 rgba(255, 232, 212, 0.24);
+    color: #fff6f2;
+    font: 700 11.5px/1 'Share Tech Mono', monospace;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: filter 0.16s ease, transform 0.1s ease, border-color 0.16s ease;
+}
+
+.soma-share-primary:hover {
+    filter: brightness(1.1);
+    border-color: rgba(255, 214, 168, 0.8);
+}
+
+.soma-share-primary:active {
+    transform: translateY(1px);
+}
+
+.soma-share-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.soma-share-sec {
+    min-height: 34px;
+    padding: 0 8px;
+    border-radius: 9px;
+    background: rgba(22, 8, 12, 0.9);
+    border: 1px solid rgba(255, 162, 148, 0.22);
+    color: rgba(252, 224, 224, 0.86);
+    font: 700 9.5px/1.1 'Share Tech Mono', monospace;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    cursor: pointer;
+    text-align: center;
+    transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+.soma-share-sec:hover {
+    background: rgba(48, 15, 24, 0.94);
+    border-color: rgba(255, 192, 152, 0.5);
+    color: #fff;
+}
+
+@media (max-height: 500px) and (min-width: 560px) {
+    .soma-share-card {
+        width: min(92%, 440px);
+        gap: 7px;
+        padding: 9px 12px 10px;
+    }
+    .soma-share-primary {
+        min-height: 36px;
+    }
+    .soma-share-sec {
+        min-height: 30px;
+    }
+}
+
+@media (max-width: 350px) {
+    .soma-share-row {
+        grid-template-columns: 1fr 1fr;
+    }
+    .soma-share-sec--tg {
+        grid-column: 1 / -1;
+    }
+}

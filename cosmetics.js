@@ -58,7 +58,7 @@ const SOMA_CATALOG = [
     { id: 'room_garland', tab: 'room', group: 'ambience', slot: 'garland', stars: 140, name: 'Гирлянда Эдисона у окна',  desc: '13 винтажных лампочек с тёплыми вольфрамовыми нитями и золотым светом по каменной арке окна.' },
     { id: 'room_candles', tab: 'room', group: 'ambience',  slot: 'candles', stars: 140, name: 'Живые свечи станции',      desc: 'Шесть восковых свечей с трепещущим живым пламенем и тёплыми бликами у ковра и на полке радио.' },
     { id: 'room_cat',     tab: 'room', group: 'companion', slot: 'cat',     stars: 220, name: 'Живой кот-хранитель',      desc: 'Крупный тёплый кот с уникальной мастью по вашему ID на кушетке: глубоко дышит, мурчит и дружит с псом.' },
-    { id: 'room_dog',     tab: 'room', group: 'companion', slot: 'dog',     stars: 220, name: 'Живой пёс-хранитель',      desc: 'Настоящий пёс одной из 7 пород по вашему ID на персидском коврике у пледа рядом с котом: дышит, виляет хвостом и бережёт уют.' }
+    { id: 'room_dog',     tab: 'room', group: 'companion', slot: 'dog',     stars: 220, name: 'Живой пёс-хранитель',      desc: 'Крупный пёс одной из 7 пород по вашему ID сладко спит, подогнув лапки на персидском коврике у пледа рядом с котом, и отзывается на ласку.' }
 ];
 
 const SOMA_ITEM_MAP = Object.fromEntries(SOMA_CATALOG.map(it => [it.id, it]));
@@ -1089,7 +1089,7 @@ function openDossier(entry) {
         <div class="space-y-1.5 pt-1">
             ${me
                 ? `<button type="button" onclick="closeDossier(); openShop()" class="w-full py-2.5 bg-red-950/80 hover:bg-red-900 border border-amber-400/45 text-amber-200 text-[11px] font-mono-tech font-bold rounded-xl transition">✦ НАСТРОИТЬ ОБЛИК И ТИТУЛ</button>
-                   <button type="button" onclick="shareTopFlex(${entry.place || 1}, ${totalXp})" class="w-full py-2 bg-black/50 hover:bg-red-950/40 border border-red-500/35 text-red-200 text-[10.5px] font-mono-tech rounded-xl transition">КОЗЫРНУТЬ МЕСТОМ В ТОПЕ</button>`
+                   <button type="button" onclick="shareTopFlex(${entry.place || 1}, ${totalXp})" class="w-full py-2 bg-black/50 hover:bg-red-950/40 border border-red-500/35 text-red-200 text-[10.5px] font-mono-tech rounded-xl transition">ПОДЕЛИТЬСЯ ОТКРЫТКОЙ ТОПА</button>`
                 : `<button type="button" onclick="closeDossier(); openShop()" class="w-full py-2.5 bg-red-950/60 hover:bg-red-900/70 border border-amber-400/40 text-amber-200 text-[10.5px] font-mono-tech rounded-xl transition">✦ ХОЧУ ВЫДЕЛЯТЬСЯ ТАК ЖЕ</button>`}
             <button type="button" onclick="closeDossier()" class="w-full py-1.5 text-gray-500 hover:text-gray-300 text-xs font-mono-tech">ЗАКРЫТЬ</button>
         </div>
@@ -1103,6 +1103,10 @@ function closeDossier() {
 }
 
 function shareTopFlex(place, xpVal) {
+    if (typeof window !== 'undefined' && window.SOMA_SHARE && typeof window.SOMA_SHARE.shareRank === 'function') {
+        window.SOMA_SHARE.shareRank(place, xpVal);
+        return;
+    }
     const c = getActiveCosmetics();
     const tl = titleLabelOf(c);
     const ep = c.epitaph ? `\n«${c.epitaph}»` : '';

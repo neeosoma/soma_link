@@ -8,9 +8,11 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="room.css?v=10">
-    <link rel="stylesheet" href="cosmetics.css?v=10">
-    <link rel="stylesheet" href="receiver.css?v=10">
+    <link rel="stylesheet" href="room.css?v=11">
+    <link rel="stylesheet" href="cosmetics.css?v=11">
+    <link rel="stylesheet" href="receiver.css?v=11">
+    <link rel="stylesheet" href="vhs.css?v=11">
+    <link rel="stylesheet" href="share.css?v=11">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@300;400;500;600;700&display=swap');
         .font-mono-tech { font-family: 'Share Tech Mono', monospace; }
@@ -199,7 +201,7 @@
             <h3 class="text-base font-bold text-white">Вы нарушитель</h3>
             <p class="text-xs text-gray-300 leading-relaxed">Десять попыток помочь. Система не рассчитана на тех, кто не готов просто смотреть. Настоящая помощь существует только за пределами SOMA_LINK: напишите живому человеку, который молчит.</p>
             <div class="bg-black/50 p-3 rounded-xl text-[11px] font-mono-tech text-amber-300 border border-amber-400/30">Статус: НАРУШИТЕЛЬ ПРОТОКОЛА // +100 XP</div>
-            <button onclick="shareEgg()" class="w-full py-2.5 bg-amber-950/50 hover:bg-amber-900/60 border border-amber-400/50 text-amber-200 text-xs font-mono-tech rounded-xl transition">РАССКАЗАТЬ ДРУГИМ</button>
+            <button onclick="shareEgg()" class="w-full py-2.5 bg-amber-950/50 hover:bg-amber-900/60 border border-amber-400/50 text-amber-200 text-xs font-mono-tech rounded-xl transition">ПОДЕЛИТЬСЯ ОТКРЫТКОЙ</button>
             <button onclick="closeEgg()" class="w-full py-2 text-gray-500 text-xs font-mono-tech">ЗАКРЫТЬ</button>
         </div>
     </div>
@@ -244,7 +246,7 @@
             <p class="text-xs text-gray-300 leading-relaxed">Весь этот шум не случаен. У NEEO_CITY есть голос, и он звучит там, где нет ленты и реакций. Включи звук и просто послушай.</p>
             <div id="music-bonus" class="hidden bg-black/50 p-2 rounded-xl text-[11px] font-mono-tech text-amber-300 border border-amber-400/30">Частота найдена // +50 XP</div>
             <div id="music-links" class="space-y-2"></div>
-            <button onclick="shareMusic()" class="w-full py-2 bg-red-950/50 border border-red-500/40 text-red-200 text-[11px] font-mono-tech rounded-xl">РАССКАЗАТЬ ДРУГИМ</button>
+            <button onclick="shareMusic()" class="w-full py-2 bg-red-950/50 border border-red-500/40 text-red-200 text-[11px] font-mono-tech rounded-xl">ПОДЕЛИТЬСЯ ОТКРЫТКОЙ</button>
             <button onclick="closeMusic()" class="w-full py-1.5 text-gray-500 text-xs font-mono-tech">ЗАКРЫТЬ</button>
         </div>
     </div>
@@ -414,7 +416,7 @@
                     <button type="button" class="station-hit station-hit--plant" data-obj="plant" aria-label="Растение — осмотреть" onclick="activateRoomObject('plant', event)"></button>
                     <button type="button" class="station-hit station-hit--window" data-obj="window" aria-label="Окно — осмотреть ночной город" onclick="activateRoomObject('window', event)"></button>
                     <button type="button" class="station-hit station-hit--lamp" data-obj="lamp" aria-label="Висячая лампа — качнуть" onclick="activateRoomObject('lamp', event)"></button>
-                    <button type="button" class="station-hit station-hit--shelf" data-obj="shelf" aria-label="Старый магнитофон — проверить кассету" onclick="activateRoomObject('shelf', event)"></button>
+                    <button type="button" class="station-hit station-hit--shelf" data-obj="shelf" aria-label="Видеомагнитофон SOMA VTR-90 — открыть VHS-архив тёплых слов" onclick="activateRoomObject('shelf', event)"></button>
                     <button type="button" class="station-hit station-hit--nightlight" data-obj="nightlight" aria-label="Ночник у терминала — подсветить" onclick="activateRoomObject('nightlight', event)"></button>
                     <button type="button" id="station-hit-bed" class="station-hit station-hit--bed" data-obj="bed" aria-label="Кушетка — осмотреть" onclick="activateRoomObject('bed', event)"></button>
                     <button type="button" id="station-hit-dog" class="station-hit station-hit--dog hidden" data-obj="dog" aria-label="Погладить пса на коврике у пледа" onclick="activateRoomObject('dog', event)"></button>
@@ -457,13 +459,13 @@
                         </div>
                     </div>
 
-                    <!-- Диегетический архив кассет входящих «Шёпотов» при касании магнитофона -->
-                    <div id="station-deck-bar" class="station-ctx hidden" aria-label="Кассетный архив">
+                    <!-- Диегетический VHS-видеоархив входящих анонимных «Шёпотов» (номер + ДД.ММ.ГГГГ) -->
+                    <div id="station-deck-bar" class="station-ctx hidden" aria-label="Видеоархив VHS">
                         <div class="station-ctx-head">
-                            <span>КАССЕТНАЯ ДЕКА // АРХИВ ШЁПОТОВ</span>
+                            <span>SOMA // VTR-90 · АРХИВ VHS-КАССЕТ</span>
                             <span id="station-deck-count">ЛОТОК ПУСТ</span>
                         </div>
-                        <p id="station-deck-empty" class="station-ctx-empty">Плёнка чиста. Когда оживёт «Шёпот», здесь останутся кассеты с тёплыми словами, написанными лично вам.</p>
+                        <p id="station-deck-empty" class="station-ctx-empty">Плёнка чиста. Каждое анонимное тёплое послание для вас запишется на номерную VHS-кассету с полной датой ДД.ММ.ГГГГ.</p>
                         <div id="station-deck-list" class="station-ctx-row"></div>
                     </div>
 
@@ -506,7 +508,7 @@
                                 <button type="button" id="pts-dew-btn" class="station-pts-mini" aria-pressed="false" onclick="togglePtsDew()">СВЕТЛЯЧКИ 7/7</button>
                                 <button type="button" id="pts-cat-btn" class="station-pts-mini" aria-pressed="false" onclick="cyclePtsCatCoat()">МАСТИ КОТА</button>
                                 <button type="button" id="pts-dog-btn" class="station-pts-mini" aria-pressed="false" onclick="cyclePtsDogBreed()">ПОРОДЫ ПСА</button>
-                                <button type="button" class="station-pts-mini" onclick="togglePtsDemoCassette()">ДЕМО-КАССЕТА</button>
+                                <button type="button" class="station-pts-mini" onclick="togglePtsDemoCassette()">ДЕМО VHS</button>
                             </div>
                             <div id="station-plant-pips" class="station-stages" role="group" aria-label="PTS: пустой горшок и 6 стадий роста">
                                 <button type="button" data-stage-btn="-1" onclick="inspectPlantStage(-1)"><b>0</b><span>пусто</span></button>
@@ -593,17 +595,19 @@
                 </div>
             </div>
             <button onclick="copyShareText()" class="w-full py-3.5 bg-red-950 hover:bg-red-900 border border-red-500/50 text-red-200 font-bold text-xs font-mono-tech uppercase tracking-wider rounded-xl transition">
-                ПОДЕЛИТЬСЯ ОТЧЁТОМ СОУЧАСТИЯ
+                ПОДЕЛИТЬСЯ СНИМКОМ СТАНЦИИ
             </button>
         </div>
     </div>
 
 <script src="config.js"></script>
-<script src="scenarios.js?v=10"></script>
-<script src="music.js?v=10"></script>
-<script src="room.js?v=10"></script>
-<script src="cosmetics.js?v=10"></script>
-<script src="receiver.js?v=10"></script>
+<script src="scenarios.js?v=11"></script>
+<script src="music.js?v=11"></script>
+<script src="room.js?v=11"></script>
+<script src="cosmetics.js?v=11"></script>
+<script src="receiver.js?v=11"></script>
+<script src="vhs.js?v=11"></script>
+<script src="share.js?v=11"></script>
 <script>
     const cfg = window.SOMA_CONFIG || {};
     const SUPABASE_URL = cfg.SUPABASE_URL;
@@ -874,6 +878,10 @@
     }
     function closeMusic() { document.getElementById('music-modal').classList.add('hidden'); }
     function shareMusic() {
+        if (window.SOMA_SHARE && typeof window.SOMA_SHARE.shareSignal === 'function') {
+            window.SOMA_SHARE.shareSignal();
+            return;
+        }
         const text = 'Я перехватил скрытую частоту в SOMA LINK. Не скажу как. Попробуй найти сам:';
         if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) {
             Telegram.WebApp.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(BOT_LINK) + '&text=' + encodeURIComponent(text));
@@ -1315,6 +1323,10 @@
     }
     function closeEgg() { document.getElementById('egg-modal').classList.add('hidden'); }
     function shareEgg() {
+        if (window.SOMA_SHARE && typeof window.SOMA_SHARE.shareEgg === 'function') {
+            window.SOMA_SHARE.shareEgg();
+            return;
+        }
         const text = 'Я нарушил протокол SOMA LINK. Не скажу как. Попробуй сам:';
         if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) {
             Telegram.WebApp.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(BOT_LINK) + '&text=' + encodeURIComponent(text));
@@ -1440,6 +1452,18 @@
 
     document.addEventListener('keydown', e => {
         if (e.key !== 'Escape') return;
+        if (window.SOMA_SHARE && typeof window.SOMA_SHARE.isOpen === 'function' && window.SOMA_SHARE.isOpen()) {
+            window.SOMA_SHARE.close();
+            return;
+        }
+        if (window.SOMA_VHS && typeof window.SOMA_VHS.isOpen === 'function' && window.SOMA_VHS.isOpen()) {
+            window.SOMA_VHS.close();
+            return;
+        }
+        if (window.SOMA_RECEIVER && typeof window.SOMA_RECEIVER.isOpen === 'function' && window.SOMA_RECEIVER.isOpen()) {
+            window.SOMA_RECEIVER.close();
+            return;
+        }
         if (typeof exitRoomFullscreen === 'function') exitRoomFullscreen();
         if (typeof closeDossier === 'function') closeDossier();
         if (typeof closeShop === 'function') closeShop();
@@ -1451,6 +1475,10 @@
     });
 
     function copyShareText() {
+        if (window.SOMA_SHARE && typeof window.SOMA_SHARE.shareWitness === 'function') {
+            window.SOMA_SHARE.shareWitness();
+            return;
+        }
         const rank = document.getElementById('rank-title').innerText;
         const text = `SOMA_LINK // SILENCE PROTOCOL\nСвидетель: @${player.name}\nРанг: ${rank}\nПросмотрено драм: ${player.seen} | Пустых реакций: ${player.reacts} | Реальной помощи: 0.\n\nПопробуй не вмешаться:`;
         if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) {

@@ -1,57 +1,79 @@
-// ===== ПАНТЕОН ЦИНИКОВ, КОСМЕТИЧЕСКИЙ БУТИК И TELEGRAM STARS (SOMA_LINK v6) =====
-// Принцип SOMA_LINK: продаётся СТРОГО эстетика. Живое Тепло и рост цветка не продаются никогда.
+// ===== ПАНТЕОН ЦИНИКОВ, КОЛЛЕКЦИОННЫЙ БУТИК И TELEGRAM STARS (SOMA_LINK v8) =====
+// Принцип SOMA_LINK: продаётся СТРОГО эстетика. Внутри каждой категории — единая равная цена,
+// чтобы каждый атрибут был самодостаточным произведением искусства со своей уникальной анимацией.
+// Живое Тепло и рост цветка не продаются никогда.
 
 const SOMA_SEALS_SVG = {
-    seal_eye: '<svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.35"><path d="M1.4 8C3.2 4.6 5.5 3.2 8 3.2S12.8 4.6 14.6 8C12.8 11.4 10.5 12.8 8 12.8S3.2 11.4 1.4 8Z"/><circle cx="8" cy="8" r="2.1" fill="currentColor"/></svg>',
-    seal_crown: '<svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linejoin="round"><path d="M2 12.5L3.2 4.8L6.2 8.2L8 3.2L9.8 8.2L12.8 4.8L14 12.5H2Z"/><line x1="2.5" y1="14.2" x2="13.5" y2="14.2"/></svg>',
-    seal_eclipse: '<svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.35"><circle cx="8" cy="8" r="5.3"/><path d="M9.6 3.1A4.7 4.7 0 0 0 9.6 12.9A5.2 5.2 0 1 1 9.6 3.1Z" fill="currentColor"/></svg>',
-    seal_moth: '<svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"><path d="M8 4.5C5.6 2.5 2 3.2 2.2 6.8C2.4 9.3 5.2 9.8 8 8.2C10.8 9.8 13.6 9.3 13.8 6.8C14 3.2 10.4 2.5 8 4.5Z"/><path d="M8 8.2L5 12.6L8 11.2L11 12.6L8 8.2Z"/><line x1="8" y1="3.4" x2="8" y2="13.2"/></svg>',
-    seal_signal: '<svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="1.2,8.5 4.4,8.5 6.2,3.2 8.4,13 10.3,6.2 11.6,8.5 14.8,8.5"/></svg>'
+    seal_eye: '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M1.2 8C3 4.4 5.4 3 8 3S13 4.4 14.8 8C13 11.6 10.6 13 8 13S3 11.6 1.2 8Z"/><g class="seal-iris"><circle cx="8" cy="8" r="2.7" stroke-width="1.15"/><circle cx="8" cy="8" r="1.25" fill="currentColor"/><circle cx="7.2" cy="7.2" r="0.55" fill="#fff7ed" stroke="none"/></g></svg>',
+    seal_eclipse: '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.25"><circle cx="8" cy="8" r="5.3" stroke-opacity="0.72"/><path d="M9.8 3.05A4.65 4.65 0 0 0 9.8 12.95A5.25 5.25 0 1 1 9.8 3.05Z" fill="currentColor"/><g class="seal-flare" stroke="none"><circle cx="12.3" cy="4.8" r="1.35" fill="#fffbeb"/><path d="M12.3 2.4L12.65 4.45L14.7 4.8L12.65 5.15L12.3 7.2L11.95 5.15L9.9 4.8L11.95 4.45Z" fill="currentColor"/></g></svg>',
+    seal_moth: '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><g class="seal-wings"><path d="M8 5C5.5 2.1 1.5 2.9 1.9 6.8C2.2 9.3 5.1 9.8 8 8.2C10.9 9.8 13.8 9.3 14.1 6.8C14.5 2.9 10.5 2.1 8 5Z" fill="currentColor" fill-opacity="0.16"/><path d="M8 8.2L4.4 12.8L7.4 11.5L8 8.2ZM8 8.2L11.6 12.8L8.6 11.5L8 8.2Z"/><circle cx="4.6" cy="6.4" r="0.85" fill="currentColor" stroke="none"/><circle cx="11.4" cy="6.4" r="0.85" fill="currentColor" stroke="none"/></g><path d="M8 3.6V13M6.6 2.3L8 4L9.4 2.3"/></svg>',
+    seal_crown: '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12.2L3.1 5L6.1 8.1L8 3.2L9.9 8.1L12.9 5L14 12.2H2Z" fill="currentColor" fill-opacity="0.15"/><line x1="2.3" y1="14" x2="13.7" y2="14"/><g class="seal-gems" fill="#fffbeb" stroke="none"><circle cx="8" cy="2.6" r="1.05"/><circle cx="3" cy="4.4" r="0.8"/><circle cx="13" cy="4.4" r="0.8"/></g></svg>',
+    seal_signal: '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,8.6 4.2,8.6 6,3 8.3,13.2 10.3,5.8 11.7,8.6 15,8.6" stroke-width="1.2" stroke-opacity="0.3"/><polyline class="seal-wave" points="1,8.6 4.2,8.6 6,3 8.3,13.2 10.3,5.8 11.7,8.6 15,8.6" stroke-width="1.55"/></svg>'
+};
+
+const SOMA_SEAL_CLASS = {
+    seal_eye: 'soma-seal--eye',
+    seal_eclipse: 'soma-seal--eclipse',
+    seal_moth: 'soma-seal--moth',
+    seal_crown: 'soma-seal--crown',
+    seal_signal: 'soma-seal--signal'
 };
 
 const THRONE_CROWN_SVG = '<svg viewBox="0 0 18 14" width="14" height="11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M1.5 11.5L3 3.5L6.5 7.2L9 1.8L11.5 7.2L15 3.5L16.5 11.5H1.5Z"/></svg>';
 
 const SOMA_CATALOG = [
-    // 1. РАМКИ ТОПА, ДОСЬЕ И КАРТОЧКИ СВИДЕТЕЛЯ
-    { id: 'frame_ember',   tab: 'frames', slot: 'frame', css: 'soma-frame--ember',   stars: 75,  name: 'Тлеющий уголь',   desc: 'Живое багрово-угольное дыхание рамки в Топе Циников, Досье и профиле.' },
-    { id: 'frame_glitch',  tab: 'frames', slot: 'frame', css: 'soma-frame--glitch',  stars: 120, name: 'Сбой протокола',  desc: 'Хроматический ЭЛТ-сдвиг и тонкая развёртка перехваченного сигнала.' },
-    { id: 'frame_neon',    tab: 'frames', slot: 'frame', css: 'soma-frame--neon',    stars: 150, name: 'Багровый неон',   desc: 'Высоковольтный рубиновый контур ночных вывесок верхнего NEEO_CITY.' },
-    { id: 'frame_gold',    tab: 'frames', slot: 'frame', css: 'soma-frame--gold',    stars: 190, name: 'Чёрное золото',   desc: 'Парадный обсидиан с золотым отливом для завсегдатаев Высшей ложи.' },
-    { id: 'frame_phantom', tab: 'frames', slot: 'frame', css: 'soma-frame--phantom', stars: 250, name: 'Призрак эфира',   desc: 'Редкое серебристо-алое свечение на границе видимого спектра.' },
+    // 1. КОЛЛЕКЦИОННЫЕ РАМКИ ТОПА, ДОСЬЕ И КАРТОЧКИ СВИДЕТЕЛЯ (ЕДИНЫЙ ТИР 150 ⭐ · 6 УНИКАЛЬНЫХ АНИМАЦИЙ)
+    { id: 'frame_ember',   tab: 'frames', group: 'frames', slot: 'frame', css: 'soma-frame--ember',   motion: 'ИСКРЫ ГОРНА',    stars: 150, name: 'Тлеющий уголь',   desc: 'Вулканический обсидиан с переливчатой кромкой жара, дыханием горна и всплывающими искрами пепла.' },
+    { id: 'frame_glitch',  tab: 'frames', group: 'frames', slot: 'frame', css: 'soma-frame--glitch',  motion: 'RGB-РАЗВЁРТКА',  stars: 150, name: 'Сбой протокола',  desc: 'Хроматический RGB-раскол, прицельные уголки телеметрии и живой бегущий луч ЭЛТ-развёртки.' },
+    { id: 'frame_neon',    tab: 'frames', group: 'frames', slot: 'frame', css: 'soma-frame--neon',    motion: 'ПЛАЗМА НЕОНА',   stars: 150, name: 'Багровый неон',   desc: 'Стеклянная неоновая трубка верхнего NEEO_CITY с бегущей по контуру рубиновой плазменной дугой.' },
+    { id: 'frame_gold',    tab: 'frames', group: 'frames', slot: 'frame', css: 'soma-frame--gold',    motion: 'ШЁЛК 24K',       stars: 150, name: 'Чёрное золото',   desc: 'Чёрный оникс Ар-Деко с двойной золотой филигранью, заклёпками и скользящим музейным бликом 24k.' },
+    { id: 'frame_phantom', tab: 'frames', group: 'frames', slot: 'frame', css: 'soma-frame--phantom', motion: 'ОРБИТА АВРОРЫ',  stars: 150, name: 'Призрак эфира',   desc: 'Спектральная призма лунного серебра, аметиста и опала с двойной орбитой северного сияния.' },
+    { id: 'frame_pulse',   tab: 'frames', group: 'frames', slot: 'frame', css: 'soma-frame--pulse',   motion: 'КАРДИО-ЛУЧ',     stars: 150, name: 'Пульс Станции',   desc: 'Живой осциллограф SOMA_LINK с двойным ритмом сердцебиения и скользящим лазерным импульсом.' },
 
-    // 2. ПЕЧАТИ, ТИТУЛЫ И ЛИЧНАЯ ЭПИТАФИЯ В ТОПЕ
-    { id: 'seal_eye',        tab: 'status', slot: 'seal',  stars: 60,  name: 'Печать «Око»',          desc: 'Знак немигающего наблюдателя рядом с вашим номером в Топе.' },
-    { id: 'seal_eclipse',    tab: 'status', slot: 'seal',  stars: 90,  name: 'Печать «Затмение»',     desc: 'Тёмный серп ночного неба рядом с именем Свидетеля.' },
-    { id: 'seal_moth',       tab: 'status', slot: 'seal',  stars: 90,  name: 'Печать «Мотылёк»',      desc: 'Символ тех, кто летит на чужой огонёк в темноте сети.' },
-    { id: 'seal_crown',      tab: 'status', slot: 'seal',  stars: 110, name: 'Печать «Венец»',        desc: 'Острая корона трибунала для претендентов на пьедестал.' },
-    { id: 'seal_signal',     tab: 'status', slot: 'seal',  stars: 140, name: 'Печать «Импульс»',      desc: 'Кардиограмма живой частоты рядом с вашим позывным.' },
-    { id: 'title_architect', tab: 'status', slot: 'title', label: 'АРХИТЕКТОР ТИШИНЫ',   stars: 80,  name: 'Титул «Архитектор тишины»',   desc: 'Заменяет стандартную подпись в Топе, Досье и карточке профиля.' },
-    { id: 'title_collector', tab: 'status', slot: 'title', label: 'КОЛЛЕКЦИОНЕР ДРАМ',   stars: 80,  name: 'Титул «Коллекционер драм»',   desc: 'Ироничный статус искушённого зрителя чужих катастроф.' },
-    { id: 'title_patrician', tab: 'status', slot: 'title', label: 'ПАТРИЦИЙ ЭФИРА',      stars: 120, name: 'Титул «Патриций эфира»',      desc: 'Привилегированный чин закрытой ложи Паноптикума.' },
-    { id: 'title_ghost',     tab: 'status', slot: 'title', label: 'ПРИЗРАК NEEO_CITY',   stars: 120, name: 'Титул «Призрак NEEO_CITY»',   desc: 'Присутствует в каждой ленте, но не оставляет следов.' },
-    { id: 'title_oracle',    tab: 'status', slot: 'title', label: 'ПОСЛЕДНИЙ СВИДЕТЕЛЬ', stars: 180, name: 'Титул «Последний свидетель»', desc: 'Высший коллекционный титул ночной станции.' },
-    { id: 'perk_epitaph',    tab: 'status', slot: 'epitaph_unlock', stars: 150, name: 'Право на эпитафию', desc: 'Ваша личная фраза (до 42 символов) на Троне #1, в строке Топа и в Досье.' },
+    // 2. ЮВЕЛИРНЫЕ ПЕЧАТИ (100 ⭐), ЖИВЫЕ ТИТУЛЫ (110 ⭐) И ЛИЧНАЯ ЭПИТАФИЯ (150 ⭐)
+    { id: 'seal_eye',        tab: 'status', group: 'seals',  slot: 'seal',  motion: 'ЖИВОЙ ВЗГЛЯД',   stars: 100, name: 'Печать «Око»',          desc: 'Рубиновое око наблюдателя: зрачок неспешно сканирует зал и изредка гипнотически моргает.' },
+    { id: 'seal_eclipse',    tab: 'status', group: 'seals',  slot: 'seal',  motion: 'КОРОНА СОЛНЦА',  stars: 100, name: 'Печать «Затмение»',     desc: 'Тёмный диск в золотой солнечной короне с мерцающей вспышкой «бриллиантового кольца».' },
+    { id: 'seal_moth',       tab: 'status', group: 'seals',  slot: 'seal',  motion: 'ВЗМАХ КРЫЛЬЕВ',  stars: 100, name: 'Печать «Мотылёк»',      desc: 'Ночной мотылёк с узором на крыльях, которые мягко трепещут рядом с вашим позывным.' },
+    { id: 'seal_crown',      tab: 'status', group: 'seals',  slot: 'seal',  motion: 'СИЯНИЕ ВЕНЦА',   stars: 100, name: 'Печать «Венец»',        desc: 'Золотая корона трибунала с тремя мерцающими искрами на острых зубцах.' },
+    { id: 'seal_signal',     tab: 'status', group: 'seals',  slot: 'seal',  motion: 'БЕГУЩИЙ ЭКГ',    stars: 100, name: 'Печать «Импульс»',      desc: 'Непрерывная живая волна кардиограммы, пробегающая рядом с вашим номером в Топе.' },
+    { id: 'title_architect', tab: 'status', group: 'titles', slot: 'title', label: 'АРХИТЕКТОР ТИШИНЫ',   glyph: '◈', titleCss: 'soma-title--architect', stars: 110, name: 'Титул «Архитектор тишины»',   desc: 'Холодный платиново-стальной перелив букв в Топе, Досье и карточке Свидетеля.' },
+    { id: 'title_collector', tab: 'status', group: 'titles', slot: 'title', label: 'КОЛЛЕКЦИОНЕР ДРАМ',   glyph: '❖', titleCss: 'soma-title--collector', stars: 110, name: 'Титул «Коллекционер драм»',   desc: 'Бархатный рубиново-розовый перелив для ценителей ночных исповедей.' },
+    { id: 'title_patrician', tab: 'status', group: 'titles', slot: 'title', label: 'ПАТРИЦИЙ ЭФИРА',      glyph: '♛', titleCss: 'soma-title--patrician', stars: 110, name: 'Титул «Патриций эфира»',      desc: 'Тёплое шампанское золото закрытой ложи Паноптикума с мягким сиянием.' },
+    { id: 'title_ghost',     tab: 'status', group: 'titles', slot: 'title', label: 'ПРИЗРАК NEEO_CITY',   glyph: '◌', titleCss: 'soma-title--ghost',     stars: 110, name: 'Титул «Призрак NEEO_CITY»',   desc: 'Спектральный опалово-серебряный перелив — повсюду в эфире и неуловим.' },
+    { id: 'title_oracle',    tab: 'status', group: 'titles', slot: 'title', label: 'ПОСЛЕДНИЙ СВИДЕТЕЛЬ', glyph: '✦', titleCss: 'soma-title--oracle',    stars: 110, name: 'Титул «Последний свидетель»', desc: 'Рассветно-янтарный огненный градиент хранителя ночной станции.' },
+    { id: 'perk_epitaph',    tab: 'status', group: 'epitaph', slot: 'epitaph_unlock', stars: 150, name: 'Право на эпитафию', desc: 'Ваша личная фраза (до 42 символов) на Троне #1, в строке Топа, в Досье и в профиле.' },
 
-    // 3. КОРПУСА ПЕЙДЖЕРА SOMA // PGR-04
-    { id: 'pager_amber', tab: 'pager', slot: 'pager', stars: 110, name: 'Янтарный фосфор',     desc: 'Тёплый монохромный дисплей 1986 года и тёмно-бронзовый крепёж.' },
-    { id: 'pager_clear', tab: 'pager', slot: 'pager', stars: 140, name: 'Дымчатый рубин 90-х', desc: 'Полупрозрачный багровый пластик, сквозь который просвечивают дорожки платы.' },
-    { id: 'pager_ghost', tab: 'pager', slot: 'pager', stars: 150, name: 'Белый шум',           desc: 'Холодный тёмный хром и бледно-серебристое свечение матрицы.' },
-    { id: 'pager_brass', tab: 'pager', slot: 'pager', stars: 175, name: 'Воронёная сталь',     desc: 'Тяжёлый оружейный корпус с латунными винтами и мягким золотистым кантом.' },
+    // 3. ЖИВЫЕ КОРПУСА ПЕЙДЖЕРА SOMA // PGR-04 (ЕДИНЫЙ ТИР 140 ⭐)
+    { id: 'pager_amber', tab: 'pager', group: 'pagers', slot: 'pager', motion: 'ЛУЧ ЛЮМИНОФОРА', sample: 'CH·04 // 1986 AMBER', stars: 140, name: 'Янтарный фосфор',     desc: 'Тёплый катодный дисплей 1986 года с живой янтарной развёрткой, пульсом диода и бронзовым крепежом.' },
+    { id: 'pager_clear', tab: 'pager', group: 'pagers', slot: 'pager', motion: 'ИМПУЛЬС ПЛАТЫ',  sample: 'CH·04 // RUBY PCB',   stars: 140, name: 'Дымчатый рубин 90-х', desc: 'Полупрозрачный рубиновый пластик, сквозь который видны дорожки платы и бегущий по ним сигнал.' },
+    { id: 'pager_ghost', tab: 'pager', group: 'pagers', slot: 'pager', motion: 'ДЫМКА ЭФИРА',    sample: 'CH·04 // WHITE NOISE', stars: 140, name: 'Белый шум',          desc: 'Анодированный титановый хром с живой опалово-серебряной дымкой на холодной матрице.' },
+    { id: 'pager_brass', tab: 'pager', group: 'pagers', slot: 'pager', motion: 'ЗОЛОТОЙ БЛИК',   sample: 'CH·04 // GUNMETAL',   stars: 140, name: 'Воронёная сталь',     desc: 'Оружейный корпус с четырьмя латунными винтами, скользящим часовым бликом и тёплой шкалой.' },
 
-    // 4. АВТОРСКАЯ КЕРАМИКА И ЖИВОЙ УЮТ КОМНАТЫ (каждый атрибут сразу и ярко преображает сцену!)
-    { id: 'room_steam',   tab: 'room', slot: 'steam',   stars: 95,  name: 'Чай и сандал у терминала', desc: 'Янтарный чай с густым паром и курильница с тлеющей палочкой благовоний и шёлковым дымком.' },
-    { id: 'room_tape',    tab: 'room', slot: 'tape',    stars: 110, name: 'Винил «Ночной экспресс»',  desc: 'Крутится пластинка, танцуют огни усилителя, по мосту за окном идёт светящийся поезд + тёплый лоу-фай звук.' },
-    { id: 'pot_cinnabar', tab: 'room', slot: 'pot',     stars: 130, name: 'Киноварный лак',           desc: 'Императорская киноварь с двойным золотым поясом и печатью мастера на резной подставке кадай.' },
-    { id: 'room_garland', tab: 'room', slot: 'garland', stars: 135, name: 'Гирлянда Эдисона у окна',  desc: '13 винтажных лампочек с тёплыми вольфрамовыми нитями и золотым светом по каменной арке окна.' },
-    { id: 'pot_moon',     tab: 'room', slot: 'pot',     stars: 140, name: 'Лунный селадон',           desc: 'Светящийся жемчужно-дымчатый фарфор с серебряным полумесяцем и лунным ореолом на подставке.' },
-    { id: 'room_candles', tab: 'room', slot: 'candles', stars: 145, name: 'Живые свечи станции',      desc: 'Шесть восковых свечей с трепещущим живым пламенем и тёплыми бликами у ковра и на полке радио.' },
-    { id: 'pot_kintsugi', tab: 'room', slot: 'pot',     stars: 190, name: 'Керамика Кинцуги',         desc: 'Чёрная японская глина на подставке кадай, исцелённая сияющими швами 24-каратного золота.' },
-    { id: 'room_cat',     tab: 'room', slot: 'cat',     stars: 250, name: 'Живой кот-хранитель',      desc: 'Крупный тёплый кот с уникальной мастью по вашему ID: глубоко дышит, качает хвостом, греет кушетку и мурчит.' }
+    // 4. АВТОРСКИЕ СОСУДЫ (160 ⭐), ЖИВАЯ АТМОСФЕРА КОМНАТЫ (140 ⭐) И КОТ-ХРАНИТЕЛЬ (220 ⭐)
+    { id: 'pot_cinnabar', tab: 'room', group: 'pots',     slot: 'pot',     stars: 160, name: 'Киноварный лак',           desc: 'Императорская киноварь на подставке кадай с двойным золотым поясом, сияющей печатью и живым лаковым переливом.' },
+    { id: 'pot_moon',     tab: 'room', group: 'pots',     slot: 'pot',     stars: 160, name: 'Лунный селадон',           desc: 'Жемчужно-дымчатый фарфор на подставке с лунным серпом в живом ореоле и мерцающими серебряными искрами.' },
+    { id: 'pot_kintsugi', tab: 'room', group: 'pots',     slot: 'pot',     stars: 160, name: 'Керамика Кинцуги',         desc: 'Чёрная японская глина раку на подставке кадай, исцелённая дышащими швами 24k золота с бегущим бликом.' },
+    { id: 'room_steam',   tab: 'room', group: 'ambience', slot: 'steam',   stars: 140, name: 'Чай и сандал у терминала', desc: 'Янтарный чай с густым паром и курильница с тлеющей палочкой благовоний и шёлковым дымком.' },
+    { id: 'room_tape',    tab: 'room', group: 'ambience', slot: 'tape',    stars: 140, name: 'Винил «Ночной экспресс»',  desc: 'Крутится пластинка, танцуют огни усилителя, по виадуку идёт светящийся поезд + тёплый лоу-фай звук.' },
+    { id: 'room_garland', tab: 'room', group: 'ambience', slot: 'garland', stars: 140, name: 'Гирлянда Эдисона у окна',  desc: '13 винтажных лампочек с тёплыми вольфрамовыми нитями и золотым светом по каменной арке окна.' },
+    { id: 'room_candles', tab: 'room', group: 'ambience', slot: 'candles', stars: 140, name: 'Живые свечи станции',      desc: 'Шесть восковых свечей с трепещущим живым пламенем и тёплыми бликами у ковра и на полке радио.' },
+    { id: 'room_cat',     tab: 'room', group: 'companion', slot: 'cat',    stars: 220, name: 'Живой кот-хранитель',      desc: 'Крупный тёплый кот с уникальной мастью по вашему ID: глубоко дышит, качает хвостом, греет кушетку и мурчит.' }
 ];
 
 const SOMA_ITEM_MAP = Object.fromEntries(SOMA_CATALOG.map(it => [it.id, it]));
+const SOMA_FRAME_CLASSES = SOMA_CATALOG.filter(it => it.slot === 'frame' && it.css).map(it => it.css);
 const ROOM_FLAG_SLOTS = ['cat', 'steam', 'tape', 'garland', 'candles'];
 const ROOM_FLAG_ITEM = { cat: 'room_cat', steam: 'room_steam', tape: 'room_tape', garland: 'room_garland', candles: 'room_candles' };
+const SHOP_GROUP_META = {
+    frames:    { title: '// КОЛЛЕКЦИОННЫЕ РАМКИ',      pill: 'ЕДИНЫЙ ТИР · 150 ⭐' },
+    seals:     { title: '// ЖИВЫЕ ПЕЧАТИ СВИДЕТЕЛЯ',   pill: 'ЕДИНЫЙ ТИР · 100 ⭐' },
+    titles:    { title: '// АВТОРСКИЕ ТИТУЛЫ',         pill: 'ЕДИНЫЙ ТИР · 110 ⭐' },
+    epitaph:   { title: '// ЛИЧНЫЙ ГОЛОС В ТОПЕ',      pill: 'ПРИВИЛЕГИЯ · 150 ⭐' },
+    pagers:    { title: '// КОРПУСА SOMA // PGR-04',   pill: 'ЕДИНЫЙ ТИР · 140 ⭐' },
+    pots:      { title: '// СОСУДЫ МАСТЕРА',           pill: 'ЕДИНЫЙ ТИР · 160 ⭐' },
+    ambience:  { title: '// ЖИВАЯ АТМОСФЕРА СТАНЦИИ',  pill: 'ЕДИНЫЙ ТИР · 140 ⭐' },
+    companion: { title: '// ЖИВОЙ СПУТНИК ПО ID',      pill: 'ХРАНИТЕЛЬ · 220 ⭐' }
+};
 
 const shopState = {
     tab: 'frames',
@@ -159,14 +181,27 @@ function frameClassOf(cosm) {
     return it && it.css ? it.css : '';
 }
 
-function sealHtmlOf(cosm) {
-    const svg = cosm && cosm.seal && SOMA_SEALS_SVG[cosm.seal];
-    return svg ? `<span class="soma-seal" aria-hidden="true">${svg}</span>` : '';
+function sealHtmlOf(cosmOrId) {
+    const id = typeof cosmOrId === 'string' ? cosmOrId : (cosmOrId && cosmOrId.seal);
+    const svg = id && SOMA_SEALS_SVG[id];
+    if (!svg) return '';
+    const mod = SOMA_SEAL_CLASS[id] || '';
+    return `<span class="soma-seal ${mod}" aria-hidden="true">${svg}</span>`;
 }
 
 function titleLabelOf(cosm) {
     const it = cosm && cosm.title && SOMA_ITEM_MAP[cosm.title];
     return it && it.label ? it.label : '';
+}
+
+function titleSpanOf(cosmOrId, withGlyph) {
+    const id = typeof cosmOrId === 'string' ? cosmOrId : (cosmOrId && cosmOrId.title);
+    const it = id && SOMA_ITEM_MAP[id];
+    if (!it || !it.label) return '';
+    const prefix = withGlyph ? `${it.glyph || '✦'} ` : '';
+    const cls = it.titleCss ? `soma-title ${it.titleCss}` : '';
+    const safe = typeof esc === 'function' ? esc(prefix + it.label) : (prefix + it.label);
+    return cls ? `<span class="${cls}">${safe}</span>` : safe;
 }
 
 // Текущий ключ недели (понедельник UTC) и таймер до сброса недельной охоты
@@ -337,8 +372,7 @@ function applyCosmeticsToUI() {
     // 2) Карточка Свидетеля в профиле (рамка, печать, титул, эпитафия)
     const card = document.getElementById('witness-card');
     if (card && card.classList) {
-        ['soma-frame--ember', 'soma-frame--glitch', 'soma-frame--gold', 'soma-frame--neon', 'soma-frame--phantom']
-            .forEach(cls => card.classList.remove(cls));
+        SOMA_FRAME_CLASSES.forEach(cls => card.classList.remove(cls));
         const fc = frameClassOf(c);
         if (fc) card.classList.add(fc);
     }
@@ -346,9 +380,9 @@ function applyCosmeticsToUI() {
     if (sealSlot) sealSlot.innerHTML = sealHtmlOf(c);
     const titleSlot = document.getElementById('card-custom-title');
     if (titleSlot) {
-        const tl = titleLabelOf(c);
-        titleSlot.textContent = tl ? `✦ ${tl}` : '';
-        titleSlot.classList.toggle('hidden', !tl);
+        const th = titleSpanOf(c, true);
+        titleSlot.innerHTML = th;
+        titleSlot.classList.toggle('hidden', !th);
     }
     const epSlot = document.getElementById('card-epitaph');
     if (epSlot) {
@@ -582,7 +616,7 @@ function renderShop() {
                 <span class="top-row-name">${sealHtmlOf(c)}<span>${esc(myAnon)}</span>${shopState.preview ? '<span class="top-you-tag">ПРИМЕРКА</span>' : ''}</span>
                 <span class="top-row-xp">${(typeof player !== 'undefined' && player.xp) || 0} XP</span>
             </div>
-            ${tl ? `<div class="top-custom-title">✦ ${esc(tl)}</div>` : '<div class="text-[9.5px] text-gray-500">ОБЛИК В ТОПЕ ЦИНИКОВ И КОМНАТЕ</div>'}
+            ${tl ? `<div class="top-custom-title">${titleSpanOf(c, true)}</div>` : '<div class="text-[9.5px] text-gray-500">ОБЛИК В ТОПЕ ЦИНИКОВ И КОМНАТЕ</div>'}
             ${c.epitaph ? `<p class="top-epitaph">«${esc(c.epitaph)}»</p>` : ''}
             ${gearBits.length ? `<div class="text-[9px] text-gray-400 pt-0.5">${gearBits.map(esc).join(' · ')}</div>` : ''}
         `;
@@ -608,11 +642,39 @@ function renderShop() {
         </div>`;
     }
 
-    html += items.map(it => {
+    let lastGroup = '';
+    items.forEach(it => {
+        if (it.group && it.group !== lastGroup && SHOP_GROUP_META[it.group]) {
+            lastGroup = it.group;
+            const gm = SHOP_GROUP_META[it.group];
+            html += `<div class="shop-tier-head"><span>${esc(gm.title)}</span><span class="shop-tier-pill">${esc(gm.pill)}</span></div>`;
+        }
         const owned = isOwned(it.id);
         const eq = isEquipped(it.id);
         const trying = shopState.preview === it.id;
-        const icon = SOMA_SEALS_SVG[it.id] ? `<span class="soma-seal">${SOMA_SEALS_SVG[it.id]}</span>` : '';
+        const sealBadge = SOMA_SEALS_SVG[it.id] ? `<span class="shop-seal-badge">${sealHtmlOf(it.id)}</span>` : '';
+        let liveSwatch = '';
+        if (it.slot === 'frame' && it.css) {
+            liveSwatch = `
+            <div class="shop-swatch-frame ${it.css}">
+                <span class="top-row-name text-[11px]">${sealHtmlOf(c)}<span>${esc(myAnon)}</span></span>
+                <span class="shop-swatch-tag">${esc(it.motion || 'ЖИВАЯ РАМКА')}</span>
+            </div>`;
+        } else if (it.slot === 'title') {
+            liveSwatch = `
+            <div class="shop-swatch-title">
+                ${titleSpanOf(it.id, true)}
+                <span class="text-[8.5px] text-gray-500 shrink-0">ЖИВОЙ ТИТУЛ</span>
+            </div>`;
+        } else if (it.slot === 'pager') {
+            liveSwatch = `
+            <div class="soma-pager shop-swatch-pager" data-skin="${it.id}">
+                <div class="pager-lcd">
+                    <span class="pager-lcd-main flex items-center gap-1.5"><i class="pager-led" aria-hidden="true"></i>${esc(it.sample || 'SOMA // PGR-04')}</span>
+                    <span class="pager-carrier text-[8.5px]">${esc(it.motion || '')}</span>
+                </div>
+            </div>`;
+        }
         const buyLabel = shopState.buying === it.id
             ? 'СЧЁТ...'
             : pts
@@ -624,16 +686,23 @@ function renderShop() {
         const tryLabel = (it.tab === 'room' || it.tab === 'pager')
             ? 'В КОМНАТЕ'
             : (trying ? 'СБРОС' : 'ПРИМЕРИТЬ');
+        const motionNote = (it.slot === 'seal' && it.motion)
+            ? `<span class="text-[8.5px] font-mono-tech text-rose-300/75">· ${esc(it.motion)}</span>`
+            : '';
         const personalCat = (it.id === 'room_cat' && typeof catSpec === 'function')
             ? `<div class="text-[9.5px] font-mono-tech text-amber-300/95 mt-1">✦ ВАШ КОТ ПО ID: ${esc(catSpec().summary.toUpperCase())}</div>`
             : '';
-        return `
+        html += `
         <div class="shop-item ${eq ? 'is-equipped' : ''}">
+            ${liveSwatch}
             <div class="shop-item-top">
-                <div>
-                    <div class="shop-item-name">${icon}<span>${esc(it.name)}</span></div>
-                    <p class="shop-item-desc">${esc(it.desc)}</p>
-                    ${personalCat}
+                <div class="flex items-start gap-2.5 min-w-0">
+                    ${sealBadge}
+                    <div class="min-w-0">
+                        <div class="shop-item-name flex-wrap"><span>${esc(it.name)}</span>${motionNote}</div>
+                        <p class="shop-item-desc">${esc(it.desc)}</p>
+                        ${personalCat}
+                    </div>
                 </div>
                 <span class="shop-price ${owned ? 'is-owned' : ''}">${owned ? 'В КОЛЛЕКЦИИ' : `${it.stars} ⭐`}</span>
             </div>
@@ -644,7 +713,7 @@ function renderShop() {
                        <button type="button" class="shop-btn shop-btn--try" onclick="tryCosmetic('${it.id}')">${tryLabel}</button>`}
             </div>
         </div>`;
-    }).join('');
+    });
 
     body.innerHTML = html;
 }
@@ -812,7 +881,7 @@ async function renderLeaderboard() {
                     <span>${esc(anonLabel(first.username))}</span>
                     ${me1 ? '<span class="top-you-tag">ВЫ</span>' : ''}
                 </div>
-                <div class="top-custom-title">✦ ${esc(t1)}</div>
+                <div class="top-custom-title">${titleSpanOf(c1, true) || `✦ ${esc(t1)}`}</div>
                 <p class="top-epitaph">«${esc(ep1)}»</p>
                 <div class="top-throne-stats">
                     <span class="top-throne-xp">${first.score || 0} XP</span>
@@ -831,7 +900,7 @@ async function renderLeaderboard() {
                 <div class="top-runner top-runner--${pl} ${frameClassOf(cr)}" onclick="openDossierByIndex(${pl - 1})">
                     <div class="top-runner-place">#0${pl} // ТРИАДА ${meR ? '· ВЫ' : ''}</div>
                     <div class="top-runner-name">${sealHtmlOf(cr)}<span>${esc(anonLabel(r.username))}</span></div>
-                    <div class="top-custom-title truncate">${esc(tr)}</div>
+                    <div class="top-custom-title truncate">${titleSpanOf(cr, false) || esc(tr)}</div>
                     <div class="top-runner-xp">${r.score || 0} XP</div>
                 </div>`;
             }).join('') + `</div>`;
@@ -847,11 +916,11 @@ async function renderLeaderboard() {
         const me = b.username === player.uid;
         const cb = entryCosmetics(b);
         const lodge = b.place <= 10;
-        const tb = titleLabelOf(cb);
+        const tb = titleSpanOf(cb, true);
         const sub = cb.epitaph
             ? `«${esc(cb.epitaph)}»`
             : tb
-                ? `✦ ${esc(tb)}`
+                ? tb
                 : `Срывов протокола: ${b.help_attempts || 0}`;
         return `
         <div class="top-row ${lodge ? 'top-row--lodge' : ''} ${me ? 'top-row--me' : ''} ${frameClassOf(cb)}" onclick="${clickExpr}">
@@ -954,7 +1023,7 @@ function openDossier(entry) {
             <div class="flex items-center gap-2 text-lg font-bold font-mono-tech text-white">
                 ${sealHtmlOf(c)}<span>${esc(anonLabel(entry.username))}</span>${me ? '<span class="top-you-tag">ВЫ</span>' : ''}
             </div>
-            ${tl ? `<div class="top-custom-title mt-0.5">✦ ${esc(tl)}</div>` : ''}
+            ${tl ? `<div class="top-custom-title mt-0.5">${titleSpanOf(c, true)}</div>` : ''}
             <div class="text-[10.5px] font-mono-tech text-red-400/90 mt-0.5">${esc(rankTitleForXp(totalXp))}</div>
         </div>
         ${c.epitaph ? `<p class="top-epitaph bg-black/40 border border-red-500/20 rounded-xl px-3 py-2">«${esc(c.epitaph)}»</p>` : ''}

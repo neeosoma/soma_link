@@ -46,15 +46,15 @@
     // + 9-й тайный звёздный алтарь пришельца-пасхалки (ПОЛНОСТЬЮ СКРЫТ, пока не расцветут все 8/8 земных растений!)
     const EARTH_COUNT = 8;
     const PEDESTALS = [
-        { slot: 0, x: 84,  y: 454, scale: 0.41, tier: 'front' },
-        { slot: 1, x: 176, y: 416, scale: 0.39, tier: 'mid'   },
-        { slot: 2, x: 268, y: 390, scale: 0.38, tier: 'back'  },
-        { slot: 3, x: 362, y: 374, scale: 0.37, tier: 'back'  },
-        { slot: 4, x: 598, y: 374, scale: 0.37, tier: 'back'  },
-        { slot: 5, x: 692, y: 390, scale: 0.38, tier: 'back'  },
-        { slot: 6, x: 784, y: 416, scale: 0.39, tier: 'mid'   },
-        { slot: 7, x: 876, y: 454, scale: 0.41, tier: 'front' },
-        { slot: 'alien', x: 480, y: 492, scale: 0.53, tier: 'altar' }
+        { slot: 0, x: 88,  y: 446, scale: 0.41, tier: 'front' },
+        { slot: 1, x: 178, y: 412, scale: 0.39, tier: 'mid'   },
+        { slot: 2, x: 270, y: 388, scale: 0.38, tier: 'back'  },
+        { slot: 3, x: 362, y: 372, scale: 0.37, tier: 'back'  },
+        { slot: 4, x: 598, y: 372, scale: 0.37, tier: 'back'  },
+        { slot: 5, x: 690, y: 388, scale: 0.38, tier: 'back'  },
+        { slot: 6, x: 782, y: 412, scale: 0.39, tier: 'mid'   },
+        { slot: 7, x: 872, y: 446, scale: 0.41, tier: 'front' },
+        { slot: 'alien', x: 480, y: 482, scale: 0.52, tier: 'altar' }
     ];
 
     // Звёзды, светлячки и капли на куполе (детерминированные, без дёрганья)
@@ -722,10 +722,29 @@
         ov.querySelector('#gh-stage').addEventListener('click', (e) => {
             const canvas = state.canvas;
             if (!canvas) return;
-            const rect = canvas.getBoundingClientRect();
-            if (!rect.width || !rect.height) return;
-            const x = ((e.clientX - rect.left) / rect.width) * SCENE_W;
-            const y = ((e.clientY - rect.top) / rect.height) * SCENE_H;
+            // Точный перевод координат клика с учётом CSS-поворота Fullscreen (±90°/180°) И object-fit: contain!
+            let lx = 0, ly = 0, lw = 0, lh = 0;
+            if (typeof window !== 'undefined' && typeof window.somaClientToLocal === 'function') {
+                const loc = window.somaClientToLocal(canvas, e.clientX, e.clientY);
+                lx = loc.x; ly = loc.y; lw = loc.w; lh = loc.h;
+            } else {
+                const rect = canvas.getBoundingClientRect();
+                if (!rect.width || !rect.height) return;
+                lx = e.clientX - rect.left;
+                ly = e.clientY - rect.top;
+                lw = rect.width;
+                lh = rect.height;
+            }
+            if (!lw || !lh) return;
+            // Вычисляем реальный прямоугольник отрисовки холста SCENE_W×SCENE_H внутри lw×lh (object-fit: contain)
+            const fitScale = Math.min(lw / SCENE_W, lh / SCENE_H);
+            const drawW = SCENE_W * fitScale;
+            const drawH = SCENE_H * fitScale;
+            const offX = (lw - drawW) * 0.5;
+            const offY = (lh - drawH) * 0.5;
+            const x = ((lx - offX) / (drawW || 1)) * SCENE_W;
+            const y = ((ly - offY) / (drawH || 1)) * SCENE_H;
+            if (x < 0 || x > SCENE_W || y < 0 || y > SCENE_H) return;
             state.ripples.push({ x, y, life: 1 });
             if (state.zen) {
                 playGlassHarp(Math.floor((x / SCENE_W) * 8));
@@ -740,7 +759,7 @@
                 const dx = x - p.x;
                 const dy = (y - (p.y - 42)) * 0.85;
                 const d = Math.hypot(dx, dy);
-                if (d < 82 && d < bestD) { bestD = d; best = { p, idx }; }
+                if (d < 86 && d < bestD) { bestD = d; best = { p, idx }; }
             });
             if (best) {
                 state.selected = best.p.slot;
@@ -753,6 +772,9 @@
             if (state.open && e.key === 'Escape') close();
         });
         document.body.appendChild(ov);
+        if (typeof window !== 'undefined' && typeof window.bindSomaSceneScroll === 'function') {
+            window.bindSomaSceneScroll(ov.querySelector('#gh-shell'));
+        }
         state.overlay = ov;
         state.canvas = ov.querySelector('#gh-canvas');
         return ov;
@@ -835,14 +857,21 @@
             aChip.type = 'button';
             aChip.className = 'gh-chip is-alien' + (gh.placed === 'alien' ? ' is-in-room' : '');
             aChip.setAttribute('aria-selected', String(state.selected === 'alien'));
+            let aLong = 'ТАЙНОЕ СЕМЯ ПРОБУДИЛОСЬ';
             if (gh.alienSeed && gh.alienSeed.bloomed && myAlien) {
-                aChip.textContent = `✦ IX · ${myAlien.kindName}`;
+                aLong = myAlien.kindName;
             } else if (gh.alienSeed) {
                 const ast = plantStage(gh.alienSeed.grownWarmth || 0, { sprouted: true, steps: ALIEN_WARMTH_STEPS });
-                aChip.textContent = `✦ IX · ЗВЁЗДНОЕ СЕМЯ (${ast < 0 ? 0 : ast + 1}/6)`;
-            } else {
-                aChip.textContent = '✦ IX · ТАЙНОЕ СЕМЯ ПРОБУДИЛОСЬ';
+                aLong = `ЗВЁЗДНОЕ СЕМЯ (${ast < 0 ? 0 : ast + 1}/6)`;
             }
+            const sShort = document.createElement('span');
+            sShort.className = 'gh-alien-short';
+            sShort.textContent = '✦ IX';
+            const sLong = document.createElement('span');
+            sLong.className = 'gh-alien-long';
+            sLong.textContent = ` · ${aLong}`;
+            aChip.appendChild(sShort);
+            aChip.appendChild(sLong);
             aChip.onclick = () => {
                 state.selected = 'alien';
                 playGlassHarp(8);

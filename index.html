@@ -8,13 +8,13 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="room.css?v=13">
-    <link rel="stylesheet" href="cosmetics.css?v=13">
-    <link rel="stylesheet" href="receiver.css?v=13">
-    <link rel="stylesheet" href="vhs.css?v=13">
-    <link rel="stylesheet" href="greenhouse.css?v=13">
-    <link rel="stylesheet" href="blimp.css?v=13">
-    <link rel="stylesheet" href="share.css?v=13">
+    <link rel="stylesheet" href="room.css?v=14">
+    <link rel="stylesheet" href="cosmetics.css?v=14">
+    <link rel="stylesheet" href="receiver.css?v=14">
+    <link rel="stylesheet" href="vhs.css?v=14">
+    <link rel="stylesheet" href="greenhouse.css?v=14">
+    <link rel="stylesheet" href="blimp.css?v=14">
+    <link rel="stylesheet" href="share.css?v=14">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@300;400;500;600;700&display=swap');
         .font-mono-tech { font-family: 'Share Tech Mono', monospace; }
@@ -424,6 +424,7 @@
                     <canvas id="station-plant" class="station-plant" width="440" height="460" aria-hidden="true"></canvas>
                     <button type="button" class="station-hit station-hit--terminal" data-obj="terminal" aria-label="Терминал NEEOSOMA — открыть тренажёр «Слушатель»" onclick="activateRoomObject('terminal', event)"></button>
                     <button type="button" class="station-hit station-hit--radio" data-obj="radio" aria-label="Приёмник NEEOSOMA // AV-88 — открыть фонотеку" onclick="activateRoomObject('radio', event)"></button>
+                    <button type="button" id="station-hit-vines" class="station-hit station-hit--vines" data-obj="vines" aria-label="Живые лианы над кушеткой — Оранжерея" onclick="activateRoomObject('vines', event)"></button>
                     <button type="button" class="station-hit station-hit--plant" data-obj="plant" aria-label="Растение — осмотреть" onclick="activateRoomObject('plant', event)"></button>
                     <button type="button" class="station-hit station-hit--window" data-obj="window" aria-label="Окно — осмотреть NEEO~CITY" onclick="activateRoomObject('window', event)"></button>
                     <button type="button" id="station-hit-blimp" class="station-hit--blimp hidden" aria-label="Дирижабль над NEEO~CITY" onclick="window.SOMA_BLIMP && window.SOMA_BLIMP.catchActive(event)"></button>
@@ -439,10 +440,9 @@
                         <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg>
                     </button>
 
-                    <!-- Ненавязчивый оверлей полноэкранного горизонтального режима -->
+                    <!-- Ненавязчивый оверлей полноэкранного горизонтального режима (ни одна кнопка не перекрывает окно!) -->
                     <div class="station-fs-hud" aria-label="Управление полноэкранным режимом">
                         <div class="station-fs-controls">
-                            <button type="button" id="station-fs-gh" class="station-fs-pill station-fs-pill--gh hidden" onclick="openGreenhouseFromFullscreen(event)" aria-label="Открыть Оранжерею станции" title="Открыть Оранжерею">✿ ОРАНЖЕРЕЯ</button>
                             <button type="button" id="station-fs-flip" class="station-fs-pill station-fs-flip" onclick="flipRoomFullscreen()" aria-label="Перевернуть экран на 180 градусов" title="Перевернуть на 180°">↻</button>
                             <button type="button" id="station-fs-snd" class="station-fs-pill" onclick="toggleSound(); bumpFullscreenHud()" aria-label="Звук станции">🔊</button>
                             <button type="button" class="station-fs-pill" onclick="exitRoomFullscreen()" aria-label="Выйти из полноэкранного режима">✕ ВЫЙТИ</button>
@@ -624,15 +624,15 @@
     </div>
 
 <script src="config.js"></script>
-<script src="scenarios.js?v=13"></script>
-<script src="music.js?v=13"></script>
-<script src="room.js?v=13"></script>
-<script src="cosmetics.js?v=13"></script>
-<script src="receiver.js?v=13"></script>
-<script src="vhs.js?v=13"></script>
-<script src="greenhouse.js?v=13"></script>
-<script src="blimp.js?v=13"></script>
-<script src="share.js?v=13"></script>
+<script src="scenarios.js?v=14"></script>
+<script src="music.js?v=14"></script>
+<script src="room.js?v=14"></script>
+<script src="cosmetics.js?v=14"></script>
+<script src="receiver.js?v=14"></script>
+<script src="vhs.js?v=14"></script>
+<script src="greenhouse.js?v=14"></script>
+<script src="blimp.js?v=14"></script>
+<script src="share.js?v=14"></script>
 <script>
     const cfg = window.SOMA_CONFIG || {};
     const SUPABASE_URL = cfg.SUPABASE_URL;

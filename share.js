@@ -349,6 +349,7 @@
         try { if (typeof drawCrtMonitor === 'function') drawCrtMonitor(g, now, phase, 0); } catch (_) {}
         try { if (typeof drawRoomCosmetics === 'function') drawRoomCosmetics(g, now, phase); } catch (_) {}
         try { if (typeof drawWindowLightBeams === 'function') drawWindowLightBeams(g, now, phase, 0); } catch (_) {}
+        try { if (typeof drawGreenhouseVines === 'function') drawGreenhouseVines(g, now, phase); } catch (_) {}
 
         // Живое растение игрока на ковре (440×460 с полями безопасности — 0% обрезки лепестков и свечения!)
         try {
@@ -1552,6 +1553,9 @@
         ov.addEventListener('click', ev => { if (ev.target === ov) closeModal(); });
         ov.querySelector('#soma-share-close').addEventListener('click', closeModal);
         ov.querySelector('#soma-share-primary').addEventListener('click', handlePrimaryShare);
+        if (typeof window !== 'undefined' && typeof window.bindSomaSceneScroll === 'function') {
+            window.bindSomaSceneScroll(ov.querySelector('.soma-share-card'));
+        }
         ov.querySelector('#soma-share-copy').addEventListener('click', async () => {
             const ok = await copyImageToClipboard();
             if (ok) {

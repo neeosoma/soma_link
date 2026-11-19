@@ -202,6 +202,12 @@
         `;
         document.body.appendChild(ov);
 
+        // Плавный поворот-зависимый тач-скролл и кассетницы, и ЭЛТ-экрана в Fullscreen (±90° / 180° / 0°)
+        if (typeof window !== 'undefined' && typeof window.bindSomaSceneScroll === 'function') {
+            window.bindSomaSceneScroll(ov.querySelector('#vhs-list'));
+            window.bindSomaSceneScroll(ov.querySelector('#vhs-crt-scroll'));
+        }
+
         // Клик по фону — аккуратно свернуть деку
         ov.addEventListener('click', ev => {
             if (ev.target === ov) closeVhs();
@@ -310,6 +316,20 @@
         renderAll(changed || true);
     }
 
+    function revealLoadedTape() {
+        const listEl = typeof document !== 'undefined' && document.getElementById('vhs-list');
+        if (!listEl) return;
+        const activeRow = listEl.querySelector('.vhs-tape.is-loaded');
+        if (!activeRow) return;
+        const top = activeRow.offsetTop - listEl.offsetTop;
+        const bot = top + activeRow.offsetHeight;
+        if (top < listEl.scrollTop) {
+            listEl.scrollTop = Math.max(0, top - 4);
+        } else if (bot > listEl.scrollTop + listEl.clientHeight) {
+            listEl.scrollTop = Math.max(0, bot - listEl.clientHeight + 4);
+        }
+    }
+
     function stepTape(delta) {
         const all = getTapes();
         if (!all.length) return;
@@ -318,6 +338,7 @@
         const curIdx = seq.findIndex(t => t.id === activeId());
         const nextIdx = curIdx < 0 ? 0 : (curIdx + delta + seq.length) % seq.length;
         insertTape(seq[nextIdx].id);
+        revealLoadedTape();
     }
 
     function renderScreen(all, current, animateInsert) {
@@ -545,6 +566,7 @@
             bumpFullscreenHud();
         }
         renderAll(didInsert);
+        revealLoadedTape();
     }
 
     function closeVhs() {

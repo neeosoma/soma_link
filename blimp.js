@@ -474,6 +474,9 @@ window.SOMA_ADS = window.SOMA_ADS || {
         mountOverlay();
         const ov = state.overlay;
         const card = ov.querySelector('#blimp-card');
+        if (card && typeof window !== 'undefined' && typeof window.bindSomaSceneScroll === 'function') {
+            window.bindSomaSceneScroll(card);
+        }
         card.style.setProperty('--blimp-accent', safeHex(campaign.accent, '#ff6b7d'));
 
         const logoEl = ov.querySelector('#blimp-logo');

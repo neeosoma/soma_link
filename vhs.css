@@ -28,10 +28,11 @@
     position: absolute;
     inset: 0;
     z-index: 42;
-    padding: clamp(8px, 2vw, 18px);
-    background: radial-gradient(ellipse at 50% 48%, rgba(20, 5, 9, 0.62), rgba(4, 1, 3, 0.84));
-    -webkit-backdrop-filter: blur(6px) saturate(1.1);
-    backdrop-filter: blur(6px) saturate(1.1);
+    padding: 2% 2.6%;
+    container-type: size;
+    background: radial-gradient(ellipse at 50% 48%, rgba(20, 5, 9, 0.66), rgba(4, 1, 3, 0.88));
+    -webkit-backdrop-filter: blur(7px) saturate(1.1);
+    backdrop-filter: blur(7px) saturate(1.1);
 }
 
 /* КОРПУС ВИДЕОМАГНИТОФОНА SOMA // VTR-90 */
@@ -750,12 +751,31 @@
     flex: 1 1 auto;
     min-height: 92px;
     overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     display: flex;
     flex-direction: column;
     gap: 6px;
-    padding-right: 2px;
+    padding-right: 4px;
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 146, 136, 0.3) transparent;
+    scrollbar-color: rgba(255, 156, 138, 0.42) rgba(20, 6, 10, 0.45);
+}
+
+.vhs-list::-webkit-scrollbar,
+.vhs-crt-scroll::-webkit-scrollbar {
+    width: 4px;
+}
+
+.vhs-list::-webkit-scrollbar-track,
+.vhs-crt-scroll::-webkit-scrollbar-track {
+    background: rgba(18, 5, 9, 0.48);
+    border-radius: 4px;
+}
+
+.vhs-list::-webkit-scrollbar-thumb,
+.vhs-crt-scroll::-webkit-scrollbar-thumb {
+    background: rgba(255, 162, 138, 0.44);
+    border-radius: 4px;
 }
 
 .vhs-tape {
@@ -902,7 +922,253 @@
     border-radius: 10px;
 }
 
-/* АДАПТИВ: КОМПАКТНЫЙ СТУДИЙНЫЙ ДВУХКОЛОНОЧНЫЙ РЕЖИМ В АЛЬБОМНОМ FULLSCREEN */
+/* ==========================================================================
+   СТУДИЙНЫЙ ШИРОКОЭКРАННЫЙ РЕЖИМ ВНУТРИ FULLSCREEN-СЦЕНЫ (.is-in-scene)
+   Работает и в нативном landscape, и на портретном iPhone с CSS-поворотом ±90°
+   (используем строго % и @container — никакого dvh, чтобы 100% деки помещалось сразу!).
+   ========================================================================== */
+.vhs-overlay.is-in-scene .vhs-chassis {
+    width: min(97%, 780px);
+    height: min(95%, 468px);
+    max-height: 95%;
+    border-radius: 16px;
+}
+
+.vhs-overlay.is-in-scene .vhs-head {
+    flex: 0 0 auto;
+    padding: 6px 12px;
+}
+
+.vhs-overlay.is-in-scene .vhs-model {
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+}
+
+.vhs-overlay.is-in-scene .vhs-counter {
+    font-size: 10px;
+    padding: 2px 6px;
+}
+
+.vhs-overlay.is-in-scene .vhs-close-btn {
+    width: 26px;
+    height: 26px;
+    font-size: 12px;
+}
+
+.vhs-overlay.is-in-scene .vhs-body {
+    flex: 1 1 0;
+    min-height: 0;
+    flex-direction: row;
+    overflow: hidden;
+}
+
+.vhs-overlay.is-in-scene .vhs-deck-stage {
+    flex: 0 0 51%;
+    width: 51%;
+    min-width: 0;
+    min-height: 0;
+    padding: 8px 11px 9px;
+    gap: 7px;
+    border-bottom: 0;
+    border-right: 1px solid rgba(255, 152, 136, 0.16);
+    background: linear-gradient(180deg, rgba(16, 6, 9, 0.56), rgba(9, 3, 5, 0.72));
+}
+
+.vhs-overlay.is-in-scene .vhs-crt-bezel {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 5px;
+    border-radius: 11px;
+}
+
+.vhs-overlay.is-in-scene .vhs-crt {
+    flex: 1 1 0;
+    min-height: 0;
+    max-height: none;
+    padding: 7px 10px 6px;
+    gap: 4px;
+    border-radius: 8px;
+}
+
+.vhs-overlay.is-in-scene .vhs-crt-scroll {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+.vhs-overlay.is-in-scene .vhs-crt-text {
+    font-size: 12.5px;
+    line-height: 1.48;
+}
+
+.vhs-overlay.is-in-scene .vhs-slot-bay {
+    flex: 0 0 auto;
+    height: 42px;
+    padding: 4px 8px;
+    border-radius: 9px;
+}
+
+.vhs-overlay.is-in-scene .vhs-carriage {
+    padding: 3px 7px;
+    gap: 6px;
+}
+
+.vhs-overlay.is-in-scene .vhs-reel-win {
+    height: 19px;
+}
+
+.vhs-overlay.is-in-scene .vhs-slot-num {
+    font-size: 9.5px;
+}
+
+.vhs-overlay.is-in-scene .vhs-slot-date {
+    font-size: 8px;
+}
+
+.vhs-overlay.is-in-scene .vhs-transport {
+    flex: 0 0 auto;
+    gap: 5px;
+}
+
+.vhs-overlay.is-in-scene .vhs-tbtn {
+    height: 30px;
+    min-width: 30px;
+    padding: 0 7px;
+    font-size: 9.5px;
+    border-radius: 7px;
+}
+
+.vhs-overlay.is-in-scene .vhs-shelf {
+    flex: 1 1 0;
+    width: 49%;
+    min-width: 0;
+    min-height: 0;
+    padding: 8px 10px 9px;
+    gap: 6px;
+    overflow: hidden;
+}
+
+.vhs-overlay.is-in-scene .vhs-tools {
+    flex: 0 0 auto;
+    gap: 5px;
+}
+
+.vhs-overlay.is-in-scene .vhs-search {
+    height: 29px;
+    padding: 0 26px 0 27px;
+    font-size: 11px;
+    border-radius: 7px;
+}
+
+.vhs-overlay.is-in-scene .vhs-pill,
+.vhs-overlay.is-in-scene .vhs-sort-btn {
+    height: 22px;
+    padding: 0 7px;
+    font-size: 8.5px;
+}
+
+.vhs-overlay.is-in-scene .vhs-list {
+    flex: 1 1 0;
+    min-height: 0;
+    gap: 5px;
+    padding-right: 4px;
+}
+
+.vhs-overlay.is-in-scene .vhs-tape {
+    flex: 0 0 auto;
+    grid-template-columns: 76px minmax(0, 1fr) auto;
+    gap: 7px;
+    padding: 6px 7px;
+    border-radius: 9px;
+}
+
+.vhs-overlay.is-in-scene .vhs-tape-num {
+    font-size: 9.5px;
+}
+
+.vhs-overlay.is-in-scene .vhs-tape-date {
+    font-size: 8px;
+}
+
+.vhs-overlay.is-in-scene .vhs-tape-preview {
+    font-size: 11px;
+    line-height: 1.32;
+    -webkit-line-clamp: 2;
+}
+
+.vhs-overlay.is-in-scene .vhs-tape-fav {
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+}
+
+@container (max-width: 680px) {
+    .vhs-overlay.is-in-scene .vhs-mode-lamp {
+        display: none;
+    }
+    .vhs-overlay.is-in-scene .vhs-tbtn--share span {
+        display: none;
+    }
+}
+
+@container (max-height: 410px) {
+    .vhs-overlay.is-in-scene .vhs-head {
+        padding: 5px 10px;
+    }
+    .vhs-overlay.is-in-scene .vhs-deck-stage {
+        padding: 6px 9px 7px;
+        gap: 5px;
+    }
+    .vhs-overlay.is-in-scene .vhs-crt {
+        padding: 6px 8px 5px;
+    }
+    .vhs-overlay.is-in-scene .vhs-crt-text {
+        font-size: 11.5px;
+        line-height: 1.4;
+    }
+    .vhs-overlay.is-in-scene .vhs-osd-top,
+    .vhs-overlay.is-in-scene .vhs-osd-bot {
+        font-size: 8px;
+    }
+    .vhs-overlay.is-in-scene .vhs-slot-bay {
+        height: 36px;
+        padding: 3px 6px;
+    }
+    .vhs-overlay.is-in-scene .vhs-tbtn {
+        height: 27px;
+        min-width: 27px;
+        font-size: 9px;
+    }
+    .vhs-overlay.is-in-scene .vhs-shelf {
+        padding: 6px 9px 7px;
+        gap: 5px;
+    }
+    .vhs-overlay.is-in-scene .vhs-search {
+        height: 26px;
+        font-size: 10.5px;
+    }
+    .vhs-overlay.is-in-scene .vhs-pill,
+    .vhs-overlay.is-in-scene .vhs-sort-btn {
+        height: 20px;
+        padding: 0 6px;
+        font-size: 8px;
+    }
+    .vhs-overlay.is-in-scene .vhs-tape {
+        grid-template-columns: 68px minmax(0, 1fr) auto;
+        padding: 5px 6px;
+        gap: 6px;
+    }
+    .vhs-overlay.is-in-scene .vhs-tape-preview {
+        font-size: 10.5px;
+        -webkit-line-clamp: 1;
+    }
+}
+
+/* АДАПТИВ: КОМПАКТНЫЙ ДВУХКОЛОНОЧНЫЙ РЕЖИМ В ОБЫЧНОМ АЛЬБОМНОМ ОКНЕ ВНЕ FULLSCREEN */
 @media (max-height: 520px) and (min-width: 560px) {
     .vhs-chassis {
         width: min(96%, 760px);
@@ -913,21 +1179,27 @@
     }
     .vhs-body {
         flex-direction: row;
+        min-height: 0;
     }
     .vhs-deck-stage {
         width: 52%;
+        min-height: 0;
         border-bottom: 0;
         border-right: 1px solid rgba(255, 148, 134, 0.15);
         padding: 9px 11px;
         justify-content: space-between;
     }
     .vhs-crt {
-        min-height: 112px;
+        min-height: 104px;
         max-height: 168px;
     }
     .vhs-shelf {
         width: 48%;
+        min-height: 0;
         padding: 8px 11px 10px;
+    }
+    .vhs-list {
+        min-height: 0;
     }
 }
 

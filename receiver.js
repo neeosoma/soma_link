@@ -1000,7 +1000,11 @@
                     </div>
                 </div>
             `;
-            document.body.appendChild(ov);
+        document.body.appendChild(ov);
+        if (typeof window !== 'undefined' && typeof window.bindSomaSceneScroll === 'function') {
+            window.bindSomaSceneScroll(ov.querySelector('#rx-list'));
+            window.bindSomaSceneScroll(ov.querySelector('.rx-stage'));
+        }
             wireEvents(ov);
         }
 

@@ -26,7 +26,30 @@
     position: absolute;
     inset: 0;
     z-index: 82;
-    padding: clamp(8px, 2vw, 18px);
+    padding: 2.2% 3%;
+    container-type: size;
+}
+
+.soma-share-overlay.is-in-scene .soma-share-card {
+    width: min(92%, 420px);
+    max-height: 94%;
+    gap: 6px;
+    padding: 8px 11px 9px;
+    border-radius: 15px;
+}
+
+.soma-share-overlay.is-in-scene .soma-share-stage {
+    max-height: 185px;
+}
+
+.soma-share-overlay.is-in-scene .soma-share-primary {
+    min-height: 34px;
+    font-size: 10.5px;
+}
+
+.soma-share-overlay.is-in-scene .soma-share-sec {
+    min-height: 28px;
+    font-size: 8.8px;
 }
 
 .soma-share-card {

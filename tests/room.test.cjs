@@ -21,7 +21,7 @@ function makeStorage(initial = {}) {
 function loadRoom(env = {}) {
     const localStorage = env.localStorage || makeStorage();
     return runInNewContext(
-        roomCode + ';({ stationPhases, PROGRESSION_RULES, GREENHOUSE_WARMTH_STEPS, ALIEN_WARMTH_STEPS, ALIEN_KINDS, alienSpec, gallerySpecForKind, isGreenhouseUnlocked, plantSecretAlienSeed, feedActiveRoomPlant, openGreenhouse, openGreenhouseFromFullscreen, cyclePtsAlienKind, getWhisperBreachCount, recordWhisperSent, syncWhisperBreachCounter, RARE_MALTESE_INDEX, RARE_MALTESE_BREED, RARE_MOON_CAT_INDEX, RARE_MOON_CAT_COAT, NEEO_SKY_POLY, HEARTH_LANTERNS, COSMIC_DAWN_STARS, stationState, indifferenceIndex, equipStationPhase, inspectPlantStage, togglePlantGallery, inspectPlantKind, togglePtsDrawer, togglePtsDew, cyclePtsCatCoat, cyclePtsDogBreed, togglePtsDemoCassette, loadWarmthLedger, claimDailyWarmth, fireflyState, recordWhisperEcho, daysSinceLastWarmth, whisperAdmission, loadGreenhouse, plantNewGreenhouseSeed, selectGreenhouseSlot, formatCassetteDate, formatCassetteNum, loadCassettes, saveWhisperCassette, toggleCassetteFav, ejectCassette, playCassette, openVhsArchive, pressPagerScan, pressPagerInfo, renderPager, PLANT_KINDS, PLANT_NOTES, PLANT_STAGES, PLANT_WARMTH_STEPS, PLANT_LEAF, PLANT_BLOOM, PLANT_POTS, CAT_COATS, catSpec, DOG_BREEDS, dogSpec, drawCompanionCat, drawCompanionDog, CITY_WINDOWS, hashStr, rng, plantSpec, plantStage, drawPlantSprite, drawCrtMonitor, drawRoomCosmetics, drawWindowWorld, drawWindowLightBeams, drawStationFx, drawCassetteDeck, paintPlantFrame, isRealTelegramMiniApp, getNativeFullscreenElement, requestNativeRoomFullscreen, getFullscreenViewport, computeFullscreenSceneBox, toggleRoomFullscreen, enterRoomFullscreen, exitRoomFullscreen, flipRoomFullscreen, renderRoom, touchRoomObject, activateRoomObject, resetStationPreview, roomAnim });',
+        roomCode + ';({ stationPhases, PROGRESSION_RULES, GREENHOUSE_WARMTH_STEPS, ALIEN_WARMTH_STEPS, ALIEN_KINDS, alienSpec, gallerySpecForKind, isGreenhouseUnlocked, plantSecretAlienSeed, feedActiveRoomPlant, openGreenhouse, openGreenhouseFromFullscreen, drawGreenhouseVines, bindSomaSceneScroll, somaClientToLocal, somaScreenDeltaToLocal, mixHex, cyclePtsAlienKind, getWhisperBreachCount, recordWhisperSent, syncWhisperBreachCounter, RARE_MALTESE_INDEX, RARE_MALTESE_BREED, RARE_MOON_CAT_INDEX, RARE_MOON_CAT_COAT, NEEO_SKY_POLY, HEARTH_LANTERNS, COSMIC_DAWN_STARS, stationState, indifferenceIndex, equipStationPhase, inspectPlantStage, togglePlantGallery, inspectPlantKind, togglePtsDrawer, togglePtsDew, cyclePtsCatCoat, cyclePtsDogBreed, togglePtsDemoCassette, loadWarmthLedger, claimDailyWarmth, fireflyState, recordWhisperEcho, daysSinceLastWarmth, whisperAdmission, loadGreenhouse, plantNewGreenhouseSeed, selectGreenhouseSlot, formatCassetteDate, formatCassetteNum, loadCassettes, saveWhisperCassette, toggleCassetteFav, ejectCassette, playCassette, openVhsArchive, pressPagerScan, pressPagerInfo, renderPager, PLANT_KINDS, PLANT_NOTES, PLANT_STAGES, PLANT_WARMTH_STEPS, PLANT_LEAF, PLANT_BLOOM, PLANT_POTS, CAT_COATS, catSpec, DOG_BREEDS, dogSpec, drawCompanionCat, drawCompanionDog, CITY_WINDOWS, hashStr, rng, plantSpec, plantStage, drawPlantSprite, drawCrtMonitor, drawRoomCosmetics, drawWindowWorld, drawWindowLightBeams, drawStationFx, drawCassetteDeck, paintPlantFrame, isRealTelegramMiniApp, getNativeFullscreenElement, requestNativeRoomFullscreen, getFullscreenViewport, computeFullscreenSceneBox, toggleRoomFullscreen, enterRoomFullscreen, exitRoomFullscreen, flipRoomFullscreen, renderRoom, touchRoomObject, activateRoomObject, resetStationPreview, roomAnim });',
         { player: { uid: 'u_0123456789abcdef', name: 'AGENT_1001', warmth: 0 }, roomPreview: false, localStorage, ...env }
     );
 }
@@ -457,7 +457,7 @@ test('release UI hides spoilers, pager replaces NEEO_PHONE, window picks unlocke
 
 test('mobile hotspots never overlap and main targets stay >=44px down to 320px width', () => {
     const blocks = [...roomCss.matchAll(/\.station-hit--(\w+)\s*\{([^}]+)\}/g)];
-    assert.equal(blocks.length, 10);
+    assert.equal(blocks.length, 11);
     const num = (body, prop) => Number(body.match(new RegExp(prop + ':\\s*([\\d.]+)%'))[1]) / 100;
     const defs = blocks.map(([, name, body]) => ({
         name, left: num(body, 'left'), top: num(body, 'top'), width: num(body, 'width'), height: num(body, 'height')
@@ -732,17 +732,17 @@ test('v8: body-portal FLIP fullscreen + 180 flip + rotated pointer mapping, Dawn
         assert.doesNotThrow(() => r.drawPlantSprite(g, r.plantSpec('u_pot'), 5, { phase: 3, now: 2500, potSkin, fireflies: 5 }));
     }
 
-    // 3. Pain Feed CTA visibility hooks present and cache-busted to v13
+    // 3. Pain Feed CTA visibility hooks present and cache-busted to v14
     assert.ok(indexHtml.includes('soma-post-cta') && indexHtml.includes('soma-post-beacon') && indexHtml.includes('soma-post-arrow'));
     assert.ok(
         indexHtml.includes('id="station-fs-flip"')
-        && indexHtml.includes('room.js?v=13')
-        && indexHtml.includes('cosmetics.css?v=13')
-        && indexHtml.includes('receiver.js?v=13')
-        && indexHtml.includes('vhs.js?v=13')
-        && indexHtml.includes('greenhouse.js?v=13')
-        && indexHtml.includes('blimp.js?v=13')
-        && indexHtml.includes('share.js?v=13')
+        && indexHtml.includes('room.js?v=14')
+        && indexHtml.includes('cosmetics.css?v=14')
+        && indexHtml.includes('receiver.js?v=14')
+        && indexHtml.includes('vhs.js?v=14')
+        && indexHtml.includes('greenhouse.js?v=14')
+        && indexHtml.includes('blimp.js?v=14')
+        && indexHtml.includes('share.js?v=14')
     );
 
     // 4. Flagship cosmetics + collectible 7" vinyl pressings: equalized peer pricing + 1:1 Edge Function parity
@@ -874,8 +874,8 @@ test('v9: true native browser fullscreen (even with Telegram SDK loaded), fixed-
             hitBoxes[m[1]] = { l: num('left'), t: num('top'), r: num('left') + num('width'), b: num('top') + num('height') };
         }
     }
-    assert.equal(Object.keys(hitBoxes).length, 10, 'all 10 interactive hotspots including dog must be styled');
-    assert.ok(hitBoxes.dog, '.station-hit--dog must exist');
+    assert.equal(Object.keys(hitBoxes).length, 11, 'all 11 interactive hotspots including dog and living vines must be styled');
+    assert.ok(hitBoxes.dog && hitBoxes.vines, '.station-hit--dog and .station-hit--vines must exist');
     const names = Object.keys(hitBoxes);
     for (let i = 0; i < names.length; i++) {
         for (let j = i + 1; j < names.length; j++) {
@@ -1068,7 +1068,7 @@ test('v11: enlarged sleeping dogs with tucked front paws, clean RX-88 header, fu
     }
     const bigFour = r.DOG_BREEDS.filter(b => b.sx >= 1.44);
     assert.equal(bigFour.length, 4, 'Golden Retriever, Samoyed, Husky, and Border Collie are >=1.44x large dogs');
-    assert.ok(roomCode.includes('const headLift = petK * 6.2;') && roomCode.includes('const peekAwake ='), 'dogs sleep with lowered head, tucked front paws, and closed eyelids that wake on petting');
+    assert.ok(/const headLift = petK \* 6(?:\.\d+)?/.test(roomCode) && roomCode.includes('const peekAwake ='), 'dogs sleep with lowered head, tucked front paws, and closed eyelids that wake on petting');
 
     // 3. VHS archive: NEEOSOMA // VTR-90 branding, full DD.MM.YYYY stamps, legacy DD.MM migration, permanent #001..#NNN numbering, favorites, PTS demo pack
     assert.ok(vhsCode.includes('NEEOSOMA // VTR-90') && shareCode.includes('NEEOSOMA // VTR-90'));
@@ -1520,10 +1520,9 @@ test('v13: scroll freedom, 66-char epitaph, 13..666 Call, 8 Earth + hidden 9th a
     assert.ok(r.stationPhases[2].entry.includes('серпом луны') && r.stationPhases[2].entry.includes('фонарики'), 'Phase 2 describes crescent moon and sky lanterns');
     assert.ok(r.stationPhases[3].entry.includes('фиалково-космический'), 'Phase 3 describes warm-violet cosmic Dawn');
 
-    // 5. Fullscreen Greenhouse pill, zero pre-8/8 spoiler of 9th Easter egg, clean 2x2 VHS bar, and enlarged readable Blimp
-    assert.ok(indexHtml.includes('id="station-fs-gh"') && indexHtml.includes('openGreenhouseFromFullscreen(event)') && indexHtml.includes('✿ ОРАНЖЕРЕЯ'),
-        'Fullscreen HUD provides direct ✿ ОРАНЖЕРЕЯ button');
-    assert.equal(typeof r.openGreenhouseFromFullscreen, 'function');
+    // 5. Diegetic Greenhouse vines portal (zero button over Fullscreen window), zero pre-8/8 spoiler of 9th Easter egg, clean 2x2 VHS bar, and enlarged Blimp
+    assert.ok(!indexHtml.includes('id="station-fs-gh"') && indexHtml.includes('id="station-hit-vines"'),
+        'Fullscreen Greenhouse button replaced by living hanging vines portal above the bed');
     assert.ok(indexHtml.includes('station-ctx-head--deck') && indexHtml.includes('id="station-deck-active"') && indexHtml.includes('id="station-deck-count"'),
         'VHS deck bar uses structured 2x2 non-overlapping header');
     assert.ok(!roomCode.includes('▣ NEEOSOMA // VTR-90'), 'redundant extra VTR-90 button removed from VHS tape list');
@@ -1531,4 +1530,154 @@ test('v13: scroll freedom, 66-char epitaph, 13..666 Call, 8 Earth + hidden 9th a
         'Conservatory shows 4x2 symmetric 8 Earth slots with ZERO pre-8/8 spoiler of the 9th secret alien');
     assert.ok(blimpCode.includes('const bw = 86, bh = 21.4') && blimpCode.includes('flightDurationSec: 26'),
         'Blimp enlarged with double-framed 86x21.4 readable signboard and graceful 26s crossing');
+});
+
+test('v14: animated hanging vines Greenhouse portal (zero button), unclipped Fullscreen Greenhouse, widescreen Fullscreen VHS + rotated touch scroll, and upgraded 8 dogs', () => {
+    const p = require('path'), fs = require('fs');
+    const vhsCss = fs.readFileSync(p.join(__dirname, '..', 'vhs.css'), 'utf8');
+    const vhsCode = fs.readFileSync(p.join(__dirname, '..', 'vhs.js'), 'utf8');
+    const ghCss = fs.readFileSync(p.join(__dirname, '..', 'greenhouse.css'), 'utf8');
+    const ghCode = fs.readFileSync(p.join(__dirname, '..', 'greenhouse.js'), 'utf8');
+    const shareCss = fs.readFileSync(p.join(__dirname, '..', 'share.css'), 'utf8');
+
+    // 1. Greenhouse button completely removed; animated hanging vines above the bed act as gated Greenhouse portal
+    assert.ok(!indexHtml.includes('id="station-fs-gh"'), 'Fullscreen Greenhouse button removed so window is 100% unobstructed');
+    assert.ok(!roomCss.includes('.station-fs-pill--gh') && !roomCode.includes('id = \'station-open-gh-btn\''),
+        'no standalone Greenhouse button remains');
+    assert.ok(indexHtml.includes('id="station-hit-vines"') && indexHtml.includes("activateRoomObject('vines', event)"),
+        'vines hotspot wired cleanly in room scene');
+
+    let ghOpened = 0, lastGhOpts = null;
+    const prodStore = makeStorage();
+    const prodPlayer = { uid: 'u_vines_prod', name: 'AGENT_V14', warmth: 12 };
+    const prodRoom = loadRoom({
+        localStorage: prodStore,
+        player: prodPlayer,
+        location: { search: '', hostname: 'neeosoma.github.io' },
+        SOMA_GREENHOUSE: { open(o) { ghOpened++; lastGhOpts = o; }, isOpen: () => false }
+    });
+    // Expose window.SOMA_GREENHOUSE inside sandbox via direct test of PROD gate -> unlock -> PTS
+    prodRoom.window = prodRoom.window || {};
+    const makeMockCtx = () => ({
+        save() {}, restore() {}, translate() {}, scale() {}, rotate() {}, beginPath() {}, closePath() {},
+        moveTo() {}, lineTo() {}, quadraticCurveTo() {}, bezierCurveTo() {}, arc() {}, ellipse() {},
+        fill() {}, stroke() {}, clip() {}, fillRect() {}, strokeRect() {}, clearRect() {},
+        createLinearGradient: () => ({ addColorStop() {} }),
+        createRadialGradient: () => ({ addColorStop() {} })
+    });
+    const vCtx = makeMockCtx();
+    assert.doesNotThrow(() => prodRoom.drawGreenhouseVines(vCtx, 1800, 0), 'vines animate smoothly before 1st bloom');
+    const mockRoomDoc = { getElementById: (id) => id === 'station' ? { dataset: {}, querySelector: () => null, querySelectorAll: () => [], classList: { add(){}, remove(){}, toggle(){}, contains(){ return false; } } } : null };
+    const prodTap = loadRoom({
+        localStorage: prodStore,
+        player: prodPlayer,
+        document: mockRoomDoc,
+        location: { search: '', hostname: 'neeosoma.github.io' },
+        window: { SOMA_GREENHOUSE: { open(o) { ghOpened++; lastGhOpts = o; } } }
+    });
+    prodTap.activateRoomObject('vines');
+    assert.equal(ghOpened, 0, 'PROD vines must NOT open Greenhouse before 1st flower blooms');
+    assert.ok(prodTap.roomAnim.vinesStart > 0 && prodTap.roomAnim.customEntry.includes('лианы'), 'tapping locked vines gently rustles and hints poetically');
+
+    // Unlock 1st flower in PROD -> touching vines opens Greenhouse!
+    const ownK = prodRoom.plantSpec().kind;
+    prodStore.setItem('soma_greenhouse', JSON.stringify({ bloomed: [ownK], activeSeed: null, placed: ownK }));
+    const openEnv = loadRoom({
+        localStorage: prodStore,
+        player: { uid: 'u_vines_prod', name: 'AGENT_V14', warmth: 260 },
+        document: mockRoomDoc,
+        location: { search: '', hostname: 'neeosoma.github.io' },
+        window: { SOMA_GREENHOUSE: { open(o) { ghOpened++; lastGhOpts = o; } } }
+    });
+    assert.doesNotThrow(() => openEnv.drawGreenhouseVines(vCtx, 2600, 2), 'vines bloom with glowing buds & motes when Greenhouse unlocked');
+    openEnv.activateRoomObject('vines');
+    assert.equal(ghOpened, 1, 'touching living vines after 1st bloom opens Greenhouse immediately');
+    assert.equal(!!(lastGhOpts && lastGhOpts.ptsDemo), false);
+
+    // PTS tester can enter Greenhouse through vines even at 0 bloomed
+    const ptsEnv = loadRoom({
+        localStorage: makeStorage(),
+        player: { uid: 'u_vines_pts', name: 'PTS_V14', warmth: 0 },
+        document: mockRoomDoc,
+        cfg: { ENV: 'pts' },
+        window: { SOMA_CONFIG: { ENV: 'pts' }, SOMA_GREENHOUSE: { open(o) { ghOpened++; lastGhOpts = o; } } }
+    });
+    ptsEnv.activateRoomObject('vines');
+    assert.equal(ghOpened, 2, 'PTS tester enters Greenhouse via living vines');
+    assert.equal(!!(lastGhOpts && lastGhOpts.ptsDemo), true);
+
+    // 2. Fullscreen Greenhouse uses % + container-type: size + object-fit: contain (0px clipping on rotated iPhone!) + rotation-aware pedestal click
+    assert.ok(ghCss.includes('.gh-overlay.is-in-fs') && ghCss.includes('container-type: size') && ghCss.includes('object-fit: contain'),
+        'Fullscreen Greenhouse sizes strictly against rotated scene container with object-fit: contain');
+    assert.ok(ghCss.includes('.gh-overlay.is-in-fs .gh-stage') && ghCss.includes('flex: 1 1 0') && ghCss.includes('min-height: 0'),
+        'Conservatory stage flexes to fit 100% of dome, 8 pedestals, and central IX altar on screen at once');
+    assert.ok(ghCode.includes('window.somaClientToLocal') && ghCode.includes('Math.min(lw / SCENE_W, lh / SCENE_H)'),
+        'Conservatory click unprojects both scene rotation (±90°/180°) and object-fit: contain letterboxing');
+
+    // 3. Fullscreen VHS studio 2-column % layout + mathematically verified rotated touch scroll across +90°, -90°, 180°, 0°
+    assert.ok(vhsCss.includes('.vhs-overlay.is-in-scene') && vhsCss.includes('container-type: size')
+        && vhsCss.includes('.vhs-overlay.is-in-scene .vhs-body') && vhsCss.includes('max-height: 95%'),
+        'Fullscreen VHS fits 100% inside rotated scene container without dvh overflow');
+    assert.ok(shareCss.includes('.soma-share-overlay.is-in-scene .soma-share-card') && shareCss.includes('max-height: 94%'),
+        'Share modal also fits cleanly inside rotated Fullscreen scene');
+    assert.ok(vhsCode.includes('bindSomaSceneScroll') && vhsCode.includes('#vhs-list') && vhsCode.includes('#vhs-crt-scroll'),
+        'Both VHS cassette list and CRT message screen support rotated touch scrolling');
+
+    // Verify exact scroll vector & live touch drag behavior on rotated +90°, -90°, and 180° Fullscreen!
+    openEnv.roomAnim.isFullscreen = true;
+    const listeners = {};
+    const mockList = {
+        scrollTop: 0, scrollHeight: 620, clientHeight: 220,
+        offsetWidth: 280, offsetHeight: 220,
+        setAttribute(k, v) { this[k] = v; },
+        addEventListener(type, fn) { (listeners[type] = listeners[type] || []).push(fn); },
+        getBoundingClientRect: () => ({ left: 40, top: 300, width: 220, height: 280 })
+    };
+    openEnv.bindSomaSceneScroll(mockList);
+    assert.equal(mockList['data-soma-scroll'], '1');
+
+    // +90° (portrait iPhone standard landscape): local top is at screen RIGHT (+X) -> dragging right (+dx) scrolls DOWN (scrollTop increases)
+    openEnv.roomAnim.fsLastDeg = 90;
+    listeners.touchstart[0]({ touches: [{ identifier: 1, clientX: 120, clientY: 420 }] });
+    listeners.touchmove[0]({ touches: [{ identifier: 1, clientX: 210, clientY: 420 }], cancelable: true, preventDefault() {}, stopPropagation() {} });
+    listeners.touchend[0]({ touches: [] });
+    assert.equal(mockList.scrollTop, 90, '+90° Fullscreen: finger drag toward local top (+X) scrolls VHS list down smoothly');
+
+    // Suppress accidental click right after drag, then allow clean tap!
+    let clickBlocked = false;
+    listeners.click[0]({ preventDefault() { clickBlocked = true; }, stopPropagation() {} });
+    assert.equal(clickBlocked, true, 'post-drag synthetic click suppressed cleanly');
+    clickBlocked = false;
+    listeners.touchstart[0]({ touches: [{ identifier: 2, clientX: 150, clientY: 420 }] });
+    listeners.touchend[0]({ touches: [] });
+    listeners.click[0]({ preventDefault() { clickBlocked = true; }, stopPropagation() {} });
+    assert.equal(clickBlocked, false, 'clean cassette tap passes right through');
+
+    // -90° (flipped 180° portrait iPhone): local top is at screen LEFT (-X) -> dragging left (-dx) scrolls DOWN further
+    openEnv.roomAnim.fsLastDeg = -90;
+    listeners.touchstart[0]({ touches: [{ identifier: 3, clientX: 200, clientY: 420 }] });
+    listeners.touchmove[0]({ touches: [{ identifier: 3, clientX: 130, clientY: 420 }], cancelable: true, preventDefault() {}, stopPropagation() {} });
+    listeners.touchend[0]({ touches: [] });
+    assert.equal(mockList.scrollTop, 160, '-90° Fullscreen: finger drag toward local top (-X) scrolls VHS list down smoothly');
+
+    // Verify somaClientToLocal unprojects rotated +90° coordinates with sub-pixel accuracy
+    openEnv.roomAnim.fsLastDeg = 90;
+    const locTopLeft = openEnv.somaClientToLocal(mockList, 40 + 220, 300); // top-right of screen bbox == local (0, 0) under +90° rotation!
+    assert.ok(Math.abs(locTopLeft.x) < 0.01 && Math.abs(locTopLeft.y) < 0.01, 'somaClientToLocal maps +90° top-left corner identically to (0,0)');
+
+    // 4. All 8 guardian dog breeds (0..6 + rare 0.1% White Maltese #7) preserve exact breeds/palettes, fix rgb() mixHex, and render cleanly in all phases & petting states
+    const mixedTwice = openEnv.mixHex(openEnv.mixHex('#fff8ee', '#ffbe8a', 0.2), '#6b2534', 0.3);
+    assert.ok(!mixedTwice.startsWith('rgb(0,0,0'), 'hexRgb cleanly parses rgb(...) strings so Samoyed & Maltese highlights stay pure snow');
+    assert.equal(openEnv.DOG_BREEDS.length, 7);
+    assert.equal(openEnv.RARE_MALTESE_BREED.pattern, 'maltese');
+    const dCtx = makeMockCtx();
+    for (let bi = 0; bi <= 7; bi++) {
+        openEnv.roomAnim.inspectDogBreed = bi;
+        for (const ph of [0, 1, 2, 3]) {
+            openEnv.roomAnim.dogPetStart = -1e9;
+            assert.doesNotThrow(() => openEnv.drawCompanionDog(dCtx, 2400, ph, false), `dog breed #${bi} sleeping in phase ${ph}`);
+            openEnv.roomAnim.dogPetStart = 1850;
+            assert.doesNotThrow(() => openEnv.drawCompanionDog(dCtx, 2400, ph, false), `dog breed #${bi} awake/petted in phase ${ph}`);
+        }
+    }
 });

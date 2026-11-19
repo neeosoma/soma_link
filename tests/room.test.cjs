@@ -1254,7 +1254,7 @@ test('v12: top-left fullscreen vinyl bar, unified NEEOSOMA/NEEO~CITY/SOMA~LINK b
             assert.equal(ds.rarity, '0.1%');
             assert.equal(ds.breed.ears, 'maltese');
             assert.equal(ds.breed.tail, 'maltese_plume');
-            assert.ok(ds.breed.name.toLowerCase().includes('белая мальтийская болонка'));
+            assert.equal(ds.breed.name, 'Лунная Юна');
         } else {
             stdHits[ds.breedIdx]++;
         }
@@ -1863,17 +1863,17 @@ test('v15: 4th pot (pot_amethyst) + per-flower Greenhouse picker, sheer FS capti
     assert.ok(roomShopHtml.includes('// ХРАНИТЕЛИ ТЕПЛА'), 'Boutique Room shows ХРАНИТЕЛИ ТЕПЛА');
     assert.ok(!/спутники|можно обоих|можно двоих|по id/i.test(roomShopHtml), 'zero mentions of ID or dual-equip hint in Boutique Room');
 
-    // 7. IMG_2254.png FIX: Selecting 0.1% Moon Cat + 0.1% White Maltese (even after closing PTS drawer!) displays exact names in Boutique preview!
+    // 7. IMG_2254.png FIX: Selecting 0.1% Moon Cat + 0.1% Lunar Yuna (even after closing PTS drawer!) displays exact names in Boutique preview!
     env.grantOwnedItem('room_cat');
     env.grantOwnedItem('room_dog');
     env.roomAnim.inspectCatCoat = env.RARE_MOON_CAT_INDEX;   // 7 -> Полуночная Луна
-    env.roomAnim.inspectDogBreed = env.RARE_MALTESE_INDEX;   // 7 -> Белая мальтийская болонка
+    env.roomAnim.inspectDogBreed = env.RARE_MALTESE_INDEX;   // 7 -> Лунная Юна
     env.roomAnim.ptsOpen = true;
     env.togglePtsDrawer(); // collapse PTS drawer — must NOT wipe chosen cat/dog!
     env.renderShop();
     const prevHtml = regEl('shop-preview').innerHTML;
     assert.ok(prevHtml.includes('🐈 Полуночная Луна'), 'Boutique preview shows selected 0.1% Black Moon Cat');
-    assert.ok(prevHtml.includes('🐕 Белая мальтийская болонка'), 'Boutique preview shows selected 0.1% White Maltese');
+    assert.ok(prevHtml.includes('🐕 Лунная Юна'), 'Boutique preview shows selected 0.1% Lunar Yuna');
     assert.ok(!prevHtml.includes('Рыжий огонёк') && !prevHtml.includes('Рыжий сиба-ину'), 'never falls back to wrong index-0 names');
 
     // 8. Custom Cat & Dog naming: prompted on purchase, validated, displayed STRICTLY in room interaction journal and NOWHERE else!
@@ -1904,7 +1904,7 @@ test('v15: 4th pot (pot_amethyst) + per-flower Greenhouse picker, sheer FS capti
     env.shopState.lastBoard = [{ username: 'u_v15_check', place: 1, xp: 1200, help_attempts: 0 }];
     env.openDossierByIndex(0);
     assert.ok(!regEl('dossier-body').innerHTML.includes('Нокс') && !regEl('dossier-body').innerHTML.includes('Юки'), 'pet names never leak into public Top dossier');
-    assert.ok(regEl('dossier-body').innerHTML.includes('Полуночная Луна') && regEl('dossier-body').innerHTML.includes('Белая мальтийская болонка'), 'own dossier shows active Moon Cat & Maltese');
+    assert.ok(regEl('dossier-body').innerHTML.includes('Полуночная Луна') && regEl('dossier-body').innerHTML.includes('Лунная Юна'), 'own dossier shows active Moon Cat & Lunar Yuna');
 
     // Room interaction journal DOES warmly feature both custom names!
     const catJournalLines = [];

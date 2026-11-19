@@ -109,6 +109,12 @@ begin
         if coalesce((new.cosmetics ->> 'tape')::boolean, false) and not ('room_tape' = any(v_owned)) then
             new.cosmetics := jsonb_set(new.cosmetics, '{tape}', 'false'::jsonb);
         end if;
+        if coalesce((new.cosmetics ->> 'garland')::boolean, false) and not ('room_garland' = any(v_owned)) then
+            new.cosmetics := jsonb_set(new.cosmetics, '{garland}', 'false'::jsonb);
+        end if;
+        if coalesce((new.cosmetics ->> 'candles')::boolean, false) and not ('room_candles' = any(v_owned)) then
+            new.cosmetics := jsonb_set(new.cosmetics, '{candles}', 'false'::jsonb);
+        end if;
         if coalesce(new.cosmetics ->> 'epitaph', '') <> '' and not ('perk_epitaph' = any(v_owned)) then
             new.cosmetics := new.cosmetics - 'epitaph';
         end if;

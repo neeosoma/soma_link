@@ -38,22 +38,27 @@ const SOMA_CATALOG = [
     { id: 'pager_ghost', tab: 'pager', slot: 'pager', stars: 150, name: 'Белый шум',           desc: 'Холодный тёмный хром и бледно-серебристое свечение матрицы.' },
     { id: 'pager_brass', tab: 'pager', slot: 'pager', stars: 175, name: 'Воронёная сталь',     desc: 'Тяжёлый оружейный корпус с латунными винтами и мягким золотистым кантом.' },
 
-    // 4. АВТОРСКАЯ КЕРАМИКА И ЖИВОЙ УЮТ КОМНАТЫ
-    { id: 'room_steam',   tab: 'room', slot: 'steam', stars: 95,  name: 'Горячий чай у терминала', desc: 'Над кружкой на столе поднимается тонкий тёплый пар в свете лампы.' },
-    { id: 'room_tape',    tab: 'room', slot: 'tape',  stars: 110, name: 'Плёнка «Ночной экспресс»', desc: 'Мягкий виниловый шорох и далёкий стук ночного поезда (при включённом звуке).' },
-    { id: 'pot_cinnabar', tab: 'room', slot: 'pot',   stars: 130, name: 'Киноварный лак',          desc: 'Глубокая императорская киноварь ручного обжига. Вид и рост цветка неизменны.' },
-    { id: 'pot_moon',     tab: 'room', slot: 'pot',   stars: 140, name: 'Лунный пепел',            desc: 'Дымчатый тёмный фарфор, тонко ловящий алые отблески ковра и рассвета.' },
-    { id: 'pot_kintsugi', tab: 'room', slot: 'pot',   stars: 190, name: 'Керамика Кинцуги',        desc: 'Чёрная японская глина, бережно склеенная швами чистого золота — символ исцеления.' },
-    { id: 'room_cat',     tab: 'room', slot: 'cat',   stars: 250, name: 'Чёрный кот на кушетке',   desc: 'Спит клубком у пледа, тихо дышит, изредка ведёт хвостом и мурчит от касания.' }
+    // 4. АВТОРСКАЯ КЕРАМИКА И ЖИВОЙ УЮТ КОМНАТЫ (каждый атрибут сразу и ярко преображает сцену!)
+    { id: 'room_steam',   tab: 'room', slot: 'steam',   stars: 95,  name: 'Чай и сандал у терминала', desc: 'Янтарный чай с густым паром и курильница с тлеющей палочкой благовоний и шёлковым дымком.' },
+    { id: 'room_tape',    tab: 'room', slot: 'tape',    stars: 110, name: 'Винил «Ночной экспресс»',  desc: 'Крутится пластинка, танцуют огни усилителя, по мосту за окном идёт светящийся поезд + тёплый лоу-фай звук.' },
+    { id: 'pot_cinnabar', tab: 'room', slot: 'pot',     stars: 130, name: 'Киноварный лак',           desc: 'Императорская киноварь с двойным золотым поясом и печатью мастера на резной подставке кадай.' },
+    { id: 'room_garland', tab: 'room', slot: 'garland', stars: 135, name: 'Гирлянда Эдисона у окна',  desc: '13 винтажных лампочек с тёплыми вольфрамовыми нитями и золотым светом по каменной арке окна.' },
+    { id: 'pot_moon',     tab: 'room', slot: 'pot',     stars: 140, name: 'Лунный селадон',           desc: 'Светящийся жемчужно-дымчатый фарфор с серебряным полумесяцем и лунным ореолом на подставке.' },
+    { id: 'room_candles', tab: 'room', slot: 'candles', stars: 145, name: 'Живые свечи станции',      desc: 'Шесть восковых свечей с трепещущим живым пламенем и тёплыми бликами у ковра и на полке радио.' },
+    { id: 'pot_kintsugi', tab: 'room', slot: 'pot',     stars: 190, name: 'Керамика Кинцуги',         desc: 'Чёрная японская глина на подставке кадай, исцелённая сияющими швами 24-каратного золота.' },
+    { id: 'room_cat',     tab: 'room', slot: 'cat',     stars: 250, name: 'Живой кот-хранитель',      desc: 'Крупный тёплый кот с уникальной мастью по вашему ID: глубоко дышит, качает хвостом, греет кушетку и мурчит.' }
 ];
 
 const SOMA_ITEM_MAP = Object.fromEntries(SOMA_CATALOG.map(it => [it.id, it]));
+const ROOM_FLAG_SLOTS = ['cat', 'steam', 'tape', 'garland', 'candles'];
+const ROOM_FLAG_ITEM = { cat: 'room_cat', steam: 'room_steam', tape: 'room_tape', garland: 'room_garland', candles: 'room_candles' };
 
 const shopState = {
     tab: 'frames',
     owned: [],
-    equipped: { frame: '', seal: '', title: '', epitaph: '', pager: '', pot: '', cat: false, steam: false, tape: false },
-    preview: null, // временная примерка любого предмета до покупки
+    equipped: { frame: '', seal: '', title: '', epitaph: '', pager: '', pot: '', cat: false, steam: false, tape: false, garland: false, candles: false },
+    preview: null, // временная примерка любого предмета до покупки (включая живой показ прямо в комнате!)
+    liveRoomTry: false,
     topMode: 'all', // 'all' | 'week'
     lastBoard: [],
     myRank: null,
@@ -116,7 +121,9 @@ function normalizeEquipped(raw, ownedList) {
         pot: check(r.pot, 'pot'),
         cat: hasFlag(r.cat, 'room_cat'),
         steam: hasFlag(r.steam, 'room_steam'),
-        tape: hasFlag(r.tape, 'room_tape')
+        tape: hasFlag(r.tape, 'room_tape'),
+        garland: hasFlag(r.garland, 'room_garland'),
+        candles: hasFlag(r.candles, 'room_candles')
     };
 }
 
@@ -125,9 +132,7 @@ function getActiveCosmetics() {
     const base = { ...shopState.equipped };
     const p = shopState.preview && SOMA_ITEM_MAP[shopState.preview];
     if (!p) return base;
-    if (p.slot === 'cat') base.cat = true;
-    else if (p.slot === 'steam') base.steam = true;
-    else if (p.slot === 'tape') base.tape = true;
+    if (ROOM_FLAG_SLOTS.includes(p.slot)) base[p.slot] = true;
     else if (p.slot === 'epitaph_unlock') {
         if (!base.epitaph) base.epitaph = 'Город горит — а у меня лучший вид.';
     } else {
@@ -144,9 +149,7 @@ function isEquipped(id) {
     const it = SOMA_ITEM_MAP[id];
     if (!it) return false;
     const eq = shopState.equipped;
-    if (it.slot === 'cat') return !!eq.cat;
-    if (it.slot === 'steam') return !!eq.steam;
-    if (it.slot === 'tape') return !!eq.tape;
+    if (ROOM_FLAG_SLOTS.includes(it.slot)) return !!eq[it.slot];
     if (it.slot === 'epitaph_unlock') return isOwned('perk_epitaph');
     return eq[it.slot] === id;
 }
@@ -243,26 +246,80 @@ function syncCosmeticsCloud() {
     } catch (_) {}
 }
 
-// Звуковая плёнка «Ночной экспресс»: тихий виниловый шорох + далёкий мягкий перестук колёс раз в 6.5 с
+// Винил «Ночной экспресс»: бархатный лоу-фай аккорд Rhodes + виниловый шорох + мягкий ритм ночного поезда
+let tapeChordIdx = 0;
+const TAPE_CHORDS = [
+    [220.0, 261.6, 329.6, 392.0], // Am7 — тёплая ночная меланхолия
+    [174.6, 220.0, 261.6, 329.6], // Fmaj7 — свет вагона в дожде
+    [146.8, 174.6, 220.0, 261.6], // Dm7 — тихое дыхание города
+    [164.8, 196.0, 246.9, 293.7]  // Em7 — возвращение домой
+];
+
 function syncAmbientTape(enabled) {
     if (!enabled) {
         if (tapeTimer) { clearInterval(tapeTimer); tapeTimer = null; }
         return;
     }
     if (tapeTimer || typeof setInterval !== 'function') return;
-    tapeTimer = setInterval(() => {
+    const playBar = () => {
         if (typeof document !== 'undefined' && document.hidden) return;
         if (typeof soundOn !== 'undefined' && !soundOn) return;
         const prof = typeof document !== 'undefined' && document.getElementById('view-profile');
         if (!prof || prof.classList.contains('hidden')) return;
+        const chord = TAPE_CHORDS[tapeChordIdx % TAPE_CHORDS.length];
+        tapeChordIdx++;
         if (typeof tone === 'function') {
-            tone(68, 0.11, 'sine', 0.016, 0, 56);
-            tone(64, 0.11, 'sine', 0.013, 0.19, 54);
-            tone(66, 0.1, 'sine', 0.011, 0.85, 55);
-            tone(62, 0.1, 'sine', 0.009, 1.04, 52);
+            // Мягкий обволакивающий аккорд виниловой пластинки
+            chord.forEach((f, idx) => tone(f, 2.2, 'sine', 0.0085, idx * 0.09, f * 0.998));
+            // Уютный мерный перестук колёс ночного экспресса на мосту
+            tone(72, 0.12, 'sine', 0.02, 0.1, 58);
+            tone(66, 0.12, 'sine', 0.016, 0.28, 54);
+            tone(70, 0.11, 'sine', 0.015, 1.35, 56);
+            tone(64, 0.11, 'sine', 0.012, 1.53, 52);
         }
-        if (typeof noise === 'function') noise(0.06, 0.006, 0.4, 1900);
-    }, 6500);
+        if (typeof noise === 'function') {
+            noise(0.08, 0.007, 0.05, 1850);
+            noise(0.07, 0.005, 1.8, 2100);
+        }
+    };
+    tapeTimer = setInterval(playBar, 5200);
+}
+
+function renderRoomTryOnBar() {
+    if (typeof document === 'undefined') return;
+    const bar = document.getElementById('station-tryon-bar');
+    const txt = document.getElementById('station-tryon-text');
+    const buyBtn = document.getElementById('station-tryon-buy');
+    if (!bar) return;
+    const it = shopState.liveRoomTry && shopState.preview && SOMA_ITEM_MAP[shopState.preview];
+    if (!it || isOwned(it.id)) {
+        bar.classList.add('hidden');
+        return;
+    }
+    const pts = typeof isPtsMode === 'function' && isPtsMode();
+    let label = `ПРИМЕРКА: «${it.name}»`;
+    if (it.id === 'room_cat' && typeof catSpec === 'function') {
+        label = `ПРИМЕРКА: ВАШ КОТ · ${catSpec().coat.name.toUpperCase()}`;
+    }
+    if (txt) txt.textContent = label;
+    if (buyBtn) {
+        buyBtn.textContent = pts ? `ВЗЯТЬ (${it.stars} ⭐)` : `ОТКРЫТЬ · ${it.stars} ⭐`;
+        buyBtn.onclick = () => {
+            const id = it.id;
+            stopRoomTryOn(true);
+            openShop(it.tab);
+            purchaseCosmetic(id);
+        };
+    }
+    bar.classList.remove('hidden');
+}
+
+function stopRoomTryOn(silent) {
+    shopState.liveRoomTry = false;
+    shopState.preview = null;
+    if (!silent && typeof SFX !== 'undefined' && SFX.tap) SFX.tap();
+    applyCosmeticsToUI();
+    if (typeof renderRoom === 'function') renderRoom();
 }
 
 // Применяет выбранную косметику к пейджеру, карточке Свидетеля в профиле и комнате
@@ -299,23 +356,27 @@ function applyCosmeticsToUI() {
         epSlot.classList.toggle('hidden', !c.epitaph);
     }
 
-    // 3) Звуковая плёнка и перерисовка комнаты (кот, пар над кружкой, горшок Кинцуги)
+    // 3) Звуковая плёнка, плашка живой примерки и перерисовка комнаты
     syncAmbientTape(!!c.tape);
+    renderRoomTryOnBar();
     if (typeof ensureStationLoop === 'function') ensureStationLoop();
 }
 
 // ===== БУТИК ПРИВИЛЕГИЙ SOMA (ПРИМЕРКА, ЭКИПИРОВКА, ОПЛАТА TELEGRAM STARS) =====
 function openShop(tab) {
+    if (typeof exitRoomFullscreen === 'function') exitRoomFullscreen(true);
     if (tab) shopState.tab = tab;
+    shopState.liveRoomTry = false;
     shopState.notice = '';
     if (typeof SFX !== 'undefined' && SFX.tap) SFX.tap();
+    applyCosmeticsToUI();
     renderShop();
     const m = document.getElementById('shop-modal');
     if (m) m.classList.remove('hidden');
 }
 
 function closeShop() {
-    shopState.preview = null;
+    if (!shopState.liveRoomTry) shopState.preview = null;
     shopState.notice = '';
     const m = document.getElementById('shop-modal');
     if (m) m.classList.add('hidden');
@@ -334,16 +395,37 @@ function switchShopTab(tab) {
 }
 
 function tryCosmetic(id) {
-    if (!SOMA_ITEM_MAP[id]) return;
-    shopState.preview = shopState.preview === id ? null : id;
     const it = SOMA_ITEM_MAP[id];
-    if (shopState.preview) {
-        shopState.notice = (it.tab === 'room' || it.tab === 'pager')
-            ? `Примерка: «${it.name}» уже показан на вашем пейджере / в комнате.`
-            : `Примерка: «${it.name}» показан на образце строки Топа выше.`;
-    } else {
-        shopState.notice = '';
+    if (!it) return;
+    // Для атрибутов комнаты и пейджера сразу показываем живую примерку прямо в вашей комнате!
+    if (it.tab === 'room' || it.tab === 'pager') {
+        shopState.preview = id;
+        shopState.liveRoomTry = true;
+        const m = document.getElementById('shop-modal');
+        if (m) m.classList.add('hidden');
+        if (typeof switchTab === 'function') switchTab('profile');
+        applyCosmeticsToUI();
+        if (typeof renderRoom === 'function') renderRoom();
+        if (it.id === 'room_cat' && typeof roomAnim !== 'undefined') {
+            roomAnim.catPetStart = typeof performance !== 'undefined' ? performance.now() : Date.now();
+            if (typeof playObjectTone === 'function') playObjectTone('cat');
+        } else if (typeof SFX !== 'undefined' && SFX.tap) {
+            SFX.tap();
+        }
+        if (it.tab === 'pager') {
+            const pg = document.getElementById('soma-pager');
+            if (pg && pg.scrollIntoView) try { pg.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (_) {}
+        } else {
+            const st = document.getElementById('station');
+            if (st && st.scrollIntoView) try { st.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {}
+        }
+        return;
     }
+    shopState.liveRoomTry = false;
+    shopState.preview = shopState.preview === id ? null : id;
+    shopState.notice = shopState.preview
+        ? `Примерка: «${it.name}» показан на образце строки Топа выше.`
+        : '';
     if (typeof SFX !== 'undefined' && SFX.tap) SFX.tap();
     applyCosmeticsToUI();
     renderShop();
@@ -353,10 +435,9 @@ function toggleEquipCosmetic(id) {
     const it = SOMA_ITEM_MAP[id];
     if (!it || !isOwned(id)) return;
     shopState.preview = null;
+    shopState.liveRoomTry = false;
     const eq = shopState.equipped;
-    if (it.slot === 'cat') eq.cat = !eq.cat;
-    else if (it.slot === 'steam') eq.steam = !eq.steam;
-    else if (it.slot === 'tape') eq.tape = !eq.tape;
+    if (ROOM_FLAG_SLOTS.includes(it.slot)) eq[it.slot] = !eq[it.slot];
     else if (it.slot !== 'epitaph_unlock') {
         eq[it.slot] = eq[it.slot] === id ? '' : id;
     }
@@ -391,10 +472,9 @@ function grantOwnedItem(id) {
     if (!SOMA_ITEM_MAP[id]) return;
     if (!shopState.owned.includes(id)) shopState.owned.push(id);
     shopState.preview = null;
+    shopState.liveRoomTry = false;
     const it = SOMA_ITEM_MAP[id];
-    if (it.slot === 'cat') shopState.equipped.cat = true;
-    else if (it.slot === 'steam') shopState.equipped.steam = true;
-    else if (it.slot === 'tape') shopState.equipped.tape = true;
+    if (ROOM_FLAG_SLOTS.includes(it.slot)) shopState.equipped[it.slot] = true;
     else if (it.slot !== 'epitaph_unlock') shopState.equipped[it.slot] = id;
     saveCosmeticsLocal();
     syncCosmeticsCloud();
@@ -487,12 +567,15 @@ function renderShop() {
     const pts = typeof isPtsMode === 'function' && isPtsMode();
 
     if (prev) {
+        const myCatLabel = typeof catSpec === 'function' ? catSpec().coat.name : 'Кот-хранитель';
         const gearBits = [];
         if (c.pager && SOMA_ITEM_MAP[c.pager]) gearBits.push(`📟 ${SOMA_ITEM_MAP[c.pager].name}`);
         if (c.pot && SOMA_ITEM_MAP[c.pot]) gearBits.push(`🏺 ${SOMA_ITEM_MAP[c.pot].name}`);
-        if (c.cat) gearBits.push('🐈‍⬛ Чёрный кот');
-        if (c.steam) gearBits.push('☕ Горячий чай');
-        if (c.tape) gearBits.push('📼 Ночной экспресс');
+        if (c.cat) gearBits.push(`🐈 ${myCatLabel}`);
+        if (c.garland) gearBits.push('💡 Огни Эдисона');
+        if (c.candles) gearBits.push('🕯 Свечи');
+        if (c.steam) gearBits.push('☕ Чай и сандал');
+        if (c.tape) gearBits.push('💿 Ночной экспресс');
         prev.className = `shop-preview-card ${fc}`.trim();
         prev.innerHTML = `
             <div class="flex justify-between items-center gap-2">
@@ -538,12 +621,19 @@ function renderShop() {
         const eqLabel = it.slot === 'epitaph_unlock'
             ? '✓ ПРАВО АКТИВНО (ПОЛЕ ВЫШЕ)'
             : (eq ? '✓ НАДЕТО (СНЯТЬ)' : 'НАДЕТЬ');
+        const tryLabel = (it.tab === 'room' || it.tab === 'pager')
+            ? 'В КОМНАТЕ'
+            : (trying ? 'СБРОС' : 'ПРИМЕРИТЬ');
+        const personalCat = (it.id === 'room_cat' && typeof catSpec === 'function')
+            ? `<div class="text-[9.5px] font-mono-tech text-amber-300/95 mt-1">✦ ВАШ КОТ ПО ID: ${esc(catSpec().summary.toUpperCase())}</div>`
+            : '';
         return `
         <div class="shop-item ${eq ? 'is-equipped' : ''}">
             <div class="shop-item-top">
                 <div>
                     <div class="shop-item-name">${icon}<span>${esc(it.name)}</span></div>
                     <p class="shop-item-desc">${esc(it.desc)}</p>
+                    ${personalCat}
                 </div>
                 <span class="shop-price ${owned ? 'is-owned' : ''}">${owned ? 'В КОЛЛЕКЦИИ' : `${it.stars} ⭐`}</span>
             </div>
@@ -551,7 +641,7 @@ function renderShop() {
                 ${owned
                     ? `<button type="button" class="shop-btn shop-btn--equip" ${it.slot === 'epitaph_unlock' ? 'disabled' : `onclick="toggleEquipCosmetic('${it.id}')"`}>${eqLabel}</button>`
                     : `<button type="button" class="shop-btn shop-btn--buy" onclick="purchaseCosmetic('${it.id}')">${buyLabel}</button>
-                       <button type="button" class="shop-btn shop-btn--try" onclick="tryCosmetic('${it.id}')">${trying ? 'СБРОС' : 'ПРИМЕРИТЬ'}</button>`}
+                       <button type="button" class="shop-btn shop-btn--try" onclick="tryCosmetic('${it.id}')">${tryLabel}</button>`}
             </div>
         </div>`;
     }).join('');
@@ -841,8 +931,14 @@ function openDossier(entry) {
     if (c.frame && SOMA_ITEM_MAP[c.frame]) gear.push(SOMA_ITEM_MAP[c.frame].name);
     if (c.pager && SOMA_ITEM_MAP[c.pager]) gear.push('Пейджер: ' + SOMA_ITEM_MAP[c.pager].name);
     if (c.pot && SOMA_ITEM_MAP[c.pot]) gear.push('Сосуд: ' + SOMA_ITEM_MAP[c.pot].name);
-    if (c.cat) gear.push('Чёрный кот');
-    if (c.steam) gear.push('Ночной чай');
+    if (c.cat) {
+        const catName = typeof catSpec === 'function' ? catSpec(entry.username).coat.name : 'Кот-хранитель';
+        gear.push('Кот: ' + catName);
+    }
+    if (c.garland) gear.push('Огни Эдисона');
+    if (c.candles) gear.push('Свечи станции');
+    if (c.tape) gear.push('Ночной экспресс');
+    if (c.steam) gear.push('Чай и сандал');
 
     const placeBadge = entry.place === 1
         ? '#1 // ВЕРХОВНЫЙ НАБЛЮДАТЕЛЬ'

@@ -1324,6 +1324,364 @@
     outline-offset: 2px;
 }
 
+.soma-pager .pager-bezel {
+    cursor: pointer;
+}
+
+.soma-pager[data-state="ready"] .pager-bars i:nth-child(1),
+.soma-pager[data-state="ready"] .pager-bars i:nth-child(2),
+.soma-pager[data-state="ready"] .pager-bars i:nth-child(3) {
+    background: #d9465f;
+}
+
+.soma-pager[data-state="inbox"] .pager-led {
+    background: #fbbf24;
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.95);
+}
+
+.soma-pager[data-state="inbox"] .pager-bars i {
+    background: #fbbf24;
+}
+
+/* ===== ИНТЕРАКТИВНЫЙ МАТРИЧНЫЙ ЭКРАН ПЕЙДЖЕРА NEEOSOMA // NMAV-04 ===== */
+.pager-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 95;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    background: rgba(5, 2, 3, 0.84);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.pager-overlay.hidden {
+    display: none !important;
+}
+
+.pager-overlay.is-in-fs {
+    position: absolute;
+    padding: 8px;
+}
+
+.pager-modal-chassis {
+    width: min(100%, 480px);
+    max-height: min(88vh, 640px);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    border-radius: 16px;
+}
+
+.pager-overlay.is-in-fs .pager-modal-chassis {
+    max-height: 94%;
+    width: min(94%, 520px);
+}
+
+.pager-modal-close {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    border: 1px solid rgba(255, 110, 128, 0.35);
+    background: rgba(24, 6, 10, 0.85);
+    color: #fda4af;
+    font: 12px 'Share Tech Mono', monospace;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pager-modal-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+
+.pager-modal-tab {
+    padding: 7px 8px;
+    border-radius: 8px;
+    border: 1px solid rgba(201, 56, 76, 0.3);
+    background: rgba(16, 4, 7, 0.78);
+    color: #b4818a;
+    font: 10px 'Share Tech Mono', monospace;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.pager-modal-tab[aria-selected="true"] {
+    color: #ffe4e8;
+    border-color: rgba(255, 110, 130, 0.72);
+    background: rgba(76, 14, 26, 0.75);
+    box-shadow: inset 0 1px 0 rgba(255, 200, 208, 0.18);
+}
+
+.pager-inbox-badge {
+    padding: 1px 5px;
+    border-radius: 999px;
+    background: #f59e0b;
+    color: #090304;
+    font-weight: 700;
+    font-size: 9px;
+}
+
+.pager-modal-bezel {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    cursor: default !important;
+}
+
+.pager-modal-lcd {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex !important;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+}
+
+.pager-modal-notice {
+    padding: 7px 9px;
+    border-radius: 7px;
+    font: 10.5px/1.35 'Share Tech Mono', monospace;
+    background: rgba(245, 158, 11, 0.14);
+    border: 1px solid rgba(251, 191, 36, 0.45);
+    color: #fde68a;
+}
+
+.pager-modal-notice.is-error {
+    background: rgba(225, 29, 72, 0.18);
+    border-color: rgba(251, 113, 133, 0.55);
+    color: #fecdd3;
+}
+
+.pager-modal-body {
+    flex: 1 1 auto;
+    min-height: 180px;
+    max-height: 54vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-right: 2px;
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+.pager-card {
+    padding: 10px;
+    border-radius: 9px;
+    background: rgba(8, 2, 4, 0.76);
+    border: 1px solid rgba(201, 56, 76, 0.32);
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.pager-card--inbox {
+    border-color: rgba(251, 191, 36, 0.48);
+    background: rgba(22, 10, 5, 0.78);
+}
+
+.pager-card.is-whispered {
+    opacity: 0.72;
+    border-style: dashed;
+}
+
+.pager-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    font-size: 9.5px;
+    color: #c97a87;
+}
+
+.pager-card-tag {
+    color: #fda4af;
+    font-weight: 700;
+}
+
+.pager-card-quote {
+    padding: 5px 8px;
+    border-left: 2px solid rgba(251, 191, 36, 0.5);
+    background: rgba(0, 0, 0, 0.35);
+    font-size: 9.5px;
+    color: #d6b48c;
+}
+
+.pager-card-text {
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.42;
+    color: #ffe4e8;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.pager-card-done {
+    font-size: 9.5px;
+    color: #fcd34d;
+}
+
+.pager-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.pager-act-btn {
+    flex: 1 1 auto;
+    min-height: 34px;
+    padding: 6px 10px;
+    border-radius: 7px;
+    font: 10px 'Share Tech Mono', monospace;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    border: 1px solid rgba(225, 64, 88, 0.55);
+    background: linear-gradient(180deg, rgba(88, 16, 30, 0.88) 0%, rgba(42, 7, 15, 0.94) 100%);
+    color: #ffe4e8;
+}
+
+.pager-act-btn--dismiss {
+    flex: 0 1 auto;
+    border-color: rgba(160, 110, 120, 0.35);
+    background: rgba(20, 7, 10, 0.8);
+    color: #c798a0;
+}
+
+.pager-act-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.pager-compose {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 6px;
+    border-top: 1px dashed rgba(201, 56, 76, 0.32);
+}
+
+.pager-compose-hint {
+    font-size: 9.5px;
+    line-height: 1.35;
+    color: #fca5a5;
+}
+
+.pager-compose-input {
+    width: 100%;
+    padding: 8px;
+    border-radius: 7px;
+    border: 1px solid rgba(244, 63, 94, 0.5);
+    background: rgba(5, 1, 3, 0.92);
+    color: #fff1f2;
+    font: 11px/1.4 'Share Tech Mono', monospace;
+    resize: vertical;
+}
+
+.pager-compose-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.pager-compose-count {
+    font-size: 9.5px;
+    color: #fda4af;
+}
+
+.pager-compose-btns {
+    display: flex;
+    gap: 6px;
+}
+
+.pager-empty-box,
+.pager-gate-box {
+    padding: 14px 10px;
+    border-radius: 9px;
+    background: rgba(8, 2, 4, 0.65);
+    border: 1px dashed rgba(201, 56, 76, 0.35);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+}
+
+.pager-empty-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #fda4af;
+    letter-spacing: 0.05em;
+}
+
+.pager-empty-sub {
+    margin: 0;
+    font-size: 10px;
+    line-height: 1.4;
+    color: #c798a0;
+}
+
+.pager-gate-meter {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    text-align: left;
+}
+
+.pager-gate-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9.5px;
+    color: #fecdd3;
+}
+
+.pager-gate-bar {
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(30, 8, 14, 0.9);
+    border: 1px solid rgba(201, 56, 76, 0.35);
+    overflow: hidden;
+}
+
+.pager-gate-bar i {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, #e11d48, #fbbf24);
+}
+
+.pager-modal-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    font: 9px 'Share Tech Mono', monospace;
+    color: #9e727a;
+}
+
+.pager-foot-vhs {
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(251, 191, 36, 0.4);
+    background: rgba(28, 12, 6, 0.85);
+    color: #fde68a;
+    font: 9.5px 'Share Tech Mono', monospace;
+    cursor: pointer;
+}
+
 /* ===== КНОПКА И ПОЛНОЭКРАННЫЙ ГОРИЗОНТАЛЬНЫЙ РЕЖИМ КОМНАТЫ ===== */
 .station-bar-right {
     display: inline-flex;

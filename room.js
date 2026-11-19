@@ -1696,8 +1696,11 @@ const roomAnim = {
     stage: 0,
     liveStage: 0,
     inspectStage: null, // ручной осмотр любой из 6 стадий (0..5)
-    previewStage: null, // выбранная стадия в режиме PTS
+    inspectKind: null,  // ручной осмотр любого из 7 видов (0..6)
+    galleryOpen: false,
+    previewStage: null,
     lastStage: -1,
+    ownSpec: null,
     spec: null,
     radioLit: false,
     previewPhase: 3,
@@ -1706,11 +1709,12 @@ const roomAnim = {
     lastTouchAt: 0,
     lastTouchObj: '',
     clearTouchTimer: null,
-    // Плавные физические таймлайны предметов (без резких вспышек!)
+    // Плавные физические таймлайны предметов (без вспышек и без артефактов!)
     lampStart: -1e9,
     lampAmp: 0,
     lampDir: 1,
     deckStart: -1e9,
+    deckWasActive: false,
     nightLStart: -1e9,
     nightRStart: -1e9,
     crtStart: -1e9,
@@ -1718,9 +1722,27 @@ const roomAnim = {
     plantStart: -1e9,
     winStart: -1e9,
     ripples: [],
-    spores: [],
-    lampCache: null
+    spores: []
 };
+
+// Возвращает эталонный экземпляр любого из 7 видов для режима осмотра (не меняя личный ID игрока)
+function gallerySpecForKind(kind, ownSpec) {
+    if (ownSpec && ownSpec.kind === kind) return ownSpec;
+    const base = ownSpec ? ownSpec.seed : 42;
+    return {
+        kind,
+        kindName: PLANT_KINDS[kind],
+        leafIdx: kind % PLANT_LEAF.length,
+        leaf: PLANT_LEAF[kind % PLANT_LEAF.length],
+        bloomIdx: (kind + 1) % PLANT_BLOOM.length,
+        bloom: PLANT_BLOOM[(kind + 1) % PLANT_BLOOM.length],
+        potIdx: kind % PLANT_POTS.length,
+        pot: PLANT_POTS[kind % PLANT_POTS.length],
+        seed: (base ^ Math.imul(kind + 1, 2654435761)) >>> 0,
+        lean: ((kind % 3) - 1) * 0.35,
+        potShape: (kind === 2 || kind === 6) ? 1 : (kind === 3 ? 2 : 0)
+    };
+}
 
 function prefersStillRoom() {
     try { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
@@ -1732,13 +1754,12 @@ function smooth01(v) { const t = clamp01(v); return t * t * (3 - 2 * t); }
 function easeOutCubic(v) { const t = clamp01(v); return 1 - Math.pow(1 - t, 3); }
 function easeInOutCubic(v) { const t = clamp01(v); return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
 
-// Плавная колоколообразная огибающая (0 -> мягкий подъём -> дыхание -> долгий спад -> 0, БЕЗ вспышки!)
 function softBell(elapsed, riseMs, holdMs, fallMs) {
     if (elapsed <= 0) return 0;
     if (elapsed < riseMs) return 0.5 - 0.5 * Math.cos(Math.PI * (elapsed / riseMs));
     if (elapsed < riseMs + holdMs) {
         const h = (elapsed - riseMs) / Math.max(1, holdMs);
-        return 0.94 + 0.06 * Math.sin(h * Math.PI);
+        return 0.95 + 0.05 * Math.sin(h * Math.PI);
     }
     const f = elapsed - riseMs - holdMs;
     if (f < fallMs) return 0.5 + 0.5 * Math.cos(Math.PI * (f / fallMs));
@@ -1753,540 +1774,444 @@ function insideWindow(x, y, pad) {
     return (dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1;
 }
 
-// Подготовка реального спрайта подвесной лампы со шнуром из фона сцены для честного маятника
-function getLampSprite() {
-    if (roomAnim.lampCache) return roomAnim.lampCache;
-    if (typeof document === 'undefined') return null;
-    const img = document.getElementById('station-bg');
-    if (!img || !img.complete || !img.naturalWidth) return null;
-    try {
-        // В исходнике 1586×992: шнур x=374, y=16..242; купол лампы x=330..420, y=242..332
-        const sx = 326, sy = 14, sw = 98, sh = 324;
-        const spr = document.createElement('canvas');
-        spr.width = sw; spr.height = sh;
-        const sg = spr.getContext('2d');
-        sg.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
-        const id = sg.getImageData(0, 0, sw, sh);
-        const d = id.data;
-
-        // Аккуратно отделяем шнур и кованый плафон от тёмной стены
-        for (let y = 0; y < sh; y++) {
-            const gy = sy + y;
-            for (let x = 0; x < sw; x++) {
-                const gx = sx + x;
-                const p = (y * sw + x) * 4;
-                let alpha = 0;
-                if (gy < 240) {
-                    // Тонкий вертикальный шнур x≈374 (не трогаем трубу потолка y≈76..92 сбоку!)
-                    const dist = Math.abs(gx - 374);
-                    if (dist <= 3.5) alpha = clamp01(1 - (dist - 1.2) / 2.5) * (d[p] > 24 ? 1 : 0.65);
-                } else {
-                    // Купольный плафон и тёплая лампа накаливания
-                    const dx = (gx - 375) / 45.5;
-                    const dy = gy < 306 ? (gy - 302) / 62 : (gy - 306) / 24;
-                    const dist = Math.hypot(dx, dy);
-                    if (dist <= 1.06) {
-                        const edge = clamp01((1.06 - dist) / 0.14);
-                        const lum = d[p];
-                        alpha = gy > 314 ? clamp01((lum - 24) / 70) * edge : edge;
-                    }
-                }
-                d[p + 3] = Math.round(alpha * 255);
-            }
-        }
-        sg.putImageData(id, 0, 0);
-
-        // Чистая заплатка тёмной стены позади неподвижной лампы
-        const patch = document.createElement('canvas');
-        patch.width = sw; patch.height = sh;
-        const pg = patch.getContext('2d');
-        pg.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
-        const pid = pg.getImageData(0, 0, sw, sh);
-        const pd = pid.data;
-        for (let y = 0; y < sh; y++) {
-            const gy = sy + y;
-            // Берём чистый тон стены слева и справа от шнура/плафона
-            const lCol = [pd[(y * sw + 2) * 4], pd[(y * sw + 2) * 4 + 1], pd[(y * sw + 2) * 4 + 2]];
-            const rCol = [pd[(y * sw + sw - 3) * 4], pd[(y * sw + sw - 3) * 4 + 1], pd[(y * sw + sw - 3) * 4 + 2]];
-            for (let x = 0; x < sw; x++) {
-                const gx = sx + x;
-                const maskA = d[(y * sw + x) * 4 + 3] / 255;
-                // Полностью закрываем статичный купол и ореол под лампой, чтобы не оставалось двойного контура
-                const domeCover = gy >= 238 ? clamp01((1.16 - Math.hypot((gx - 375) / 48, (gy - 294) / 54)) / 0.14) : 0;
-                const w = Math.max(maskA, domeCover);
-                if (w <= 0.01) continue;
-                const t = x / (sw - 1);
-                const br = Math.min(24, lCol[0] * (1 - t) + rCol[0] * t);
-                const bg = Math.min(6,  lCol[1] * (1 - t) + rCol[1] * t);
-                const bb = Math.min(8,  lCol[2] * (1 - t) + rCol[2] * t);
-                const p = (y * sw + x) * 4;
-                pd[p]     = Math.round(pd[p] * (1 - w) + br * w);
-                pd[p + 1] = Math.round(pd[p + 1] * (1 - w) + bg * w);
-                pd[p + 2] = Math.round(pd[p + 2] * (1 - w) + bb * w);
-            }
-        }
-        pg.putImageData(pid, 0, 0);
-
-        roomAnim.lampCache = { spr, patch, sx: sx * 0.5, sy: sy * 0.5, sw: sw * 0.5, sh: sh * 0.5, pivX: 187, pivY: 8 };
-        return roomAnim.lampCache;
-    } catch (_) {
-        return null;
-    }
-}
-
 function spawnPlantSpores(count, isPetals) {
-    const n = count || 6;
+    const n = count || 5;
     for (let i = 0; i < n; i++) {
         roomAnim.spores.push({
-            x: 396 + (Math.random() - 0.5) * (42 + roomAnim.stage * 10),
-            y: isPetals ? (345 - roomAnim.stage * 10 + Math.random() * 24) : (425 - roomAnim.stage * 16 - Math.random() * 18),
-            vx: (Math.random() - 0.5) * 0.22 + (isPetals ? 0.12 : 0),
-            vy: isPetals ? (0.24 + Math.random() * 0.22) : (-0.28 - Math.random() * 0.26),
+            x: 396 + (Math.random() - 0.5) * (40 + roomAnim.stage * 9),
+            y: isPetals ? (345 - roomAnim.stage * 10 + Math.random() * 22) : (425 - roomAnim.stage * 15 - Math.random() * 16),
+            vx: (Math.random() - 0.5) * 0.2 + (isPetals ? 0.1 : 0),
+            vy: isPetals ? (0.22 + Math.random() * 0.2) : (-0.25 - Math.random() * 0.22),
             life: 1,
             petal: !!isPetals,
             phase: Math.random() * 6.28
         });
     }
-    if (roomAnim.spores.length > 26) roomAnim.spores.splice(0, roomAnim.spores.length - 26);
+    if (roomAnim.spores.length > 24) roomAnim.spores.splice(0, roomAnim.spores.length - 24);
 }
 
-// 1) Плавная анимация окон в домах NEEO_CITY, огней моста и рассветного неба за круглым окном
+// 1) Окна в домах NEEO_CITY, заря и дождь за круглым стеклом
 function drawWindowWorld(g, now, phase, winGlow) {
     g.save();
     g.beginPath();
-    g.ellipse(WIN_CX, WIN_CY, WIN_RX - 1.5, WIN_RY - 1.5, 0, 0, Math.PI * 2);
+    g.ellipse(WIN_CX, WIN_CY, WIN_RX - 2, WIN_RY - 2, 0, 0, Math.PI * 2);
     g.clip();
 
-    // На фазе 3 («Рассвет») за силуэтами высоток медленно дышит живая ало-янтарная заря (без единой капли дождя!)
+    // На макс. фазе («Рассвет») за домами дышит живая ало-янтарная заря (без дождя и без ночного созвездия!)
     if (phase >= 2) {
         const isDawn = phase === 3;
-        const breathe = 0.5 + 0.5 * Math.sin(now * 0.00055);
-        const shiftX = Math.sin(now * 0.00032) * 14;
-        const intensity = (isDawn ? 0.34 + breathe * 0.1 + winGlow * 0.08 : 0.1 + breathe * 0.03);
+        const breathe = 0.5 + 0.5 * Math.sin(now * 0.00052);
+        const shiftX = Math.sin(now * 0.00028) * 12;
+        const intensity = isDawn ? (0.34 + breathe * 0.09 + winGlow * 0.06) : (0.09 + breathe * 0.025);
 
         g.save();
         g.globalCompositeOperation = 'screen';
-        // Заря, поднимающаяся из-за горизонта за домами
-        const dg = g.createRadialGradient(WIN_CX + shiftX, 204, 8, WIN_CX + shiftX * 0.5, 192, 168);
-        dg.addColorStop(0, `rgba(255,132,112,${intensity.toFixed(3)})`);
-        dg.addColorStop(0.38, `rgba(238,54,72,${(intensity * 0.68).toFixed(3)})`);
-        dg.addColorStop(0.75, `rgba(148,18,36,${(intensity * 0.3).toFixed(3)})`);
+        const dg = g.createRadialGradient(WIN_CX + shiftX, 206, 8, WIN_CX + shiftX * 0.4, 190, 166);
+        dg.addColorStop(0, `rgba(255,134,114,${intensity.toFixed(3)})`);
+        dg.addColorStop(0.4, `rgba(236,54,70,${(intensity * 0.65).toFixed(3)})`);
+        dg.addColorStop(0.76, `rgba(146,18,36,${(intensity * 0.28).toFixed(3)})`);
         dg.addColorStop(1, 'rgba(90,8,20,0)');
         g.fillStyle = dg;
         g.fillRect(WIN_CX - WIN_RX, WIN_CY - WIN_RY, WIN_RX * 2, WIN_RY * 2);
 
-        // Тонкая плавно плывущая рассветная дымка над горизонтом
         if (isDawn) {
-            const bandY = 178 + Math.sin(now * 0.0004) * 5;
-            const hg = g.createLinearGradient(0, bandY - 52, 0, bandY + 58);
-            hg.addColorStop(0, 'rgba(255,90,96,0)');
-            hg.addColorStop(0.5, `rgba(255,118,106,${(0.14 + breathe * 0.06).toFixed(3)})`);
+            const bandY = 180 + Math.sin(now * 0.00036) * 4.5;
+            const hg = g.createLinearGradient(0, bandY - 56, 0, bandY + 58);
+            hg.addColorStop(0, 'rgba(255,92,96,0)');
+            hg.addColorStop(0.5, `rgba(255,122,108,${(0.14 + breathe * 0.055).toFixed(3)})`);
             hg.addColorStop(1, 'rgba(200,32,52,0)');
             g.fillStyle = hg;
-            g.fillRect(WIN_CX - WIN_RX, bandY - 52, WIN_RX * 2, 110);
+            g.fillRect(WIN_CX - WIN_RX, bandY - 56, WIN_RX * 2, 114);
         }
         g.restore();
     }
 
-    // Живые окна в домах NEEO_CITY: плавно гаснут, загораются и тепло дышат
+    // Естественная плавная жизнь окон в домах (только по точным контурам окон, сохраняя их переплёты)
     for (let i = 0; i < CITY_WINDOWS.length; i++) {
         const [wx, wy, ww, wh] = CITY_WINDOWS[i];
-        // Медленная индивидуальная волна жизни для каждого окна (цикл 9–24 сек)
-        const rate = 0.00028 + (i % 9) * 0.000075;
+        const rate = 0.00024 + (i % 9) * 0.000065;
         const ph = i * 2.39996 + (i % 5) * 0.7;
-        const w1 = Math.sin(now * rate + ph);
-        const w2 = Math.sin(now * rate * 0.43 - ph * 0.6);
-        const mood = w1 * 0.65 + w2 * 0.35; // -1..1
+        const mood = Math.sin(now * rate + ph) * 0.65 + Math.sin(now * rate * 0.41 - ph * 0.6) * 0.35;
 
-        if (mood < -0.22) {
-            // Окно плавно гаснет (жильцы выключили свет)
-            const dim = smooth01((-mood - 0.22) / 0.62) * (phase === 3 ? 0.82 : 0.72);
-            g.fillStyle = `rgba(18,3,6,${dim.toFixed(3)})`;
-            g.fillRect(wx - 0.5, wy - 0.5, ww + 1, wh + 1);
-        } else if (mood > 0.18) {
-            // Окно плавно разгорается тёплым живым светом
-            const glow = smooth01((mood - 0.18) / 0.68) * (0.55 + (phase === 3 ? 0.2 : 0.1) + winGlow * 0.18);
-            g.fillStyle = `rgba(255,88,96,${(glow * 0.34).toFixed(3)})`;
-            g.fillRect(wx - 1.5, wy - 1.5, ww + 3, wh + 3);
-            g.fillStyle = i % 3 === 0
-                ? `rgba(255,198,176,${(glow * 0.78).toFixed(3)})`
-                : `rgba(255,134,138,${(glow * 0.72).toFixed(3)})`;
+        if (mood < -0.25) {
+            // Мягкое приглушение света в окне (без грубых чёрных пятен)
+            const dim = smooth01((-mood - 0.25) / 0.65) * 0.68;
+            g.fillStyle = `rgba(20,4,7,${dim.toFixed(3)})`;
             g.fillRect(wx, wy, ww, wh);
+        } else if (mood > 0.22) {
+            // Мягкое тёплое разгорание окна изнутри
+            const glow = smooth01((mood - 0.22) / 0.68) * (0.42 + (phase === 3 ? 0.14 : 0.08));
+            const cx = wx + ww * 0.5, cy = wy + wh * 0.5;
+            radialAura(g, cx, cy, Math.max(ww, wh) * 1.4, '#ff9892', '#c8283e', glow * 0.55);
+            g.fillStyle = `rgba(255,186,168,${(glow * 0.55).toFixed(3)})`;
+            g.fillRect(wx + 0.3, wy + 0.3, Math.max(1, ww - 0.6), Math.max(1, wh - 0.6));
         }
     }
 
-    // Мягкое переливание огней на ночном мосту
+    // Тёплые огни моста и неспешные сигнальные маячки на крышах высоток
     for (let b = 0; b < BRIDGE_LIGHTS.length; b++) {
-        const bx = BRIDGE_LIGHTS[b];
-        const a = (0.25 + 0.35 * (0.5 + 0.5 * Math.sin(now * 0.0011 + b * 0.85)));
-        g.fillStyle = `rgba(255,162,152,${a.toFixed(3)})`;
-        g.fillRect(bx - 1, 232, 2, 1.6);
+        const a = 0.2 + 0.3 * (0.5 + 0.5 * Math.sin(now * 0.00095 + b * 0.9));
+        g.fillStyle = `rgba(255,164,154,${a.toFixed(3)})`;
+        g.fillRect(BRIDGE_LIGHTS[b] - 0.8, 232, 1.6, 1.4);
     }
-
-    // Плавные сигнальные огни на крышах небоскрёбов
     CITY_BEACONS.forEach(bc => {
-        const p = Math.pow(0.5 + 0.5 * Math.sin(now * bc.speed + bc.phase), 2.2);
-        if (p > 0.08) {
-            radialAura(g, bc.x, bc.y, bc.r * 3.4, '#ff5c70', '#9e1428', p * 0.36);
-            g.fillStyle = `rgba(255,204,208,${(p * 0.78).toFixed(3)})`;
-            g.beginPath(); g.arc(bc.x, bc.y, bc.r * 0.52, 0, Math.PI * 2); g.fill();
+        const p = Math.pow(0.5 + 0.5 * Math.sin(now * bc.speed + bc.phase), 2.4);
+        if (p > 0.1) {
+            radialAura(g, bc.x, bc.y, bc.r * 3, '#ff6274', '#9e1428', p * 0.32);
+            g.fillStyle = `rgba(255,204,208,${(p * 0.72).toFixed(3)})`;
+            g.beginPath(); g.arc(bc.x, bc.y, bc.r * 0.45, 0, Math.PI * 2); g.fill();
         }
     });
 
-    // Дождь и живые капли на стекле — ТОЛЬКО в фазах 0, 1, 2 (в фазе 3 небо чистое, без застывшего дождя!)
+    // Живой дождь и капли по стеклу (только фазы 0..2; на «Рассвете» дождя нет)
     if (phase < 3) {
-        const streakCount = [44, 24, 10, 0][phase];
+        const streakCount = [42, 22, 9, 0][phase];
         g.lineCap = 'round';
         for (let i = 0; i < streakCount; i++) {
             const d = FX_RAIN[i];
-            const al = d.alpha * (phase === 0 ? 1 : phase === 1 ? 0.78 : 0.52);
-            g.strokeStyle = d.near ? `rgba(255,148,160,${al.toFixed(3)})` : `rgba(224,62,82,${al.toFixed(3)})`;
-            g.lineWidth = d.near ? 1.15 : 0.8;
+            const al = d.alpha * (phase === 0 ? 0.95 : phase === 1 ? 0.72 : 0.48);
+            g.strokeStyle = d.near ? `rgba(255,146,158,${al.toFixed(3)})` : `rgba(218,58,78,${al.toFixed(3)})`;
+            g.lineWidth = d.near ? 1.1 : 0.75;
             g.beginPath();
             g.moveTo(d.x, d.y);
-            g.lineTo(d.x - d.len * 0.09, d.y + d.len);
+            g.lineTo(d.x - d.len * 0.08, d.y + d.len);
             g.stroke();
         }
-
-        const dropCount = [16, 11, 6, 0][phase];
+        const dropCount = [15, 10, 5, 0][phase];
         for (let i = 0; i < dropCount; i++) {
             const dr = FX_DROPS[i];
             if (!insideWindow(dr.x, dr.y, 6)) continue;
             const tg = g.createLinearGradient(dr.x, dr.y - dr.trail, dr.x, dr.y);
             tg.addColorStop(0, 'rgba(255,112,128,0)');
-            tg.addColorStop(1, 'rgba(255,132,146,0.28)');
+            tg.addColorStop(1, 'rgba(255,132,146,0.24)');
             g.strokeStyle = tg;
-            g.lineWidth = 1.1;
+            g.lineWidth = 1.0;
             g.beginPath(); g.moveTo(dr.x, dr.y - dr.trail); g.lineTo(dr.x, dr.y); g.stroke();
-            g.fillStyle = 'rgba(255,192,200,0.72)';
-            g.beginPath(); g.ellipse(dr.x, dr.y, 1.2, 1.8, 0, 0, Math.PI * 2); g.fill();
+            g.fillStyle = 'rgba(255,190,198,0.65)';
+            g.beginPath(); g.ellipse(dr.x, dr.y, 1.1, 1.6, 0, 0, Math.PI * 2); g.fill();
         }
     }
 
-    // Нежнейшая водная/световая рябь по стеклу при касании окна
-    for (let i = roomAnim.ripples.length - 1; i >= 0; i--) {
+    // Едва заметная мягкая рябь влаги по стеклу при касании окна
+    for (let i = 0; i < roomAnim.ripples.length; i++) {
         const rp = roomAnim.ripples[i];
-        const prog = 1 - rp.life;
-        const rad = 4 + rp.maxR * easeOutCubic(prog);
-        const alpha = Math.sin(rp.life * Math.PI) * 0.28;
-        g.strokeStyle = `rgba(255,168,176,${alpha.toFixed(3)})`;
-        g.lineWidth = 1.2;
+        const rad = 4 + rp.maxR * easeOutCubic(1 - rp.life);
+        const alpha = Math.sin(rp.life * Math.PI) * 0.22;
+        g.strokeStyle = `rgba(255,172,180,${alpha.toFixed(3)})`;
+        g.lineWidth = 1.0;
         g.beginPath(); g.arc(rp.x, rp.y, rad, 0, Math.PI * 2); g.stroke();
     }
 
     g.restore();
 }
 
-// 2) Плавный объёмный свет ИЗ круглого окна на комнату, растение и ковёр (максимальный уровень!)
+// 2) Плавный объёмный свет ИЗ круглого окна вниз на растение и ковёр
 function drawWindowLightBeams(g, now, phase, winGlow) {
     if (phase < 2) return;
     const isMax = phase === 3;
-    const strength = (isMax ? 1 : 0.28) + winGlow * 0.16;
-    const b1 = 0.5 + 0.5 * Math.sin(now * 0.00062);
-    const b2 = 0.5 + 0.5 * Math.sin(now * 0.00041 + 1.8);
-    const sway = Math.sin(now * 0.00034) * 14;
+    const strength = (isMax ? 1 : 0.26) + winGlow * 0.14;
+    const b1 = 0.5 + 0.5 * Math.sin(now * 0.00058);
+    const b2 = 0.5 + 0.5 * Math.sin(now * 0.00039 + 1.8);
+    const sway = Math.sin(now * 0.00032) * 12;
 
     g.save();
     g.globalCompositeOperation = 'screen';
 
-    // Подсветка внутреннего нижнего откоса круглого окна (показывает, что свет бьёт снаружи внутрь!)
-    const rimA = (0.2 + b1 * 0.08) * strength;
+    // Тёплый блик рассвета по нижней внутренней кромке круглого окна
+    const rimA = (0.18 + b1 * 0.07) * strength;
     g.strokeStyle = `rgba(255,134,132,${rimA.toFixed(3)})`;
-    g.lineWidth = 3.2;
+    g.lineWidth = 2.8;
     g.beginPath();
-    g.ellipse(WIN_CX, WIN_CY + 1, WIN_RX + 1.5, WIN_RY + 1.5, 0, Math.PI * 0.14, Math.PI * 0.86);
+    g.ellipse(WIN_CX, WIN_CY + 1, WIN_RX + 1, WIN_RY + 1, 0, Math.PI * 0.15, Math.PI * 0.85);
     g.stroke();
 
-    // Мягкие бархатные объёмные лучи рассвета (без жёстких граней), льющиеся ИЗ круглого окна вниз на растение и ковёр
-    const fanAngles = [-0.24, -0.11, 0.0, 0.12, 0.25];
+    // Бархатные объёмные лучи, льющиеся из проёма круглого окна на пол комнаты
+    const fanAngles = [-0.23, -0.11, 0.0, 0.11, 0.23];
     fanAngles.forEach((baseAng, idx) => {
-        const drift = Math.sin(now * (0.00038 + idx * 0.00007) + idx * 1.4) * 0.035;
-        const pulseA = 0.5 + 0.5 * Math.sin(now * (0.00055 + idx * 0.00009) + idx * 1.1);
-        const rayA = (0.055 + pulseA * 0.042) * (idx === 2 ? 1.25 : 0.92) * strength;
+        const drift = Math.sin(now * (0.00036 + idx * 0.00006) + idx * 1.4) * 0.032;
+        const pulseA = 0.5 + 0.5 * Math.sin(now * (0.00052 + idx * 0.00008) + idx * 1.1);
+        const rayA = (0.052 + pulseA * 0.038) * (idx === 2 ? 1.25 : 0.9) * strength;
         g.save();
-        g.translate(WIN_CX, WIN_CY - 22);
+        g.translate(WIN_CX, WIN_CY - 20);
         g.rotate(baseAng + drift);
-        g.scale(0.32 + (idx === 2 ? 0.09 : 0), 1);
-        const rg = g.createRadialGradient(0, 120, 10, 0, 155, 225);
+        g.scale(0.33 + (idx === 2 ? 0.09 : 0), 1);
+        const rg = g.createRadialGradient(0, 118, 10, 0, 155, 222);
         rg.addColorStop(0, `rgba(255,126,118,${rayA.toFixed(3)})`);
-        rg.addColorStop(0.55, `rgba(232,54,72,${(rayA * 0.58).toFixed(3)})`);
+        rg.addColorStop(0.55, `rgba(230,52,70,${(rayA * 0.56).toFixed(3)})`);
         rg.addColorStop(1, 'rgba(150,18,34,0)');
         g.fillStyle = rg;
-        g.beginPath(); g.arc(0, 155, 225, 0, Math.PI * 2); g.fill();
+        g.beginPath(); g.arc(0, 155, 222, 0, Math.PI * 2); g.fill();
         g.restore();
     });
 
-    // Живое световое пятно от круглого окна, мягко лежащее на полу и ковре (смещается вместе с лучами!)
+    // Световая проекция окна на ковре (плавно дышит и чуть плывёт вместе с лучами)
     if (isMax) {
-        const poolX = WIN_CX + sway * 0.65, poolY = 418;
         g.save();
-        g.translate(poolX, poolY);
+        g.translate(WIN_CX + sway * 0.6, 418);
         g.scale(1, 0.34);
-        const pg = g.createRadialGradient(0, -35, 12, 0, 0, 215);
-        pg.addColorStop(0, `rgba(255,112,110,${(0.22 + b2 * 0.07).toFixed(3)})`);
-        pg.addColorStop(0.52, `rgba(224,44,64,${(0.13 + b1 * 0.04).toFixed(3)})`);
+        const pg = g.createRadialGradient(0, -34, 12, 0, 0, 212);
+        pg.addColorStop(0, `rgba(255,112,110,${(0.2 + b2 * 0.065).toFixed(3)})`);
+        pg.addColorStop(0.52, `rgba(222,42,62,${(0.12 + b1 * 0.04).toFixed(3)})`);
         pg.addColorStop(1, 'rgba(140,14,30,0)');
         g.fillStyle = pg;
-        g.beginPath(); g.arc(0, 0, 215, 0, Math.PI * 2); g.fill();
+        g.beginPath(); g.arc(0, 0, 212, 0, Math.PI * 2); g.fill();
         g.restore();
     }
 
-    // Тёплые пылинки, медленно кружащиеся только внутри конуса света из окна
-    const moteCnt = isMax ? FX_MOTES.length : 9;
+    // Тёплые пылинки внутри конуса света из окна
+    const moteCnt = isMax ? FX_MOTES.length : 8;
     for (let i = 0; i < moteCnt; i++) {
         const m = FX_MOTES[i];
         const v = (m.v + now * m.speed) % 1;
-        const span = 96 + v * 125;
-        const mx = WIN_CX + (m.u - 0.5) * span * 2 + Math.sin(now * 0.00055 + m.phase) * 9 + sway * v * 0.5;
-        const my = 152 + v * 298;
+        const span = 94 + v * 120;
+        const mx = WIN_CX + (m.u - 0.5) * span * 2 + Math.sin(now * 0.0005 + m.phase) * 8 + sway * v * 0.45;
+        const my = 152 + v * 296;
         const edgeFade = Math.sin(v * Math.PI) * (1 - Math.abs(m.u - 0.5) * 1.4);
-        const twinkle = 0.45 + 0.55 * Math.sin(now * 0.0014 + m.phase);
-        const ma = Math.max(0, edgeFade * twinkle * (isMax ? 0.52 : 0.24));
+        const ma = Math.max(0, edgeFade * (0.45 + 0.55 * Math.sin(now * 0.0013 + m.phase)) * (isMax ? 0.48 : 0.22));
         if (ma < 0.03) continue;
         g.fillStyle = `rgba(255,198,190,${ma.toFixed(3)})`;
         g.beginPath(); g.arc(mx, my, m.size, 0, Math.PI * 2); g.fill();
     }
-
     g.restore();
 }
 
-// 3) Честное маятниковое покачивание висячей лампы на шнуре
-function drawSwingingLamp(g, now) {
-    const elapsed = (now - roomAnim.lampStart) * 0.001; // сек
-    let angle = 0, warmth = 0;
-    if (elapsed > 0 && elapsed < 5.6 && roomAnim.lampAmp > 0.001) {
-        // Плавный затухающий маятник: стартует строго с 0°, мягко качается туда-сюда и замирает
-        const env = Math.exp(-elapsed * 0.72);
-        angle = roomAnim.lampDir * roomAnim.lampAmp * env * Math.sin(elapsed * 4.4);
-        warmth = env * smooth01(elapsed / 0.35);
+// 3) Идеально чистое маятниковое качание отдельного слоя висячей лампы (#station-lamp) вокруг точки крепления на потолке
+function updateSwingingLamp(g, now) {
+    const lampEl = typeof document !== 'undefined' && document.getElementById('station-lamp');
+    const elapsed = (now - roomAnim.lampStart) * 0.001;
+    let angle = 0, env = 0;
+    if (elapsed > 0 && elapsed < 5.4 && roomAnim.lampAmp > 0.001) {
+        env = Math.exp(-elapsed * 0.78);
+        angle = roomAnim.lampDir * roomAnim.lampAmp * env * Math.sin(elapsed * 4.2);
     }
-
-    const armLen = 158 - 8;
-    // При повороте холста на angle точка (0, armLen) смещается в (-sin*L, cos*L)
-    const bulbX = 187.5 - Math.sin(angle) * armLen;
-    const bulbY = 8 + Math.cos(angle) * armLen;
-
-    if (Math.abs(angle) > 0.0012) {
-        const cache = getLampSprite();
-        if (cache) {
-            // Скрываем статичную лампу чистой стеной и рисуем саму лампу, повёрнутую вокруг точки подвеса!
-            g.drawImage(cache.patch, cache.sx, cache.sy, cache.sw, cache.sh);
-            g.save();
-            g.translate(cache.pivX, cache.pivY);
-            g.rotate(angle);
-            g.drawImage(cache.spr, cache.sx - cache.pivX, cache.sy - cache.pivY, cache.sw, cache.sh);
-            g.restore();
+    if (lampEl && lampEl.style) {
+        if (Math.abs(angle) > 0.0004) {
+            const deg = (angle * 180 / Math.PI).toFixed(3);
+            lampEl.style.transform = `rotate(${deg}deg)`;
+        } else if (lampEl.style.transform) {
+            lampEl.style.transform = '';
         }
     }
-
-    // Живое дыхание нити накала и мягкий качающийся свет на терминале под лампой
-    const idleBreath = 0.5 + 0.5 * Math.sin(now * 0.0016);
+    // Мягкий живой отсвет качнувшейся лампы на крышке терминала внизу
+    const bulbX = 188 - Math.sin(angle) * 158;
+    const bulbY = Math.cos(angle) * 158;
     g.save();
     g.globalCompositeOperation = 'screen';
-    radialAura(g, bulbX, bulbY, 28 + warmth * 14, '#ff9a98', '#c8223c', 0.12 + idleBreath * 0.04 + warmth * 0.16);
-    if (warmth > 0.02) {
-        // Мягкий блик от качнувшейся лампы скользит по верхушке терминала и столу
-        radialAura(g, bulbX + Math.sin(angle) * 62, 232, 56, '#ff7280', '#961428', warmth * 0.14);
+    if (env > 0.02) {
+        const softIn = smooth01(elapsed / 0.35) * env;
+        radialAura(g, bulbX, bulbY, 34, '#ff8e8c', '#b81e36', softIn * 0.18);
+        radialAura(g, 188 - Math.sin(angle) * 215, 224, 52, '#ff7280', '#8f1226', softIn * 0.14);
     }
     g.restore();
 }
 
-// 4) Плавная анимация старого кассетного магнитофона: открытие кармана → выезд кассеты → возврат → закрытие
-function drawCassetteDeck(g, now) {
-    // Точные координаты кассетного отсека верхней деки (в 793×496: x=45..69, y=279..292)
-    const elapsed = (now - roomAnim.deckStart) * 0.001;
-    const idleBlink = 0.35 + 0.25 * Math.sin(now * 0.0019);
+// 4) Оптическая плавная подсветка ночников (БЕЗ нарисованной второй решётки — светится родное стекло сквозь родные прутья!)
+function updateNightlights(g, now) {
+    const pL = softBell(now - roomAnim.nightLStart, 950, 800, 1750);
+    const pR = softBell(now - roomAnim.nightRStart, 950, 800, 1750);
 
-    // Тёплый индикатор нижней деки (x=52..72, y=306..313)
-    const active = elapsed > 0 && elapsed < 2.9;
+    const nlEl = typeof document !== 'undefined' && document.getElementById('station-nl');
+    const nrEl = typeof document !== 'undefined' && document.getElementById('station-nr');
+    if (nlEl && nlEl.style) nlEl.style.opacity = pL > 0.003 ? pL.toFixed(3) : '0';
+    if (nrEl && nrEl.style) nrEl.style.opacity = pR > 0.003 ? pR.toFixed(3) : '0';
+
+    // Нежный рассеянный отсвет на столешнице и складках пледа вокруг ночников
+    if (pL > 0.01 || pR > 0.01) {
+        g.save();
+        g.globalCompositeOperation = 'screen';
+        if (pL > 0.01) {
+            radialAura(g, 114, 296, 48, '#ff7c78', '#a81830', pL * 0.2);
+            g.save();
+            g.translate(112, 316); g.scale(1, 0.3);
+            radialAura(g, 0, 0, 62, '#ff8882', '#9e162c', pL * 0.24);
+            g.restore();
+        }
+        if (pR > 0.01) {
+            radialAura(g, 748, 312, 54, '#ff7c78', '#a81830', pR * 0.22);
+            g.save();
+            g.translate(736, 336); g.scale(1, 0.34);
+            radialAura(g, 0, 0, 74, '#ff8882', '#9e162c', pR * 0.24);
+            g.restore();
+        }
+        g.restore();
+    }
+}
+
+// 5) Реалистичный пиксельный 3D-лоток старого кассетного магнитофона (масштаб 1:1 к исходнику: x=70..180, y=534..606)
+// Выезжает строго горизонтально вперёд-вправо в точной изометрии полки и плавно заезжает обратно (никаких «призраков»!)
+function drawCassetteDeck(now) {
+    const cv = typeof document !== 'undefined' && document.getElementById('station-deck');
+    if (!cv || !cv.getContext) return;
+    const g = cv.getContext('2d');
+    if (!g) return;
+
+    const elapsed = (now - roomAnim.deckStart) * 0.001;
+    const active = elapsed > 0 && elapsed < 2.85;
     if (!active) {
-        g.fillStyle = `rgba(255,112,124,${idleBlink.toFixed(3)})`;
-        g.fillRect(54, 308, 2, 1.5);
+        if (roomAnim.deckWasActive) {
+            g.clearRect(0, 0, cv.width, cv.height);
+            roomAnim.deckWasActive = false;
+        }
         return;
     }
+    roomAnim.deckWasActive = true;
+    g.clearRect(0, 0, cv.width, cv.height);
 
-    // Фазы плавной механики (2.9 сек):
-    // 0.00..0.48 — крышка подкассетника плавно откидывается на себя
-    // 0.36..1.05 — кассета плавно выезжает из кармана с лёгким проворотом бобин
-    // 1.05..1.65 — короткая живая пауза (кассета на виду, мерцают тёплые индикаторы уровня)
-    // 1.65..2.35 — кассета плавно уходит обратно в карман
-    // 2.25..2.85 — крышка мягко прикрывается и защёлкивается
-    let doorOpen = 0, eject = 0;
-    if (elapsed < 0.48) doorOpen = easeInOutCubic(elapsed / 0.48);
-    else if (elapsed < 2.25) doorOpen = 1;
-    else doorOpen = 1 - easeInOutCubic((elapsed - 2.25) / 0.6);
+    // Плавный таймлайн моторизованного лотка:
+    // 0.00..0.22 — нажатие кнопки EJECT и тёплый огонёк индикатора
+    // 0.16..0.92 — плавный горизонтальный выезд 3D-лотка с лежащей кассетой C-90
+    // 0.92..1.52 — спокойная пауза в открытом положении
+    // 1.52..2.38 — плавное втягивание лотка обратно в шахту деки
+    // 2.38..2.85 — мягкое затухание индикатора после защёлкивания
+    let eject = 0;
+    if (elapsed >= 0.16 && elapsed < 0.92) eject = easeOutCubic((elapsed - 0.16) / 0.76);
+    else if (elapsed >= 0.92 && elapsed < 1.52) eject = 1;
+    else if (elapsed >= 1.52 && elapsed < 2.38) eject = 1 - easeInOutCubic((elapsed - 1.52) / 0.86);
 
-    if (elapsed >= 0.36 && elapsed < 1.05) eject = easeOutCubic((elapsed - 0.36) / 0.69);
-    else if (elapsed >= 1.05 && elapsed < 1.65) eject = 1;
-    else if (elapsed >= 1.65 && elapsed < 2.35) eject = 1 - easeInOutCubic((elapsed - 1.65) / 0.7);
+    const openVis = clamp01(eject * 4.5);
+    const ledA = softBell(elapsed * 1000, 260, 1950, 620);
 
-    const cx = 57.5, cy = 285.5;
-    const deckWarm = Math.sin(clamp01(elapsed / 2.9) * Math.PI);
-
-    // Плавная тёплая подсветка окошка деки и VU-индикаторов внизу
-    g.save();
-    radialAura(g, cx, cy, 24, '#ff7882', '#9e182c', deckWarm * 0.22);
-    for (let b = 0; b < 4; b++) {
-        const lvl = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(elapsed * 5.2 + b * 1.1));
-        g.fillStyle = `rgba(255,146,142,${(deckWarm * lvl * 0.78).toFixed(3)})`;
-        g.fillRect(54 + b * 4, 308, 2.4, 2.2);
+    // Кнопка EJECT (в исходнике x=145..154, y=557..561 -> локально 75..84, 23..27) и тёплый красный светодиод (76, 41)
+    if (elapsed < 0.35) {
+        const press = Math.sin((elapsed / 0.35) * Math.PI);
+        g.fillStyle = `rgba(10,2,3,${(press * 0.7).toFixed(3)})`;
+        g.fillRect(75, 23, 8, 3);
     }
+    g.fillStyle = `rgba(180,38,46,${(ledA * 0.45).toFixed(3)})`;
+    g.fillRect(74, 39, 5, 5);
+    g.fillStyle = `rgba(255,156,148,${(ledA * 0.88).toFixed(3)})`;
+    g.fillRect(75.5, 40.5, 2, 2);
 
-    // Открытая ниша подкассетника с тёплой внутренней подсветкой и лентопротяжным валиком
-    g.fillStyle = `rgba(12,3,5,${(0.92 * doorOpen).toFixed(3)})`;
-    g.fillRect(cx - 12.5, cy - 6.5, 25, 13);
-    g.fillStyle = `rgba(220,58,72,${(0.32 * doorOpen).toFixed(3)})`;
-    g.fillRect(cx - 11, cy - 5, 22, 3);
-    // Магнитная головка и тонвалы внутри
-    g.fillStyle = `rgba(185,112,118,${(0.65 * doorOpen).toFixed(3)})`;
-    g.fillRect(cx - 2, cy + 3.5, 4, 2);
-    g.fillRect(cx - 7, cy + 4, 1.5, 1.5);
-    g.fillRect(cx + 5.5, cy + 4, 1.5, 1.5);
+    if (eject <= 0.01) return;
 
-    // Сама аудиокассета (выезжает плавно вперёд-вверх под естественным углом старой деки!)
-    if (doorOpen > 0.15) {
-        const slideX = eject * 6.5;
-        const slideY = -eject * 10.5;
-        const scale = 0.88 + eject * 0.22;
-        const reelAng = eject * Math.PI * 1.35 + (elapsed > 1.05 && elapsed < 1.65 ? Math.sin((elapsed - 1.05) * 3) * 0.08 : 0);
+    // Точная геометрия горизонтальной шахты деки (x=90..138, y=560..577 -> локально x0=20..68, наклон фасада -3.4°: dy = -2.8px)
+    const xL = 20, xR = 67;           // левый и правый край шахты (ширина 47px)
+    const yL = 33.5, yR = 30.8;       // линия слота по наклону передней панели деки
+    // Вектор горизонтального выезда лотка ИЗ деки в комнату (вперёд-вправо-вниз по перспективе полки!)
+    const vx = 14.5 * eject;
+    const vy = 10.5 * eject;
 
-        g.save();
-        // При малом выезде кассета аккуратно обрезается нижней кромкой кармана
-        g.beginPath();
-        g.rect(cx - 26, cy - 28, 56, 34.5);
-        g.clip();
+    // 1. Тёмная открытая шахта деки с тёплой тусклой подсветкой лентопротяжки в глубине
+    g.save();
+    g.fillStyle = `rgba(9,2,3,${(0.92 * openVis).toFixed(3)})`;
+    g.beginPath();
+    g.moveTo(xL, yL - 8); g.lineTo(xR, yR - 8);
+    g.lineTo(xR, yR + 6); g.lineTo(xL, yL + 6);
+    g.closePath();
+    g.fill();
+    // Тусклый тёплый огонёк подсветки кассетоприёмника внутри шахты
+    const wellGrad = g.createLinearGradient(xL, yL - 7, xL, yL + 3);
+    wellGrad.addColorStop(0, `rgba(148,34,40,${(0.45 * openVis).toFixed(3)})`);
+    wellGrad.addColorStop(1, 'rgba(20,4,6,0)');
+    g.fillStyle = wellGrad;
+    g.fillRect(xL + 3, yR - 7, xR - xL - 6, 9);
 
-        g.translate(cx + slideX, cy + slideY);
-        g.rotate(-eject * 0.055);
-        g.scale(scale, scale);
+    // 2. Реалистичная падающая тень от выдвинутого лотка на нижнюю кромку деки и усилитель
+    g.fillStyle = `rgba(4,1,2,${(0.68 * Math.min(1, eject * 1.4)).toFixed(3)})`;
+    g.beginPath();
+    g.moveTo(xL + 1, yL + 6.5);
+    g.lineTo(xR + 1, yR + 6.5);
+    g.lineTo(xR + vx + 1, yR + vy + 9.5);
+    g.lineTo(xL + vx - 1, yL + vy + 9.5);
+    g.closePath();
+    g.fill();
 
-        // Тень под выехавшей кассетой
-        if (eject > 0.05) {
-            g.fillStyle = `rgba(4,1,2,${(eject * 0.58).toFixed(3)})`;
-            g.fillRect(-11.5, -5.5, 24, 14.5);
-        }
+    // 3. Твердотельный металлический 3D-лоток (горизонтальная площадка в изометрии)
+    const fLx = xL + vx, fLy = yL + vy;
+    const fRx = xR + vx, fRy = yR + vy;
 
-        // Корпус компакт-кассеты (тёмный графитово-бордовый пластик с тёплой фаской)
-        g.fillStyle = '#240c10';
-        g.strokeStyle = '#9c434d';
+    // Дно и боковые металлические салазки лотка
+    g.fillStyle = '#180507';
+    g.beginPath();
+    g.moveTo(xL, yL); g.lineTo(xR, yR);
+    g.lineTo(fRx, fRy); g.lineTo(fLx, fLy);
+    g.closePath();
+    g.fill();
+
+    // Боковые стальные направляющие (правая ловит тёплый алый свет от ночника рядом!)
+    g.strokeStyle = '#4a1418';
+    g.lineWidth = 1.4;
+    g.beginPath(); g.moveTo(xL + 0.7, yL); g.lineTo(fLx + 0.7, fLy); g.stroke();
+    g.strokeStyle = '#7d262c';
+    g.beginPath(); g.moveTo(xR - 0.7, yR); g.lineTo(fRx - 0.7, fRy); g.stroke();
+
+    // 4. Настоящая аудиокассета C-90, ЛЕЖАЩАЯ ПЛАШМЯ внутри горизонтального лотка!
+    if (eject > 0.12) {
+        const cIn = 3.5; // отступ кассеты от бортиков лотка
+        const bLx = xL + cIn + vx * 0.08, bLy = yL + vy * 0.08 - 0.5;
+        const bRx = xR - cIn + vx * 0.08, bRy = yR + vy * 0.08 - 0.5;
+        const cLx = fLx + cIn - vx * 0.1, cLy = fLy - vy * 0.1 - 1.2;
+        const cRx = fRx - cIn - vx * 0.1, cRy = fRy - vy * 0.1 - 1.2;
+
+        // Тёмно-бордовый матовый корпус кассеты (вид сверху под углом комнаты)
+        g.fillStyle = '#260a0d';
+        g.strokeStyle = '#5c1b20';
         g.lineWidth = 0.9;
         g.beginPath();
-        g.rect(-11.5, -7, 23, 14);
+        g.moveTo(bLx, bLy); g.lineTo(bRx, bRy);
+        g.lineTo(cRx, cRy); g.lineTo(cLx, cLy);
+        g.closePath();
         g.fill();
         g.stroke();
 
-        // Верхняя бумажная наклейка в тёплом алом свете ночника
-        const lbl = g.createLinearGradient(-10, -5.5, 10, -1);
-        lbl.addColorStop(0, '#c86a72');
-        lbl.addColorStop(0.55, '#eb9ca2');
-        lbl.addColorStop(1, '#9e454e');
-        g.fillStyle = lbl;
-        g.fillRect(-9.6, -5.4, 19.2, 3.3);
-        // Тонкая полоска «А-стороны» на наклейке
-        g.fillStyle = '#5c1822';
-        g.fillRect(-8.5, -4.4, 11, 0.8);
-
-        // Прозрачное окошко с двумя вращающимися бобинками и тёмной магнитной лентой
-        g.fillStyle = '#120406';
-        g.fillRect(-8.2, -1.2, 16.4, 5.2);
-        // Остаток плёнки на левой и правой катушках
-        g.fillStyle = '#3b151a';
-        g.beginPath(); g.arc(-4.6, 1.4, 2.3, 0, Math.PI * 2); g.fill();
-        g.beginPath(); g.arc(4.6, 1.4, 1.9, 0, Math.PI * 2); g.fill();
-
-        // Светлые зубчатые сердечники бобин (плавно проворачиваются при выезде/заезде!)
-        for (const rx of [-4.6, 4.6]) {
-            g.save();
-            g.translate(rx, 1.4);
-            g.rotate(reelAng);
-            g.strokeStyle = '#f2b8be';
-            g.lineWidth = 0.85;
-            g.beginPath(); g.arc(0, 0, 1.25, 0, Math.PI * 2); g.stroke();
-            for (let k = 0; k < 3; k++) {
-                const a = k * 2.094;
-                g.beginPath(); g.moveTo(0, 0); g.lineTo(Math.cos(a) * 1.45, Math.sin(a) * 1.45); g.stroke();
-            }
-            g.restore();
-        }
-
-        // Нижняя трапеция кассеты (утолщение под головку)
-        g.fillStyle = '#341218';
+        // Узкая тёплая бумажная наклейка кассеты (вдоль дальней половины, без яркой белизны — в тоне сцены!)
+        const lerp = (a, b, t) => a + (b - a) * t;
+        g.fillStyle = '#852b32';
         g.beginPath();
-        g.moveTo(-7.5, 7); g.lineTo(-6.2, 4.6); g.lineTo(6.2, 4.6); g.lineTo(7.5, 7);
+        g.moveTo(lerp(bLx, cLx, 0.16) + 2, lerp(bLy, cLy, 0.16));
+        g.lineTo(lerp(bRx, cRx, 0.16) - 2, lerp(bRy, cRy, 0.16));
+        g.lineTo(lerp(bRx, cRx, 0.46) - 2, lerp(bRy, cRy, 0.46));
+        g.lineTo(lerp(bLx, cLx, 0.46) + 2, lerp(bLy, cLy, 0.46));
         g.closePath();
         g.fill();
-        g.restore();
+
+        // Узкое тёмное смотровое окошко плёнки с двумя плоскими в перспективе медными бобышками
+        if (eject > 0.38) {
+            const mLx = lerp(bLx, cLx, 0.68), mLy = lerp(bLy, cLy, 0.68);
+            const mRx = lerp(bRx, cRx, 0.68), mRy = lerp(bRy, cRy, 0.68);
+            g.strokeStyle = '#0e0204';
+            g.lineWidth = 2.4;
+            g.beginPath();
+            g.moveTo(lerp(mLx, mRx, 0.2), lerp(mLy, mRy, 0.2));
+            g.lineTo(lerp(mLx, mRx, 0.8), lerp(mLy, mRy, 0.8));
+            g.stroke();
+
+            // Плоские эллипсы катушек в изометрии (тёплая медь #99393f, никаких белых кружков!)
+            for (const u of [0.33, 0.67]) {
+                const hx = lerp(mLx, mRx, u), hy = lerp(mLy, mRy, u);
+                g.fillStyle = '#8f343a';
+                g.beginPath(); g.ellipse(hx, hy, 2.4, 0.95, -0.06, 0, Math.PI * 2); g.fill();
+                g.fillStyle = '#140406';
+                g.beginPath(); g.ellipse(hx, hy, 0.9, 0.45, -0.06, 0, Math.PI * 2); g.fill();
+            }
+        }
     }
 
-    // Передняя полупрозрачная крышка кассетного кармана (откидывается на петлях снизу)
-    const lidTilt = doorOpen * 4.8;
-    const lidTopY = cy - 6.5 + doorOpen * 4.2;
-    g.fillStyle = `rgba(48,16,22,${(0.55 - eject * 0.18).toFixed(3)})`;
-    g.strokeStyle = `rgba(218,98,110,${(0.5 + doorOpen * 0.35).toFixed(3)})`;
-    g.lineWidth = 0.9;
+    // 5. Массивная передняя планка (фасад) кассетного лотка с тонкой металлической фаской сверху
+    const lipH = 5.2;
+    const faceGrad = g.createLinearGradient(fLx, fLy, fRx, fRy);
+    faceGrad.addColorStop(0, '#22080a');
+    faceGrad.addColorStop(0.65, '#340d11');
+    faceGrad.addColorStop(1, '#54181d'); // отсвет от правого ночника
+    g.fillStyle = faceGrad;
     g.beginPath();
-    g.moveTo(cx - 12.5 - lidTilt * 0.25, lidTopY);
-    g.lineTo(cx + 12.5 + lidTilt * 0.25, lidTopY);
-    g.lineTo(cx + 12.5, cy + 6.8);
-    g.lineTo(cx - 12.5, cy + 6.8);
+    g.moveTo(fLx, fLy); g.lineTo(fRx, fRy);
+    g.lineTo(fRx, fRy + lipH); g.lineTo(fLx, fLy + lipH);
     g.closePath();
     g.fill();
-    g.stroke();
+
+    // Верхнее ребро передней планки и правый торец лотка
+    g.strokeStyle = '#882c33';
+    g.lineWidth = 1.0;
+    g.beginPath(); g.moveTo(fLx, fLy); g.lineTo(fRx, fRy); g.stroke();
+    g.strokeStyle = '#120305';
+    g.beginPath(); g.moveTo(fLx, fLy + lipH); g.lineTo(fRx, fRy + lipH); g.stroke();
+
+    // Аккуратная выемка по центру передней планки лотка
+    const midX = (fLx + fRx) * 0.5, midY = (fLy + fRy) * 0.5;
+    g.fillStyle = '#140406';
+    g.fillRect(midX - 5, midY + 1.4, 10, 2);
     g.restore();
-}
-
-// 5) Плавная тёплая подсветка решётчатых ночников (левого у терминала и правого у кушетки)
-function drawNightlight(g, now, startAt, cx, topY, w, h, surfaceY, wallSide) {
-    const elapsed = now - startAt;
-    // Плавнейший розжиг 950мс -> мягкое тёплое дыхание 850мс -> долгий шёлковый спад 1650мс
-    const pulse = softBell(elapsed, 950, 850, 1650);
-    const idle = 0.08 + 0.03 * Math.sin(now * 0.0018 + cx);
-    const k = idle + pulse * 0.92;
-
-    const midY = topY + h * 0.5;
-    g.save();
-    g.globalCompositeOperation = 'screen';
-
-    // Мягкий ореол в воздухе и тёплый отсвет на столешнице / складках пледа и кирпичной стене
-    radialAura(g, cx, midY, 26 + pulse * 44, '#ff988c', '#c8223c', 0.08 + pulse * 0.34);
-    if (pulse > 0.01) {
-        // Тёплое световое пятно, стелющееся по столу или пледу кушетки
-        g.save();
-        g.translate(cx + wallSide * 8, surfaceY);
-        g.scale(1, 0.32);
-        radialAura(g, 0, 0, 52 + pulse * 42, '#ff8e88', '#b81d36', pulse * 0.32);
-        g.restore();
-    }
-
-    // Внутренняя матовая колба ночника плавно наливается тёплым янтарно-алым светом
-    if (pulse > 0.01) {
-        const lg = g.createLinearGradient(cx - w * 0.5, midY, cx + w * 0.5, midY);
-        lg.addColorStop(0, `rgba(235,58,72,${(pulse * 0.42).toFixed(3)})`);
-        lg.addColorStop(0.5, `rgba(255,214,196,${(pulse * 0.78).toFixed(3)})`);
-        lg.addColorStop(1, `rgba(235,58,72,${(pulse * 0.42).toFixed(3)})`);
-        g.fillStyle = lg;
-        g.beginPath();
-        g.rect(cx - w * 0.46, topY + 2, w * 0.92, h - 4);
-        g.fill();
-    }
-    g.restore();
-
-    // Сохраняем тёмный силуэт кованой решётки поверх свечения, чтобы свет шёл ИЗНУТРИ ночника!
-    if (pulse > 0.02) {
-        g.save();
-        g.strokeStyle = `rgba(22,5,8,${(pulse * 0.78).toFixed(3)})`;
-        g.lineWidth = 1.25;
-        for (const u of [-0.46, -0.18, 0.16, 0.46]) {
-            const bx = cx + w * u;
-            g.beginPath(); g.moveTo(bx, topY + 1); g.lineTo(bx, topY + h - 1); g.stroke();
-        }
-        for (let r = 0; r <= 4; r++) {
-            const by = topY + 2 + (r / 4) * (h - 4);
-            g.beginPath(); g.moveTo(cx - w * 0.48, by); g.lineTo(cx + w * 0.48, by); g.stroke();
-        }
-        g.restore();
-    }
-    void k;
 }
 
 function drawStationFx(now, step) {
@@ -2306,14 +2231,13 @@ function drawStationFx(now, step) {
     const crtGlow = softBell(now - roomAnim.crtStart, 420, 350, 950);
     const radGlow = softBell(now - roomAnim.radioStart, 420, 350, 950);
 
-    // Обновление физики дождя, капель и ряби
     if (step) {
         if (phase < 3) {
             const speedMul = phase === 0 ? 1 : phase === 1 ? 0.76 : 0.55;
             for (let i = 0; i < FX_RAIN.length; i++) {
                 const d = FX_RAIN[i];
                 d.y += d.v * speedMul;
-                d.x -= d.v * 0.09 * speedMul;
+                d.x -= d.v * 0.08 * speedMul;
                 if (d.y > WIN_CY + WIN_RY || d.x < WIN_CX - WIN_RX) {
                     d.x = WIN_CX + ((((i * 97 + ((now * 0.05) | 0)) % 304) - 152));
                     d.y = WIN_CY - WIN_RY - (i % 18);
@@ -2321,11 +2245,10 @@ function drawStationFx(now, step) {
             }
             for (let i = 0; i < FX_DROPS.length; i++) {
                 const dr = FX_DROPS[i];
-                if (dr.pause > 0 && winGlow < 0.25) {
-                    dr.pause--;
-                } else {
-                    dr.y += dr.v * (1 + winGlow * 1.1) * speedMul;
-                    dr.x += Math.sin(now * 0.0016 + i * 1.7) * 0.07;
+                if (dr.pause > 0 && winGlow < 0.25) dr.pause--;
+                else {
+                    dr.y += dr.v * (1 + winGlow) * speedMul;
+                    dr.x += Math.sin(now * 0.0015 + i * 1.7) * 0.06;
                     if ((i + ((now * 0.02) | 0)) % 127 === 0) dr.pause = 20 + (i % 5) * 8;
                 }
                 if (!insideWindow(dr.x, dr.y, 7)) {
@@ -2341,83 +2264,53 @@ function drawStationFx(now, step) {
             roomAnim.ripples[i].life -= roomAnim.ripples[i].speed;
             if (roomAnim.ripples[i].life <= 0) roomAnim.ripples.splice(i, 1);
         }
-        // Редкий живой лепесток, неспешно слетающий с цветущего бонсая
-        if (roomAnim.spec && roomAnim.spec.kind === 6 && roomAnim.stage === 5 && roomAnim.spores.length < 3 && Math.random() < 0.018) {
+        if (roomAnim.spec && roomAnim.spec.kind === 6 && roomAnim.stage === 5 && roomAnim.spores.length < 3 && Math.random() < 0.016) {
             spawnPlantSpores(1, true);
         }
         for (let i = roomAnim.spores.length - 1; i >= 0; i--) {
             const sp = roomAnim.spores[i];
-            sp.x += sp.vx + Math.sin(now * 0.003 + sp.phase) * (sp.petal ? 0.28 : 0.12);
+            sp.x += sp.vx + Math.sin(now * 0.003 + sp.phase) * (sp.petal ? 0.26 : 0.1);
             sp.y += sp.vy;
             sp.life -= sp.petal ? 0.0085 : 0.014;
             if (sp.life <= 0 || sp.y > 474) roomAnim.spores.splice(i, 1);
         }
     }
 
-    // 1. Ночной город с живыми окнами, заря и дождь за стеклом
     drawWindowWorld(g, now, phase, winGlow);
-
-    // 2. Плавный объёмный свет из круглого окна на комнату и ковёр
     drawWindowLightBeams(g, now, phase, winGlow);
+    updateSwingingLamp(g, now);
+    updateNightlights(g, now);
+    drawCassetteDeck(now);
 
-    // 3. Подвесная лампа на шнуре (плавный маятник)
-    drawSwingingLamp(g, now);
-
-    // 4. Старый кассетный магнитофон (плавный выезд и возврат кассеты)
-    drawCassetteDeck(g, now);
-
-    // 5. Левый ночник (x=208..244 -> cx=113) и правый ночник (x=1474..1514 -> cx=747)
-    drawNightlight(g, now, roomAnim.nightLStart, 113, 280, 15.5, 34, 316, -1);
-    drawNightlight(g, now, roomAnim.nightRStart, 747.5, 292, 16, 41, 338, -1);
-
-    // 6. Плавная живая осциллограмма на ЭЛТ-терминале (x=150..204, y=218..264)
-    const sx = 150, sy = 218, sw = 54, sh = 46;
-    g.strokeStyle = `rgba(255,152,162,${(0.55 + crtGlow * 0.35).toFixed(3)})`;
-    g.lineWidth = 1.25;
-    g.beginPath();
-    for (let x = 4; x < sw - 4; x++) {
-        const u = x / (sw - 1);
-        const env = Math.sin(u * Math.PI);
-        const wave = Math.sin(now * 0.0045 + x * 0.32) * 0.65 + Math.sin(now * 0.011 - x * 0.58) * 0.35;
-        const wy = sy + sh * 0.52 + wave * env * (5.2 + crtGlow * 5.5);
-        if (x === 4) g.moveTo(sx + x, wy); else g.lineTo(sx + x, wy);
+    // Мягкое тёплое дыхание ЭЛТ и шкалы радио при касании (без лишних линий и без вспышек)
+    if (crtGlow > 0.02) {
+        g.save();
+        g.globalCompositeOperation = 'screen';
+        radialAura(g, 177, 241, 40, '#ff7888', '#a81830', crtGlow * 0.18);
+        g.restore();
     }
-    g.stroke();
-    if (crtGlow > 0.02) radialAura(g, sx + sw * 0.5, sy + sh * 0.5, 42, '#ff7888', '#a81830', crtGlow * 0.18);
-
-    // 7. Тёплая аналоговая шкала приёмника (x=642..698, y=216..232)
-    const needleU = radGlow > 0.02
-        ? 0.22 + 0.56 * (0.5 - 0.5 * Math.cos(now * 0.0045))
-        : roomAnim.radioLit
-            ? 0.62 + Math.sin(now * 0.0011) * 0.06
-            : 0.28 + Math.sin(now * 0.0007) * 0.14;
-    const nx = 646 + needleU * 46;
-    g.fillStyle = `rgba(255,154,164,${(0.45 + (roomAnim.radioLit ? 0.35 : 0) + radGlow * 0.2).toFixed(3)})`;
-    g.fillRect(nx, 218, 1.4, 11);
-    if (roomAnim.radioLit || radGlow > 0.04) {
-        for (let b = 0; b < 5; b++) {
-            const bh = 2 + (0.5 + 0.5 * Math.sin(now * 0.006 + b * 1.2)) * (4 + radGlow * 3);
-            g.fillStyle = `rgba(255,96,112,${(0.26 + radGlow * 0.28).toFixed(3)})`;
-            g.fillRect(652 + b * 8, 229 - bh, 3.2, bh);
-        }
+    if (radGlow > 0.02) {
+        g.save();
+        g.globalCompositeOperation = 'screen';
+        radialAura(g, 672, 224, 36, '#ff7888', '#a81830', radGlow * 0.18);
+        g.restore();
     }
-    if (radGlow > 0.02) radialAura(g, 672, 226, 38, '#ff7888', '#a81830', radGlow * 0.16);
 
-    // 8. Пыльца и опадающие живые лепестки растения
+    // Пыльца и опадающие лепестки растения
     for (let i = 0; i < roomAnim.spores.length; i++) {
         const sp = roomAnim.spores[i];
-        const a = Math.sin(clamp01(sp.life) * Math.PI) * 0.78;
+        const a = Math.sin(clamp01(sp.life) * Math.PI) * 0.76;
         if (sp.petal) {
             const bl = roomAnim.spec ? roomAnim.spec.bloom : PLANT_BLOOM[1];
             g.save();
             g.translate(sp.x, sp.y);
             g.rotate(now * 0.002 + sp.phase);
             g.fillStyle = mixHex(bl[1], bl[2], 0.55, a);
-            g.beginPath(); g.ellipse(0, 0, 2.6, 1.3, 0, 0, Math.PI * 2); g.fill();
+            g.beginPath(); g.ellipse(0, 0, 2.5, 1.25, 0, 0, Math.PI * 2); g.fill();
             g.restore();
         } else {
             g.fillStyle = `rgba(255,224,188,${a.toFixed(3)})`;
-            g.beginPath(); g.arc(sp.x, sp.y, 1.25, 0, Math.PI * 2); g.fill();
+            g.beginPath(); g.arc(sp.x, sp.y, 1.2, 0, Math.PI * 2); g.fill();
         }
     }
 
@@ -2432,14 +2325,13 @@ function paintPlantFrame(now) {
     const still = prefersStillRoom();
     const touchGlow = still ? 0 : softBell(now - roomAnim.plantStart, 520, 420, 1250);
     const kind = roomAnim.spec.kind;
-    // Кактус (1) — 0 раскачивания; суккулент (2) и бонсай (6) — только еле уловимое дыхание цветоноса/листвы; гибкие виды — мягкое дыхание кончиков
     let sway = 0;
     if (!still && kind !== 1) {
         const elapsed = (now - roomAnim.plantStart) * 0.001;
         const rustle = (elapsed > 0 && elapsed < 2.4)
-            ? Math.exp(-elapsed * 1.6) * Math.sin(elapsed * 5.2) * (kind === 6 || kind === 2 ? 1.6 : 4.2)
+            ? Math.exp(-elapsed * 1.6) * Math.sin(elapsed * 5.2) * (kind === 6 || kind === 2 ? 1.5 : 3.8)
             : 0;
-        const idle = Math.sin(now * 0.00085) * (kind === 6 ? 1.1 : kind === 2 ? 1.8 : 2.4);
+        const idle = Math.sin(now * 0.00082) * (kind === 6 ? 1.0 : kind === 2 ? 1.6 : 2.2);
         sway = idle + rustle;
     }
     drawPlantSprite(g, roomAnim.spec, roomAnim.stage, {
@@ -2455,10 +2347,20 @@ function stationLoop(now) {
         roomAnim.raf = null;
         return;
     }
-    if (now - roomAnim.lastFrame >= 28) {
-        roomAnim.lastFrame = now;
-        drawStationFx(now, true);
-        paintPlantFrame(now);
+    // Полная частота экрана (60–120 fps) во время анимации лампы, кассеты и ночников для идеальной плавности!
+    const busy = (now - roomAnim.lampStart < 5500)
+        || (now - roomAnim.deckStart < 2950)
+        || (now - roomAnim.nightLStart < 3600)
+        || (now - roomAnim.nightRStart < 3600)
+        || roomAnim.ripples.length > 0;
+    if (busy || now - roomAnim.lastFrame >= 33) {
+        const stepWorld = (now - roomAnim.lastFrame) >= 28;
+        if (stepWorld) roomAnim.lastFrame = now;
+        drawStationFx(now, stepWorld);
+        if (!roomAnim.lastPlantFrame || now - roomAnim.lastPlantFrame >= 45) {
+            roomAnim.lastPlantFrame = now;
+            paintPlantFrame(now);
+        }
     }
     roomAnim.raf = requestAnimationFrame(stationLoop);
 }
@@ -2487,19 +2389,18 @@ function setStationEntry(text, pulse) {
 
 function playObjectTone(obj) {
     if (typeof tone !== 'function') return;
-    if (obj === 'plant') { tone(396, 0.38, 'sine', 0.026); tone(594, 0.48, 'sine', 0.018, 0.09); }
+    if (obj === 'plant') { tone(396, 0.38, 'sine', 0.025); tone(594, 0.46, 'sine', 0.017, 0.09); }
     else if (obj === 'window') { tone(660, 0.28, 'sine', 0.018, 0, 520); }
-    else if (obj === 'lamp') { tone(520, 0.14, 'triangle', 0.016, 0, 440); tone(260, 0.45, 'sine', 0.015, 0.05); }
+    else if (obj === 'lamp') { tone(480, 0.14, 'triangle', 0.015, 0, 410); tone(240, 0.45, 'sine', 0.014, 0.05); }
     else if (obj === 'shelf') {
-        // Мягкий механический звук открытия кассеты и возврата назад
-        if (typeof noise === 'function') { noise(0.05, 0.022, 0, 1600); noise(0.04, 0.018, 2.2, 1400); }
-        tone(280, 0.12, 'triangle', 0.016, 0.05, 340);
-        tone(320, 0.12, 'triangle', 0.014, 1.7, 250);
+        if (typeof noise === 'function') { noise(0.04, 0.02, 0.02, 1500); noise(0.035, 0.016, 2.32, 1350); }
+        tone(210, 0.24, 'sine', 0.015, 0.15, 260);
+        tone(250, 0.24, 'sine', 0.014, 1.55, 195);
     } else if (obj === 'nightlight' || obj === 'nightlightR') {
-        tone(294, 0.65, 'sine', 0.022, 0, 330);
-        tone(440, 0.75, 'sine', 0.014, 0.12);
+        tone(294, 0.65, 'sine', 0.02, 0, 330);
+        tone(440, 0.75, 'sine', 0.013, 0.12);
     } else if (obj === 'bed') {
-        tone(220, 0.55, 'sine', 0.022); tone(330, 0.65, 'sine', 0.015, 0.12);
+        tone(220, 0.55, 'sine', 0.02); tone(330, 0.65, 'sine', 0.014, 0.12);
     }
 }
 
@@ -2557,37 +2458,38 @@ function touchRoomObject(obj, event) {
         roomAnim.winStart = now;
         const wx = fxX && insideWindow(fxX, fxY, 12) ? fxX : WIN_CX;
         const wy = fxY && insideWindow(fxX, fxY, 12) ? fxY : WIN_CY + 10;
-        roomAnim.ripples.push({ x: wx, y: wy, maxR: 28, life: 1, speed: 0.022 });
+        roomAnim.ripples.push({ x: wx, y: wy, maxR: 26, life: 1, speed: 0.022 });
         line = nextRoomLine('win_' + roomAnim.activePhase, ROOM_LINES.window[roomAnim.activePhase] || ROOM_LINES.window[0]);
         playObjectTone('window');
     } else if (obj === 'lamp') {
-        // Мягкий толчок подвесной лампы (если уже качается — плавно подхватываем без рывка)
         const running = (now - roomAnim.lampStart) * 0.001;
-        if (running > 0.45 || running < 0) {
-            roomAnim.lampDir = fxX && fxX > 187 ? -1 : -roomAnim.lampDir;
-            roomAnim.lampAmp = 0.095; // ~5.5° плавного естественного качания
+        if (running > 0.5 || running < 0) {
+            roomAnim.lampDir = fxX ? (fxX > 188 ? 1 : -1) : -roomAnim.lampDir;
+            roomAnim.lampAmp = 0.095; // ~5.4° мягкого реалистичного маятника
             roomAnim.lampStart = now;
         }
         line = nextRoomLine('lamp', ROOM_LINES.lamp);
         playObjectTone('lamp');
     } else if (obj === 'shelf') {
-        // Плавный выезд и возврат кассеты (не обрываем на полпути, если уже идёт цикл)
         if ((now - roomAnim.deckStart) > 2850) {
             roomAnim.deckStart = now;
             playObjectTone('shelf');
         }
         line = nextRoomLine('shelf', ROOM_LINES.shelf);
     } else if (obj === 'nightlight') {
-        roomAnim.nightLStart = now;
+        if ((now - roomAnim.nightLStart) > 900) {
+            roomAnim.nightLStart = now;
+            playObjectTone('nightlight');
+        }
         line = nextRoomLine('nightlight', ROOM_LINES.nightlight);
-        playObjectTone('nightlight');
     } else if (obj === 'nightlightR') {
-        roomAnim.nightRStart = now;
+        if ((now - roomAnim.nightRStart) > 900) {
+            roomAnim.nightRStart = now;
+            playObjectTone('nightlightR');
+        }
         line = nextRoomLine('nightlightR', ROOM_LINES.nightlightR);
-        playObjectTone('nightlightR');
     } else if (obj === 'bed') {
-        // Лёгкое касание кушетки мягко отзывается тёплым светом прикроватного ночника
-        roomAnim.nightRStart = now;
+        if ((now - roomAnim.nightRStart) > 900) roomAnim.nightRStart = now;
         line = nextRoomLine('bed', ROOM_LINES.bed);
         playObjectTone('bed');
     }
@@ -2608,7 +2510,16 @@ function activateRoomObject(obj, event) {
     else if (obj === 'radio' && typeof openRadio === 'function') openRadio();
 }
 
-// Прямой наглядный осмотр любой из 6 стадий роста растения (1/6 .. 6/6) в нижней панели
+function animatePlantShift() {
+    const cv = typeof document !== 'undefined' && document.getElementById('station-plant');
+    if (cv && cv.classList) {
+        cv.classList.remove('is-stage-shift');
+        void cv.offsetWidth;
+        cv.classList.add('is-stage-shift');
+    }
+}
+
+// Осмотр любой из 6 стадий роста (1/6 .. 6/6)
 function inspectPlantStage(idx) {
     const s = Math.trunc(Number(idx));
     if (!Number.isInteger(s) || s < 0 || s >= PLANT_STAGES.length) return;
@@ -2616,16 +2527,47 @@ function inspectPlantStage(idx) {
     if (previewing) {
         roomAnim.previewStage = s;
     } else {
-        roomAnim.inspectStage = (s === roomAnim.liveStage) ? null : s;
+        roomAnim.inspectStage = (s === roomAnim.liveStage && roomAnim.inspectKind === null) ? null : s;
     }
     const sp = roomAnim.spec || plantSpec();
     roomAnim.customEntry = PLANT_NOTES[sp.kind][s];
-    const cv = typeof document !== 'undefined' && document.getElementById('station-plant');
-    if (cv && cv.classList) {
-        cv.classList.remove('is-stage-shift');
-        void cv.offsetWidth;
-        cv.classList.add('is-stage-shift');
+    animatePlantShift();
+    playObjectTone('plant');
+    renderRoom();
+}
+
+// Открыть/скрыть панель осмотра всех 7 видов растений
+function togglePlantGallery() {
+    roomAnim.galleryOpen = !roomAnim.galleryOpen;
+    if (!roomAnim.galleryOpen && roomAnim.inspectKind !== null) {
+        roomAnim.inspectKind = null;
+        roomAnim.customEntry = '';
+        animatePlantShift();
     }
+    if (typeof SFX !== 'undefined' && SFX.tap) SFX.tap();
+    renderRoom();
+}
+
+// Посмотреть любой из 7 видов прямо на ковре (личное растение по ID сохраняется неизменным!)
+function inspectPlantKind(kindIdx) {
+    const k = Math.trunc(Number(kindIdx));
+    if (!Number.isInteger(k) || k < 0 || k >= PLANT_KINDS.length) return;
+    const own = roomAnim.ownSpec || plantSpec();
+    roomAnim.galleryOpen = true;
+    if (k === own.kind) {
+        roomAnim.inspectKind = null;
+    } else {
+        roomAnim.inspectKind = k;
+        // Если игрок ещё на 1-й стадии, сразу показываем цветущую 6-ю стадию чужого вида, а кнопки 1–6 переключают любую!
+        if (roomAnim.inspectStage === null && !(typeof roomPreview !== 'undefined' && roomPreview) && roomAnim.liveStage < 5) {
+            roomAnim.inspectStage = 5;
+        }
+    }
+    const nextStage = (typeof roomPreview !== 'undefined' && roomPreview)
+        ? (Number.isInteger(roomAnim.previewStage) ? roomAnim.previewStage : roomAnim.stage)
+        : (Number.isInteger(roomAnim.inspectStage) ? roomAnim.inspectStage : roomAnim.liveStage);
+    roomAnim.customEntry = PLANT_NOTES[k][nextStage];
+    animatePlantShift();
     playObjectTone('plant');
     renderRoom();
 }
@@ -2656,17 +2598,22 @@ function renderRoom() {
         : (typeof rankIdx === 'function' ? rankIdx() : 0);
     const stars = rIdx + 1;
     const phase = stationPhases[active];
-    const spec = plantSpec();
+
+    const ownSpec = plantSpec();
+    const otherKind = Number.isInteger(roomAnim.inspectKind) && roomAnim.inspectKind !== ownSpec.kind;
+    const spec = otherKind ? gallerySpecForKind(roomAnim.inspectKind, ownSpec) : ownSpec;
     const liveStage = plantStage(warmth, rIdx);
 
-    // Если игрок реально вырос до новой стадии — сбрасываем режим осмотра и показываем живой рост!
     const grew = roomAnim.lastStage >= 0 && liveStage > roomAnim.lastStage && !previewing;
-    if (grew) roomAnim.inspectStage = null;
+    if (grew) {
+        roomAnim.inspectStage = null;
+        roomAnim.inspectKind = null;
+    }
 
     const shownStage = previewing
         ? (Number.isInteger(roomAnim.previewStage) ? roomAnim.previewStage : liveStage)
         : (Number.isInteger(roomAnim.inspectStage) ? roomAnim.inspectStage : liveStage);
-    const isPeeking = !previewing && shownStage !== liveStage;
+    const isPeeking = otherKind || (!previewing && shownStage !== liveStage);
     const radioReady = typeof musicFound === 'function' && musicFound();
 
     roomAnim.activePhase = active;
@@ -2675,12 +2622,13 @@ function renderRoom() {
     roomAnim.liveStage = liveStage;
     roomAnim.stage = shownStage;
     roomAnim.lastStage = liveStage;
+    roomAnim.ownSpec = ownSpec;
     roomAnim.spec = spec;
     roomAnim.radioLit = radioReady;
     if (grew) {
         roomAnim.plantStart = typeof performance !== 'undefined' ? performance.now() : Date.now();
-        roomAnim.customEntry = PLANT_NOTES[spec.kind][liveStage];
-        if (liveStage >= 3) spawnPlantSpores(6, liveStage === 5 && spec.kind >= 4);
+        roomAnim.customEntry = PLANT_NOTES[ownSpec.kind][liveStage];
+        if (liveStage >= 3) spawnPlantSpores(6, liveStage === 5 && ownSpec.kind >= 4);
     }
 
     room.dataset.phase = String(active);
@@ -2700,25 +2648,44 @@ function renderRoom() {
     }
     const plantSub = document.getElementById('station-plant-sub');
     if (plantSub) {
-        if (isPeeking) {
+        if (otherKind) {
+            plantSub.textContent = `осмотр вида · ваш по ID: ${ownSpec.kindName.toLowerCase()} (стадия ${liveStage + 1}/6)`;
+        } else if (!previewing && shownStage !== liveStage) {
             const need = PLANT_WARMTH_STEPS[shownStage];
             plantSub.textContent = shownStage <= liveStage
-                ? `пройдено · ваш этап ${liveStage + 1}/6`
-                : `с ${need} тепла / Ур. ${shownStage + 1} · ваш ${liveStage + 1}/6`;
+                ? `пройденный этап · сейчас у вас ${liveStage + 1}/6`
+                : `откроется на ${need} тепла (Ур. ${shownStage + 1}) · сейчас ${liveStage + 1}/6`;
         } else if (previewing) {
-            plantSub.textContent = `нажмите 1–6 для всех стадий`;
+            plantSub.textContent = `листайте стадии 1–6 и все 7 видов растений`;
         } else if (liveStage < 5) {
-            plantSub.textContent = `след.: ${PLANT_WARMTH_STEPS[liveStage + 1]} тепла · нажмите 1–6`;
+            plantSub.textContent = `след. стадия: ${PLANT_WARMTH_STEPS[liveStage + 1]} тепла · нажмите 1–6 для осмотра`;
         } else {
-            plantSub.textContent = `полное цветение · все 6 стадий`;
+            plantSub.textContent = `полное цветение · все 6 стадий открыты`;
         }
     }
 
+    const toggleBtn = document.getElementById('station-kinds-toggle');
+    const kindsWrap = document.getElementById('station-plant-kinds');
+    if (toggleBtn) {
+        toggleBtn.setAttribute('aria-expanded', String(roomAnim.galleryOpen));
+        toggleBtn.textContent = roomAnim.galleryOpen ? 'СКРЫТЬ ВИДЫ' : 'ВСЕ 7 ВИДОВ';
+    }
+    if (kindsWrap && kindsWrap.classList) {
+        kindsWrap.classList.toggle('hidden', !roomAnim.galleryOpen);
+    }
+    room.querySelectorAll('[data-kind-btn]').forEach((btn, idx) => {
+        const isOwn = idx === ownSpec.kind;
+        const label = PLANT_KINDS[idx][0] + PLANT_KINDS[idx].slice(1).toLowerCase();
+        btn.textContent = isOwn ? `★ ${label}` : label;
+        btn.classList.toggle('is-own', isOwn);
+        btn.setAttribute('aria-pressed', String(idx === spec.kind));
+    });
+
     room.querySelectorAll('[data-stage-btn]').forEach((btn, idx) => {
-        const reached = previewing || idx <= liveStage;
+        const reached = (previewing || idx <= liveStage) && !otherKind;
         const selected = idx === shownStage;
         btn.classList.toggle('is-reached', reached);
-        btn.classList.toggle('is-live', !previewing && idx === liveStage);
+        btn.classList.toggle('is-live', !previewing && !otherKind && idx === liveStage);
         btn.classList.toggle('is-peek', !reached && selected);
         btn.setAttribute('aria-pressed', String(selected));
         btn.title = `Стадия ${idx + 1}/6: ${PLANT_STAGES[idx]} (${PLANT_WARMTH_STEPS[idx]} тепла)`;
@@ -2732,7 +2699,7 @@ function renderRoom() {
     const nextEl = document.getElementById('station-next');
     if (nextEl) {
         nextEl.textContent = previewing
-            ? 'Режим осмотра: переключайте стадии 1–6 и атмосферы комнаты.'
+            ? 'Режим осмотра: переключайте атмосферы, стадии 1–6 и все 7 видов.'
             : next
                 ? `До атмосферы «${next.name}»: ещё ${next.at - warmth} тепла.`
                 : 'Все атмосферы открыты. За окном — живой рассвет.';
@@ -2754,11 +2721,16 @@ function renderRoom() {
         if (sub) sub.textContent = !previewing && i > unlocked ? `${stationPhases[i].at} тепла` : i === active ? 'выбрано' : 'открыто';
     });
 
+    // На «Рассвете» звёзды растворяются в утреннем свете, в ночных фазах сияют по рангу
     room.querySelectorAll('.station-sky circle, .station-sky line').forEach(el => {
-        el.style.opacity = Number(el.dataset.star) <= stars ? 1 : 0;
+        el.style.opacity = active === 3 ? 0 : (Number(el.dataset.star) <= stars ? 1 : 0);
     });
     const stEl = document.getElementById('station-stars');
-    if (stEl) stEl.textContent = `Карта неба: ${stars}/6. С каждым новым рангом загорается звезда.`;
+    if (stEl) {
+        stEl.textContent = active === 3
+            ? `Карта неба: ${stars}/6. В лучах рассвета звёзды тают — они видны в ночных атмосферах.`
+            : `Карта неба: ${stars}/6. С каждым новым рангом загорается звезда.`;
+    }
 
     const appRadio = document.getElementById('app-radio');
     if (appRadio) appRadio.style.opacity = radioReady ? 1 : 0.65;
@@ -2770,6 +2742,7 @@ function resetStationPreview() {
     roomAnim.previewPhase = stationPhases.length - 1;
     roomAnim.previewStage = null;
     roomAnim.inspectStage = null;
+    roomAnim.inspectKind = null;
     roomAnim.customEntry = '';
 }
 

@@ -40,7 +40,7 @@
     -webkit-user-select: none;
 }
 
-.station-scene > img,
+.station-scene > #station-bg,
 .station-light,
 .station-rain,
 .station-sky,
@@ -51,27 +51,90 @@
     height: 100%;
 }
 
-.station-scene > img {
+.station-scene > img#station-bg,
+.station-scene > img:first-child {
     object-fit: fill;
     pointer-events: none;
     transition: filter 1.1s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.station[data-phase="0"] .station-scene > img {
+/* Настоящая вырезанная из сцены подвесная лампа на шнуре: качается от точки крепления на потолке без единого артефакта */
+.station-lamp {
+    position: absolute;
+    left: 20.1765%;
+    top: 0;
+    width: 7.0618%;
+    height: 35.0806%;
+    object-fit: fill;
+    pointer-events: none;
+    transform-origin: 50% 0%;
+    will-change: transform, filter;
+    transition: filter 1.1s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.station[data-phase="0"] .station-scene > #station-bg,
+.station[data-phase="0"] .station-lamp {
     filter: brightness(1.04) contrast(1.04) saturate(1.02);
 }
 
-.station[data-phase="1"] .station-scene > img {
+.station[data-phase="1"] .station-scene > #station-bg,
+.station[data-phase="1"] .station-lamp {
     filter: brightness(1.08) contrast(1.03) saturate(1.05);
 }
 
-.station[data-phase="2"] .station-scene > img {
+.station[data-phase="2"] .station-scene > #station-bg,
+.station[data-phase="2"] .station-lamp {
     filter: brightness(1.12) contrast(1.03) saturate(1.08);
 }
 
 /* На максимуме стены и углы остаются в уютном полумраке, чтобы свет шёл именно ИЗ окна */
-.station[data-phase="3"] .station-scene > img {
+.station[data-phase="3"] .station-scene > #station-bg,
+.station[data-phase="3"] .station-lamp {
     filter: brightness(1.1) contrast(1.05) saturate(1.08);
+}
+
+/* Оптическая подсветка родных ночников через color-dodge: чёрные прутья решётки остаются родными, светится только стекло и поверхность рядом! */
+.station-nightlight {
+    position: absolute;
+    pointer-events: none;
+    opacity: 0;
+    mix-blend-mode: color-dodge;
+    background: radial-gradient(
+        ellipse 50% 50% at 50% 48%,
+        rgba(220, 92, 86, 0.72) 0%,
+        rgba(175, 48, 56, 0.44) 34%,
+        rgba(110, 22, 30, 0.18) 64%,
+        transparent 100%
+    );
+    will-change: opacity;
+}
+
+.station-nightlight--l {
+    /* Центр родного левого ночника: x=228 (14.38%), y=592 (59.68%) */
+    left: 8.6%;
+    top: 49.5%;
+    width: 11.6%;
+    height: 21%;
+}
+
+.station-nightlight--r {
+    /* Центр родного правого ночника: x=1496 (94.33%), y=624 (62.9%) */
+    left: 87.8%;
+    top: 51.5%;
+    width: 13%;
+    height: 23.5%;
+}
+
+/* Отдельный микро-холст 1:1 над кассетным отсеком старого магнитофона (x=70..180, y=534..606) */
+.station-deck {
+    position: absolute;
+    left: 4.4136%;
+    top: 53.8306%;
+    width: 6.9357%;
+    height: 7.2581%;
+    pointer-events: none;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
 }
 
 /* Мягкое наружное свечение проёма окна + живой конус света из окна на пол */
@@ -142,12 +205,25 @@
 .station[data-phase="2"] .station-rain { opacity: 0.14; }
 .station[data-phase="3"] .station-rain { opacity: 0; }
 
-/* Созвездие рангов в верхней части ночного неба */
+/* Созвездие рангов: сияет ночью, тускнеет перед зарёй и полностью растворяется в ярком свете рассвета! */
 .station-sky {
     color: var(--signal-soft);
     pointer-events: none;
+    opacity: 0.92;
     filter: drop-shadow(0 0 4px rgba(255, 84, 102, 0.72));
-    transition: filter 0.9s ease, opacity 0.9s ease;
+    transition: filter 0.9s ease, opacity 1.2s ease;
+}
+
+.station[data-phase="1"] .station-sky {
+    opacity: 1;
+}
+
+.station[data-phase="2"] .station-sky {
+    opacity: 0.38;
+}
+
+.station[data-phase="3"] .station-sky {
+    opacity: 0;
 }
 
 .station-sky circle,
@@ -461,6 +537,68 @@
     font: 9.5px 'Share Tech Mono', monospace;
     letter-spacing: 0.03em;
     color: #b78991;
+    line-height: 1.3;
+}
+
+.station-kinds-toggle {
+    flex-shrink: 0;
+    padding: 2px 7px;
+    font: 9.5px 'Share Tech Mono', monospace;
+    letter-spacing: 0.05em;
+    color: #f5bfc7;
+    background: #21090e;
+    border: 1px solid #63212e;
+    border-radius: 999px;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+}
+
+.station-kinds-toggle:hover,
+.station-kinds-toggle[aria-expanded="true"] {
+    background: #310d15;
+    border-color: var(--signal);
+    color: #fff0f2;
+}
+
+.station-kinds {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding-top: 2px;
+}
+
+.station-kinds.hidden {
+    display: none;
+}
+
+.station-kinds button {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 28px;
+    padding: 3px 6px;
+    font: 9.5px 'Share Tech Mono', monospace;
+    background: #110508;
+    border: 1px solid #3f161f;
+    border-radius: 6px;
+    color: #b98f96;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+}
+
+.station-kinds button.is-own {
+    border-color: #6f2634;
+    color: #f5cfd5;
+}
+
+.station-kinds button[aria-pressed="true"] {
+    background: #2f0c14;
+    border-color: var(--signal);
+    color: #fff2f4;
+    box-shadow: inset 0 0 8px rgba(255, 68, 88, 0.2);
 }
 
 .station-stages {

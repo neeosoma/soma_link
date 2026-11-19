@@ -219,6 +219,14 @@ const ROOM_LINES = {
         'Подвесная лампа плавно качнулась на шнуре — тёплый блик поплыл по столу.',
         'Абажур неспешно покачивается под потолком и мягко замирает в тишине.'
     ],
+    vines: [
+        'Живые лианы над кушеткой тихо шелестят в полумраке — они раскроют путь в Оранжерею, когда расцветёт ваш первый цветок.',
+        'Сердцевидные листья мягко качнулись от прикосновения, затаив дыхание будущего зимнего сада.'
+    ],
+    vinesOpen: [
+        'Живые лианы мягко расступились — за тёплой листвой открывается стеклянный купол вашей Оранжереи.',
+        'По изумрудным плетям пробежал тихий свет: дверь в купол Оранжереи открыта.'
+    ],
     shelf: [
         'Карман старой деки мягко открылся, показал кассету без подписи и плавно втянул её обратно.',
         'Механика магнитофона тихо вздохнула: кассета выехала на мгновение и вернулась на место.'
@@ -358,7 +366,15 @@ function stationState(warmth, equipped, seenMax) {
 
 // ===== БОТАНИЧЕСКАЯ ЖИВОПИСЬ ВЫСОКОГО РАЗРЕШЕНИЯ (7 ВИДОВ × 6 СТАДИЙ) =====
 function hexRgb(hex) {
-    const h = String(hex || '#000000').replace('#', '');
+    const s = String(hex || '#000000').trim();
+    if (s.startsWith('rgb')) {
+        const m = s.match(/([\d.]+)/g);
+        return m ? [Number(m[0]) || 0, Number(m[1]) || 0, Number(m[2]) || 0] : [0, 0, 0];
+    }
+    const h = s.replace('#', '');
+    if (h.length === 3) {
+        return [parseInt(h[0] + h[0], 16) || 0, parseInt(h[1] + h[1], 16) || 0, parseInt(h[2] + h[2], 16) || 0];
+    }
     return [parseInt(h.slice(0, 2), 16) || 0, parseInt(h.slice(2, 4), 16) || 0, parseInt(h.slice(4, 6), 16) || 0];
 }
 
@@ -3025,6 +3041,7 @@ const roomAnim = {
     radioStart: -1e9,
     plantStart: -1e9,
     winStart: -1e9,
+    vinesStart: -1e9,
     catPetStart: -1e9,
     dogPetStart: -1e9,
     inspectCatCoat: null,
@@ -5570,62 +5587,114 @@ function drawCompanionDog(g, now, phase, still) {
     const override = Number.isInteger(roomAnim.inspectDogBreed) ? roomAnim.inspectDogBreed : null;
     const dog = dogSpec(uid, override);
     const b = dog.breed;
+    const isRareMaltese = b.pattern === 'maltese';
+    const isSamoyed = b.pattern === 'samoyed';
+    const isWhiteCloud = isSamoyed || isRareMaltese;
     const t = still ? 1.8 : now * 0.001;
 
-    // Просторный персидский коврик пса на полу прямо у свисающего пледа кушетки —
-    // крупный тёплый пёс сладко спит с подогнутыми лапками совсем рядом с котом (618, 333)!
+    // Просторный персидский коврик пса на полу у свисающего пледа кушетки — рядом с котом (618, 333)
     const rugX = 622, rugY = 433;
     const cx = 613, cy = 425;
 
-    // Медленное глубокое сонное дыхание крупной спящей собаки (в такт тишине комнаты)
+    // Глубокое живое дыхание спящего пса
     const breathRaw = still ? 0.45 : (0.5 + 0.5 * Math.sin(t * 1.48 + 0.6));
     const breath = breathRaw * breathRaw * (3 - 2 * breathRaw);
-    const rise = breath * 2.2;
-    const rib = breath * 1.1;
+    const rise = breath * 2.15;
+    const rib = breath * 1.05;
 
     const petElapsed = now - (roomAnim.dogPetStart || -1e9);
     const isPetted = !still && petElapsed > 0 && petElapsed < 3600;
-    const petK = isPetted ? softBell(petElapsed, 260, 2050, 1100) : 0;
-    // В первые мгновения ласки пёс сонно приоткрывает глаза, узнаёт хозяина и блаженно жмурится!
-    const peekAwake = isPetted && petElapsed > 180 && petElapsed < 1150;
+    const petK = isPetted ? softBell(petElapsed, 250, 2050, 1100) : 0;
+    // Как и кот: сонно приоткрывает сияющие глаза при ласке (и изредка на долю секунды сквозь дрёму!)
+    const lazyCycle = !still ? (t % 21.5) : 0;
+    const lazyPeek = !still && !isPetted && lazyCycle > 18.8 && lazyCycle < 19.85;
+    const peekAwake = (isPetted && petElapsed > 150 && petElapsed < 1420) || lazyPeek;
 
     const catNear = !!getRoomCosmeticsSafe().cat;
-    // Во сне голова низко и уютно лежит над подогнутыми передними лапками; при ласке — тепло приподнимается!
-    const headLift = petK * 6.2;
-    const headPitch = -0.155 + breath * 0.018 + petK * 0.24;
+    const headLift = petK * 6.0;
+    const headPitch = -0.145 + breath * 0.018 + petK * 0.23;
 
-    // Хвост: во сне тихо дышит и изредка сонно подрагивает, при поглаживании — счастливо виляет по коврику!
+    // Живой хвост: мягко дышит во сне, счастливо виляет при ласке
     const wag = still
         ? 0
         : isPetted
-            ? Math.sin(t * 13.5) * (5.2 * petK + 1.1)
-            : (Math.sin(t * 0.95) * 0.85 + (Math.sin(t * 0.37) > 0.91 ? Math.sin(t * 7.4) * 1.6 : 0));
+            ? Math.sin(t * 13.4) * (5.0 * petK + 1.1)
+            : (Math.sin(t * 0.92) * 0.8 + (Math.sin(t * 0.37) > 0.92 ? Math.sin(t * 7.2) * 1.45 : 0));
 
-    // Сонное подрагивание ушка во сне и тёплый подъём при поглаживании
-    const earPerk = petK * 2.4 + ((!still && Math.sin(t * 0.62 + 1.9) > 0.95) ? Math.sin(t * 14) * 1.1 : 0);
+    // Сонное подёргивание ушка (как у кота!) и радостный подъём при поглаживании
+    const earPerk = petK * 2.35 + ((!still && Math.sin(t * 0.64 + 1.9) > 0.95) ? Math.sin(t * 13.5) * 1.05 : 0);
     const nrBoost = !still ? softBell(now - roomAnim.nightRStart, 650, 900, 1700) : 0;
 
-    // Гармоничная интеграция шерсти в тёплый багрово-янтарный колорит комнаты (без пластиковой белизны!)
-    const roomTint = phase === 3 ? '#ffbe8a' : '#d9686e';
-    const tintAmt = phase === 3 ? 0.14 : 0.19;
-    const furDark = mixHex(b.dark, '#140307', 0.22);
-    const furMid = mixHex(b.mid, '#54121d', 0.13);
-    const furLight = mixHex(b.light, roomTint, 0.12);
-    const creamWarm = mixHex(b.cream, roomTint, tintAmt);
-    const creamShade = mixHex(b.cream, '#59232c', phase === 3 ? 0.28 : 0.36);
-    const rimCol = mixHex(b.rim, phase === 3 ? '#ffe09a' : '#ff8c7a', phase === 3 ? 0.45 : 0.38, 0.58);
+    // АТМОСФЕРНАЯ СВЕТОВАЯ ПАЛИТРА УРОВНЯ КОТА:
+    // бережно сохраняем 100% родных цветов каждой породы (b.dark / b.mid / b.light / b.cream / b.rim),
+    // глубоко вживляя шерсть в камерный багрово-янтарный (или рассветный) свет комнаты!
+    const keyWarm = phase === 2 ? '#ffd28e' : (phase === 3 ? '#f0b8dc' : '#e8837e');
+    const roomShadow = phase === 3 ? '#1a081d' : '#180408';
+    const rugBounce = phase === 2 ? '#c45b3a' : (phase === 3 ? '#8c2d56' : '#7a1928');
 
-    // 1. Персидский коврик пса + тёплое общее сияние очага между псом и котом
-    const auraA = 0.12 + breath * 0.06 + petK * 0.16 + nrBoost * 0.09 + (phase === 3 ? 0.06 : 0);
+    const furDark  = mixHex(b.dark, roomShadow, 0.34);
+    const furMid   = mixHex(b.mid, '#4c0f1b', phase === 2 ? 0.16 : 0.22);
+    const furLight = mixHex(b.light, keyWarm, 0.16);
+    const furDeep  = mixHex(b.dark, '#090103', 0.56);
+
+    // Тёплый бархатный крем (без резкой пластмассовой белизны в тёмной комнате)
+    const creamLight = mixHex(b.cream, keyWarm, phase === 3 ? 0.16 : 0.20);
+    const creamWarm  = mixHex(b.cream, '#c86a6e', phase === 3 ? 0.20 : 0.26);
+    const creamShade = mixHex(b.cream, '#4d1824', phase === 3 ? 0.36 : 0.44);
+    const creamDeep  = mixHex(b.cream, '#24070e', 0.62);
+
+    // Облачный белоснежный мех самоеда и редчайшей 0.1% мальтийской болонки (чистые тёплые переходы без серой грязи!)
+    const cloudHighlight = isRareMaltese
+        ? mixHex('#ffffff', phase === 3 ? '#fae8ff' : '#ffe8e6', 0.18)
+        : mixHex(b.cream, keyWarm, 0.18);
+    const cloudTop = isRareMaltese
+        ? mixHex('#fff8f6', phase === 3 ? '#f3d4ee' : '#eab0b6', 0.22)
+        : mixHex(b.cream, '#da8488', phase === 3 ? 0.20 : 0.26);
+    const cloudMid = isRareMaltese
+        ? mixHex('#ebd8e4', phase === 3 ? '#8b4e86' : '#8f4658', 0.34)
+        : mixHex(b.mid, '#6b2534', 0.34);
+    const cloudDark = isRareMaltese
+        ? mixHex('#9c7b96', '#2a0918', 0.52)
+        : mixHex(b.dark, '#290912', 0.48);
+
+    // Мягкий золотисто-розовый контровой кант (как у кота!)
+    const rimHex = isRareMaltese
+        ? mixHex('#f5d0fe', '#ffe4b8', 0.38)
+        : mixHex(b.rim, phase === 2 ? '#ffe09c' : (phase === 3 ? '#f5c6ec' : '#ffa28c'), 0.42);
+
+    // 1. Персидский коврик пса + тёплое живое дыхание света (и мистический аметистовый ореол у 0.1% мальтезе!)
+    const auraA = 0.13 + breath * 0.06 + petK * 0.17 + nrBoost * 0.09 + (phase >= 2 ? 0.05 : 0);
     drawDogPersianRug(g, rugX, rugY, phase, auraA);
 
+    if (isRareMaltese) {
+        g.save();
+        g.globalCompositeOperation = 'screen';
+        radialAura(g, cx + 2, cy - 2, 52, '#e9d5ff', '#7c3aed', 0.13 + breath * 0.06 + petK * 0.12);
+        g.restore();
+    }
+
     if (catNear && !still) {
-        // Едва уловимый тёплый мост живого тепла между псом на коврике и котом на кушетке
         g.save();
         g.globalCompositeOperation = 'screen';
         radialAura(g, 620, 382, 54, '#ffb970', '#a81e34', 0.06 + breath * 0.03 + petK * 0.06);
         g.restore();
     }
+
+    // Вспомогательная кисть мягких шёрстных прядей (придаёт живую фактуру меха без жёстких полос)
+    const strokeFurLocks = (pts, col, w, alpha) => {
+        g.save();
+        g.strokeStyle = col;
+        g.lineWidth = w;
+        if (alpha !== undefined) g.globalAlpha = alpha;
+        g.beginPath();
+        for (let i = 0; i < pts.length; i++) {
+            const p = pts[i];
+            g.moveTo(p[0], p[1]);
+            g.quadraticCurveTo(p[2], p[3], p[4], p[5]);
+        }
+        g.stroke();
+        g.restore();
+    };
 
     g.save();
     g.translate(cx, cy);
@@ -5633,792 +5702,1120 @@ function drawCompanionDog(g, now, phase, still) {
     g.lineCap = 'round';
     g.lineJoin = 'round';
 
-    // 2. Глубокая бархатная контактная тень свернувшегося спящего пса на ворсе персидского коврика
+    // 2. Многослойная бархатная контактная тень на ворсе персидского коврика (плотно «усаживает» пса в сцену)
     g.save();
     if (g.createRadialGradient) {
-        const sg = g.createRadialGradient(0, 9.5, 6, 0, 10.5, 44);
-        sg.addColorStop(0, 'rgba(4, 1, 2, 0.88)');
-        sg.addColorStop(0.65, 'rgba(6, 1, 2, 0.54)');
-        sg.addColorStop(1, 'rgba(6, 1, 2, 0)');
+        const sg = g.createRadialGradient(-1, 10.2, 5, 1, 11.0, 44);
+        sg.addColorStop(0, 'rgba(3, 0, 2, 0.92)');
+        sg.addColorStop(0.58, 'rgba(6, 1, 3, 0.64)');
+        sg.addColorStop(1, 'rgba(6, 1, 3, 0)');
         g.fillStyle = sg;
-    } else g.fillStyle = 'rgba(5, 1, 2, 0.68)';
+    } else g.fillStyle = 'rgba(5, 1, 2, 0.72)';
     g.beginPath();
-    g.ellipse(1.5, 10.2, 41, 11.8, 0.12, 0, Math.PI * 2);
+    g.ellipse(1.2, 10.6, 41.5, 12.2, 0.11, 0, Math.PI * 2);
     g.fill();
     g.restore();
 
-    // 3. ДАЛЬНИЙ ХВОСТ (кольцо сиба-ину и самоеда либо помпон корги рисуются у крупа)
+    // 3. СКУЛЬПТУРНЫЙ ДАЛЬНИЙ ХВОСТ (пышное кольцо сиба-ину, облачный султан самоеда, пушистый помпон корги)
     g.save();
     if (b.tail === 'curled') {
-        const isSam = b.pattern === 'samoyed';
-        const tx = 22.5 + wag * 0.38, ty = -9.8 - rise * 0.5 - Math.abs(wag) * 0.12;
-        g.strokeStyle = furDark;
-        g.lineWidth = isSam ? 10.4 : 8.2;
+        const wOff = wag * 0.42;
+        const ty = (isSamoyed ? -10.8 : -9.4) - rise * 0.52 - Math.abs(wag) * 0.14;
+        const tx = (isSamoyed ? 21.5 : 23.2) + wOff;
+        const outerR = isSamoyed ? 11.4 : 8.6;
+
+        // Тень хвоста на крупе
+        g.fillStyle = 'rgba(10, 2, 5, 0.36)';
         g.beginPath();
-        g.moveTo(26, 1.5);
-        g.bezierCurveTo(37.5 + wag * 0.32, -2.8, 35 + wag * 0.36, ty - 6.2, tx - 2.5, ty - 0.8);
-        g.stroke();
-        g.strokeStyle = isSam ? creamWarm : furLight;
-        g.lineWidth = isSam ? 8.4 : 6.2;
-        g.stroke();
-        g.strokeStyle = creamWarm;
-        g.lineWidth = isSam ? 4.4 : 2.8;
+        g.ellipse(tx + 3.2, ty + 4.8, outerR * 0.85, outerR * 0.62, -0.2, 0, Math.PI * 2);
+        g.fill();
+
+        // Пышный объёмный завиток хвоста (настоящая веерная форма с градиентом, не труба!)
+        if (g.createRadialGradient) {
+            const tg = g.createRadialGradient(tx + 2, ty - 2.5, 1.5, tx + 3.5, ty + 1.5, outerR * 1.25);
+            if (isSamoyed) {
+                tg.addColorStop(0, cloudHighlight);
+                tg.addColorStop(0.58, cloudTop);
+                tg.addColorStop(1, cloudDark);
+            } else {
+                tg.addColorStop(0, creamLight);
+                tg.addColorStop(0.46, furLight);
+                tg.addColorStop(0.82, furMid);
+                tg.addColorStop(1, furDeep);
+            }
+            g.fillStyle = tg;
+        } else g.fillStyle = isSamoyed ? cloudTop : furLight;
+
         g.beginPath();
-        g.arc(tx + 2.4, ty - 0.4, 4.3, Math.PI * 1.4, Math.PI * 0.72);
+        g.moveTo(25.2, 2.6);
+        g.bezierCurveTo(38.2 + wOff * 0.8, 0.2, 39.4 + wOff, ty - 8.2, tx + 2.4, ty - 7.4);
+        g.bezierCurveTo(tx - 6.8, ty - 6.6, tx - 7.2, ty + 3.2, tx + 0.5, ty + 5.2);
+        g.bezierCurveTo(tx + 5.2, ty + 6.4, 29.5, 5.8, 25.2, 2.6);
+        g.closePath();
+        g.fill();
+
+        // Кремовый пушистый подшёрсток внутри кольца сиба-ину / шёлковые перья самоеда
+        g.fillStyle = isSamoyed ? cloudHighlight : creamWarm;
+        g.globalAlpha = isSamoyed ? 0.72 : 0.84;
+        g.beginPath();
+        g.arc(tx + 1.2, ty - 0.6, isSamoyed ? 5.6 : 4.1, Math.PI * 0.75, Math.PI * 2.15);
+        g.quadraticCurveTo(tx + 1.6, ty + 1.2, tx - 2.6, ty + 2.2);
+        g.closePath();
+        g.fill();
+        g.globalAlpha = 1;
+
+        // Внутренняя улитка завитка и мягкий контровой блик сверху
+        g.strokeStyle = isSamoyed ? mixHex(cloudDark, '#3a101d', 0.25, 0.45) : mixHex(furDark, '#1a0408', 0.3, 0.55);
+        g.lineWidth = 1.05;
+        g.beginPath();
+        g.arc(tx + 1.4, ty + 0.4, isSamoyed ? 2.8 : 2.3, Math.PI * 0.2, Math.PI * 1.45);
+        g.stroke();
+
+        g.strokeStyle = mixHex(rimHex, '#ffffff', 0.25, 0.62);
+        g.lineWidth = 1.05;
+        g.beginPath();
+        g.moveTo(tx - 3.6, ty - 4.8);
+        g.quadraticCurveTo(tx + 3.4, ty - 8.2, tx + 10.2, ty - 2.6);
         g.stroke();
     } else if (b.tail === 'bob') {
-        const bx0 = 31.2 + wag * 0.36, by0 = 1.4 - rise * 0.35 - Math.abs(wag) * 0.24;
-        g.fillStyle = furDark;
-        g.beginPath(); g.ellipse(bx0, by0, 5.6, 4.5, 0.28 - wag * 0.04, 0, Math.PI * 2); g.fill();
-        g.fillStyle = furLight;
-        g.beginPath(); g.ellipse(bx0 - 0.4, by0 - 0.3, 4.5, 3.6, 0.28 - wag * 0.04, 0, Math.PI * 2); g.fill();
-        g.fillStyle = creamWarm;
-        g.beginPath(); g.ellipse(bx0 + 1.4, by0 + 0.5, 3.0, 2.5, 0.2, 0, Math.PI * 2); g.fill();
+        // Очаровательный пушистый персиково-сливочный хвостик-помпон вельш-корги
+        const bx0 = 31.4 + wag * 0.38, by0 = 1.2 - rise * 0.35 - Math.abs(wag) * 0.24;
+        if (g.createRadialGradient) {
+            const bg0 = g.createRadialGradient(bx0 + 0.6, by0 - 1.4, 0.8, bx0, by0 + 0.6, 6.2);
+            bg0.addColorStop(0, creamLight);
+            bg0.addColorStop(0.58, creamWarm);
+            bg0.addColorStop(1, furDark);
+            g.fillStyle = bg0;
+        } else g.fillStyle = creamWarm;
+        g.beginPath();
+        g.moveTo(27.5, -2.2);
+        g.bezierCurveTo(bx0 + 3.2, by0 - 4.4, bx0 + 6.4, by0 - 0.6, bx0 + 4.8, by0 + 2.8);
+        g.bezierCurveTo(bx0 + 3.0, by0 + 5.2, 28.4, 5.2, 27.5, -2.2);
+        g.closePath();
+        g.fill();
+        g.strokeStyle = mixHex(rimHex, '#fff4e4', 0.3, 0.55);
+        g.lineWidth = 0.85;
+        g.beginPath();
+        g.arc(bx0 + 0.8, by0 - 0.4, 3.6, -Math.PI * 0.65, Math.PI * 0.22);
+        g.stroke();
     }
     g.restore();
 
-    // 4. ДАЛЬНЯЯ ПЕРЕДНЯЯ ЛАПКА — УЮТНО ПОДОГНУТА КАЛАЧИКОМ ПОД ГРУДЬ И ПОДБОРОДОК (как у спящего пса!)
+    // 4. ДАЛЬНЯЯ ПЕРЕДНЯЯ ЛАПКА — мягко уведена в полутень под тёплую грудь
     const legK = b.legLen;
-    const farFoldX = -20.5 - 3.6 * legK, farFoldY = 6.2;
+    const farFoldX = -20.2 - 3.5 * legK, farFoldY = 6.3;
     const farLegTop = (b.pattern === 'golden')
-        ? mixHex(b.mid, b.cream, 0.24)
-        : (b.pattern === 'spaniel' ? mixHex(b.mid, b.dark, 0.22) : (b.pattern === 'shiba' ? mixHex(b.mid, b.cream, 0.45) : creamShade));
-    const farLegBot = mixHex(b.dark, '#140408', 0.38);
+        ? mixHex(furMid, creamWarm, 0.28)
+        : (b.pattern === 'spaniel'
+            ? mixHex(b.mid, creamShade, 0.28)
+            : (b.pattern === 'shiba' ? mixHex(furMid, creamShade, 0.45) : (isWhiteCloud ? cloudMid : creamShade)));
+    const farLegBot = isWhiteCloud ? cloudDark : mixHex(furDeep, creamDeep, 0.35);
     if (g.createLinearGradient) {
-        const flg = g.createLinearGradient(farFoldX, 2.5, farFoldX + 8, farFoldY + 4.2);
+        const flg = g.createLinearGradient(farFoldX - 2, 2.2, farFoldX + 8, farFoldY + 4.4);
         flg.addColorStop(0, farLegTop);
         flg.addColorStop(1, farLegBot);
         g.fillStyle = flg;
     } else g.fillStyle = farLegTop;
     g.beginPath();
     g.moveTo(-15.5, 2.4);
-    g.bezierCurveTo(farFoldX - 2.4, 3.2, farFoldX - 4.4, farFoldY + 0.2, farFoldX - 2.2, farFoldY + 2.4);
+    g.bezierCurveTo(farFoldX - 2.3, 3.1, farFoldX - 4.3, farFoldY + 0.1, farFoldX - 2.1, farFoldY + 2.4);
     g.bezierCurveTo(farFoldX + 0.5, farFoldY + 4.0, -16.0, farFoldY + 3.6, -12.5, 7.6);
     g.closePath();
     g.fill();
 
-    // 5. АНАТОМИЧЕСКИЙ КОРПУС НАСТОЯЩЕЙ СОБАКИ (глубокая грудная клетка, выраженная холка, талия и мощное бедро)
-    const withersY = -13.6 - rise;
-    const loinY = -10.5 - rise * 0.72;
-    const croupY = -8.4 - rise * 0.48;
-
-    const samWarmTop = mixHex(b.cream, phase === 3 ? '#ffc28e' : '#d6787e', phase === 3 ? 0.22 : 0.28);
-    const samWarmMid = mixHex(b.mid, '#5c1f2b', 0.24);
-    const samWarmDark = mixHex(b.dark, '#260810', 0.35);
-    // Белоснежный шёлк редчайшей мальтийской болонки (0.1%) — тёплый сливочно-снежный мех, идеально вписанный в свет комнаты!
-    const isWhiteCloud = b.pattern === 'samoyed' || b.pattern === 'maltese';
-    const cloudTop = b.pattern === 'maltese'
-        ? mixHex('#fffaf7', phase === 3 ? '#ffd8b0' : '#f0b8be', phase === 3 ? 0.18 : 0.22)
-        : samWarmTop;
-    const cloudMid = b.pattern === 'maltese'
-        ? mixHex('#f2e4e8', phase === 3 ? '#d49a7e' : '#b86e7c', 0.26)
-        : samWarmMid;
-    const cloudDark = b.pattern === 'maltese'
-        ? mixHex('#b89aa8', '#421222', 0.42)
-        : samWarmDark;
+    // 5. ОБЪЁМНЫЙ БАРХАТНЫЙ КОРПУС СПЯЩЕГО ПСА (дышащая грудь, плавная холка, тёплое согнутое бедро)
+    const withersY = -13.5 - rise;
+    const loinY = -10.4 - rise * 0.72;
+    const croupY = -8.3 - rise * 0.48;
 
     if (g.createRadialGradient) {
-        const bg = g.createRadialGradient(-5, -8 - rise * 0.6, 3, 4, 3, 40);
+        const bg = g.createRadialGradient(-4, -9.5 - rise * 0.6, 2.5, 4, 3.5, 41);
         if (isWhiteCloud) {
-            bg.addColorStop(0, cloudTop);
-            bg.addColorStop(0.62, cloudMid);
+            bg.addColorStop(0, cloudHighlight);
+            bg.addColorStop(0.45, cloudTop);
+            bg.addColorStop(0.78, cloudMid);
             bg.addColorStop(1, cloudDark);
         } else {
             bg.addColorStop(0, furLight);
-            bg.addColorStop(0.56, furMid);
-            bg.addColorStop(1, furDark);
+            bg.addColorStop(0.48, furMid);
+            bg.addColorStop(0.84, furDark);
+            bg.addColorStop(1, furDeep);
         }
         g.fillStyle = bg;
-    } else g.fillStyle = furMid;
+    } else g.fillStyle = isWhiteCloud ? cloudTop : furMid;
 
     g.save();
     g.beginPath();
-    g.moveTo(-21.5 - rib * 0.5, 1.2); // глубокий киль груди
-    g.bezierCurveTo(-23 - rib * 0.5, -7.2, -17.5, withersY, -8, withersY); // подъём к холке
-    g.bezierCurveTo(1, withersY + 0.4, 7, loinY, 15, loinY + 0.3);         // линия спины и поясницы
-    g.bezierCurveTo(23, croupY, 31, croupY + 3.4, 33, 2.5);                // округлый круп
-    g.bezierCurveTo(34.5, 8.8, 26, 12.2, 13, 11.8);                        // основание бедра на ковре
-    g.bezierCurveTo(1, 11.2, -13.5, 10.2, -21.5 - rib * 0.5, 1.2);         // подтянутый живот и грудь
+    g.moveTo(-21.4 - rib * 0.5, 1.2);
+    g.bezierCurveTo(-23.0 - rib * 0.5, -7.2, -17.4, withersY, -7.8, withersY);
+    g.bezierCurveTo(1.2, withersY + 0.4, 7.2, loinY, 15.2, loinY + 0.3);
+    g.bezierCurveTo(23.2, croupY, 31.2, croupY + 3.3, 33.0, 2.5);
+    g.bezierCurveTo(34.5, 8.8, 26.0, 12.2, 13.0, 11.8);
+    g.bezierCurveTo(1.0, 11.2, -13.5, 10.2, -21.4 - rib * 0.5, 1.2);
     g.closePath();
     g.fill();
     g.clip();
 
-    // Породный окрас и живописные планы шерсти по корпусу (мягкие переходы, без резких полосок!)
+    // Породные окрасы с мягкими живописными градиентами и шёрстными переходами
     if (b.pattern === 'husky') {
-        // Плащевой окрас сибирского хаски: серебристо-снежный бок и плечо под угольно-серым чепраком
-        g.fillStyle = creamWarm;
+        // Благородный серебристо-угольный чепрак и снежный подшёрсток сибирского хаски
+        if (g.createLinearGradient) {
+            const hg0 = g.createLinearGradient(0, -3, 0, 13);
+            hg0.addColorStop(0, creamLight);
+            hg0.addColorStop(0.58, creamWarm);
+            hg0.addColorStop(1, creamShade);
+            g.fillStyle = hg0;
+        } else g.fillStyle = creamWarm;
         g.beginPath();
-        g.moveTo(-24, -4.5);
-        g.bezierCurveTo(-13, -3.2, -7, 3.2, 6, 4.2);
-        g.bezierCurveTo(16, 4.5, 22, 1.5, 32, 6.5);
+        g.moveTo(-24, -4.8);
+        g.bezierCurveTo(-13.5, -3.6, -7.2, 2.8, 5.5, 3.8);
+        g.bezierCurveTo(15.8, 4.2, 21.8, 1.2, 32.5, 6.2);
         g.lineTo(34, 14); g.lineTo(-26, 14);
         g.closePath();
         g.fill();
-        g.fillStyle = creamShade;
-        g.beginPath(); g.ellipse(3, 11.4, 27, 4.4, 0.05, 0, Math.PI * 2); g.fill();
+        // Пушистая зубчатая граница двойной шерсти на плече и боку хаски
+        strokeFurLocks([
+            [-11.5, -1.8, -8.5, 0.2, -6.2, 1.6],
+            [-4.0, 1.2, -0.5, 2.8, 2.8, 3.6],
+            [11.0, 3.4, 14.8, 2.6, 18.2, 3.5]
+        ], furMid, 1.35, 0.55);
     } else if (b.pattern === 'collie' || b.pattern === 'corgi') {
-        // Белоснежный воротник-шаль на плечах и светлый низ груди бордер-колли и вельш-корги
-        g.fillStyle = creamWarm;
+        // Роскошный белый воротник-шаль на плечах и тёплый животик колли и вельш-корги
+        if (g.createLinearGradient) {
+            const cg0 = g.createLinearGradient(-16, -12, -4, 13);
+            cg0.addColorStop(0, creamLight);
+            cg0.addColorStop(0.62, creamWarm);
+            cg0.addColorStop(1, creamShade);
+            g.fillStyle = cg0;
+        } else g.fillStyle = creamWarm;
         g.beginPath();
         g.moveTo(-24, -15);
-        g.bezierCurveTo(-9.5, -15, -4.5, -5, -7.5, 4.5);
-        g.bezierCurveTo(-2, 7.8, 9, 8.8, 15, 12);
+        g.bezierCurveTo(-9.0, -14.8, -3.8, -5.8, -6.2, 1.8);
+        g.bezierCurveTo(-7.2, 4.8, 4.5, 7.8, 15.5, 11.8);
         g.lineTo(-26, 13);
         g.closePath();
         g.fill();
-        g.fillStyle = creamShade;
-        g.beginPath(); g.ellipse(-4, 11.2, 19, 3.8, 0.06, 0, Math.PI * 2); g.fill();
-    } else if (b.pattern === 'samoyed') {
-        // Живописная облачная шерсть самоеда, согретая тёплым светом камина/окна
-        g.fillStyle = samWarmTop;
-        g.beginPath(); g.ellipse(-4, -4.5 - rise * 0.5, 26, 9.5, 0.05, 0, Math.PI * 2); g.fill();
-        g.fillStyle = samWarmDark;
-        g.beginPath(); g.ellipse(5, 11.5, 29, 4.8, 0.07, 0, Math.PI * 2); g.fill();
-    } else if (b.pattern === 'golden') {
-        // Тёплый янтарно-медовый бок ретривера со светлым золотистым очесом снизу и у груди
-        g.fillStyle = mixHex(b.light, b.cream, 0.42, 0.52);
-        g.beginPath(); g.ellipse(-12, 1.5, 10.5, 8.5, -0.15, 0, Math.PI * 2); g.fill();
-        g.fillStyle = mixHex(b.dark, '#1f0805', 0.25, 0.45);
-        g.beginPath(); g.ellipse(5, 11.4, 26, 4.4, 0.06, 0, Math.PI * 2); g.fill();
-        // Мягкий солнечный блик по спинке и лопатке
-        g.fillStyle = mixHex(b.rim, b.light, 0.45, 0.26);
-        g.beginPath(); g.ellipse(2, -7.5 - rise * 0.6, 17, 4.2, 0.08, 0, Math.PI * 2); g.fill();
-    } else if (b.pattern === 'shiba') {
-        // Кремовое «урадзиро» на груди и животике рыжего сиба-ину
-        g.fillStyle = creamWarm;
-        g.beginPath(); g.ellipse(-16, 3.5, 8.2, 7.2, -0.2, 0, Math.PI * 2); g.fill();
-        g.fillStyle = creamShade;
-        g.beginPath(); g.ellipse(1, 10.6, 20, 3.8, 0.05, 0, Math.PI * 2); g.fill();
-    } else if (b.pattern === 'spaniel') {
-        // Тёплый каштаново-шоколадный глянец по холке и спинке спаниеля
-        g.fillStyle = mixHex(b.light, b.rim, 0.28, 0.28);
-        g.beginPath(); g.ellipse(1, -7.2 - rise * 0.5, 16, 4.0, 0.08, 0, Math.PI * 2); g.fill();
-    } else if (b.pattern === 'maltese') {
-        // Струящийся белоснежный шёлковый плащ мальтийской болонки с жемчужным переливом по спинке
-        g.fillStyle = mixHex('#ffffff', '#f8ecff', 0.25, 0.52);
-        g.beginPath(); g.ellipse(2, -6.2 - rise * 0.5, 22, 6.2, 0.06, 0, Math.PI * 2); g.fill();
-        g.strokeStyle = 'rgba(255, 250, 255, 0.52)';
-        g.lineWidth = 1.1;
-        for (let k = -2; k <= 3; k++) {
-            const sx0 = k * 6.8;
-            g.beginPath();
-            g.moveTo(sx0, -2.5);
-            g.quadraticCurveTo(sx0 - 1.4, 4.8, sx0 + 1.2, 10.6);
-            g.stroke();
+        // Пушистые пёрышки белого воротника поверх рыжего/чёрного плеча
+        strokeFurLocks([
+            [-6.8, -7.6, -4.2, -6.4, -3.2, -4.8],
+            [-6.2, -3.8, -3.6, -2.5, -2.8, -0.9],
+            [-6.6, -0.2, -4.0, 1.2, -3.4, 2.8]
+        ], creamLight, 1.35, 0.82);
+        if (b.pattern === 'collie') {
+            // Бархатный тёплый глянец на иссиня-чёрной спинке бордер-колли (чтобы читался благородный объём, как у чёрного кота!)
+            g.fillStyle = mixHex(b.light, keyWarm, 0.28, 0.34);
+            g.beginPath(); g.ellipse(8, -7.2 - rise * 0.5, 15, 4.0, 0.08, 0, Math.PI * 2); g.fill();
+        } else {
+            // Тёплый лисье-медовый отблеск на спинке корги
+            g.fillStyle = mixHex(b.rim, b.light, 0.45, 0.28);
+            g.beginPath(); g.ellipse(9, -6.8 - rise * 0.5, 14, 4.2, 0.09, 0, Math.PI * 2); g.fill();
         }
+    } else if (isSamoyed) {
+        // Воздушное тёпло-снежное облако самоеда с объёмными слоями пуха
+        g.fillStyle = cloudHighlight;
+        g.globalAlpha = 0.58;
+        g.beginPath(); g.ellipse(-3, -6.8 - rise * 0.55, 22, 6.2, 0.06, 0, Math.PI * 2); g.fill();
+        g.globalAlpha = 1;
+        strokeFurLocks([
+            [-9, -2.5, -4, -0.8, 1, -1.6],
+            [13, -1.8, 18, -0.2, 23, 1.6]
+        ], cloudMid, 1.0, 0.16);
+    } else if (b.pattern === 'golden') {
+        // Богатый медово-золотистый шёлк ретривера с тёплым сливочным очесом на груди и боку
+        g.fillStyle = mixHex(b.light, creamLight, 0.45, 0.58);
+        g.beginPath(); g.ellipse(-12.5, 1.2, 11.0, 8.6, -0.15, 0, Math.PI * 2); g.fill();
+        g.fillStyle = mixHex(b.rim, b.light, 0.48, 0.32);
+        g.beginPath(); g.ellipse(2.5, -7.6 - rise * 0.6, 17.5, 4.4, 0.08, 0, Math.PI * 2); g.fill();
+        strokeFurLocks([
+            [-6, 3.4, -0.5, 5.2, 5.5, 4.6],
+            [4, 5.8, 9.5, 7.2, 15.0, 6.2],
+            [-2, -2.6, 4.2, -1.6, 10.2, -2.2]
+        ], mixHex(b.light, b.cream, 0.48), 1.15, 0.45);
+    } else if (b.pattern === 'shiba') {
+        // Плюшевый огненно-рыжий мех сиба-ину и мягкое кремовое «урадзиро» на груди и животике
+        g.fillStyle = creamWarm;
+        g.beginPath(); g.ellipse(-16.2, 3.2, 8.8, 7.6, -0.2, 0, Math.PI * 2); g.fill();
+        g.fillStyle = mixHex(b.rim, b.light, 0.4, 0.30);
+        g.beginPath(); g.ellipse(3.0, -7.5 - rise * 0.55, 16.0, 4.2, 0.08, 0, Math.PI * 2); g.fill();
+        g.fillStyle = creamShade;
+        g.beginPath(); g.ellipse(1.5, 10.6, 19.5, 3.6, 0.05, 0, Math.PI * 2); g.fill();
+    } else if (b.pattern === 'spaniel') {
+        // Глубокий шоколадно-каштановый шёлк спаниеля с тёплым карамельным подпалом у груди и глянцевым бликом
+        g.fillStyle = mixHex(b.light, b.cream, 0.36, 0.38);
+        g.beginPath(); g.ellipse(-15.5, 4.0, 7.4, 5.8, -0.15, 0, Math.PI * 2); g.fill();
+        g.fillStyle = mixHex(b.light, b.rim, 0.36, 0.34);
+        g.beginPath(); g.ellipse(1.5, -7.4 - rise * 0.5, 16.5, 4.2, 0.08, 0, Math.PI * 2); g.fill();
+        strokeFurLocks([
+            [-5, 1.5, 0.5, 3.4, 6.5, 2.2],
+            [6, 3.8, 12.0, 5.4, 17.5, 3.8]
+        ], mixHex(b.light, b.rim, 0.3), 1.05, 0.34);
+    } else if (isRareMaltese) {
+        // Жемчужно-белоснежная шёлковая мантия редчайшей 0.1% мальтийской болонки (нежные волнистые блики, 0% серых полос!)
+        g.fillStyle = cloudHighlight;
+        g.globalAlpha = 0.65;
+        g.beginPath(); g.ellipse(2, -6.8 - rise * 0.5, 21, 5.6, 0.06, 0, Math.PI * 2); g.fill();
+        // Едва уловимый сиренево-жемчужный рефлекс у крупа от фиолетового хвоста
+        g.fillStyle = 'rgba(196, 155, 255, 0.16)';
+        g.beginPath(); g.ellipse(24, 3.5, 9.5, 7.2, 0.2, 0, Math.PI * 2); g.fill();
+        g.globalAlpha = 1;
+        strokeFurLocks([
+            [-7, 0.5, -3.5, 4.8, -0.5, 7.8],
+            [2, -0.2, 5.2, 4.6, 8.6, 7.8],
+            [11, 0.2, 14.5, 4.8, 18.0, 7.6]
+        ], 'rgba(255, 250, 255, 0.55)', 1.05, 0.6);
     }
 
-    // Мягкая анатомическая светотень согнутого мускулистого заднего бедра (окорока)
-    g.fillStyle = 'rgba(12, 2, 5, 0.22)';
+    // Глубокая бархатная светотень внизу живота + тёплый ало-янтарный рефлекс от персидского коврика (вживляет в комнату на 100%!)
+    if (g.createLinearGradient) {
+        const bellySh = g.createLinearGradient(0, 2.5, 0, 12.5);
+        bellySh.addColorStop(0, 'rgba(16, 3, 7, 0)');
+        bellySh.addColorStop(0.72, 'rgba(18, 3, 8, 0.34)');
+        bellySh.addColorStop(1, 'rgba(12, 2, 5, 0.58)');
+        g.fillStyle = bellySh;
+        g.fillRect(-26, 2.5, 62, 11);
+    }
+    g.fillStyle = mixHex(rugBounce, keyWarm, 0.25, 0.14);
     g.beginPath();
-    g.moveTo(11, 0);
-    g.quadraticCurveTo(8, 7.5, 19, 11.5);
-    g.lineTo(7, 11.8);
-    g.quadraticCurveTo(5, 5.5, 11, 0);
+    g.ellipse(3, 10.6, 26, 2.8, 0.05, 0, Math.PI * 2);
+    g.fill();
+
+    // Объёмная скульптурная складка согнутого заднего бедра (окорока) с мягким бликом по округлости
+    g.fillStyle = 'rgba(12, 2, 6, 0.26)';
+    g.beginPath();
+    g.moveTo(11.8, -0.8);
+    g.bezierCurveTo(7.4, 4.8, 8.8, 9.4, 18.5, 11.6);
+    g.lineTo(7.2, 11.8);
+    g.bezierCurveTo(4.6, 7.2, 5.8, 2.6, 11.8, -0.8);
     g.closePath();
     g.fill();
+
+    g.strokeStyle = isWhiteCloud ? cloudHighlight : mixHex(furLight, rimHex, 0.45);
+    g.globalAlpha = 0.28;
+    g.lineWidth = 1.4;
+    g.beginPath();
+    g.moveTo(14.2, -1.6);
+    g.quadraticCurveTo(10.2, 4.2, 15.2, 8.8);
+    g.stroke();
+    g.globalAlpha = 1;
     g.restore();
 
-    // Деликатный тёплый контровой свет по линии спины (мягкое сияние шерсти, не жёсткая проволока!)
-    g.strokeStyle = mixHex(b.rim, phase === 3 ? '#ffe09a' : '#ff8c7a', phase === 3 ? 0.45 : 0.38, 0.34);
-    g.lineWidth = 1.05;
+    // Тёплый живописный контровой свет по линии спины и крупа (фирменный приём кота!)
+    g.strokeStyle = mixHex(rimHex, '#fff2dc', 0.25, 0.58);
+    g.lineWidth = 1.25;
     g.beginPath();
-    g.moveTo(-13, withersY + 1.2);
-    g.bezierCurveTo(-4, withersY + 0.4, 8, loinY + 0.4, 24, croupY + 1.4);
+    g.moveTo(-13.2, withersY + 1.0);
+    g.bezierCurveTo(-4.0, withersY + 0.1, 8.2, loinY + 0.2, 24.5, croupY + 1.4);
+    g.quadraticCurveTo(30.4, croupY + 3.8, 32.2, 0.6);
     g.stroke();
 
-    // 6. СОГНУТАЯ ЗАДНЯЯ ЛАПА (цельный живописный силуэт плюсны и стопы у бедра)
+    // 6. СОГНУТАЯ ЗАДНЯЯ ЛАПКА С МЯГКИМ ОБЪЁМОМ И АККУРАТНЫМИ ПАЛЬЧИКАМИ
     const nearTopCol = (b.pattern === 'golden')
-        ? mixHex(b.light, b.cream, 0.38)
-        : (b.pattern === 'shiba' ? mixHex(b.light, b.cream, 0.48)
-            : (b.pattern === 'spaniel' ? mixHex(b.mid, b.cream, 0.52)
-                : (isWhiteCloud ? cloudTop : creamWarm)));
+        ? mixHex(b.light, creamLight, 0.34)
+        : (b.pattern === 'shiba'
+            ? mixHex(b.light, creamLight, 0.46)
+            : (b.pattern === 'spaniel'
+                ? mixHex(b.mid, creamWarm, 0.48)
+                : (isWhiteCloud ? cloudTop : creamLight)));
+    const nearMidCol = (b.pattern === 'golden')
+        ? mixHex(furMid, creamWarm, 0.26)
+        : (b.pattern === 'spaniel'
+            ? mixHex(furMid, creamShade, 0.3)
+            : (isWhiteCloud ? cloudMid : creamWarm));
     const nearBotCol = (b.pattern === 'golden' || b.pattern === 'spaniel')
-        ? mixHex(b.mid, b.dark, 0.35)
-        : (isWhiteCloud ? cloudMid : creamShade);
+        ? mixHex(furDark, '#1a0408', 0.25)
+        : (isWhiteCloud ? cloudDark : creamShade);
+
+    // Тень под задней лапкой
+    g.fillStyle = 'rgba(6, 1, 3, 0.48)';
+    g.beginPath();
+    g.ellipse(14.2, 13.6, 12.6, 2.4, -0.03, 0, Math.PI * 2);
+    g.fill();
 
     if (g.createLinearGradient) {
-        const hlg = g.createLinearGradient(0, 7.5, 0, 14.5);
+        const hlg = g.createLinearGradient(0, 7.6, 0, 14.4);
         hlg.addColorStop(0, nearTopCol);
+        hlg.addColorStop(0.55, nearMidCol);
         hlg.addColorStop(1, nearBotCol);
         g.fillStyle = hlg;
     } else g.fillStyle = nearTopCol;
     g.beginPath();
-    g.moveTo(25, 7.6);
-    g.quadraticCurveTo(16, 9.8, 9.5, 9.6);
-    g.bezierCurveTo(4.2, 9.5, 1.8, 11.2, 2.5, 12.8);
-    g.bezierCurveTo(3.4, 14.0, 9.5, 14.0, 16.5, 13.4);
-    g.quadraticCurveTo(23.5, 12.6, 27.5, 10.2);
+    g.moveTo(25.2, 7.4);
+    g.quadraticCurveTo(16.2, 9.6, 9.2, 9.5);
+    g.bezierCurveTo(4.0, 9.4, 1.6, 11.0, 2.4, 12.8);
+    g.bezierCurveTo(3.4, 14.1, 9.6, 14.1, 16.8, 13.4);
+    g.quadraticCurveTo(23.8, 12.6, 27.6, 10.1);
     g.closePath();
     g.fill();
-
-    // 7. БЛИЖНЯЯ ПЕРЕДНЯЯ ЛАПКА — МЯГКО СОГНУТА В ЗАПЯСТЬЕ И УЮТНО ПОДОГНУТА ПОД ТЁПЛУЮ ГРУДЬ!
-    const wristX = -15.8 - 5.2 * legK, wristY = 9.4;
-    // Мягкая тень под сгибом подогнутой лапки
-    g.fillStyle = 'rgba(10, 2, 4, 0.38)';
+    // Нежные складочки пальчиков задней лапки
+    g.strokeStyle = 'rgba(20, 5, 9, 0.42)';
+    g.lineWidth = 0.68;
     g.beginPath();
-    g.ellipse((wristX - 4) * 0.5 - 4, wristY + 3.1, 10.5, 2.5, 0.04, 0, Math.PI * 2);
+    g.moveTo(2.8, 11.5); g.lineTo(5.2, 11.6);
+    g.moveTo(3.1, 12.6); g.lineTo(5.6, 12.6);
+    g.stroke();
+
+    // 7. БЛИЖНЯЯ ПЕРЕДНЯЯ ЛАПКА — уютно подогнута под тёплую грудь с шёлковым очесом у локтя
+    const wristX = -15.6 - 5.1 * legK, wristY = 9.4;
+    g.fillStyle = 'rgba(6, 1, 3, 0.48)';
+    g.beginPath();
+    g.ellipse((wristX - 4) * 0.5 - 3.8, wristY + 3.2, 11.0, 2.6, 0.04, 0, Math.PI * 2);
     g.fill();
 
     if (g.createLinearGradient) {
-        const nlg = g.createLinearGradient(wristX, 4.5, -2, wristY + 4.2);
+        const nlg = g.createLinearGradient(wristX, 4.4, -2, wristY + 4.4);
         nlg.addColorStop(0, nearTopCol);
-        nlg.addColorStop(0.66, nearTopCol);
+        nlg.addColorStop(0.58, nearMidCol);
         nlg.addColorStop(1, nearBotCol);
         g.fillStyle = nlg;
     } else g.fillStyle = nearTopCol;
     g.beginPath();
-    g.moveTo(-2.5, 4.6); // мягкое плечо и локоть
-    g.bezierCurveTo(-8.5, 6.8, wristX + 5.2, wristY - 2.6, wristX + 0.5, wristY - 2.1); // предплечье к сгибу запястья
-    g.bezierCurveTo(wristX - 3.2, wristY - 1.6, wristX - 3.8, wristY + 1.8, wristX - 0.2, wristY + 3.0); // округлый тёплый сгиб запястья!
-    g.bezierCurveTo(wristX + 4.2, wristY + 4.3, -12.5, wristY + 3.9, -9.2, wristY + 2.2); // кисть завернулась внутрь под грудь!
-    g.quadraticCurveTo(-4.0, wristY + 2.4, 0.6, 9.8); // шёлковый очес у локтя
+    g.moveTo(-2.2, 4.4);
+    g.bezierCurveTo(-8.2, 6.6, wristX + 5.2, wristY - 2.6, wristX + 0.5, wristY - 2.1);
+    g.bezierCurveTo(wristX - 3.2, wristY - 1.6, wristX - 3.8, wristY + 1.8, wristX - 0.1, wristY + 3.0);
+    g.bezierCurveTo(wristX + 4.2, wristY + 4.3, -12.2, wristY + 4.0, -8.8, wristY + 2.2);
+    g.quadraticCurveTo(-3.8, wristY + 2.3, 1.0, 9.6);
     g.closePath();
     g.fill();
-    // Деликатная анатомическая складочка сгиба подогнутой внутрь кисти (делает позу на 100% живой и уютной!)
-    g.strokeStyle = mixHex(b.dark, '#26080e', 0.35, 0.42);
-    g.lineWidth = 0.78;
+    // Тонкий верхний блик и мягкая складочка подогнутой лапки
+    g.strokeStyle = mixHex(nearTopCol, '#fff4e6', 0.35, 0.45);
+    g.lineWidth = 0.72;
     g.beginPath();
-    g.moveTo(wristX + 0.8, wristY + 0.5);
-    g.quadraticCurveTo(wristX + 4.8, wristY + 1.8, -11.4, wristY + 0.9);
+    g.moveTo(wristX - 1.2, wristY - 1.4);
+    g.quadraticCurveTo(wristX + 4.2, wristY - 1.8, -7.5, 6.2);
+    g.stroke();
+    g.strokeStyle = 'rgba(20, 5, 9, 0.42)';
+    g.lineWidth = 0.75;
+    g.beginPath();
+    g.moveTo(wristX + 0.6, wristY + 0.6);
+    g.quadraticCurveTo(wristX + 4.8, wristY + 1.9, -11.2, wristY + 0.9);
     g.stroke();
 
-    // 7б. ПУШИСТЫЙ ХВОСТ, УЮТНО ОБНИМАЮЩИЙ БЕДРО СВЕРНУВШЕГОСЯ ПСА (ретривер, хаски, колли, спаниель)
+    // 7б. СКУЛЬПТУРНЫЙ ПЕРЬЕВОЙ ХВОСТ, УЮТНО ОБНИМАЮЩИЙ БЕДРО (ретривер, хаски, колли, спаниель, 0.1% мальтезе!)
+    // Рисуем настоящим заострённым веерным силуэтом с шёлковым очесом (никаких жёстких «трубок»!)
     if (b.tail === 'brush' || b.tail === 'plume') {
         g.save();
         const isBrush = b.tail === 'brush';
-        const liftY = petK * 4.5 + wag * 0.52;
-        const tipX = 16.5 - wag * 0.35, tipY = 14.2 - liftY * 0.85;
-        const midX = 37.2 + Math.abs(wag) * 0.2, midY = 11.4 - liftY * 0.65;
-        // Мягкая тень хвоста на коврике
-        g.strokeStyle = 'rgba(8, 1, 3, 0.42)';
-        g.lineWidth = isBrush ? 7.6 : 6.4;
+        const liftY = petK * 4.4 + wag * 0.52;
+        const tipX = 14.8 - wag * 0.38;
+        const tipY = 14.0 - liftY * 0.82;
+        const thick = isBrush ? 1.12 : 0.96;
+
+        // Бархатная тень хвоста на коврике
+        g.fillStyle = 'rgba(6, 1, 3, 0.52)';
         g.beginPath();
-        g.moveTo(29.5, 4.8);
-        g.bezierCurveTo(38.5, 7.6, midX, midY + 2.2, tipX, tipY + 1.6);
-        g.stroke();
-        // Основной пушистый изгиб хвоста вокруг бедра
-        g.strokeStyle = furDark;
-        g.lineWidth = isBrush ? 7.8 : 6.4;
-        g.beginPath();
-        g.moveTo(29.2, 3.6);
-        g.bezierCurveTo(38.2, 6.2 - liftY * 0.3, midX, midY, tipX, tipY);
-        g.stroke();
-        g.strokeStyle = (b.pattern === 'golden') ? mixHex(b.light, b.mid, 0.35) : furMid;
-        g.lineWidth = isBrush ? 6.0 : 4.8;
-        g.stroke();
-        // Шёлковый светлый очес / подшёрсток хвоста
-        const featherCol = (b.pattern === 'golden')
-            ? mixHex(b.light, b.cream, 0.52)
-            : (b.pattern === 'spaniel' ? mixHex(b.mid, b.light, 0.5) : creamWarm);
-        g.strokeStyle = featherCol;
-        g.lineWidth = isBrush ? 2.6 : 2.3;
-        g.beginPath();
-        g.moveTo(34.5, 8.8 - liftY * 0.4);
-        g.quadraticCurveTo(28.5, midY + 2.0, tipX + 1.2, tipY + 0.7);
-        g.stroke();
-        if (b.pattern === 'collie') {
-            // Фирменная снежно-белая кисточка хвоста бордер-колли
-            g.strokeStyle = creamWarm;
-            g.lineWidth = 4.3;
-            g.beginPath();
-            g.moveTo(tipX + 6.5, tipY - 0.4);
-            g.quadraticCurveTo(tipX + 3.0, tipY + 0.3, tipX, tipY);
-            g.stroke();
-        }
-        g.restore();
-    } else if (b.tail === 'maltese_plume') {
-        // ЕДИНЫЙ ПЫШНЫЙ ПЕРЬЕВОЙ ФИОЛЕТОВЫЙ ХВОСТ БЕЛОЙ МАЛЬТИЙСКОЙ БОЛОНКИ (0.1%) — живописный веер шёлковой шерсти!
-        g.save();
-        const liftY = petK * 3.8 + wag * 0.55;
-        const tipX = 16.5 - wag * 0.35;
-        const tipY = 12.8 - liftY * 0.78;
-        // Мягкая бархатная тень пушистого хвоста на персидском коврике
-        g.fillStyle = 'rgba(12, 2, 10, 0.52)';
-        g.beginPath();
-        g.moveTo(28.0, 2.5);
-        g.bezierCurveTo(42.5, 1.5, 42.8, 15.2, tipX - 1.5, tipY + 3.4);
-        g.bezierCurveTo(25.5, 16.8, 32.0, 9.2, 26.5, 5.5);
+        g.moveTo(28.5, 3.2);
+        g.bezierCurveTo(41.5, 4.8, 41.2, 15.8 - liftY * 0.5, tipX, tipY + 2.8);
+        g.bezierCurveTo(23.5, 14.6 - liftY * 0.5, 31.5, 10.6, 27.0, 6.0);
         g.closePath();
         g.fill();
 
-        // Скульптурный силуэт пышного лисье-шёлкового фиолетового хвоста, уютно обнимающего бедро спящей болонки!
-        const vDark = mixHex('#2e104d', '#3a0c1e', 0.22);
-        const vMid = mixHex('#7c3aed', phase === 3 ? '#c084fc' : '#9333ea', 0.28);
-        const vLight = mixHex('#c49bff', phase === 3 ? '#ffe0c2' : '#f5d0fe', 0.24);
+        // Основное объёмное перо хвоста
+        const tTop = (b.pattern === 'golden') ? furLight : (b.pattern === 'collie' ? mixHex(b.light, furMid, 0.5) : furLight);
+        const tMid = furMid;
+        const tBot = furDeep;
         if (g.createLinearGradient) {
-            const tg = g.createLinearGradient(36, -3 - liftY * 0.3, tipX, tipY + 2);
-            tg.addColorStop(0.0, vDark);
-            tg.addColorStop(0.32, vMid);
-            tg.addColorStop(0.76, vLight);
-            tg.addColorStop(1.0, '#e9d5ff');
+            const tg = g.createLinearGradient(36, 2 - liftY * 0.3, tipX, tipY + 2);
+            tg.addColorStop(0, tMid);
+            tg.addColorStop(0.45, tTop);
+            tg.addColorStop(1, tBot);
+            g.fillStyle = tg;
+        } else g.fillStyle = tMid;
+
+        g.beginPath();
+        g.moveTo(28.0, 0.8);
+        g.bezierCurveTo(39.4, 2.2 - liftY * 0.32, 42.6, 10.2 - liftY * 0.5, 35.8, 13.8 * thick - liftY * 0.62);
+        g.bezierCurveTo(30.4, 16.4 - liftY * 0.72, 21.2, 16.0 - liftY * 0.78, tipX, tipY);
+        g.bezierCurveTo(20.6, 11.4 - liftY * 0.68, 29.8, 10.8 - liftY * 0.52, 32.0, 7.6 - liftY * 0.36);
+        g.quadraticCurveTo(32.2, 4.8, 26.8, 4.4);
+        g.closePath();
+        g.fill();
+
+        // Шёлковый светлый подшёрсток / перо по нижней кромке хвоста
+        const featherCol = (b.pattern === 'golden')
+            ? mixHex(b.light, creamLight, 0.56)
+            : (b.pattern === 'spaniel' ? mixHex(b.light, b.rim, 0.34) : creamWarm);
+        g.fillStyle = featherCol;
+        g.globalAlpha = b.pattern === 'spaniel' ? 0.55 : 0.85;
+        g.beginPath();
+        g.moveTo(36.2, 11.4 - liftY * 0.52);
+        g.bezierCurveTo(31.2, 15.6 - liftY * 0.68, 22.0, 15.8 - liftY * 0.76, tipX, tipY);
+        g.quadraticCurveTo(25.4, 12.8 - liftY * 0.64, 36.2, 11.4 - liftY * 0.52);
+        g.closePath();
+        g.fill();
+        g.globalAlpha = 1;
+
+        if (b.pattern === 'collie') {
+            // Фирменная снежно-белая кисточка («фонарик») на кончике хвоста бордер-колли
+            g.fillStyle = creamLight;
+            g.beginPath();
+            g.moveTo(tipX + 8.6, tipY - 1.4);
+            g.quadraticCurveTo(tipX + 3.8, tipY - 1.6, tipX, tipY);
+            g.quadraticCurveTo(tipX + 4.2, tipY + 2.2, tipX + 9.2, tipY + 0.9);
+            g.closePath();
+            g.fill();
+        }
+
+        // Тёплый контровой блик по верхнему гребню хвоста
+        g.strokeStyle = mixHex(rimHex, '#fff4e2', 0.22, 0.52);
+        g.lineWidth = 0.95;
+        g.beginPath();
+        g.moveTo(29.2, 1.4);
+        g.bezierCurveTo(38.6, 2.8 - liftY * 0.32, 40.4, 9.2 - liftY * 0.48, 33.5, 12.6 - liftY * 0.6);
+        g.stroke();
+        g.restore();
+    } else if (b.tail === 'maltese_plume') {
+        // РОСКОШНЫЙ ШЁЛКОВЫЙ АМЕТИСТОВО-ФИОЛЕТОВЫЙ ХВОСТ-СУЛТАН БЕЛОЙ МАЛЬТИЙСКОЙ БОЛОНКИ (0.1%)!
+        g.save();
+        const liftY = petK * 4.0 + wag * 0.55;
+        const tipX = 15.2 - wag * 0.36;
+        const tipY = 12.8 - liftY * 0.78;
+
+        g.fillStyle = 'rgba(10, 2, 14, 0.56)';
+        g.beginPath();
+        g.moveTo(27.8, 2.4);
+        g.bezierCurveTo(43.0, 1.4, 43.2, 15.4, tipX - 1.2, tipY + 3.2);
+        g.bezierCurveTo(25.0, 16.6, 31.8, 9.2, 26.4, 5.4);
+        g.closePath();
+        g.fill();
+
+        const vDeep  = b.violetDark  || '#2f0e4f';
+        const vMid   = b.violetMid   || '#7c3aed';
+        const vLight = b.violetLight || '#b983ff';
+        const vSilk  = b.violetSilk  || '#eed9ff';
+        if (g.createLinearGradient) {
+            const tg = g.createLinearGradient(37, -3.5 - liftY * 0.3, tipX, tipY + 2);
+            tg.addColorStop(0.0, vDeep);
+            tg.addColorStop(0.34, vMid);
+            tg.addColorStop(0.74, vLight);
+            tg.addColorStop(1.0, vSilk);
             g.fillStyle = tg;
         } else g.fillStyle = vMid;
 
         g.beginPath();
-        g.moveTo(27.2, -0.8); // выход из белоснежного крупа
-        g.bezierCurveTo(38.5, -5.2 - liftY * 0.35, 44.2, 3.2 - liftY * 0.45, 38.4, 10.6 - liftY * 0.55); // пышный верхний гребень хвоста
-        g.bezierCurveTo(33.8, 15.6 - liftY * 0.65, 22.8, 16.4 - liftY * 0.72, tipX, tipY); // заострённый шёлковый кончик-перо!
-        g.bezierCurveTo(22.4, 10.8 - liftY * 0.6, 30.8, 9.8 - liftY * 0.45, 31.6, 5.4 - liftY * 0.3); // мягкий внутренний изгиб
-        g.quadraticCurveTo(31.2, 2.2, 26.4, 2.8);
+        g.moveTo(27.0, -1.0);
+        g.bezierCurveTo(38.8, -5.6 - liftY * 0.35, 44.6, 3.0 - liftY * 0.45, 38.6, 10.6 - liftY * 0.55);
+        g.bezierCurveTo(33.8, 15.8 - liftY * 0.65, 22.4, 16.4 - liftY * 0.72, tipX, tipY);
+        g.bezierCurveTo(21.8, 10.8 - liftY * 0.6, 30.8, 9.8 - liftY * 0.45, 31.6, 5.2 - liftY * 0.3);
+        g.quadraticCurveTo(31.2, 2.0, 26.2, 2.8);
         g.closePath();
         g.fill();
 
-        // Тёмно-сливовый объём по нижнему краю хвоста для натуральной шерстяной глубины
-        g.strokeStyle = vDark;
-        g.lineWidth = 1.25;
-        g.stroke();
-
-        // Нежные перьевые пряди лавандового шёлка вдоль изгиба хвоста
-        g.strokeStyle = 'rgba(243, 232, 255, 0.62)';
-        g.lineWidth = 1.05;
-        g.beginPath();
-        g.moveTo(30.5, 0.2 - liftY * 0.2);
-        g.bezierCurveTo(39.4, -0.4 - liftY * 0.35, 38.2, 8.8 - liftY * 0.5, 24.5, 12.8 - liftY * 0.65);
-        g.moveTo(33.8, 4.2 - liftY * 0.3);
-        g.quadraticCurveTo(32.5, 11.4 - liftY * 0.55, tipX + 2.2, tipY + 0.3);
-        g.stroke();
+        // Струящиеся лавандово-жемчужные шёлковые нити хвоста
+        strokeFurLocks([
+            [29.8, -0.4 - liftY * 0.18, 39.8, -1.2 - liftY * 0.35, 35.8, 9.2 - liftY * 0.52],
+            [35.2, 4.6 - liftY * 0.32, 33.4, 12.2 - liftY * 0.56, 21.8, 13.6 - liftY * 0.68],
+            [30.5, 9.2 - liftY * 0.45, 25.0, 12.6 - liftY * 0.62, tipX + 1.2, tipY + 0.2]
+        ], vSilk, 0.92, 0.72);
         g.restore();
     }
 
-    // 8. БЛАГОРОДНАЯ ШЕЯ И ПУШИСТАЯ ГРУДЬ — ГОЛОВА УЮТНО ЛЕЖИТ В СЛАДКОМ СНЕ ПРЯМО НАД ПОДОГНУТЫМИ ЛАПКАМИ!
-    const hx = -18.2, hy = -9.6 - rise * 0.55 - headLift;
+    // 8. ПУШИСТАЯ ШЕЯ И ВОРОТНИК ГРУДИ С МЯГКОЙ ТЕНЬЮ ПОД ПОДБОРОДКОМ (без резких геометрических стыков!)
+    const hx = -18.0, hy = -9.5 - rise * 0.55 - headLift;
     const hScale = 1.19;
     const ruffS = b.ruff || 1;
 
-    // Задняя и боковая часть шеи (плавно перетекает в холку и плечо без единого шва!)
-    if (isWhiteCloud) {
-        g.fillStyle = cloudTop;
-    } else if (b.pattern === 'collie' || b.pattern === 'corgi') {
-        g.fillStyle = creamWarm;
-    } else {
-        g.fillStyle = furMid;
-    }
+    // Плавный переход загривка в холку
+    if (g.createLinearGradient) {
+        const ng = g.createLinearGradient(hx, hy - 4, -4, 6);
+        if (isWhiteCloud) {
+            ng.addColorStop(0, cloudHighlight);
+            ng.addColorStop(0.65, cloudTop);
+            ng.addColorStop(1, cloudMid);
+        } else if (b.pattern === 'collie' || b.pattern === 'corgi') {
+            ng.addColorStop(0, creamLight);
+            ng.addColorStop(0.68, creamWarm);
+            ng.addColorStop(1, creamShade);
+        } else {
+            ng.addColorStop(0, furLight);
+            ng.addColorStop(0.62, furMid);
+            ng.addColorStop(1, furDark);
+        }
+        g.fillStyle = ng;
+    } else g.fillStyle = isWhiteCloud ? cloudTop : furMid;
+
     g.beginPath();
-    g.moveTo(-2.5, withersY + 0.5);
+    g.moveTo(-2.2, withersY + 0.4);
     g.bezierCurveTo(-8.5, withersY - 1.2, hx + 11.2, hy - 0.5, hx + 9.8, hy - 4.4);
     g.lineTo(hx - 4.0, hy + 4.2);
-    g.bezierCurveTo(-24.2, -3.8, -23.0, 3.2, -16.2, 6.8);
-    g.quadraticCurveTo(-7.0, 5.2, -2.5, withersY + 0.5);
+    g.bezierCurveTo(-24.2, -3.6, -23.0, 3.4, -16.0, 7.0);
+    g.quadraticCurveTo(-6.8, 5.4, -2.2, withersY + 0.4);
     g.closePath();
     g.fill();
 
-    // Пушистый передний воротник груди, на который мягко опирается сонный подбородок
-    const ruffCol = (b.pattern === 'spaniel')
-        ? mixHex(b.mid, b.dark, 0.14)
-        : (b.pattern === 'golden' ? mixHex(b.light, b.cream, 0.36)
-            : (isWhiteCloud ? cloudTop : creamWarm));
-    g.fillStyle = ruffCol;
+    // Пышное жабо груди (особенно облачное у самоеда, колли, корги, ретривера и мальтезе!)
+    const ruffTop = (b.pattern === 'spaniel')
+        ? mixHex(b.light, b.mid, 0.5)
+        : (b.pattern === 'golden'
+            ? mixHex(b.light, creamLight, 0.48)
+            : (isWhiteCloud ? cloudHighlight : creamLight));
+    const ruffBot = (b.pattern === 'spaniel')
+        ? furDark
+        : (b.pattern === 'golden'
+            ? mixHex(furMid, creamShade, 0.35)
+            : (isWhiteCloud ? cloudMid : creamShade));
+    if (g.createLinearGradient) {
+        const rg = g.createLinearGradient(-23, hy + 2, -13, 9);
+        rg.addColorStop(0, ruffTop);
+        rg.addColorStop(1, ruffBot);
+        g.fillStyle = rg;
+    } else g.fillStyle = ruffTop;
+
     g.beginPath();
-    g.moveTo(hx - 3.2, hy + 3.8);
-    g.quadraticCurveTo(hx - 6.2 * ruffS, hy + 7.4, hx - 4.6 * ruffS, hy + 9.4);
-    g.quadraticCurveTo(-23.0 * Math.min(1.14, ruffS), 2.8, -18.0, 7.0);
-    g.quadraticCurveTo(-11.8, 7.2, hx + 4.2, hy + 5.2);
+    g.moveTo(hx - 3.0, hy + 3.2);
+    g.bezierCurveTo(hx - 6.8 * ruffS, hy + 5.8, hx - 7.0 * ruffS, hy + 9.6, hx - 4.2 * ruffS, hy + 11.0);
+    g.bezierCurveTo(-24.4 * Math.min(1.15, ruffS), 2.8, -22.2, 6.8, -16.8, 7.8);
+    g.quadraticCurveTo(-10.2, 7.4, hx + 4.8, hy + 5.2);
     g.closePath();
     g.fill();
 
-    // 9. НАСТОЯЩАЯ СОБАЧЬЯ ГОЛОВА В РАКУРСЕ 3/4 (ЧЕРЕП → «СТОП» → БЛАГОРОДНАЯ МОРДА → МОЧКА НОСА → БРЫЛИ → ЖИВЫЕ ГЛАЗА!)
+    // Нежные шёрстные завитки на грудке
+    strokeFurLocks([
+        [-21.2 * Math.min(1.1, ruffS), -1.2, -23.0 * Math.min(1.1, ruffS), 1.4, -20.4, 3.2],
+        [-19.2, 2.0, -20.6, 4.6, -17.8, 6.2]
+    ], ruffBot, 0.85, 0.45);
+
+    // Мягкая контактная тень от сонной головы и мордочки на пушистой грудке (сразу рождает живой 3D-объём!)
+    g.fillStyle = 'rgba(14, 3, 7, 0.34)';
+    g.beginPath();
+    g.ellipse(hx - 1.2, hy + 6.2 + headLift * 0.25, 9.2, 2.8, -0.1, 0, Math.PI * 2);
+    g.fill();
+
+    // 9. ВЫРАЗИТЕЛЬНАЯ ГОЛОВА В РАКУРСЕ 3/4 УРОВНЯ КОТА (живой объём, тёплый контровой свет, реснички, усики!)
     g.save();
     g.translate(hx, hy);
     g.scale(hScale, hScale);
     g.rotate(headPitch);
 
-    const mLen = b.muzzleLen * 0.92;
+    const mLen = b.muzzleLen * 0.90;
     const mDrop = b.muzzleDrop;
-    const noseX = -5.4 - mLen;
-    const noseY = -0.9;
-    const stopX = -5.0;
-    const stopY = -3.2 + b.stop * 0.85;
-    const pantOpen = isPetted ? petK * 2.0 : 0;
-    const perkR = earPerk * 0.03;
+    const noseX = -5.3 - mLen;
+    const noseY = -0.85;
+    const stopX = -4.9;
+    const stopY = -3.2 + b.stop * 0.82;
+    const pantOpen = isPetted ? petK * 1.85 : 0;
+    const perkR = earPerk * 0.032;
 
-    // 9а. Дальнее ухо ЗА черепом
+    // 9а. Породные стоячие ушки с тёплым контровым кантом, розовой раковиной и нежным пушком внутри!
     const drawErectEar = (ex, ey, w, h, rot, roundness, isFar) => {
         g.save();
         g.translate(ex, ey);
         g.rotate(rot);
-        const outCol = (b.pattern === 'samoyed')
-            ? (isFar ? samWarmMid : samWarmTop)
-            : (isFar ? furDark : mixHex(b.mid, b.dark, 0.2));
-        g.fillStyle = outCol;
+        if (!isFar) {
+            // Мягкая тень у основания ближнего ушка на макушке
+            g.fillStyle = 'rgba(12, 2, 6, 0.28)';
+            g.beginPath(); g.ellipse(0.4, 1.4, w * 0.92, 1.7, 0.1, 0, Math.PI * 2); g.fill();
+        }
+        const outTop = isSamoyed
+            ? (isFar ? cloudTop : cloudHighlight)
+            : (isFar ? furDark : mixHex(furMid, furLight, 0.35));
+        const outBot = isSamoyed
+            ? (isFar ? cloudMid : cloudTop)
+            : (isFar ? furDeep : furDark);
+        if (g.createLinearGradient) {
+            const eg = g.createLinearGradient(0, -h, 0, 2);
+            eg.addColorStop(0, outTop);
+            eg.addColorStop(1, outBot);
+            g.fillStyle = eg;
+        } else g.fillStyle = outTop;
+
         g.beginPath();
-        g.moveTo(-w * 0.85, 1.5);
+        g.moveTo(-w * 0.86, 1.6);
         if (roundness > 0.5) {
-            g.bezierCurveTo(-w * 0.95, -h * 0.72, -w * 0.42, -h, -0.2, -h);
-            g.bezierCurveTo(w * 0.48, -h, w * 1.0, -h * 0.65, w * 0.95, 1.9);
+            g.bezierCurveTo(-w * 0.96, -h * 0.72, -w * 0.42, -h, -0.15, -h);
+            g.bezierCurveTo(w * 0.46, -h, w * 0.94, -h * 0.58, w * 0.96, 1.9);
         } else {
-            g.quadraticCurveTo(-w * 0.56, -h * 0.7, -0.3, -h);
-            g.quadraticCurveTo(w * 0.68, -h * 0.62, w * 0.95, 1.9);
+            g.quadraticCurveTo(-w * 0.58, -h * 0.72, -0.25, -h);
+            g.quadraticCurveTo(w * 0.70, -h * 0.62, w * 0.96, 1.9);
         }
         g.closePath();
         g.fill();
-        g.fillStyle = mixHex(b.earIn, b.cream, b.pattern === 'samoyed' ? 0.35 : 0.2, isFar ? 0.65 : 0.82);
+
+        // Тёплый контровой свет по кромке ушка (как у кота!)
+        g.strokeStyle = mixHex(rimHex, '#ffe4ce', 0.3, isFar ? 0.42 : 0.72);
+        g.lineWidth = 0.85;
         g.beginPath();
-        g.moveTo(-w * 0.54, 0.5);
-        g.quadraticCurveTo(-0.25, -h * 0.78, w * 0.34, 0.6);
+        g.moveTo(-w * 0.78, 0.6);
+        g.quadraticCurveTo(-w * 0.52, -h * 0.76, -0.15, -h);
+        g.quadraticCurveTo(w * 0.54, -h * 0.72, w * 0.82, 0.8);
+        g.stroke();
+
+        // Бархатная тёплая розовато-персиковая раковина ушка
+        if (g.createLinearGradient) {
+            const ig = g.createLinearGradient(0, -h * 0.78, 0, 1);
+            ig.addColorStop(0, mixHex(b.earIn, '#2a0812', isFar ? 0.32 : 0.16));
+            ig.addColorStop(1, mixHex(b.earIn, creamLight, isSamoyed ? 0.48 : 0.30));
+            g.fillStyle = ig;
+        } else g.fillStyle = b.earIn;
+        g.globalAlpha = isFar ? 0.68 : 0.84;
+        g.beginPath();
+        g.moveTo(-w * 0.54, 0.6);
+        g.quadraticCurveTo(-0.22, -h * 0.78, w * 0.38, 0.7);
         g.closePath();
         g.fill();
+        g.globalAlpha = 1;
+
+        // Пушистые светлые кисточки шерсти внутри ушка
         if (!isFar) {
-            g.strokeStyle = b.pattern === 'samoyed' ? samWarmTop : creamWarm;
-            g.lineWidth = 0.8;
+            g.strokeStyle = isSamoyed ? cloudHighlight : creamLight;
+            g.globalAlpha = 0.82;
+            g.lineWidth = 0.82;
             g.beginPath();
-            g.moveTo(w * 0.3, 0.2); g.lineTo(-w * 0.14, -h * 0.24);
-            g.moveTo(w * 0.22, -h * 0.22); g.lineTo(-w * 0.1, -h * 0.42);
+            g.moveTo(w * 0.34, 0.4);  g.quadraticCurveTo(w * 0.05, -h * 0.14, -w * 0.18, -h * 0.22);
+            g.moveTo(w * 0.24, -h * 0.18); g.quadraticCurveTo(0, -h * 0.32, -w * 0.14, -h * 0.42);
+            g.moveTo(-w * 0.44, 0.4); g.lineTo(-w * 0.12, -h * 0.12);
             g.stroke();
+            g.globalAlpha = 1;
         }
         g.restore();
     };
 
+    // Дальнее ушко за черепом
     if (b.ears === 'pointed') {
-        drawErectEar(-2.0, -6.5, 3.3, 7.6, -0.24 - perkR, 0.2, true);
+        drawErectEar(-2.0, -6.5, 3.3, 7.7, -0.24 - perkR, 0.2, true);
     } else if (b.ears === 'samoyed') {
-        drawErectEar(-1.8, -6.5, 3.5, 7.0, -0.22 - perkR, 0.72, true);
+        drawErectEar(-1.8, -6.4, 3.6, 7.1, -0.22 - perkR, 0.74, true);
     } else if (b.ears === 'corgi') {
-        drawErectEar(-2.2, -6.2, 4.1, 9.8, -0.30 - perkR, 0.85, true);
+        drawErectEar(-2.1, -6.2, 4.1, 9.8, -0.29 - perkR, 0.85, true);
     } else if (b.ears === 'tipped') {
         drawErectEar(-2.0, -6.4, 3.2, 7.4, -0.20 - perkR, 0.2, true);
-        g.fillStyle = furDark;
+        g.fillStyle = furDeep;
         g.beginPath(); g.ellipse(-4.5, -12.0 - earPerk * 0.18, 2.4, 1.35, -0.42, 0, Math.PI * 2); g.fill();
     } else if (b.ears === 'floppy' || b.ears === 'longfloppy') {
-        g.fillStyle = furDark;
+        g.fillStyle = furDeep;
         g.beginPath();
-        g.ellipse(-5.8, 1.0, 2.2, b.ears === 'longfloppy' ? 5.8 : 3.8, 0.16, 0, Math.PI * 2);
+        g.ellipse(-5.8, 0.9, 2.3, b.ears === 'longfloppy' ? 5.9 : 3.9, 0.16, 0, Math.PI * 2);
         g.fill();
     } else if (b.ears === 'maltese') {
-        // Дальнее шелковистое ФИОЛЕТОВОЕ ушко белой мальтийской болонки за белоснежной мордочкой!
+        // Дальнее шелковистое фиолетовое ушко 0.1% белой мальтийской болонки
         g.save();
-        g.fillStyle = b.violetDark || '#2f0e4f';
+        const fvg = g.createLinearGradient && g.createLinearGradient(-6, -5, -6, 6.5);
+        if (fvg) {
+            fvg.addColorStop(0, b.violetLight || '#b983ff');
+            fvg.addColorStop(0.5, b.violetMid || '#7c3aed');
+            fvg.addColorStop(1, b.violetDark || '#2f0e4f');
+            g.fillStyle = fvg;
+        } else g.fillStyle = b.violetMid || '#7c3aed';
         g.beginPath();
-        g.ellipse(-6.1, 0.6, 2.8, 6.2, 0.22, 0, Math.PI * 2);
+        g.moveTo(-4.8, -4.4);
+        g.bezierCurveTo(-8.2, -3.2, -9.2, 3.4, -6.6, 6.2);
+        g.bezierCurveTo(-4.4, 6.8, -3.4, 2.6, -4.8, -4.4);
+        g.closePath();
         g.fill();
-        g.fillStyle = b.violetMid || '#7c3aed';
+        g.strokeStyle = b.violetSilk || '#eed9ff';
+        g.globalAlpha = 0.65;
+        g.lineWidth = 0.75;
         g.beginPath();
-        g.ellipse(-6.3, 0.4, 2.0, 5.1, 0.22, 0, Math.PI * 2);
-        g.fill();
-        g.strokeStyle = b.violetLight || '#b983ff';
-        g.lineWidth = 0.85;
-        g.beginPath();
-        g.moveTo(-6.5, -3.2); g.quadraticCurveTo(-7.5, 0.6, -6.2, 4.4);
+        g.moveTo(-6.2, -2.8); g.quadraticCurveTo(-7.6, 1.0, -6.3, 4.8);
         g.stroke();
         g.restore();
     }
 
-    // 9б. Нижняя челюсть и естественный розовый язычок радости при поглаживании
+    // 9б. Нижняя челюсть и крошечный розовый язычок радости при поглаживании
     g.fillStyle = (b.pattern === 'golden' || b.pattern === 'spaniel')
-        ? mixHex(b.mid, b.dark, 0.35)
+        ? mixHex(furMid, furDark, 0.45)
         : (isWhiteCloud ? cloudMid : creamShade);
     g.beginPath();
     g.moveTo(noseX + 2.0, noseY + mDrop - 0.3);
-    g.quadraticCurveTo(noseX + 4.4, noseY + mDrop + 1.6 + pantOpen, -3.4, 4.6 + pantOpen * 0.5);
-    g.lineTo(2.5, 4.5);
+    g.quadraticCurveTo(noseX + 4.4, noseY + mDrop + 1.5 + pantOpen, -3.4, 4.5 + pantOpen * 0.48);
+    g.lineTo(2.5, 4.4);
     g.lineTo(-4.0, 1.5);
     g.closePath();
     g.fill();
 
     if (pantOpen > 0.35) {
-        const pant = Math.sin(t * 10.5) * 0.32;
-        g.fillStyle = '#3b0c16';
+        const pant = Math.sin(t * 10.5) * 0.3;
+        g.fillStyle = '#380a14';
         g.beginPath();
-        g.moveTo(noseX + 1.9, noseY + mDrop - 0.4);
-        g.quadraticCurveTo(-8.2, noseY + mDrop + 1.3 + pantOpen * 0.78, -4.2, 2.6);
+        g.moveTo(noseX + 1.9, noseY + mDrop - 0.35);
+        g.quadraticCurveTo(-8.0, noseY + mDrop + 1.25 + pantOpen * 0.76, -4.1, 2.5);
         g.closePath();
         g.fill();
-        g.fillStyle = '#e0687a';
+        g.fillStyle = '#e87285';
         g.beginPath();
-        g.ellipse(noseX + 2.5, noseY + mDrop + 1.1 + pant * 0.3, 2.2, 1.15, -0.22, 0, Math.PI * 2);
+        g.ellipse(noseX + 2.5, noseY + mDrop + 1.05 + pant * 0.28, 2.15, 1.1, -0.2, 0, Math.PI * 2);
         g.fill();
     }
 
-    // 9в. ЕДИНЫЙ СКУЛЬПТУРНЫЙ СИЛУЭТ СОБАЧЬЕГО ЧЕРЕПА И МОРДЫ!
+    // 9в. СКУЛЬПТУРНЫЙ ЧЕРЕП И МОРДОЧКА С ЖИВЫМ 3D-ОБЪЁМОМ (исправлен 0% чёрный артефакт у самоеда!)
     if (g.createRadialGradient) {
-        const hg = g.createRadialGradient(-2.2, -3.8, 1.5, -1.0, 0.5, 16);
-        if (b.pattern === 'maltese') {
-            // Белоснежная плюшевая мордочка и лобик мальтийской болонки (без серого налёта!)
-            hg.addColorStop(0, cloudTop);
-            hg.addColorStop(0.72, cloudTop);
+        const hg = g.createRadialGradient(-2.0, -4.4, 1.4, -0.6, 0.8, 16.5);
+        if (isRareMaltese) {
+            hg.addColorStop(0, cloudHighlight);
+            hg.addColorStop(0.62, cloudTop);
             hg.addColorStop(1, cloudMid);
+        } else if (isSamoyed) {
+            hg.addColorStop(0, cloudHighlight);
+            hg.addColorStop(0.58, cloudTop);
+            hg.addColorStop(1, cloudMid);
+        } else if (b.pattern === 'collie') {
+            hg.addColorStop(0, mixHex(b.light, keyWarm, 0.18));
+            hg.addColorStop(0.58, furMid);
+            hg.addColorStop(1, furDeep);
         } else {
-            hg.addColorStop(0, isWhiteCloud ? cloudTop : furLight);
-            hg.addColorStop(0.62, isWhiteCloud ? mixHex(cloudTop, cloudMid, 0.42) : furMid);
-            hg.addColorStop(1, isWhiteCloud ? cloudMid : furDark);
+            hg.addColorStop(0, furLight);
+            hg.addColorStop(0.58, furMid);
+            hg.addColorStop(1, furDark);
         }
         g.fillStyle = hg;
-    } else g.fillStyle = furMid;
+    } else g.fillStyle = isWhiteCloud ? cloudTop : furMid;
 
     g.save();
     g.beginPath();
-    g.moveTo(8.8, 4.2);                                                    // плавный выход из шеи
-    g.bezierCurveTo(10.2, -1.6, 9.0, -7.8, 3.0, -8.8);                     // округлый собачий затылок и темя
-    g.bezierCurveTo(-0.8, -9.3, -3.7, -7.7, stopX, stopY);                 // выразительный лоб и «стоп»
-    g.quadraticCurveTo((stopX + noseX) * 0.5, stopY + 0.85, noseX + 0.8, noseY - 0.55); // спинка носа
-    g.bezierCurveTo(noseX - 0.55, noseY + 0.4, noseX - 0.35, noseY + mDrop - 0.25, noseX + 2.5, noseY + mDrop); // нос и губа
-    g.bezierCurveTo(noseX + 5.5, noseY + mDrop + 0.55, -6.0, 3.7, -3.0, 4.9); // брыли
-    g.quadraticCurveTo(2.6, 6.2, 8.8, 4.2);                                // щека и скула
+    g.moveTo(8.8, 4.2);
+    g.bezierCurveTo(10.3, -1.6, 9.0, -7.9, 3.0, -8.9);
+    g.bezierCurveTo(-0.8, -9.4, -3.7, -7.8, stopX, stopY);
+    g.quadraticCurveTo((stopX + noseX) * 0.5, stopY + 0.82, noseX + 0.8, noseY - 0.55);
+    g.bezierCurveTo(noseX - 0.55, noseY + 0.4, noseX - 0.35, noseY + mDrop - 0.25, noseX + 2.5, noseY + mDrop);
+    g.bezierCurveTo(noseX + 5.5, noseY + mDrop + 0.55, -5.8, 3.7, -2.8, 4.9);
+    g.quadraticCurveTo(2.7, 6.2, 8.8, 4.2);
     g.closePath();
     g.fill();
     g.clip();
 
-    // Породные лицевые маски
+    // Породные маски лица (ювелирно мягкие и узнаваемые!)
     if (b.pattern === 'husky') {
-        // Чистая благородная маска сибирского хаски: снежные щёки, морда и мягкий миндаль вокруг голубого глаза
-        g.fillStyle = creamWarm;
+        if (g.createLinearGradient) {
+            const mg = g.createLinearGradient(0, -4, 0, 5.5);
+            mg.addColorStop(0, creamLight);
+            mg.addColorStop(0.7, creamWarm);
+            mg.addColorStop(1, creamShade);
+            g.fillStyle = mg;
+        } else g.fillStyle = creamWarm;
         g.beginPath();
-        g.moveTo(noseX - 1, noseY + 0.35);
-        g.quadraticCurveTo(-8.2, noseY + 0.2, -4.4, -1.0);
-        g.quadraticCurveTo(0.6, -2.2, 4.6, 1.8);
-        g.lineTo(5.5, 7); g.lineTo(noseX - 2, 7);
+        g.moveTo(noseX - 1, noseY + 0.25);
+        g.quadraticCurveTo(-8.2, noseY + 0.1, -4.4, -1.1);
+        g.quadraticCurveTo(0.8, -2.3, 4.9, 1.8);
+        g.lineTo(5.6, 7); g.lineTo(noseX - 2, 7);
         g.closePath();
         g.fill();
-        g.beginPath(); g.ellipse(-1.8, -3.4, 2.7, 2.0, -0.14, 0, Math.PI * 2); g.fill();
+        // Фирменная снежная маска-трилистник вокруг глаза и бровки хаски
+        g.fillStyle = creamLight;
+        g.beginPath(); g.ellipse(-1.75, -3.45, 2.8, 2.05, -0.14, 0, Math.PI * 2); g.fill();
+        g.beginPath(); g.ellipse(-3.6, -5.8, 0.9, 1.35, 0.22, 0, Math.PI * 2); g.fill();
     } else if (b.pattern === 'collie' || b.pattern === 'corgi') {
-        // Белая мордочка и аккуратная белая проточина по самой переносице (глаз чисто сидит в тёмном/рыжем окрасе!)
-        g.fillStyle = creamWarm;
+        g.fillStyle = creamLight;
         g.beginPath();
         g.moveTo(noseX - 1, noseY - 1.5);
-        g.lineTo(stopX + 0.2, stopY - 0.3);
-        g.lineTo(-3.2, -8.4);
+        g.lineTo(stopX + 0.25, stopY - 0.3);
+        g.lineTo(-3.1, -8.5);
         g.lineTo(-5.2, -8.0);
         g.lineTo(stopX - 1.4, stopY + 1.2);
-        g.lineTo(-5.2, 1.4);
-        g.lineTo(-2.6, 6.5);
+        g.lineTo(-5.0, 1.45);
+        g.lineTo(-2.4, 6.5);
         g.lineTo(noseX - 2, 6.5);
         g.closePath();
         g.fill();
+        // Мягкая тень под белой брылей
+        g.fillStyle = creamShade;
+        g.globalAlpha = 0.55;
+        g.beginPath(); g.ellipse(noseX + 4.2, noseY + mDrop + 0.4, 4.6, 1.3, 0.12, 0, Math.PI * 2); g.fill();
+        g.globalAlpha = 1;
     } else if (b.pattern === 'shiba') {
-        // Мягкое пушистое кремовое «урадзиро» на щеке, брылях и бровке сиба-ину
-        g.fillStyle = creamWarm;
+        // Фирменное плюшевое кремовое «урадзиро» на щёчке, мордочке и круглой бровке сиба-ину
+        g.fillStyle = creamLight;
         g.beginPath();
-        g.moveTo(noseX - 0.5, noseY + 0.85);
-        g.quadraticCurveTo(-7.8, noseY + 0.9, -4.0, -0.1);
-        g.quadraticCurveTo(1.5, -0.6, 4.6, 3.0);
-        g.lineTo(5.0, 7); g.lineTo(noseX - 2, 7);
+        g.moveTo(noseX - 0.6, noseY + 0.72);
+        g.quadraticCurveTo(-7.8, noseY + 0.75, -3.9, -0.2);
+        g.quadraticCurveTo(1.7, -0.7, 5.0, 2.9);
+        g.lineTo(5.2, 7); g.lineTo(noseX - 2, 7);
         g.closePath();
         g.fill();
-        g.beginPath(); g.ellipse(-1.8, -5.3, 1.2, 0.68, -0.12, 0, Math.PI * 2); g.fill();
+        g.beginPath(); g.ellipse(-1.85, -5.35, 1.28, 0.74, -0.14, 0, Math.PI * 2); g.fill();
     } else if (b.pattern === 'golden') {
-        // Тёплая сливочно-золотая морда и мягкая тень под брылей ретривера
-        g.fillStyle = mixHex(b.light, b.cream, 0.5, 0.72);
-        g.beginPath(); g.ellipse(noseX + 4.5, noseY + 1.6, 5.4, 2.8, 0.06, 0, Math.PI * 2); g.fill();
-        g.fillStyle = mixHex(b.mid, b.dark, 0.32, 0.38);
-        g.beginPath(); g.ellipse(-5.2, 2.0, 4.2, 1.8, 0.14, 0, Math.PI * 2); g.fill();
+        g.fillStyle = mixHex(b.light, creamLight, 0.52, 0.76);
+        g.beginPath(); g.ellipse(noseX + 4.5, noseY + 1.5, 5.5, 2.8, 0.06, 0, Math.PI * 2); g.fill();
+        g.fillStyle = mixHex(b.light, keyWarm, 0.35, 0.42);
+        g.beginPath(); g.ellipse(-1.8, -5.2, 1.5, 0.8, -0.12, 0, Math.PI * 2); g.fill();
+        g.fillStyle = mixHex(furMid, furDark, 0.42, 0.42);
+        g.beginPath(); g.ellipse(-5.0, 2.2, 4.2, 1.7, 0.14, 0, Math.PI * 2); g.fill();
     } else if (b.pattern === 'spaniel') {
-        g.fillStyle = mixHex(b.mid, b.cream, 0.5, 0.78);
-        g.beginPath(); g.ellipse(noseX + 4.0, noseY + 2.1, 4.4, 2.4, 0.1, 0, Math.PI * 2); g.fill();
-        g.fillStyle = creamWarm;
-        g.beginPath(); g.ellipse(-1.8, -5.3, 1.15, 0.66, -0.12, 0, Math.PI * 2); g.fill();
-    } else if (b.pattern === 'samoyed') {
-        g.fillStyle = samWarmTop;
-        g.beginPath(); g.ellipse(3.4, 1.2, 5.6, 4.2, -0.15, 0, Math.PI * 2); g.fill();
+        // Тёплый карамельный подпал на мордочке, щёчке и бровке шоколадного спаниеля
+        g.fillStyle = mixHex(b.light, creamWarm, 0.48, 0.80);
+        g.beginPath(); g.ellipse(noseX + 4.2, noseY + 2.0, 4.6, 2.4, 0.1, 0, Math.PI * 2); g.fill();
+        g.fillStyle = creamLight;
+        g.beginPath(); g.ellipse(-1.85, -5.35, 1.22, 0.72, -0.12, 0, Math.PI * 2); g.fill();
+    } else if (isSamoyed) {
+        // Сияющая белоснежная мордочка и тёплая пушистая щёчка лунного самоеда
+        g.fillStyle = cloudHighlight;
+        g.globalAlpha = 0.72;
+        g.beginPath(); g.ellipse(noseX + 4.6, noseY + 0.9, 5.2, 2.7, 0.05, 0, Math.PI * 2); g.fill();
+        g.beginPath(); g.ellipse(2.6, 0.8, 5.4, 4.0, -0.15, 0, Math.PI * 2); g.fill();
+        g.globalAlpha = 1;
+    } else if (isRareMaltese) {
+        // Фарфорово-белоснежная мордочка мальтезе с нежнейшим розово-жемчужным румянцем на щёчке
+        g.fillStyle = cloudHighlight;
+        g.globalAlpha = 0.78;
+        g.beginPath(); g.ellipse(-2.8, -1.2, 6.2, 4.6, -0.1, 0, Math.PI * 2); g.fill();
+        g.fillStyle = 'rgba(244, 168, 212, 0.22)';
+        g.beginPath(); g.ellipse(0.4, 0.2, 2.3, 1.3, 0, 0, Math.PI * 2); g.fill();
+        g.globalAlpha = 1;
     }
 
-    // Деликатный блик по спинке носа
-    g.strokeStyle = mixHex(b.rim, '#ffe4b8', 0.45, 0.35);
-    g.lineWidth = 0.8;
+    // Нежная тень по нижнему контуру щеки для бархатной круглоты головы
+    g.fillStyle = 'rgba(18, 4, 9, 0.22)';
     g.beginPath();
-    g.moveTo(stopX - 0.3, stopY + 0.35);
-    g.lineTo(noseX + 2.3, noseY - 0.25);
+    g.ellipse(1.5, 5.1, 7.6, 1.8, 0.05, 0, Math.PI * 2);
+    g.fill();
+
+    // Тёплый блик по лобику и спинке носа
+    g.strokeStyle = mixHex(rimHex, '#fff4e0', 0.35, 0.56);
+    g.lineWidth = 0.92;
+    g.beginPath();
+    g.moveTo(4.2, -8.3);
+    g.bezierCurveTo(-0.4, -8.9, -3.4, -7.4, stopX, stopY);
+    g.lineTo(noseX + 2.2, noseY - 0.3);
     g.stroke();
     g.restore();
 
-    if (b.pattern === 'samoyed' || b.pattern === 'maltese') {
-        // Пушистая снежная щёчка самоеда и шёлковая щёчка + хохолок белой мальтийской болонки!
-        g.fillStyle = cloudTop;
+    // Пушистые шёрстные щёчки (самоед, сиба, хаски, мальтезе) и воздушный хохолок мальтийской болонки!
+    if (isWhiteCloud || b.pattern === 'shiba' || b.pattern === 'husky') {
+        g.fillStyle = isWhiteCloud ? cloudTop : creamWarm;
         g.beginPath();
-        g.moveTo(5.2, 0.2); g.quadraticCurveTo(9.8, 2.6, 6.2, 5.2); g.quadraticCurveTo(3.0, 5.5, 2.2, 3.2);
+        g.moveTo(4.8, 0.4);
+        g.quadraticCurveTo(9.4, 2.5, 6.0, 5.1);
+        g.quadraticCurveTo(3.0, 5.5, 2.0, 3.2);
         g.closePath();
         g.fill();
-        if (b.pattern === 'maltese') {
-            // Воздушная белоснежная макушка мальтезе, плавно переходящая в лобик
-            g.fillStyle = cloudTop;
+        if (isRareMaltese) {
+            // Шёлковая белоснежная чёлка-облачко мальтезе с крошечной аметистовой искоркой в волосах
+            g.fillStyle = cloudHighlight;
             g.beginPath();
-            g.moveTo(-3.2, -6.8);
-            g.bezierCurveTo(-2.2, -9.8, 3.6, -10.0, 5.4, -7.2);
-            g.quadraticCurveTo(1.2, -5.8, -3.2, -6.8);
+            g.moveTo(-3.4, -6.7);
+            g.bezierCurveTo(-2.2, -10.0, 3.8, -10.2, 5.6, -7.1);
+            g.quadraticCurveTo(1.2, -5.6, -3.4, -6.7);
             g.closePath();
             g.fill();
         }
     }
 
-    // 9г. Линия верхней губы (брылей)
-    const smileUp = (b.pattern === 'samoyed' ? 0.62 : 0.22) + petK * 0.72;
-    g.strokeStyle = 'rgba(18, 5, 8, 0.82)';
-    g.lineWidth = 0.9;
+    // 9г. Мягкая живая улыбка спящего пса и тончайшие точечки вибрисс-усиков (как у кота!)
+    const smileUp = (isSamoyed ? 0.68 : (isRareMaltese ? 0.45 : 0.28)) + petK * 0.72;
+    g.strokeStyle = 'rgba(22, 5, 10, 0.78)';
+    g.lineWidth = 0.88;
     g.beginPath();
-    g.moveTo(noseX + 0.6, noseY + mDrop - 0.45);
-    g.bezierCurveTo(noseX + 4.0, noseY + mDrop + 0.4, -6.8, 2.6, -4.4, 1.95 - smileUp);
+    g.moveTo(noseX + 0.7, noseY + mDrop - 0.45);
+    g.bezierCurveTo(noseX + 4.0, noseY + mDrop + 0.38, -6.6, 2.55, -4.2, 1.9 - smileUp);
     g.stroke();
 
-    // 9д. Кожаная мочка носа с влажным бликом
+    // Деликатные полупрозрачные усики на мордочке (фирменная деталь уюта, роднящая пса с котом!)
+    g.strokeStyle = 'rgba(255, 224, 216, 0.28)';
+    g.lineWidth = 0.55;
+    g.beginPath();
+    g.moveTo(noseX + 3.4, noseY + 1.2); g.quadraticCurveTo(noseX + 0.8, noseY + 2.4, noseX - 1.6, noseY + 3.2);
+    g.moveTo(noseX + 4.6, noseY + 1.5); g.quadraticCurveTo(noseX + 2.6, noseY + 3.0, noseX + 0.4, noseY + 4.0);
+    g.stroke();
+
+    // 9д. Глянцевая кожаная мочка носа с ноздрёй и живым влажным бликом
     g.fillStyle = b.nose;
     g.beginPath();
-    g.moveTo(noseX + 2.2, noseY - 0.9);
-    g.bezierCurveTo(noseX - 0.65, noseY - 0.9, noseX - 0.95, noseY + 1.25, noseX + 0.75, noseY + 1.75);
-    g.quadraticCurveTo(noseX + 2.6, noseY + 1.35, noseX + 2.2, noseY - 0.9);
+    g.moveTo(noseX + 2.25, noseY - 0.92);
+    g.bezierCurveTo(noseX - 0.68, noseY - 0.92, noseX - 0.98, noseY + 1.28, noseX + 0.78, noseY + 1.78);
+    g.quadraticCurveTo(noseX + 2.68, noseY + 1.38, noseX + 2.25, noseY - 0.92);
     g.closePath();
     g.fill();
-    g.fillStyle = 'rgba(255, 236, 232, 0.65)';
-    g.beginPath();
-    g.ellipse(noseX + 0.85, noseY - 0.32, 0.95, 0.38, -0.12, 0, Math.PI * 2);
-    g.fill();
+    g.fillStyle = 'rgba(0, 0, 0, 0.55)';
+    g.beginPath(); g.ellipse(noseX + 1.15, noseY + 0.72, 0.55, 0.34, 0.35, 0, Math.PI * 2); g.fill();
+    g.fillStyle = 'rgba(255, 242, 238, 0.78)';
+    g.beginPath(); g.ellipse(noseX + 0.82, noseY - 0.36, 0.96, 0.40, -0.14, 0, Math.PI * 2); g.fill();
 
-    // 9е. УМИРОТВОРЁННО ЗАКРЫТЫЙ ГЛАЗ СПЯЩЕГО ПСА (как у кота рядом!) + ТЁПЛЫЙ ВЗГЛЯД И УЛЫБКА ПРИ ЛАСКЕ!
-    const ex = -1.7, ey = -3.45;
+    // 9е. ДУШЕВНЫЕ ГЛАЗА И РЕСНИЧКИ УРОВНЯ КОТА (мирный сон / сияющий взгляд при ласке / счастливый прищур «⌒»)
+    const ex = -1.65, ey = -3.42;
     if (peekAwake) {
-        // На мгновение сонно приоткрывает глаза навстречу ладони (у хаски блеснёт льдисто-голубая радужка!)
-        g.fillStyle = '#0e0305';
+        const halfK = lazyPeek ? 0.62 : 1.0;
+        // Бархатная подводка века
+        g.fillStyle = '#0c0205';
         g.beginPath();
-        g.moveTo(ex - 2.15, ey + 0.05);
-        g.quadraticCurveTo(ex - 0.15, ey - 1.55, ex + 2.05, ey + 0.15);
-        g.quadraticCurveTo(ex + 0.1, ey + 1.32, ex - 2.15, ey + 0.05);
+        g.moveTo(ex - 2.35, ey + 0.08);
+        g.quadraticCurveTo(ex - 0.1, ey - 1.85 * halfK, ex + 2.25, ey + 0.18);
+        g.quadraticCurveTo(ex + 0.05, ey + 1.55 * halfK, ex - 2.35, ey + 0.08);
         g.closePath();
         g.fill();
-        g.fillStyle = b.eyeGlow;
-        g.beginPath(); g.ellipse(ex - 0.12, ey + 0.02, 1.15, 0.95, 0, 0, Math.PI * 2); g.fill();
-        g.fillStyle = b.eye;
-        g.beginPath(); g.arc(ex - 0.24, ey, 0.65, 0, Math.PI * 2); g.fill();
-        g.fillStyle = 'rgba(255, 248, 236, 0.9)';
-        g.beginPath(); g.arc(ex - 0.58, ey - 0.42, 0.46, 0, Math.PI * 2); g.fill();
+        // Сияющая радужка (льдисто-голубая у хаски, тёплый янтарь у ретривера/сибы/корги, звёздно-аметистовая у 0.1% мальтезе!)
+        const irisGlow = isRareMaltese ? '#c49bff' : b.eyeGlow;
+        g.fillStyle = irisGlow;
+        g.beginPath(); g.ellipse(ex - 0.1, ey + 0.04, 1.42, 1.18 * halfK, 0, 0, Math.PI * 2); g.fill();
+        // Глубокий живой зрачок
+        g.fillStyle = '#090104';
+        g.beginPath(); g.ellipse(ex - 0.22, ey + 0.02, 0.78, 0.78 * halfK, 0, 0, Math.PI * 2); g.fill();
+        // Двойная живая искорка света в глазу (как у кота!)
+        g.fillStyle = '#fffdf5';
+        g.beginPath(); g.arc(ex - 0.66, ey - 0.42 * halfK, 0.52, 0, Math.PI * 2); g.fill();
+        g.fillStyle = 'rgba(255, 244, 224, 0.75)';
+        g.beginPath(); g.arc(ex + 0.48, ey + 0.36 * halfK, 0.26, 0, Math.PI * 2); g.fill();
     } else if (isPetted && petK > 0.22) {
-        // Счастливый блаженный прищур благодарного пса от поглаживания
-        g.strokeStyle = '#120406';
-        g.lineWidth = 1.28;
+        // Блаженная счастливая дуга «⌒» благодарного пса от поглаживания
+        g.strokeStyle = b.pattern === 'collie' ? mixHex(rimHex, '#ffe8d8', 0.5, 0.88) : '#180408';
+        g.lineWidth = 1.32;
         g.beginPath();
-        g.moveTo(ex - 2.1, ey + 0.32);
-        g.quadraticCurveTo(ex, ey - 1.25, ex + 2.15, ey + 0.42);
+        g.moveTo(ex - 2.2, ey + 0.36);
+        g.quadraticCurveTo(ex, ey - 1.38, ex + 2.25, ey + 0.44);
         g.stroke();
     } else {
-        // Глубокий спокойный сон: мягкая тёплая дуга сомкнутого века с ресничками
-        const lidCol = (b.pattern === 'collie') ? '#f2d9dc' : '#160508';
-        if (b.pattern === 'collie') {
-            // Тонкий тёплый блик по сомкнутому веку, чтобы его было нежно видно на тёмной маске колли
-            g.strokeStyle = 'rgba(248, 214, 212, 0.68)';
-            g.lineWidth = 1.05;
-        } else {
-            g.strokeStyle = lidCol;
-            g.lineWidth = 1.22;
-        }
+        // Глубокий уютный сон: нежно изогнутое сомкнутое веко с крошечными ресничками!
+        const isDarkFace = b.pattern === 'collie' || b.pattern === 'spaniel';
+        g.strokeStyle = b.pattern === 'collie'
+            ? 'rgba(246, 206, 206, 0.74)'
+            : (b.pattern === 'spaniel' ? 'rgba(22, 5, 7, 0.88)' : 'rgba(24, 5, 10, 0.86)');
+        g.lineWidth = 1.22;
         g.beginPath();
-        g.moveTo(ex - 2.15, ey - 0.22);
-        g.quadraticCurveTo(ex - 0.05, ey + 1.15, ex + 2.15, ey - 0.12);
+        g.moveTo(ex - 2.2, ey - 0.24);
+        g.quadraticCurveTo(ex - 0.05, ey + 1.18, ex + 2.18, ey - 0.14);
         g.stroke();
-        // Едва заметная тёплая тень надбровья спящей собаки
-        g.strokeStyle = b.pattern === 'collie' ? 'rgba(255, 224, 214, 0.26)' : 'rgba(22, 6, 10, 0.28)';
-        g.lineWidth = 0.72;
+        // Изящная ресничка у внешнего уголка глаза
+        g.lineWidth = 0.82;
         g.beginPath();
-        g.moveTo(ex - 1.6, ey - 1.15);
-        g.quadraticCurveTo(ex + 0.2, ey - 1.65, ex + 1.8, ey - 0.95);
+        g.moveTo(ex + 1.85, ey + 0.02);
+        g.lineTo(ex + 2.65, ey - 0.32);
+        g.stroke();
+        // Мягкий тёплый блик по верхнему веку для бархатного объёма
+        g.strokeStyle = isDarkFace ? 'rgba(255, 220, 205, 0.28)' : 'rgba(255, 236, 224, 0.32)';
+        g.lineWidth = 0.68;
+        g.beginPath();
+        g.moveTo(ex - 1.65, ey - 0.95);
+        g.quadraticCurveTo(ex + 0.15, ey - 1.48, ex + 1.75, ey - 0.82);
         g.stroke();
     }
 
-    // 9ж. Ближнее породное ухо с объёмной тенью и живой складкой
+    // 9ж. БЛИЖНЕЕ ПОРОДНОЕ УШКО С БАРХАТНЫМ ОБЪЁМОМ, ТЕНЬЮ И КОНТРОВЫМ БЛИКОМ
     if (b.ears === 'pointed') {
-        drawErectEar(3.4, -6.2, 3.7, 8.3, -0.15 - perkR, 0.2, false);
+        drawErectEar(3.4, -6.2, 3.7, 8.4, -0.15 - perkR, 0.2, false);
     } else if (b.ears === 'samoyed') {
-        drawErectEar(3.5, -6.2, 3.9, 7.6, -0.14 - perkR, 0.72, false);
+        drawErectEar(3.5, -6.1, 3.9, 7.6, -0.14 - perkR, 0.74, false);
     } else if (b.ears === 'corgi') {
         drawErectEar(3.8, -5.8, 4.4, 10.6, -0.12 - perkR, 0.85, false);
     } else if (b.ears === 'tipped') {
         drawErectEar(3.4, -6.0, 3.6, 8.0, -0.12 - perkR, 0.2, false);
-        g.fillStyle = mixHex(b.dark, b.light, 0.25);
+        // Фирменный загнутый вперёд бархатный кончик ушка колли
+        g.fillStyle = mixHex(b.dark, b.light, 0.32);
+        g.strokeStyle = mixHex(rimHex, '#ffe6d2', 0.3, 0.55);
+        g.lineWidth = 0.7;
         g.beginPath();
-        g.moveTo(1.2, -13.2 - earPerk * 0.18);
-        g.quadraticCurveTo(4.0, -13.8, 4.6, -11.1);
+        g.moveTo(1.1, -13.3 - earPerk * 0.18);
+        g.quadraticCurveTo(4.1, -13.9, 4.7, -11.0);
         g.lineTo(-0.3, -10.5);
         g.closePath();
         g.fill();
+        g.stroke();
     } else if (b.ears === 'floppy') {
-        // Бархатное треугольное висячее ухо золотистого ретривера
+        // Бархатное золотистое ушко ретривера с тёплым медовым градиентом и шёлковым бликом
         g.save();
-        g.translate(4.1, -6.1 - earPerk * 0.2);
+        g.translate(4.1, -6.0 - earPerk * 0.2);
         g.rotate(perkR * 0.65);
-        g.fillStyle = 'rgba(18, 5, 7, 0.42)';
+        g.fillStyle = 'rgba(16, 4, 7, 0.46)';
         g.beginPath();
-        g.moveTo(-2.7, 1.2);
-        g.bezierCurveTo(-3.2, 5.4, -1.6, 10.4, 1.8, 10.6);
-        g.bezierCurveTo(4.7, 10.2, 5.1, 4.4, 3.1, 0.6);
+        g.moveTo(-2.8, 1.2);
+        g.bezierCurveTo(-3.4, 5.5, -1.7, 10.6, 1.8, 10.8);
+        g.bezierCurveTo(4.8, 10.4, 5.2, 4.5, 3.1, 0.6);
         g.closePath();
         g.fill();
-        g.fillStyle = mixHex(b.mid, b.dark, 0.2);
+
+        if (g.createLinearGradient) {
+            const eg = g.createLinearGradient(0, -1, 1.5, 10.5);
+            eg.addColorStop(0, furLight);
+            eg.addColorStop(0.55, furMid);
+            eg.addColorStop(1, furDark);
+            g.fillStyle = eg;
+        } else g.fillStyle = furMid;
         g.beginPath();
         g.moveTo(-2.3, 0.4);
-        g.bezierCurveTo(-0.9, -1.2, 3.1, -0.6, 4.3, 1.8);
-        g.bezierCurveTo(5.3, 5.5, 4.1, 10.0, 1.1, 10.2);
-        g.bezierCurveTo(-1.8, 10.0, -2.9, 5.0, -2.3, 0.4);
+        g.bezierCurveTo(-0.8, -1.3, 3.2, -0.6, 4.4, 1.8);
+        g.bezierCurveTo(5.5, 5.6, 4.2, 10.2, 1.1, 10.4);
+        g.bezierCurveTo(-1.9, 10.1, -3.0, 5.0, -2.3, 0.4);
         g.closePath();
         g.fill();
-        g.fillStyle = mixHex(b.light, b.mid, 0.48, 0.72);
-        g.beginPath(); g.ellipse(1.1, 4.3, 2.1, 3.6, -0.1, 0, Math.PI * 2); g.fill();
+
+        g.strokeStyle = mixHex(rimHex, b.light, 0.4, 0.62);
+        g.lineWidth = 0.85;
+        g.beginPath();
+        g.moveTo(-1.6, 0.0);
+        g.bezierCurveTo(1.2, -0.9, 3.9, 0.2, 4.4, 3.4);
+        g.quadraticCurveTo(4.6, 7.2, 2.4, 9.6);
+        g.stroke();
         g.restore();
     } else if (b.ears === 'longfloppy') {
-        // Длинное шелковистое волнистое ухо спаниеля
+        // Длинное шелковистое волнистое ухо шоколадного спаниеля с карамельно-медными завитками
         g.save();
         g.translate(4.2, -4.3 - earPerk * 0.18);
         g.rotate(perkR * 0.5);
-        g.fillStyle = 'rgba(12, 3, 5, 0.48)';
-        g.beginPath(); g.ellipse(0.9, 7.2, 4.2, 7.4, -0.06, 0, Math.PI * 2); g.fill();
-        g.fillStyle = mixHex(b.mid, b.dark, 0.3);
+        g.fillStyle = 'rgba(10, 2, 5, 0.54)';
+        g.beginPath(); g.ellipse(0.8, 7.3, 4.4, 7.5, -0.06, 0, Math.PI * 2); g.fill();
+
+        if (g.createLinearGradient) {
+            const eg = g.createLinearGradient(0, -0.8, 1.2, 14.4);
+            eg.addColorStop(0, furLight);
+            eg.addColorStop(0.45, furMid);
+            eg.addColorStop(1, furDeep);
+            g.fillStyle = eg;
+        } else g.fillStyle = furMid;
         g.beginPath();
         g.moveTo(-2.1, 0);
-        g.bezierCurveTo(-3.3, 4.8, -3.4, 12.6, 0.8, 14.2);
-        g.bezierCurveTo(4.9, 14.8, 6.0, 10.4, 4.0, 1.1);
-        g.quadraticCurveTo(1.1, -1.0, -2.1, 0);
+        g.bezierCurveTo(-3.4, 4.8, -3.5, 12.6, 0.8, 14.3);
+        g.bezierCurveTo(5.0, 14.9, 6.2, 10.4, 4.1, 1.1);
+        g.quadraticCurveTo(1.1, -1.1, -2.1, 0);
         g.closePath();
         g.fill();
-        g.strokeStyle = mixHex(b.light, b.rim, 0.34, 0.52);
-        g.lineWidth = 0.9;
+
+        g.strokeStyle = mixHex(b.rim, b.light, 0.42, 0.62);
+        g.lineWidth = 0.88;
         g.beginPath();
-        g.moveTo(-0.7, 1.8); g.bezierCurveTo(-2.0, 5.2, 0.2, 8.6, -0.9, 12.6);
-        g.moveTo(1.9, 2.2);  g.bezierCurveTo(0.8, 5.8, 3.0, 9.2, 1.7, 13.0);
+        g.moveTo(-0.8, 1.4); g.bezierCurveTo(-2.2, 5.2, 0.3, 8.6, -0.9, 12.8);
+        g.moveTo(1.7, 1.6);  g.bezierCurveTo(0.5, 5.6, 3.1, 9.2, 1.7, 13.2);
+        g.moveTo(3.4, 1.2);  g.quadraticCurveTo(5.0, 6.4, 3.6, 12.0);
         g.stroke();
         g.restore();
     } else if (b.ears === 'maltese') {
-        // ШЕЛКОВИСТОЕ СТРУЯЩЕЕСЯ ФИОЛЕТОВОЕ УШКО БЕЛОЙ МАЛЬТИЙСКОЙ БОЛОНКИ (0.1%)!
+        // СТРУЯЩЕЕСЯ КОРОЛЕВСКО-ФИОЛЕТОВОЕ ШЁЛКОВОЕ УШКО БЕЛОЙ МАЛЬТИЙСКОЙ БОЛОНКИ (0.1%)!
         g.save();
-        g.translate(4.0, -5.2 - earPerk * 0.2);
+        g.translate(3.9, -5.1 - earPerk * 0.2);
         g.rotate(perkR * 0.55);
-        // Мягкая тень фиолетового ушка на белоснежной щеке
-        g.fillStyle = 'rgba(22, 6, 38, 0.42)';
-        g.beginPath();
-        g.ellipse(0.6, 7.0, 4.3, 7.2, -0.05, 0, Math.PI * 2);
-        g.fill();
-        // Живописный градиент от бархатной сливы через королевский аметист к нежной сирени
+        g.fillStyle = 'rgba(18, 4, 32, 0.45)';
+        g.beginPath(); g.ellipse(0.5, 7.1, 4.3, 7.3, -0.05, 0, Math.PI * 2); g.fill();
+
+        const vDeep  = b.violetDark  || '#2f0e4f';
+        const vMid   = b.violetMid   || '#7c3aed';
+        const vLight = b.violetLight || '#b983ff';
+        const vSilk  = b.violetSilk  || '#eed9ff';
         if (g.createLinearGradient) {
-            const eg = g.createLinearGradient(0, -1, 1.2, 13.8);
-            eg.addColorStop(0.0, b.violetLight || '#b983ff');
-            eg.addColorStop(0.45, b.violetMid || '#7c3aed');
-            eg.addColorStop(1.0, b.violetDark || '#2f0e4f');
+            const eg = g.createLinearGradient(-0.5, -1.2, 1.6, 14.0);
+            eg.addColorStop(0.0, vSilk);
+            eg.addColorStop(0.22, vLight);
+            eg.addColorStop(0.62, vMid);
+            eg.addColorStop(1.0, vDeep);
             g.fillStyle = eg;
-        } else g.fillStyle = b.violetMid || '#7c3aed';
+        } else g.fillStyle = vMid;
+        // Изящный каскадный локон с мягкими перьевыми кончиками (не плоский овал!)
         g.beginPath();
-        g.moveTo(-2.2, -0.4);
-        g.bezierCurveTo(-3.6, 4.4, -3.5, 11.8, 0.6, 13.8);
-        g.bezierCurveTo(4.8, 14.2, 5.8, 9.8, 4.1, 0.8);
-        g.quadraticCurveTo(1.1, -1.6, -2.2, -0.4);
+        g.moveTo(-2.1, -0.4);
+        g.bezierCurveTo(-3.7, 3.8, -4.0, 10.8, -0.8, 13.6);
+        g.quadraticCurveTo(0.8, 14.6, 2.2, 13.7);
+        g.bezierCurveTo(5.5, 11.8, 6.0, 6.4, 4.1, 0.7);
+        g.quadraticCurveTo(1.1, -1.7, -2.1, -0.4);
         g.closePath();
         g.fill();
-        // Шёлковые лавандовые пряди по висячему ушку мальтезе
-        g.strokeStyle = b.violetSilk || '#eed9ff';
-        g.lineWidth = 0.92;
-        g.globalAlpha = 0.78;
+
+        // Переливающиеся лавандово-жемчужные шёлковые пряди ушка
+        g.strokeStyle = vSilk;
+        g.lineWidth = 0.85;
+        g.globalAlpha = 0.82;
         g.beginPath();
-        g.moveTo(-0.8, 1.0); g.bezierCurveTo(-1.8, 5.2, -0.6, 9.2, -0.2, 12.4);
-        g.moveTo(1.6, 1.2);  g.bezierCurveTo(2.8, 5.4, 2.2, 9.6, 1.5, 12.6);
+        g.moveTo(-0.9, 0.6); g.bezierCurveTo(-2.2, 4.8, -1.4, 9.2, -0.4, 12.6);
+        g.moveTo(1.1, 0.4);  g.bezierCurveTo(0.4, 5.0, 1.6, 9.4, 1.1, 13.0);
+        g.moveTo(2.8, 1.0);  g.bezierCurveTo(4.4, 5.2, 4.0, 9.4, 2.6, 12.4);
         g.stroke();
         g.restore();
     }
 
     g.restore(); // конец трансформации головы
-
     g.restore(); // конец масштаба породы
 
-    // 10. Едва заметное тёплое дыхание у носа и нежные янтарные искры радости при поглаживании!
+    // 10. Живое тёплое дыхание у носика во сне + сияющие искры радости при поглаживании (и аметистово-звёздные у 0.1% мальтезе!)
     if (!still) {
-        const worldNoseX = cx + (hx + (-5.4 - mLen) * hScale) * b.sx;
-        const worldNoseY = cy + (hy - 1.0 * hScale) * b.sy;
+        const worldNoseX = cx + (hx + (-5.3 - mLen) * hScale) * b.sx;
+        const worldNoseY = cy + (hy - 0.95 * hScale) * b.sy;
         const exhale = ((t + 0.8) * 0.31) % 1;
-        const exA = Math.sin(exhale * Math.PI) * 0.2;
+        const exA = Math.sin(exhale * Math.PI) * 0.22;
         if (exA > 0.04 && !isPetted) {
-            g.fillStyle = `rgba(255, 214, 172, ${exA.toFixed(3)})`;
+            g.fillStyle = `rgba(255, 218, 182, ${exA.toFixed(3)})`;
             g.beginPath();
             g.arc(worldNoseX - 2 - exhale * 5, worldNoseY - 1 - exhale * 10, 0.95 + exhale * 1.0, 0, Math.PI * 2);
             g.fill();
@@ -6429,15 +6826,19 @@ function drawCompanionDog(g, now, phase, still) {
             const p01 = clamp01(petElapsed / 2700);
             const sparkX = [-10, 1, 12];
             const sparkRise = [21, 27, 19];
+            const spCore = isRareMaltese ? '#f5d0fe' : '#ffe89c';
+            const spRim  = isRareMaltese ? '#9333ea' : '#ff6b78';
             for (let k = 0; k < 3; k++) {
                 const kp = clamp01((p01 * 1.45) - k * 0.18);
                 if (kp <= 0 || kp >= 1) continue;
-                const ka = Math.sin(kp * Math.PI) * 0.86;
+                const ka = Math.sin(kp * Math.PI) * 0.88;
                 const kx = worldHeadX + sparkX[k] + Math.sin(kp * 5.2 + k * 2.1) * 3.2;
                 const ky = worldHeadY - 12 - kp * sparkRise[k];
-                radialAura(g, kx, ky, 6.2, '#ffe89c', '#ff6b78', ka * 0.52);
-                g.fillStyle = `rgba(255, 244, 192, ${ka.toFixed(3)})`;
-                g.beginPath(); g.arc(kx, ky, 1.3, 0, Math.PI * 2); g.fill();
+                radialAura(g, kx, ky, 6.4, spCore, spRim, ka * 0.55);
+                g.fillStyle = isRareMaltese
+                    ? `rgba(250, 236, 255, ${ka.toFixed(3)})`
+                    : `rgba(255, 244, 192, ${ka.toFixed(3)})`;
+                g.beginPath(); g.arc(kx, ky, 1.32, 0, Math.PI * 2); g.fill();
             }
         }
     }
@@ -6701,6 +7102,448 @@ function drawRoomCosmetics(g, now, phase) {
     }
 }
 
+// ===== ЖИВЫЕ СВИСАЮЩИЕ ЛИАНЫ НАД КУШЕТКОЙ — ДИЕГЕТИЧЕСКИЙ ПОРТАЛ В ОРАНЖЕРЕЮ =====
+// Расположены с попиксельной точностью поверх каскадного плюща/эпипремнума справа над полкой (x: 710..766, y: 112..254):
+// ни единой кнопки поверх окна — живые плети дышат в полумраке, а после первого расцветшего цветка
+// распускают нежные росистые бутоны и светлячков-пыльцу, приглашая войти в стеклянный купол Оранжереи.
+const VINE_STRANDS = [
+    {
+        x0: 718, y0: 125, len: 64, swayAmp: 2.3, freq: 0.72, ph: 0.2,
+        leaves: [
+            { u: 0.22, dx: -3.4, s: 5.6, ang: -0.46, tone: 0 },
+            { u: 0.48, dx: 2.8,  s: 5.2, ang: 0.34,  tone: 1 },
+            { u: 0.74, dx: -3.2, s: 6.1, ang: -0.38, tone: 2, bud: true },
+            { u: 0.98, dx: 0.4,  s: 4.8, ang: 0.08,  tone: 1 }
+        ]
+    },
+    {
+        x0: 730, y0: 119, len: 108, swayAmp: 3.1, freq: 0.64, ph: 1.45,
+        leaves: [
+            { u: 0.16, dx: -3.2, s: 6.4, ang: -0.40, tone: 1 },
+            { u: 0.34, dx: 3.5,  s: 6.0, ang: 0.36,  tone: 0 },
+            { u: 0.52, dx: -3.8, s: 6.8, ang: -0.34, tone: 2, bud: true },
+            { u: 0.71, dx: 3.0,  s: 5.8, ang: 0.30,  tone: 1 },
+            { u: 0.87, dx: -2.6, s: 5.6, ang: -0.26, tone: 0 },
+            { u: 0.99, dx: 0.3,  s: 4.9, ang: 0.05,  tone: 2 }
+        ]
+    },
+    {
+        x0: 743, y0: 118, len: 132, swayAmp: 3.6, freq: 0.58, ph: 2.8,
+        leaves: [
+            { u: 0.13, dx: 3.2,  s: 6.6, ang: 0.38,  tone: 2 },
+            { u: 0.28, dx: -3.5, s: 6.2, ang: -0.35, tone: 0 },
+            { u: 0.44, dx: 3.8,  s: 7.0, ang: 0.32,  tone: 1, bud: true },
+            { u: 0.60, dx: -3.4, s: 6.5, ang: -0.30, tone: 2 },
+            { u: 0.76, dx: 3.1,  s: 6.1, ang: 0.26,  tone: 0, bud: true },
+            { u: 0.90, dx: -2.4, s: 5.4, ang: -0.22, tone: 1 },
+            { u: 1.00, dx: 0.6,  s: 5.1, ang: 0.06,  tone: 2 }
+        ]
+    },
+    {
+        x0: 756, y0: 124, len: 112, swayAmp: 2.9, freq: 0.68, ph: 4.1,
+        leaves: [
+            { u: 0.18, dx: 3.4,  s: 6.0, ang: 0.42,  tone: 0 },
+            { u: 0.38, dx: -3.0, s: 6.3, ang: -0.32, tone: 1 },
+            { u: 0.58, dx: 3.6,  s: 6.4, ang: 0.35,  tone: 2, bud: true },
+            { u: 0.78, dx: -2.8, s: 5.6, ang: -0.28, tone: 0 },
+            { u: 0.97, dx: 0.8,  s: 4.7, ang: 0.12,  tone: 1 }
+        ]
+    }
+];
+
+function drawVineHeartLeaf(g, x, y, size, ang, darkCol, midCol, lightCol, rimCol, rimAlpha) {
+    g.save();
+    g.translate(x, y);
+    g.rotate(ang);
+    // Мягкая тень листка на кирпичной кладке
+    g.fillStyle = 'rgba(6, 1, 3, 0.52)';
+    g.beginPath();
+    g.moveTo(0, -size * 0.22 + 1.2);
+    g.bezierCurveTo(-size * 0.82, -size * 0.68 + 1.2, -size * 0.86, size * 0.36 + 1.2, 0, size * 1.12 + 1.2);
+    g.bezierCurveTo(size * 0.86, size * 0.36 + 1.2, size * 0.82, -size * 0.68 + 1.2, 0, -size * 0.22 + 1.2);
+    g.closePath();
+    g.fill();
+
+    // Бархатное сердцевидное полотно листа
+    if (g.createLinearGradient) {
+        const lg = g.createLinearGradient(-size * 0.55, -size * 0.5, size * 0.5, size * 1.05);
+        lg.addColorStop(0, lightCol);
+        lg.addColorStop(0.48, midCol);
+        lg.addColorStop(1, darkCol);
+        g.fillStyle = lg;
+    } else {
+        g.fillStyle = midCol;
+    }
+    g.beginPath();
+    g.moveTo(0, -size * 0.22);
+    g.bezierCurveTo(-size * 0.82, -size * 0.68, -size * 0.86, size * 0.36, 0, size * 1.12);
+    g.bezierCurveTo(size * 0.86, size * 0.36, size * 0.82, -size * 0.68, 0, -size * 0.22);
+    g.closePath();
+    g.fill();
+
+    // Центральная жилка и тёплый контровой кант света от лампы и ночника
+    g.strokeStyle = mixHex(rimCol, lightCol, 0.35, rimAlpha);
+    g.lineWidth = 0.72;
+    g.beginPath();
+    g.moveTo(-size * 0.52, -size * 0.24);
+    g.quadraticCurveTo(-size * 0.64, size * 0.32, 0, size * 1.04);
+    g.stroke();
+
+    g.strokeStyle = mixHex(lightCol, rimCol, 0.5, rimAlpha * 0.62);
+    g.lineWidth = 0.55;
+    g.beginPath();
+    g.moveTo(0, -size * 0.14);
+    g.quadraticCurveTo(-size * 0.05, size * 0.42, 0, size * 0.92);
+    g.stroke();
+    g.restore();
+}
+
+function drawGreenhouseVines(g, now, phase) {
+    const still = prefersStillRoom();
+    const t = still ? 1.8 : now * 0.001;
+    const gh = loadGreenhouse();
+    const ghOpen = isGreenhouseUnlocked() || isPtsMode();
+    const allEarth = gh.bloomed.length >= PLANT_KINDS.length;
+    const secretAwait = ghOpen && allEarth && !(gh.alienSeed && gh.alienSeed.bloomed);
+
+    // Органичный шелест при касании (затухающий маятник по всей длине плетей)
+    const touchDt = Math.max(0, (now - (roomAnim.vinesStart || -1e9)) * 0.001);
+    const rustleEnv = touchDt < 2.6 ? Math.exp(-touchDt * 1.45) * Math.sin(touchDt * 7.4) : 0;
+    const touchGlow = softBell(now - (roomAnim.vinesStart || -1e9), 280, 420, 1200);
+
+    // Палитра листвы органично слита с бордово-тёплой тенью ниши + тёплый изумрудно-янтарный свет Оранжереи при открытии
+    const warmPhase = phase === 2;
+    const dawnPhase = phase === 3;
+    const baseDark  = '#16060a';
+    const baseMid   = ghOpen
+        ? (warmPhase ? '#3a2b20' : dawnPhase ? '#2e2234' : '#2a2c24')
+        : (warmPhase ? '#381518' : dawnPhase ? '#2e1424' : '#2c0e14');
+    const baseLight = ghOpen
+        ? (warmPhase ? '#6e5838' : dawnPhase ? '#584862' : '#4a5a42')
+        : (warmPhase ? '#5e2622' : dawnPhase ? '#4e2438' : '#4c1a21');
+    const rimCol    = secretAwait
+        ? '#e9c2ff'
+        : ghOpen
+            ? (warmPhase ? '#ffe49e' : '#a7f3d0')
+            : (warmPhase ? '#ffb878' : dawnPhase ? '#d8a4d8' : '#c85a64');
+
+    const breath = still ? 0.65 : (0.55 + 0.45 * Math.sin(t * 1.45));
+
+    g.save();
+
+    // Деликатное изумрудно-золотое (или аметистовое при 8/8) дыхание за лианами, когда Оранжерея открыта
+    if (ghOpen) {
+        g.save();
+        g.globalCompositeOperation = 'screen';
+        const auraA = (0.14 + 0.08 * breath + 0.16 * touchGlow);
+        radialAura(g, 740, 178, 54,
+            secretAwait ? '#d8b4fe' : (warmPhase ? '#ffd88a' : '#86efac'),
+            secretAwait ? '#6d28d9' : '#14532d',
+            auraA);
+        radialAura(g, 744, 224, 38,
+            secretAwait ? '#f0abfc' : '#bbf7d0',
+            '#7f1d2d',
+            auraA * 0.62);
+        g.restore();
+    } else if (touchGlow > 0.02) {
+        g.save();
+        g.globalCompositeOperation = 'screen';
+        radialAura(g, 740, 182, 42, '#ff9c86', '#6e1828', touchGlow * 0.18);
+        g.restore();
+    }
+
+    // Пышная шапка верхних листьев у кашпо (x: 736, y: 118)
+    const crownLeaves = [
+        { x: 724, y: 116, s: 6.2, a: -0.58 },
+        { x: 736, y: 113, s: 6.8, a: -0.08 },
+        { x: 749, y: 115, s: 6.5, a: 0.44 },
+        { x: 731, y: 121, s: 5.8, a: -0.22 },
+        { x: 744, y: 121, s: 6.0, a: 0.25 }
+    ];
+    for (let c = 0; c < crownLeaves.length; c++) {
+        const cl = crownLeaves[c];
+        const cSway = still ? 0 : Math.sin(t * 0.9 + c * 1.1) * 0.55 + rustleEnv * 1.4;
+        drawVineHeartLeaf(
+            g, cl.x + cSway, cl.y, cl.s, cl.a + cSway * 0.03,
+            baseDark, baseMid, baseLight, rimCol,
+            ghOpen ? (0.46 + 0.2 * breath + 0.2 * touchGlow) : (0.30 + 0.18 * touchGlow)
+        );
+    }
+
+    // 4 живые каскадные плети, мягко покачивающиеся в тёплом воздухе комнаты
+    for (let si = 0; si < VINE_STRANDS.length; si++) {
+        const st = VINE_STRANDS[si];
+        const wave = (u) => {
+            const nat = Math.sin(u * 4.2 + st.ph) * 2.2 * Math.sin(u * Math.PI);
+            if (still) return nat + Math.sin(st.ph + u * 2.1) * st.swayAmp * 0.25 * u;
+            const air = Math.sin(t * st.freq * 1.65 + st.ph - u * 1.85) * st.swayAmp
+                      + Math.sin(t * 0.52 + si * 1.9 + u * 1.2) * (st.swayAmp * 0.42);
+            const touch = rustleEnv * (4.8 + si * 0.55) * Math.sin(u * 2.4 + si * 0.5);
+            return nat + (air + touch) * Math.pow(u, 1.22);
+        };
+
+        // Гибкий органичный стебель плети
+        g.strokeStyle = mixHex(baseDark, baseLight, ghOpen ? 0.52 : 0.36, 0.86);
+        g.lineWidth = 1.1;
+        g.lineCap = 'round';
+        g.beginPath();
+        g.moveTo(st.x0, st.y0);
+        const segs = 7;
+        for (let k = 1; k <= segs; k++) {
+            const u = k / segs;
+            g.lineTo(st.x0 + wave(u), st.y0 + st.len * u);
+        }
+        g.stroke();
+
+        // Тонкий завиток усика на самом кончике плети
+        const tipX = st.x0 + wave(1);
+        const tipY = st.y0 + st.len;
+        g.strokeStyle = mixHex(baseLight, rimCol, ghOpen ? 0.48 : 0.22, 0.62);
+        g.lineWidth = 0.72;
+        g.beginPath();
+        g.moveTo(tipX, tipY);
+        g.bezierCurveTo(tipX + (si % 2 ? 3.2 : -3.2), tipY + 4.2, tipX + (si % 2 ? -2.2 : 2.2), tipY + 7.4, tipX + (si % 2 ? 1.2 : -1.2), tipY + 8.2);
+        g.stroke();
+
+        // Сердцевидные листья и живые росистые бутоны портала Оранжереи
+        for (let li = 0; li < st.leaves.length; li++) {
+            const lf = st.leaves[li];
+            const wx = wave(lf.u);
+            const lx = st.x0 + wx + lf.dx;
+            const ly = st.y0 + st.len * lf.u;
+            const flutter = still ? 0 : Math.sin(t * 1.9 + st.ph + li * 1.3) * 0.055 + rustleEnv * 0.11 * lf.u;
+            const tShift = lf.tone === 2 ? 0.18 : (lf.tone === 0 ? -0.12 : 0);
+            const lMid = tShift >= 0 ? mixHex(baseMid, baseLight, tShift) : mixHex(baseMid, baseDark, -tShift);
+            const lTop = tShift >= 0 ? mixHex(baseLight, rimCol, ghOpen ? 0.24 : 0.12) : baseLight;
+            const rimA = ghOpen
+                ? (0.44 + 0.26 * Math.sin(t * 1.6 + si + li * 0.7) * 0.5 + 0.16 + touchGlow * 0.22)
+                : (0.28 + touchGlow * 0.2);
+
+            // Черешок
+            g.strokeStyle = mixHex(baseMid, rimCol, 0.2, 0.72);
+            g.lineWidth = 0.75;
+            g.beginPath();
+            g.moveTo(st.x0 + wx, ly - 1.4);
+            g.lineTo(lx, ly);
+            g.stroke();
+
+            drawVineHeartLeaf(g, lx, ly, lf.s, lf.ang + flutter + wx * 0.025, baseDark, lMid, lTop, rimCol, Math.min(0.92, rimA));
+
+            // Когда Оранжерея открыта — среди листвы нежно дышат фарфорово-росистые бутоны!
+            if (ghOpen && lf.bud) {
+                const bx = lx + (lf.dx < 0 ? -2.2 : 2.2);
+                const by = ly + lf.s * 0.42;
+                const bPulse = still ? 0.8 : (0.65 + 0.35 * Math.sin(t * 2.1 + si * 1.7 + li));
+                const budCore = secretAwait && (si === 2 && li === 2) ? '#f5d0fe' : '#fef3c7';
+                const budGlow = secretAwait && (si === 2 && li === 2) ? '#c084fc' : '#6ee7b7';
+                radialAura(g, bx, by, 5.6, budCore, budGlow, (0.34 + touchGlow * 0.28) * bPulse);
+                g.fillStyle = mixHex(budCore, '#ffffff', 0.35, 0.92);
+                g.beginPath();
+                g.ellipse(bx, by, 1.45, 2.05, lf.ang * 0.5, 0, Math.PI * 2);
+                g.fill();
+            }
+        }
+    }
+
+    // Парящие искорки оранжерейной пыльцы вокруг живых лиан — мягкий бессловесный знак живого портала
+    if (ghOpen) {
+        const moteCount = secretAwait ? 6 : 4;
+        for (let m = 0; m < moteCount; m++) {
+            const seed = m * 1.93 + 0.6;
+            const cyc = still ? ((m + 0.5) / moteCount) : ((t * (0.14 + (m % 3) * 0.03) + m * 0.27) % 1);
+            const ma = Math.sin(cyc * Math.PI) * (0.62 + touchGlow * 0.32);
+            if (ma < 0.05) continue;
+            const mx = 720 + ((m * 13) % 40) + Math.sin(t * 1.15 + seed) * 5.2;
+            const my = 246 - cyc * 124;
+            const isVioletMote = secretAwait && (m % 2 === 0);
+            radialAura(g, mx, my, 4.8, isVioletMote ? '#f3e8ff' : '#fef08a', isVioletMote ? '#a855f7' : '#34d399', ma * 0.55);
+            g.fillStyle = isVioletMote
+                ? `rgba(245, 224, 255, ${ma.toFixed(3)})`
+                : `rgba(236, 253, 215, ${ma.toFixed(3)})`;
+            g.beginPath();
+            g.arc(mx, my, 0.95, 0, Math.PI * 2);
+            g.fill();
+        }
+    }
+
+    g.restore();
+}
+
+// ===== ВРАЩЕНИЕ СЦЕНЫ И ПЛАВНЫЙ ТАЧ-СКРОЛЛ ВНУТРИ FULLSCREEN (±90° / 180°) =====
+// Когда #station-scene повёрнута на ±90° на портретном iPhone/Android, нативный overflow-y браузера
+// слушает физическую ось Y экрана вместо локальной оси Y оверлея. Эти хелперы точно переводят касания
+// и жесты прокрутки в локальную систему координат любого окна (VHS, Оранжерея, Приёмник, Снимок, Дирижабль).
+function getSomaSceneRotationDeg(el) {
+    if (!roomAnim.isFullscreen && !roomAnim.fsClosing) return 0;
+    if (el && typeof document !== 'undefined') {
+        const scene = document.getElementById('station-scene');
+        if (scene && typeof scene.contains === 'function' && !scene.contains(el)) return 0;
+    }
+    return Number(roomAnim.fsLastDeg) || 0;
+}
+
+function somaClientToLocal(el, clientX, clientY) {
+    if (!el || typeof el.getBoundingClientRect !== 'function') return { x: 0, y: 0, w: 1, h: 1 };
+    const rect = el.getBoundingClientRect();
+    const deg = getSomaSceneRotationDeg(el);
+    const localW = Number(el.offsetWidth) || ((Math.abs(deg) === 90) ? rect.height : rect.width) || 1;
+    const localH = Number(el.offsetHeight) || ((Math.abs(deg) === 90) ? rect.width : rect.height) || 1;
+    if (!deg) {
+        return {
+            x: ((clientX - rect.left) / (rect.width || 1)) * localW,
+            y: ((clientY - rect.top) / (rect.height || 1)) * localH,
+            w: localW,
+            h: localH
+        };
+    }
+    const cx = rect.left + rect.width * 0.5;
+    const cy = rect.top + rect.height * 0.5;
+    const dx = clientX - cx;
+    const dy = clientY - cy;
+    const rad = (deg * Math.PI) / 180;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+    // Обратный поворот (-deg) + учёт возможного scale
+    const unrotW = Math.abs(deg) === 90 ? rect.height : rect.width;
+    const unrotH = Math.abs(deg) === 90 ? rect.width : rect.height;
+    const sx = (unrotW || localW) / localW;
+    const sy = (unrotH || localH) / localH;
+    const lx = (dx * cos + dy * sin) / (sx || 1) + localW * 0.5;
+    const ly = (-dx * sin + dy * cos) / (sy || 1) + localH * 0.5;
+    return { x: lx, y: ly, w: localW, h: localH };
+}
+
+function somaScreenDeltaToLocal(deg, dx, dy) {
+    if (!deg) return { lx: dx, ly: dy };
+    const rad = (deg * Math.PI) / 180;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+    return {
+        lx: dx * cos + dy * sin,
+        ly: -dx * sin + dy * cos
+    };
+}
+
+function bindSomaSceneScroll(el) {
+    if (!el || el.__somaScrollBound || typeof el.addEventListener !== 'function') return el;
+    el.__somaScrollBound = true;
+    if (typeof el.setAttribute === 'function') el.setAttribute('data-soma-scroll', '1');
+
+    let activeId = null;
+    let lastX = 0;
+    let lastY = 0;
+    let lastT = 0;
+    let totalMove = 0;
+    let dragging = false;
+    let velY = 0;
+    let rafId = 0;
+    let suppressClickUntil = 0;
+
+    const stopInertia = () => {
+        if (rafId && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(rafId);
+        rafId = 0;
+        velY = 0;
+    };
+
+    const canScrollY = () => (el.scrollHeight - el.clientHeight) > 1;
+
+    const startInertia = () => {
+        if (typeof requestAnimationFrame !== 'function' || Math.abs(velY) < 0.08) return;
+        let prev = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+        const tick = (ts) => {
+            const now = ts || Date.now();
+            const dt = Math.min(34, Math.max(8, now - prev));
+            prev = now;
+            const before = el.scrollTop;
+            el.scrollTop = Math.max(0, Math.min(el.scrollHeight - el.clientHeight, before + velY * dt));
+            velY *= Math.pow(0.92, dt / 16);
+            if (Math.abs(velY) < 0.04 || Math.abs(el.scrollTop - before) < 0.1) {
+                rafId = 0;
+                return;
+            }
+            rafId = requestAnimationFrame(tick);
+        };
+        rafId = requestAnimationFrame(tick);
+    };
+
+    // Touch events — надёжно работают в iOS Safari, Telegram WebView и Android Chrome при rotate(±90deg / 180deg)
+    el.addEventListener('touchstart', (ev) => {
+        const deg = getSomaSceneRotationDeg(el);
+        if (!deg || !ev.touches || ev.touches.length !== 1) return;
+        stopInertia();
+        const t = ev.touches[0];
+        activeId = t.identifier;
+        lastX = t.clientX;
+        lastY = t.clientY;
+        lastT = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+        totalMove = 0;
+        dragging = false;
+    }, { passive: true });
+
+    el.addEventListener('touchmove', (ev) => {
+        const deg = getSomaSceneRotationDeg(el);
+        if (!deg || activeId === null || !ev.touches) return;
+        let t = null;
+        for (let i = 0; i < ev.touches.length; i++) {
+            if (ev.touches[i].identifier === activeId) { t = ev.touches[i]; break; }
+        }
+        if (!t) return;
+        const dx = t.clientX - lastX;
+        const dy = t.clientY - lastY;
+        const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+        const dt = Math.max(6, now - lastT);
+        lastX = t.clientX;
+        lastY = t.clientY;
+        lastT = now;
+
+        const { ly } = somaScreenDeltaToLocal(deg, dx, dy);
+        totalMove += Math.hypot(dx, dy);
+        if (!dragging && totalMove > 6) dragging = true;
+        if (!dragging) return;
+
+        if (canScrollY()) {
+            const deltaScroll = -ly;
+            const maxScroll = Math.max(0, el.scrollHeight - el.clientHeight);
+            el.scrollTop = Math.max(0, Math.min(maxScroll, el.scrollTop + deltaScroll));
+            const instV = deltaScroll / dt;
+            velY = velY * 0.45 + instV * 0.55;
+        }
+        if (ev.cancelable) ev.preventDefault();
+        ev.stopPropagation();
+    }, { passive: false });
+
+    const finishTouch = () => {
+        if (activeId === null) return;
+        const wasDrag = dragging;
+        activeId = null;
+        dragging = false;
+        if (wasDrag) {
+            suppressClickUntil = Date.now() + 260;
+            startInertia();
+        }
+    };
+    el.addEventListener('touchend', finishTouch, { passive: true });
+    el.addEventListener('touchcancel', finishTouch, { passive: true });
+
+    // Подавляем случайный клик по кассете сразу после перетягивания списка, но пропускаем чистые тапы!
+    el.addEventListener('click', (ev) => {
+        if (suppressClickUntil && Date.now() < suppressClickUntil) {
+            suppressClickUntil = 0;
+            ev.preventDefault();
+            ev.stopPropagation();
+        }
+    }, true);
+
+    return el;
+}
+
+if (typeof window !== 'undefined') {
+    window.getSomaSceneRotationDeg = getSomaSceneRotationDeg;
+    window.somaClientToLocal = somaClientToLocal;
+    window.somaScreenDeltaToLocal = somaScreenDeltaToLocal;
+    window.bindSomaSceneScroll = bindSomaSceneScroll;
+}
+
 function drawStationFx(now, step) {
     const cv = typeof document !== 'undefined' && document.getElementById('station-fx');
     if (!cv || !cv.getContext) return;
@@ -6777,6 +7620,7 @@ function drawStationFx(now, step) {
     }
     updateSwingingLamp(g, now);
     updateNightlights(g, now);
+    drawGreenhouseVines(g, now, phase);
     drawCassetteDeck(now);
 
     // Мягкое тёплое дыхание ламповой шкалы приёмника RX-88 (при касании и во время звучания музыки!)
@@ -7543,6 +8387,12 @@ function playObjectTone(obj) {
         if (typeof noise === 'function') noise(0.028, 0.025, 0, 2200);
         tone(920, 0.055, 'square', 0.014, 0.02, 640);
         tone(195, 0.22, 'sine', 0.016, 0.09, 155);
+    } else if (obj === 'vines') {
+        // Нежный ботанический шелест живых лиан и хрустальный перезвон входа в Оранжерею
+        if (typeof noise === 'function') noise(0.06, 0.014, 0, 1650);
+        tone(523.25, 0.34, 'sine', 0.016, 0.02, 587.33);
+        tone(659.25, 0.42, 'sine', 0.014, 0.10, 783.99);
+        tone(987.77, 0.50, 'sine', 0.010, 0.19);
     }
 }
 
@@ -7708,6 +8558,34 @@ function touchRoomObject(obj, event) {
         }
         modeLabel = 'ЖУРНАЛ // НОЧНИК';
         line = nextRoomLine('nightlightR', ROOM_LINES.nightlightR);
+    } else if (obj === 'vines') {
+        roomAnim.contextPanel = '';
+        roomAnim.vinesStart = now;
+        playObjectTone('vines');
+        const unlocked = isGreenhouseUnlocked();
+        const ptsAllow = !unlocked && isPtsMode();
+        if (unlocked || ptsAllow) {
+            modeLabel = 'ЖУРНАЛ // ОРАНЖЕРЕЯ';
+            line = nextRoomLine('vinesOpen', ROOM_LINES.vinesOpen);
+            roomAnim.customMode = modeLabel;
+            roomAnim.customEntry = line;
+            if (roomAnim.isFullscreen) bumpFullscreenHud();
+            const opened = openGreenhouse(unlocked ? {} : { ptsDemo: true });
+            if (opened) {
+                renderRoom();
+                return;
+            }
+        } else {
+            modeLabel = 'ЖУРНАЛ // ЛИАНЫ';
+            line = nextRoomLine('vines', ROOM_LINES.vines);
+            if (roomAnim.isFullscreen) {
+                bumpFullscreenHud();
+                showFullscreenCaption(line);
+                roomAnim.customMode = modeLabel;
+                roomAnim.customEntry = line;
+                return;
+            }
+        }
     } else if (obj === 'bed') {
         roomAnim.contextPanel = '';
         if ((now - roomAnim.nightRStart) > 900) roomAnim.nightRStart = now;
@@ -8431,15 +9309,18 @@ function renderRoom() {
         }
     }
 
-    // Оранжерея игрока: открывается СТРОГО только когда выращено первое растение (в Fullscreen PTS-тестер тоже сразу видит вход!)
+    // Оранжерея игрока: открывается СТРОГО после первого расцветшего цветка (вход — живые лианы над кушеткой, без кнопок на окне!)
     const hasGh = !previewing && gh.bloomed.includes(ownSpec.kind);
-    const canFsGh = hasGh || isPtsMode();
-    const fsGhBtn = document.getElementById('station-fs-gh');
-    if (fsGhBtn && fsGhBtn.classList) {
-        fsGhBtn.classList.toggle('hidden', !canFsGh);
-        fsGhBtn.textContent = (hasGh && gh.bloomed.length >= PLANT_KINDS.length && !gh.alienSeed)
-            ? '✦ ОРАНЖЕРЕЯ'
-            : '✿ ОРАНЖЕРЕЯ';
+    const vinesHit = document.getElementById('station-hit-vines');
+    if (vinesHit && typeof vinesHit.setAttribute === 'function') {
+        const canPortal = hasGh || isPtsMode();
+        vinesHit.setAttribute(
+            'aria-label',
+            canPortal
+                ? 'Живые лианы над кушеткой — войти в Оранжерею'
+                : 'Живые лианы над кушеткой'
+        );
+        if (vinesHit.classList) vinesHit.classList.toggle('is-portal-open', canPortal);
     }
     const ghBox = document.getElementById('station-greenhouse');
     if (ghBox && ghBox.classList) {
@@ -8455,16 +9336,14 @@ function renderRoom() {
         const ghSlots = document.getElementById('station-gh-slots');
         if (ghSlots && hasGh && document.createElement) {
             ghSlots.textContent = '';
-            // Главная парадная кнопка входа в интерактивный стеклянный купол Оранжереи!
-            const enterBtn = document.createElement('button');
-            enterBtn.type = 'button';
-            enterBtn.id = 'station-open-gh-btn';
-            enterBtn.className = 'is-gh-portal';
-            enterBtn.textContent = (gh.bloomed.length >= PLANT_KINDS.length && !gh.alienSeed)
-                ? '✦ ОТКРЫТЬ ОРАНЖЕРЕЮ · ТАЙНОЕ СЕМЯ!'
-                : '✿ ОТКРЫТЬ ОРАНЖЕРЕЮ';
-            enterBtn.onclick = () => openGreenhouse();
-            ghSlots.appendChild(enterBtn);
+            // Тихая диегетическая подсказка вместо отдельной кнопки: в Оранжерею ведут живые лианы над кушеткой!
+            const hint = document.createElement('span');
+            const secretReady = gh.bloomed.length >= PLANT_KINDS.length && !gh.alienSeed;
+            hint.className = secretReady ? 'station-gh-hint is-secret' : 'station-gh-hint';
+            hint.textContent = secretReady
+                ? '✦ Коснитесь живых лиан над кушеткой — в куполе Оранжереи ждёт тайное семя'
+                : '✿ Коснитесь живых лиан над кушеткой, чтобы войти в купол Оранжереи';
+            ghSlots.appendChild(hint);
 
             gh.bloomed.forEach(k => {
                 const b = document.createElement('button');

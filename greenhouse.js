@@ -152,7 +152,8 @@
                         bloomed: [0, 1, 2, 3, 4, 5, 6],
                         activeSeed: { kind: 7, grownWarmth: 164 },
                         alienSeed: null,
-                        placed: 7
+                        placed: 7,
+                        pots: (typeof loadGreenhouse === 'function' && loadGreenhouse().pots) || {}
                     },
                     isDemo: true
                 };
@@ -164,7 +165,8 @@
                     bloomed: [0, 1, 2, 3, 4, 5, 6, 7],
                     activeSeed: null,
                     alienSeed: { kind: demoAlienKind, grownWarmth: 760, bloomed: true },
-                    placed: 'alien'
+                    placed: 'alien',
+                    pots: (typeof loadGreenhouse === 'function' && loadGreenhouse().pots) || {}
                 },
                 isDemo: true
             };
@@ -567,7 +569,10 @@
                         g.beginPath(); g.arc(p.x, p.y - 76, 138, 0, Math.PI * 2); g.fill();
                         g.restore();
                     }
-                    const spCanvas = renderSpecimenCanvas(`alien_${myAlien.alienKind}`, myAlien, aStage, nowBucket, 'pot_kintsugi');
+                    const alienPot = typeof potSkinForFlower === 'function'
+                        ? potSkinForFlower('alien', potSkin, gh)
+                        : 'pot_kintsugi';
+                    const spCanvas = renderSpecimenCanvas(`alien_${myAlien.alienKind}`, myAlien, aStage, nowBucket, alienPot);
                     const dw = 440 * p.scale, dh = 460 * p.scale;
                     g.drawImage(spCanvas, p.x - dw * 0.5, p.y - 434 * p.scale, dw, dh);
                     if (!gh.alienSeed.bloomed && !inRoom) {
@@ -597,9 +602,13 @@
 
             drawPedestalBase(g, p, { selected: isSel, inRoom, isAlien: false, unlocked: isBloomed || isActiveSeed });
 
+            const flowerPot = typeof potSkinForFlower === 'function'
+                ? potSkinForFlower(kind, potSkin, gh)
+                : potSkin;
+
             if (isBloomed) {
                 const spec = typeof gallerySpecForKind === 'function' ? gallerySpecForKind(kind, own) : own;
-                const spCanvas = renderSpecimenCanvas(`earth_${kind}`, spec, 5, Math.floor(nowBucket * 0.5), potSkin);
+                const spCanvas = renderSpecimenCanvas(`earth_${kind}`, spec, 5, Math.floor(nowBucket * 0.5), flowerPot);
                 const dw = 440 * p.scale, dh = 460 * p.scale;
                 g.drawImage(spCanvas, p.x - dw * 0.5, p.y - 434 * p.scale, dw, dh);
             } else if (isActiveSeed) {
@@ -607,7 +616,7 @@
                 const sStage = typeof plantStage === 'function' && typeof GREENHOUSE_WARMTH_STEPS !== 'undefined'
                     ? plantStage(gh.activeSeed.grownWarmth || 0, { sprouted: true, steps: GREENHOUSE_WARMTH_STEPS })
                     : -1;
-                const spCanvas = renderSpecimenCanvas(`seed_${kind}`, spec, sStage, Math.floor(nowBucket * 0.5), potSkin);
+                const spCanvas = renderSpecimenCanvas(`seed_${kind}`, spec, sStage, Math.floor(nowBucket * 0.5), flowerPot);
                 const dw = 440 * p.scale, dh = 460 * p.scale;
                 g.drawImage(spCanvas, p.x - dw * 0.5, p.y - 434 * p.scale, dw, dh);
                 if (!inRoom) {
@@ -697,6 +706,7 @@
                         <span class="gh-insp-status" id="gh-insp-status">—</span>
                     </div>
                     <p class="gh-insp-note" id="gh-insp-note"></p>
+                    <div class="gh-pot-bar hidden" id="gh-pot-bar" role="radiogroup" aria-label="Выбор сосуда для цветка"></div>
                     <div class="gh-progress hidden" id="gh-progress"><i></i></div>
                     <div class="gh-actions" id="gh-actions"></div>
                     <div class="gh-rule-foot">⚖ Растение растёт строго пока стоит в вашей комнате · в Оранжерее семя бережно ждёт без потерь</div>
@@ -884,12 +894,78 @@
         const nameEl = ov.querySelector('#gh-insp-name');
         const statusEl = ov.querySelector('#gh-insp-status');
         const noteEl = ov.querySelector('#gh-insp-note');
+        const potBar = ov.querySelector('#gh-pot-bar');
         const progEl = ov.querySelector('#gh-progress');
         const progFill = progEl.querySelector('i');
         const actEl = ov.querySelector('#gh-actions');
         actEl.textContent = '';
+        if (potBar) { potBar.textContent = ''; potBar.classList.add('hidden'); }
         progEl.classList.add('hidden');
         statusEl.className = 'gh-insp-status';
+
+        // Индивидуальный выбор сосуда для каждого пробуждённого цветка в Оранжерее (родная глина + 4 сосуда мастера)
+        const POT_OPTIONS = [
+            { id: 'default',      label: 'Глина',    full: 'Родная терракота',  cls: 'default' },
+            { id: 'pot_cinnabar', label: 'Киноварь', full: 'Киноварный лак',    cls: 'cinnabar' },
+            { id: 'pot_moon',     label: 'Селадон',  full: 'Лунный селадон',    cls: 'moon' },
+            { id: 'pot_kintsugi', label: 'Кинцуги',  full: 'Керамика Кинцуги',  cls: 'kintsugi' },
+            { id: 'pot_amethyst', label: 'Аметист',  full: 'Аметистовый оникс', cls: 'amethyst' }
+        ];
+        const renderPotPicker = (slotKey) => {
+            if (!potBar) return;
+            const globalPot = (typeof getActiveCosmetics === 'function' && getActiveCosmetics().pot) || '';
+            const activePotRaw = typeof potSkinForFlower === 'function'
+                ? potSkinForFlower(slotKey, globalPot, gh)
+                : (slotKey === 'alien' ? 'pot_kintsugi' : (globalPot || 'default'));
+            const activePot = (!activePotRaw || activePotRaw === 'default') ? 'default' : activePotRaw;
+            const lbl = document.createElement('span');
+            lbl.className = 'gh-pot-label';
+            lbl.textContent = 'СОСУД:';
+            potBar.appendChild(lbl);
+            const list = document.createElement('div');
+            list.className = 'gh-pot-list';
+            POT_OPTIONS.forEach((opt, oi) => {
+                const unlocked = opt.id === 'default'
+                    || (typeof isPotSkinAvailable === 'function'
+                        ? isPotSkinAvailable(opt.id)
+                        : (typeof isPtsMode === 'function' && isPtsMode()));
+                const isCur = activePot === opt.id;
+                const pb = document.createElement('button');
+                pb.type = 'button';
+                pb.className = `gh-pot-opt gh-pot-opt--${opt.cls}`
+                    + (isCur ? ' is-active' : '')
+                    + (!unlocked ? ' is-locked' : '');
+                pb.setAttribute('role', 'radio');
+                pb.setAttribute('aria-checked', String(isCur));
+                pb.setAttribute('aria-label', unlocked ? `Сосуд: ${opt.full}` : `${opt.full} (открыть в Атрибутах)`);
+                pb.title = unlocked ? opt.full : `${opt.full} · открыть в Атрибутах`;
+                const dot = document.createElement('i');
+                dot.className = 'gh-pot-dot';
+                dot.setAttribute('aria-hidden', 'true');
+                const txt = document.createElement('span');
+                txt.className = 'gh-pot-txt';
+                txt.textContent = unlocked ? opt.label : `${opt.label} ⭐`;
+                pb.appendChild(dot);
+                pb.appendChild(txt);
+                pb.onclick = () => {
+                    if (!unlocked) {
+                        close();
+                        if (typeof openShop === 'function') openShop('room');
+                        return;
+                    }
+                    if (typeof setGreenhouseFlowerPot === 'function') {
+                        setGreenhouseFlowerPot(slotKey, opt.id);
+                    }
+                    playGlassHarp((oi + 2) % 8);
+                    try { Telegram.WebApp.HapticFeedback.selectionChanged(); } catch (_) {}
+                    renderControls();
+                    if (state.open) drawFrame(typeof performance !== 'undefined' ? performance.now() : Date.now());
+                };
+                list.appendChild(pb);
+            });
+            potBar.appendChild(list);
+            potBar.classList.remove('hidden');
+        };
 
         const addBtn = (label, cls, disabled, fn) => {
             const b = document.createElement('button');
@@ -925,6 +1001,7 @@
                     : `Сейчас в комнате стоит другой цветок, поэтому звёздное семя бережно ждёт под хрустальным клошем (${ag}/${maxW} тепла). Верните его в комнату, чтобы продолжить уход.`;
                 progEl.classList.remove('hidden');
                 progFill.style.width = `${Math.min(100, Math.round((ag / maxW) * 100))}%`;
+                renderPotPicker('alien');
                 addBtn(
                     inRoom ? '✓ РАСТЁТ В ВАШЕЙ КОМНАТЕ' : '✦ ВЕРНУТЬ В КОМНАТУ (РАСТИТЬ)',
                     'gh-btn--alien',
@@ -937,6 +1014,7 @@
                 statusEl.textContent = inRoom ? '◉ СИЯЕТ В КОМНАТЕ · 1 ИЗ 7' : '✦ ВАШ ЕДИНСТВЕННЫЙ ПРИШЕЛЕЦ (1/7)';
                 statusEl.classList.add('is-alien');
                 noteEl.textContent = `${myAlien.alien.note}`;
+                renderPotPicker('alien');
                 if (isDemo) {
                     addBtn('✦ СЛЕД. ВИД ПРИШЕЛЬЦА (PTS)', 'gh-btn--alien', false, () => {
                         state.ptsDemoAlien = ((Number.isInteger(state.ptsDemoAlien) ? state.ptsDemoAlien : myAlien.alienKind) + 1) % ALIEN_KINDS.length;
@@ -962,6 +1040,7 @@
                 statusEl.textContent = inRoom ? '◉ СЕЙЧАС В КОМНАТЕ' : 'В ОРАНЖЕРЕЕ · ГОТОВ К РАЗМЕЩЕНИЮ';
                 if (inRoom) statusEl.classList.add('is-room');
                 noteEl.textContent = (typeof PLANT_NOTES !== 'undefined' && PLANT_NOTES[k]) ? PLANT_NOTES[k][5] : '';
+                renderPotPicker(k);
                 if (!isDemo) {
                     addBtn(
                         inRoom ? '✓ СТОИТ В ВАШЕЙ КОМНАТЕ' : '✿ ПОСТАВИТЬ В КОМНАТУ',
@@ -989,6 +1068,7 @@
                     : `Семя бережно хранится под стеклянным клошем (${sg}/${maxW} тепла). Поставьте его в комнату, чтобы оно продолжило расти.`;
                 progEl.classList.remove('hidden');
                 progFill.style.width = `${Math.min(100, Math.round((sg / maxW) * 100))}%`;
+                renderPotPicker(k);
                 addBtn(
                     inRoom ? '✓ РАСТЁТ В ВАШЕЙ КОМНАТЕ' : '🌱 ПОСТАВИТЬ В КОМНАТУ (РАСТИТЬ)',
                     '',

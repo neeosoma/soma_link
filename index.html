@@ -8,8 +8,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="room.css?v=9">
-    <link rel="stylesheet" href="cosmetics.css?v=9">
+    <link rel="stylesheet" href="room.css?v=10">
+    <link rel="stylesheet" href="cosmetics.css?v=10">
+    <link rel="stylesheet" href="receiver.css?v=10">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@300;400;500;600;700&display=swap');
         .font-mono-tech { font-family: 'Share Tech Mono', monospace; }
@@ -199,7 +200,6 @@
             <p class="text-xs text-gray-300 leading-relaxed">Десять попыток помочь. Система не рассчитана на тех, кто не готов просто смотреть. Настоящая помощь существует только за пределами SOMA_LINK: напишите живому человеку, который молчит.</p>
             <div class="bg-black/50 p-3 rounded-xl text-[11px] font-mono-tech text-amber-300 border border-amber-400/30">Статус: НАРУШИТЕЛЬ ПРОТОКОЛА // +100 XP</div>
             <button onclick="shareEgg()" class="w-full py-2.5 bg-amber-950/50 hover:bg-amber-900/60 border border-amber-400/50 text-amber-200 text-xs font-mono-tech rounded-xl transition">РАССКАЗАТЬ ДРУГИМ</button>
-            <button onclick="closeEgg(); openMusic()" class="w-full py-2 text-amber-300/70 text-[11px] font-mono-tech tracking-widest">▸ ПРИНЯТЬ СИГНАЛ</button>
             <button onclick="closeEgg()" class="w-full py-2 text-gray-500 text-xs font-mono-tech">ЗАКРЫТЬ</button>
         </div>
     </div>
@@ -410,14 +410,14 @@
                     <canvas id="station-deck" class="station-deck" width="110" height="72" aria-hidden="true"></canvas>
                     <canvas id="station-plant" class="station-plant" width="360" height="380" aria-hidden="true"></canvas>
                     <button type="button" class="station-hit station-hit--terminal" data-obj="terminal" aria-label="Терминал — открыть тренажёр «Слушатель»" onclick="activateRoomObject('terminal', event)"></button>
-                    <button type="button" class="station-hit station-hit--radio" data-obj="radio" aria-label="Приёмник — открыть радио" onclick="activateRoomObject('radio', event)"></button>
+                    <button type="button" class="station-hit station-hit--radio" data-obj="radio" aria-label="Ламповый приёмник RX-88 — открыть фонотеку" onclick="activateRoomObject('radio', event)"></button>
                     <button type="button" class="station-hit station-hit--plant" data-obj="plant" aria-label="Растение — осмотреть" onclick="activateRoomObject('plant', event)"></button>
                     <button type="button" class="station-hit station-hit--window" data-obj="window" aria-label="Окно — осмотреть ночной город" onclick="activateRoomObject('window', event)"></button>
                     <button type="button" class="station-hit station-hit--lamp" data-obj="lamp" aria-label="Висячая лампа — качнуть" onclick="activateRoomObject('lamp', event)"></button>
                     <button type="button" class="station-hit station-hit--shelf" data-obj="shelf" aria-label="Старый магнитофон — проверить кассету" onclick="activateRoomObject('shelf', event)"></button>
                     <button type="button" class="station-hit station-hit--nightlight" data-obj="nightlight" aria-label="Ночник у терминала — подсветить" onclick="activateRoomObject('nightlight', event)"></button>
                     <button type="button" id="station-hit-bed" class="station-hit station-hit--bed" data-obj="bed" aria-label="Кушетка — осмотреть" onclick="activateRoomObject('bed', event)"></button>
-                    <button type="button" id="station-hit-dog" class="station-hit station-hit--dog hidden" data-obj="dog" aria-label="Погладить пса" onclick="activateRoomObject('dog', event)"></button>
+                    <button type="button" id="station-hit-dog" class="station-hit station-hit--dog hidden" data-obj="dog" aria-label="Погладить пса на коврике у пледа" onclick="activateRoomObject('dog', event)"></button>
                     <button type="button" class="station-hit station-hit--nightlightR" data-obj="nightlightR" aria-label="Ночник у кушетки — подсветить" onclick="activateRoomObject('nightlightR', event)"></button>
 
                     <!-- Неподвижная угловая кнопка полного экрана (строго 34×34px в правом верхнем своде — никогда не прыгает!) -->
@@ -599,10 +599,11 @@
     </div>
 
 <script src="config.js"></script>
-<script src="scenarios.js?v=9"></script>
-<script src="room.js?v=9"></script>
-<script src="cosmetics.js?v=9"></script>
-<script src="music.js"></script>
+<script src="scenarios.js?v=10"></script>
+<script src="music.js?v=10"></script>
+<script src="room.js?v=10"></script>
+<script src="cosmetics.js?v=10"></script>
+<script src="receiver.js?v=10"></script>
 <script>
     const cfg = window.SOMA_CONFIG || {};
     const SUPABASE_URL = cfg.SUPABASE_URL;
@@ -698,7 +699,12 @@
         try { localStorage.setItem('soma_warmth', String(player.warmth)); } catch (e) {}
         try { supabaseClient.from('soma_users').update({ warmth: player.warmth }).eq('username', player.uid).then(() => {}, () => {}); } catch (e) {}
     }
-    function openRadio() { if (musicFound()) openMusic(); else { SFX.block(); notify('Приёмник молчит. Найдите частоту.'); } }
+    // Ламповый приёмник SOMA // RX-88 — личная фонотека и коллекционный винил 7" (БЕЗ выхода из Fullscreen и БЕЗ промо)
+    function openRadio() {
+        if (window.SOMA_RECEIVER && typeof window.SOMA_RECEIVER.open === 'function') {
+            window.SOMA_RECEIVER.open();
+        }
+    }
     let roomPreview = false;
     function showPts() {
         const b = document.createElement('div');

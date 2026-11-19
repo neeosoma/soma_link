@@ -1,5 +1,5 @@
 // =====================================================================
-// SOMA_LINK v9 // Supabase Edge Function: soma-stars (БЕЗ СВОЕГО СЕРВЕРА)
+// SOMA_LINK v10 // Supabase Edge Function: soma-stars (БЕЗ СВОЕГО СЕРВЕРА)
 // Работает на бесплатном тарифе Supabase Edge Functions + Telegram Stars (XTR).
 //
 // Маршруты:
@@ -49,7 +49,12 @@ const CATALOG: Record<string, { title: string; description: string; stars: numbe
     room_garland:    { title: 'Гирлянда Эдисона у окна',    description: '13 тёплых винтажных лампочек по каменной арке круглого окна.', stars: 140 },
     room_candles:    { title: 'Живые свечи станции',        description: 'Шесть восковых свечей с живым пламенем у ковра и на полке радио.', stars: 140 },
     room_cat:        { title: 'Живой кот-хранитель',        description: 'Крупный тёплый кот одной из 7 мастей по вашему ID на кушетке.', stars: 220 },
-    room_dog:        { title: 'Живой пёс-хранитель',        description: 'Верный пёс одной из 7 пород по вашему ID на своём лежаке у ковра.', stars: 220 },
+    room_dog:        { title: 'Живой пёс-хранитель',        description: 'Настоящий пёс одной из 7 пород по вашему ID на персидском коврике у пледа рядом с котом.', stars: 220 },
+    // 5. Эксклюзивные коллекционные пластинки 7" лампового приёмника SOMA // RX-88 (единый тир 50 ⭐ ≈ $1, навсегда в фонотеке)
+    track_velvet:    { title: 'Винил 7": «Бархатный пепел»',    description: 'Dubplate #01 · Рубиновый воск. Эксклюзивная пластинка приёмника RX-88 навсегда в фонотеке.', stars: 50 },
+    track_aurora:    { title: 'Винил 7": «Фосфорный рассвет»',  description: 'Dubplate #02 · Золото 24k. Эксклюзивная пластинка приёмника RX-88 навсегда в фонотеке.', stars: 50 },
+    track_solstice:  { title: 'Винил 7": «Тишина двоих»',       description: 'Dubplate #03 · Лунный перламутр. Эксклюзивная пластинка приёмника RX-88 навсегда в фонотеке.', stars: 50 },
+    track_rainline:  { title: 'Винил 7": «Последний трамвай»',  description: 'Dubplate #04 · Дымчатый аметист. Эксклюзивная пластинка приёмника RX-88 навсегда в фонотеке.', stars: 50 },
 };
 
 const CORS = {

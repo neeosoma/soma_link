@@ -727,14 +727,17 @@ test('v8: body-portal FLIP fullscreen + 180 flip + rotated pointer mapping, Dawn
         assert.doesNotThrow(() => r.drawPlantSprite(g, r.plantSpec('u_pot'), 5, { phase: 3, now: 2500, potSkin, fireflies: 5 }));
     }
 
-    // 3. Pain Feed CTA visibility hooks present and cache-busted to v9
+    // 3. Pain Feed CTA visibility hooks present and cache-busted to v10
     assert.ok(indexHtml.includes('soma-post-cta') && indexHtml.includes('soma-post-beacon') && indexHtml.includes('soma-post-arrow'));
-    assert.ok(indexHtml.includes('id="station-fs-flip"') && indexHtml.includes('room.js?v=9') && indexHtml.includes('cosmetics.css?v=9'));
+    assert.ok(indexHtml.includes('id="station-fs-flip"') && indexHtml.includes('room.js?v=10') && indexHtml.includes('cosmetics.css?v=10') && indexHtml.includes('receiver.js?v=10'));
 
-    // 4. Flagship cosmetics: equalized peer pricing within every category + 1:1 Edge Function parity + every frame/seal/title/pager styled in CSS
-    const cEnv = { localStorage: makeStorage(), player: { uid: 'u_01', warmth: 12, xp: 500 }, esc: s => String(s) };
+    // 4. Flagship cosmetics + collectible 7" vinyl pressings: equalized peer pricing + 1:1 Edge Function parity
+    const musicCode = require('fs').readFileSync(require('path').join(__dirname, '..', 'music.js'), 'utf8');
+    const cEnv = { window: {}, localStorage: makeStorage(), player: { uid: 'u_01', warmth: 12, xp: 500 }, esc: s => String(s) };
+    vm.runInNewContext(musicCode, cEnv);
     vm.runInNewContext(cosmCode + ';globalThis.C = { SOMA_CATALOG, SOMA_SEALS_SVG, SOMA_SEAL_CLASS, sealHtmlOf, titleSpanOf };', cEnv);
     const cat = cEnv.C.SOMA_CATALOG;
+    const collectTracks = (cEnv.window.SOMA_TRACKS || []).filter(t => t.collectible);
     const pricesOf = slot => [...new Set(cat.filter(i => i.slot === slot).map(i => i.stars))];
     assert.deepEqual(pricesOf('frame'), [150], 'all 6 flagship frames must share equal 150 Stars tier');
     assert.equal(cat.filter(i => i.slot === 'frame').length, 6, '6 bespoke animated frames including frame_pulse');
@@ -744,14 +747,16 @@ test('v8: body-portal FLIP fullscreen + 180 flip + rotated pointer mapping, Dawn
     assert.deepEqual(pricesOf('pot'), [160], 'all 3 artisan pots must share equal 160 Stars tier');
     const ambStars = [...new Set(cat.filter(i => ['steam', 'tape', 'garland', 'candles'].includes(i.slot)).map(i => i.stars))];
     assert.deepEqual(ambStars, [140], 'all 4 room ambience items must share equal 140 Stars tier');
+    assert.deepEqual([...new Set(collectTracks.map(t => t.stars))], [50], 'all 4 collectible 7" singles share equal 50 Stars ($1) tier');
 
     // Exact bidirectional 1:1 count and price parity with billing/supabase/functions/soma-stars/index.ts
+    const allBillable = [...cat, ...collectTracks];
     const edgeEntries = [...edgeCode.matchAll(/^\s*(\w+)\s*:\s*\{\s*title:[^}]*stars:\s*(\d+)\s*\}/gm)];
-    assert.equal(edgeEntries.length, cat.length, 'Edge Function must have exact same item count as SOMA_CATALOG');
+    assert.equal(edgeEntries.length, allBillable.length, 'Edge Function must match exact 30 cosmetics + 4 collectible 7" tracks');
     for (const [_, id, stars] of edgeEntries) {
-        const found = cat.find(i => i.id === id);
-        assert.ok(found, `Edge item ${id} must exist in SOMA_CATALOG`);
-        assert.equal(found.stars, Number(stars), `Edge price for ${id} must match SOMA_CATALOG`);
+        const found = allBillable.find(i => i.id === id);
+        assert.ok(found, `Edge item ${id} must exist in SOMA_CATALOG or SOMA_TRACKS`);
+        assert.equal(found.stars, Number(stars), `Edge price for ${id} must match client catalog`);
     }
     // Every frame, seal, title, and pager has dedicated CSS animation rules in cosmetics.css
     for (const it of cat) {
@@ -914,7 +919,7 @@ test('v9: true native browser fullscreen (even with Telegram SDK loaded), fixed-
     assert.ok(duetDogHit.title.includes('Погладить пса'), 'dog hotspot has accessible breed label');
     const dogLines = [0, 1, 2].map(() => { duetRoom.touchRoomObject('dog'); return duetRoom.roomAnim.customEntry; });
     const catLines = [0, 1, 2].map(() => { duetRoom.touchRoomObject('bed'); return duetRoom.roomAnim.customEntry; });
-    assert.ok(dogLines[0].includes('хвостом') && dogLines[2].includes('вдвоём'), 'petting dog triggers happy tail wag & cat+dog duet line');
+    assert.ok(dogLines[0].includes('хвостом') && dogLines[1].includes('персидском коврике') && dogLines[2].includes('пледа'), 'petting dog triggers happy tail wag & Persian-rug-by-blanket duet line next to cat');
     assert.ok(catLines[0].includes('замурчал') && catLines[2].includes('двойное живое тепло'), 'petting cat independently works alongside dog & triggers cat+dog duet line');
     const cycledBreeds = new Set();
     for (let i = 0; i < 7; i++) {
@@ -923,4 +928,105 @@ test('v9: true native browser fullscreen (even with Telegram SDK loaded), fixed-
     }
     assert.equal(cycledBreeds.size, 7, 'PTS dog cycler tours all 7 dog breeds and returns to own breed');
     assert.equal(duetRoom.roomAnim.inspectDogBreed, null, 'full 7-step cycle lands cleanly back on player ID breed');
+});
+
+test('v10: realistic dogs on Persian rug by bed blanket next to untouched cat, NEEOSOMA isolated strictly to nickname egg, and fullscreen-safe RX-88 collectible Hi-Fi receiver', () => {
+    const p = require('path'), fs = require('fs'), vm = require('vm');
+    const musicCode = fs.readFileSync(p.join(__dirname, '..', 'music.js'), 'utf8');
+    const rxCode = fs.readFileSync(p.join(__dirname, '..', 'receiver.js'), 'utf8');
+    const rxCss = fs.readFileSync(p.join(__dirname, '..', 'receiver.css'), 'utf8');
+    const cosmCode = fs.readFileSync(p.join(__dirname, '..', 'cosmetics.js'), 'utf8');
+
+    // 1. Cat stays untouched at (618, 333); dog sits on its own mini Persian rug beside the bed's blanket right below the cat!
+    assert.ok(roomCode.includes('const cx = 618, cy = 333;'), 'cat couch position (618, 333) must stay completely untouched');
+    assert.ok(roomCode.includes('function drawDogPersianRug(') && roomCode.includes('const rugX = 622, rugY = 433;'), 'dog has its own isometric Persian rug beside the draped blanket');
+    assert.ok(roomCode.includes('const cx = 621, cy = 423;'), 'dog rests right next to the cat below the couch and blanket');
+    const dogHit = roomCss.match(/\.station-hit--dog\s*\{([^}]+)\}/)[1];
+    const bedHit = roomCss.match(/\.station-hit--bed\s*\{([^}]+)\}/)[1];
+    assert.ok(parseFloat(dogHit.match(/left:\s*([\d.]+)%/)[1]) >= 65 && parseFloat(dogHit.match(/top:\s*([\d.]+)%/)[1]) >= 77, 'dog hotspot aligned with floor by bed blanket');
+    assert.ok(parseFloat(bedHit.match(/top:\s*([\d.]+)%/)[1]) + parseFloat(bedHit.match(/height:\s*([\d.]+)%/)[1]) <= parseFloat(dogHit.match(/top:\s*([\d.]+)%/)[1]), 'bed (cat) and dog hotspots never overlap');
+
+    // Every single one of the 7 dog breeds has authentic per-breed anatomy scales & draws cleanly in all 4 phases (awake + petted)
+    const r = loadRoom({ getActiveCosmetics: () => ({ cat: true, dog: true }) });
+    const largeDogs = r.DOG_BREEDS.filter(b => b.sx >= 1.05 && b.sy >= 1.03);
+    assert.ok(largeDogs.length >= 4, 'Golden Retriever, Husky, Samoyed, and Border Collie are genuinely larger than cats');
+    const corgi = r.DOG_BREEDS.find(b => b.pattern === 'corgi');
+    assert.ok(corgi && corgi.legLen < 0.8 && corgi.ears === 'corgi', 'Corgi has authentic short legs and large rounded Pembroke ears');
+    const dummyGrad = { addColorStop() {} };
+    const g = {
+        canvas: { width: 793, height: 496 },
+        fillStyle: '', strokeStyle: '', lineWidth: 1, globalAlpha: 1, globalCompositeOperation: 'source-over',
+        save() {}, restore() {}, translate() {}, scale() {}, rotate() {},
+        beginPath() {}, closePath() {}, clip() {}, fill() {}, stroke() {},
+        fillRect() {}, moveTo() {}, lineTo() {}, quadraticCurveTo() {}, bezierCurveTo() {}, arc() {}, ellipse() {},
+        createLinearGradient: () => dummyGrad, createRadialGradient: () => dummyGrad
+    };
+    for (let bi = 0; bi < 7; bi++) {
+        r.roomAnim.inspectDogBreed = bi;
+        for (const ph of [0, 1, 2, 3]) {
+            r.roomAnim.dogPetStart = -1e9;
+            assert.doesNotThrow(() => r.drawCompanionDog(g, 4200, ph, false));
+            r.roomAnim.dogPetStart = 3500;
+            assert.doesNotThrow(() => r.drawCompanionDog(g, 4200, ph, false));
+        }
+    }
+
+    // 2. NEEOSOMA promo strictly isolated to 7-tap nickname easter egg (zero promo in receiver, room.js, or #egg-modal)!
+    assert.ok(!/NEEOSOMA|SOMA_MUSIC|music-modal|openMusic|musicFound/.test(rxCode), 'receiver.js must contain zero NEEOSOMA promo references');
+    assert.ok(!/NEEOSOMA/.test(rxCss), 'receiver.css must contain zero NEEOSOMA references');
+    assert.ok(!/musicFound|openMusic|SOMA_MUSIC|NEEOSOMA/.test(roomCode), 'room.js must contain zero NEEOSOMA promo references');
+    const eggBlock = indexHtml.match(/id="egg-modal"[\s\S]*?<\/div>\s*<\/div>/)[0];
+    assert.ok(!eggBlock.includes('openMusic'), '#egg-modal must NOT redirect to NEEOSOMA promo');
+    assert.ok(/function pulseTap\(\)[\s\S]{0,260}if \(pulseN >= 7\) \{ pulseN = 0; openMusic\(\); \}/.test(indexHtml), 'nickname 7-tap easter egg stays intact');
+    assert.ok(indexHtml.includes('id="music-modal"') && musicCode.includes("name: 'NEEOSOMA'"), 'NEEOSOMA easter-egg config preserved');
+    assert.ok(/function openRadio\(\)\s*\{\s*if \(window\.SOMA_RECEIVER/.test(indexHtml), 'openRadio opens RX-88 Hi-Fi receiver directly');
+
+    // 3. Activating radio inside fullscreen NEVER exits fullscreen (while terminal still exits fullscreen)!
+    let radioOpened = 0, trainerOpened = 0;
+    const fsRoom = loadRoom({
+        document: {
+            hidden: false,
+            documentElement: { classList: { add() {}, remove() {} } },
+            getElementById: id => id === 'station' ? { dataset: {}, classList: { remove() {}, contains: () => false } } : null
+        },
+        openRadio: () => { radioOpened++; },
+        openTrainer: () => { trainerOpened++; }
+    });
+    fsRoom.roomAnim.isFullscreen = true;
+    fsRoom.activateRoomObject('radio');
+    assert.equal(radioOpened, 1, 'radio opens RX-88 immediately');
+    assert.equal(fsRoom.roomAnim.isFullscreen, true, 'opening radio receiver MUST NEVER exit fullscreen!');
+    fsRoom.activateRoomObject('terminal');
+    assert.equal(trainerOpened, 1);
+    assert.equal(fsRoom.roomAnim.isFullscreen, false, 'opening terminal trainer exits fullscreen cleanly');
+
+    // 4. RX-88 streaming URL parsers (Spotify + Yandex Music) & $1 (50 Stars) collectible ownership security
+    const rxEnv = { window: {}, URL, localStorage: makeStorage(), player: { uid: 'u_vinyl_42', warmth: 25, xp: 400 }, isPtsMode: () => true, esc: s => String(s) };
+    rxEnv.window = rxEnv;
+    vm.runInNewContext(musicCode, rxEnv);
+    vm.runInNewContext(cosmCode, rxEnv);
+    vm.runInNewContext(rxCode, rxEnv);
+    const RX = rxEnv.window.SOMA_RECEIVER;
+    assert.ok(RX, 'window.SOMA_RECEIVER initialized');
+
+    const sp1 = RX.parseSpotifyEmbed('https://open.spotify.com/intl-ru/track/4cOdK2wGLETKBW3PvgPWqT?si=abc');
+    assert.equal(sp1.embedUrl, 'https://open.spotify.com/embed/track/4cOdK2wGLETKBW3PvgPWqT?utm_source=generator&theme=0');
+    const sp2 = RX.parseSpotifyEmbed('https://open.spotify.com/playlist/37i9dQZF1DX4WYpdgoIcn6');
+    assert.equal(sp2.kind, 'playlist');
+    assert.equal(RX.parseSpotifyEmbed('https://evil.example.com/track/123'), null, 'rejects untrusted Spotify domains');
+
+    const ya1 = RX.parseYandexEmbed('https://music.yandex.ru/album/112233/track/998877');
+    assert.equal(ya1.embedUrl, 'https://music.yandex.ru/iframe/track/998877/112233');
+    const ya2 = RX.parseYandexEmbed('https://music.yandex.ru/users/author.name/playlists/1005');
+    assert.equal(ya2.embedUrl, 'https://music.yandex.ru/iframe/playlist/author.name/1005');
+    assert.equal(RX.parseYandexEmbed('javascript:alert(1)'), null, 'rejects unsafe streaming schemes');
+
+    // Free tracks owned immediately; $1 (50 Stars) dubplates locked until purchased, then permanently stored with 0% pay-to-win!
+    assert.equal(RX.isTrackOwned('rx_night_platform'), true);
+    assert.equal(RX.isTrackOwned('track_aurora'), false);
+    RX.buy('track_aurora');
+    assert.equal(RX.isTrackOwned('track_aurora'), true, 'PTS 1-click purchase unlocks collectible 7" vinyl forever');
+    assert.ok(JSON.parse(rxEnv.localStorage.getItem('soma_owned')).includes('track_aurora'), 'persisted in soma_owned');
+    assert.equal(rxEnv.player.warmth, 25, 'buying collectible music grants 0 gameplay warmth (zero pay-to-win)');
+    assert.equal(rxEnv.player.xp, 400, 'buying collectible music grants 0 gameplay XP (zero pay-to-win)');
 });

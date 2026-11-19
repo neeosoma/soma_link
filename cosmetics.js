@@ -41,7 +41,7 @@ const SOMA_CATALOG = [
     { id: 'title_patrician', tab: 'status', group: 'titles', slot: 'title', label: 'ПАТРИЦИЙ ЭФИРА',      glyph: '♛', titleCss: 'soma-title--patrician', stars: 110, name: 'Титул «Патриций эфира»',      desc: 'Тёплое шампанское золото закрытой ложи Паноптикума с мягким сиянием.' },
     { id: 'title_ghost',     tab: 'status', group: 'titles', slot: 'title', label: 'ПРИЗРАК NEEO~CITY',   glyph: '◌', titleCss: 'soma-title--ghost',     stars: 110, name: 'Титул «Призрак NEEO~CITY»',   desc: 'Спектральный опалово-серебряный перелив — повсюду в эфире и неуловим.' },
     { id: 'title_oracle',    tab: 'status', group: 'titles', slot: 'title', label: 'ПОСЛЕДНИЙ СВИДЕТЕЛЬ', glyph: '✦', titleCss: 'soma-title--oracle',    stars: 110, name: 'Титул «Последний свидетель»', desc: 'Рассветно-янтарный огненный градиент хранителя ночной станции.' },
-    { id: 'perk_epitaph',    tab: 'status', group: 'epitaph', slot: 'epitaph_unlock', stars: 150, name: 'Право на эпитафию', desc: 'Ваша личная фраза (до 42 символов) на Троне #1, в строке Топа, в Досье и в профиле.' },
+    { id: 'perk_epitaph',    tab: 'status', group: 'epitaph', slot: 'epitaph_unlock', stars: 150, name: 'Право на эпитафию', desc: 'Ваша личная фраза (до 66 символов) на Троне #1, в строке Топа, в Досье и в профиле.' },
 
     // 3. ЖИВЫЕ КОРПУСА ПЕЙДЖЕРА NEEOSOMA // NMAV-04 (ЕДИНЫЙ ТИР 140 ⭐)
     { id: 'pager_amber', tab: 'pager', group: 'pagers', slot: 'pager', motion: 'ЛУЧ ЛЮМИНОФОРА', sample: 'CH·04 // 1986 AMBER', stars: 140, name: 'Янтарный фосфор',     desc: 'Тёплый катодный дисплей 1986 года с живой янтарной развёрткой, пульсом диода и бронзовым крепежом.' },
@@ -57,7 +57,7 @@ const SOMA_CATALOG = [
     { id: 'room_tape',    tab: 'room', group: 'ambience', slot: 'tape',    stars: 140, name: 'Винил «Ночной экспресс»',  desc: 'Крутится пластинка, танцуют огни усилителя, по виадуку идёт светящийся поезд + тёплый лоу-фай звук.' },
     { id: 'room_garland', tab: 'room', group: 'ambience', slot: 'garland', stars: 140, name: 'Гирлянда Эдисона у окна',  desc: '13 винтажных лампочек с тёплыми вольфрамовыми нитями и золотым светом по каменной арке окна.' },
     { id: 'room_candles', tab: 'room', group: 'ambience',  slot: 'candles', stars: 140, name: 'Живые свечи станции',      desc: 'Шесть восковых свечей с трепещущим живым пламенем и тёплыми бликами у ковра и на полке радио.' },
-    { id: 'room_cat',     tab: 'room', group: 'companion', slot: 'cat',     stars: 220, name: 'Живой кот-хранитель',      desc: 'Крупный тёплый кот с уникальной мастью по вашему ID на кушетке: глубоко дышит, мурчит и дружит с псом.' },
+    { id: 'room_cat',     tab: 'room', group: 'companion', slot: 'cat',     stars: 220, name: 'Живой кот-хранитель',      desc: 'Крупный тёплый кот одной из 7 мастей по вашему ID на кушетке: глубоко дышит, мурчит и дружит с псом (шанс 0.1% — уникальный чёрный кот с полумесяцем во лбу!).' },
     { id: 'room_dog',     tab: 'room', group: 'companion', slot: 'dog',     stars: 220, name: 'Живой пёс-хранитель',      desc: 'Крупный пёс одной из 7 пород по вашему ID спит на персидском коврике рядом с котом (шанс 0.1% — уникальная белая мальтийская болонка с фиолетовыми ушами и хвостом!).' }
 ];
 
@@ -121,8 +121,9 @@ function saveCosmeticsLocal() {
 }
 
 // Защита анонимности и лора: режет ссылки, @ники, телефоны, карты и грубый спам
+const EPITAPH_MAX_LEN = 66;
 function sanitizeEpitaph(raw) {
-    const str = String(raw || '').replace(/[\r\n\t]+/g, ' ').replace(/\s{2,}/g, ' ').trim().slice(0, 42);
+    const str = String(raw || '').replace(/[\r\n\t]+/g, ' ').replace(/\s{2,}/g, ' ').trim().slice(0, EPITAPH_MAX_LEN);
     if (!str) return { ok: true, value: '' };
     if (/(https?:\/\/|www\.|t\.me\/|telegram\.me|\.ru\b|\.com\b|\.net\b|\.org\b|\.io\b|@\w{2,})/i.test(str)) {
         return { ok: false, error: 'Протокол запрещает ссылки, домены и @контакты.' };
@@ -441,6 +442,9 @@ function closeShop() {
     if (topView && !topView.classList.contains('hidden') && typeof renderLeaderboard === 'function') {
         renderLeaderboard();
     }
+    if (typeof window !== 'undefined' && typeof window.restoreSomaScroll === 'function') {
+        window.restoreSomaScroll();
+    }
 }
 
 function switchShopTab(tab) {
@@ -670,12 +674,16 @@ function renderShop() {
 
     // Редактор личной эпитафии во вкладке «Статус», если открыто право на эпитафию
     if (shopState.tab === 'status' && isOwned('perk_epitaph')) {
+        const curEp = shopState.equipped.epitaph || '';
         html += `
         <div class="shop-item is-equipped">
-            <div class="text-[10px] font-mono-tech text-amber-300 uppercase">// ВАША ЭПИТАФИЯ В ТОПЕ (ДО 42 СИМВ.)</div>
+            <div class="flex items-center justify-between gap-2 text-[10px] font-mono-tech text-amber-300 uppercase">
+                <span>// ВАША ЭПИТАФИЯ В ТОПЕ (ДО 66 СИМВ.)</span>
+                <span id="shop-epitaph-count" class="text-rose-200/80">${curEp.length} / 66</span>
+            </div>
             <div class="flex gap-1.5">
-                <input id="shop-epitaph-input" maxlength="42" value="${esc(shopState.equipped.epitaph || '')}" placeholder="Город горит — а у меня лучший вид..." class="flex-1 min-w-0 bg-[#080305] border border-red-500/35 focus:border-red-400 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none font-mono-tech">
-                <button type="button" onclick="saveMyEpitaph()" class="px-3 py-1.5 bg-red-950 hover:bg-red-900 border border-red-500/50 rounded-lg text-[10px] font-mono-tech text-red-100 font-bold">СОХР.</button>
+                <input id="shop-epitaph-input" maxlength="66" value="${esc(curEp)}" oninput="(function(el){var c=document.getElementById('shop-epitaph-count');if(c)c.textContent=el.value.length+' / 66';})(this)" placeholder="Город горит — а у меня лучший вид..." class="flex-1 min-w-0 bg-[#080305] border border-red-500/35 focus:border-red-400 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none font-mono-tech">
+                <button type="button" onclick="saveMyEpitaph()" class="px-3 py-1.5 bg-red-950 hover:bg-red-900 border border-red-500/50 rounded-lg text-[10px] font-mono-tech text-red-100 font-bold shrink-0">СОХР.</button>
             </div>
         </div>`;
     }

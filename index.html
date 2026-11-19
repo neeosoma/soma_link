@@ -8,17 +8,18 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="room.css?v=12">
-    <link rel="stylesheet" href="cosmetics.css?v=12">
-    <link rel="stylesheet" href="receiver.css?v=12">
-    <link rel="stylesheet" href="vhs.css?v=12">
-    <link rel="stylesheet" href="greenhouse.css?v=12">
-    <link rel="stylesheet" href="blimp.css?v=12">
-    <link rel="stylesheet" href="share.css?v=12">
+    <link rel="stylesheet" href="room.css?v=13">
+    <link rel="stylesheet" href="cosmetics.css?v=13">
+    <link rel="stylesheet" href="receiver.css?v=13">
+    <link rel="stylesheet" href="vhs.css?v=13">
+    <link rel="stylesheet" href="greenhouse.css?v=13">
+    <link rel="stylesheet" href="blimp.css?v=13">
+    <link rel="stylesheet" href="share.css?v=13">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@300;400;500;600;700&display=swap');
         .font-mono-tech { font-family: 'Share Tech Mono', monospace; }
-        body { font-family: 'Inter', sans-serif; background-color: #0b0708; color: #d1c5c6; overscroll-behavior: none; }
+        html, body { height: 100%; overflow: hidden; overscroll-behavior: none; background-color: #0b0708; }
+        body { font-family: 'Inter', sans-serif; color: #d1c5c6; width: 100%; margin: 0; -webkit-text-size-adjust: 100%; }
         .crt::after {
             content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0;
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 0, 0, 0.01), rgba(255, 0, 0, 0.02));
@@ -32,9 +33,17 @@
         .animate-shake { animation: shake 0.25s ease-in-out; }
         @keyframes eq { 0%, 100% { height: 12%; } 50% { height: 100%; } }
         .eq-bar { width: 6px; height: 12%; background: linear-gradient(#ef4444, #7f1d1d); border-radius: 2px; animation: eq 0.9s ease-in-out infinite; }
-        .app-h { height: var(--tg-viewport-stable-height, 100dvh); }
-        @media (min-width: 768px) { .app-h { height: 840px; } }
-        #view-feed, #view-top, #view-profile { overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; }
+        .app-h { height: var(--tg-viewport-stable-height, 100dvh); max-height: 100%; min-height: 0; }
+        @media (min-width: 768px) { .app-h { height: min(840px, calc(100dvh - 2rem)); } }
+        #view-feed, #view-top, #view-profile {
+            min-height: 0;
+            overflow-x: hidden;
+            overflow-y: auto;
+            overscroll-behavior-y: contain;
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-y;
+        }
+        .soma-hold-btn { touch-action: pan-y; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
         .fade { opacity: 0; transition: opacity .8s; }
         .px1 { transform: translateX(calc(var(--px, 0) * 2px)); }
         .px2 { transform: translateX(calc(var(--px, 0) * 4px)); }
@@ -150,7 +159,7 @@
         ::-webkit-scrollbar-thumb { background: #7f1d1d; }
     </style>
 </head>
-<body class="crt min-h-screen flex flex-col items-center justify-center p-0 md:p-4">
+<body class="crt h-full flex flex-col items-center justify-center p-0 md:p-4">
 
     <!-- БЛОКИРОВКА ПОМОЩИ ("ЧЕСОТКА БЕССИЛИЯ") -->
     <div id="block-modal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-6">
@@ -183,11 +192,11 @@
                 <input id="new-pain-tag" maxlength="24" placeholder="Свой тег (необязательно)" class="w-full bg-[#080405] border border-red-500/30 focus:border-red-500 rounded-xl px-3 py-2 text-xs text-white outline-none font-mono-tech uppercase">
                 <div id="tag-chips" class="flex flex-wrap gap-1.5"></div>
             </div>
-            <textarea id="new-pain-text" rows="5" maxlength="666" oninput="updateCharCount()" placeholder="Выплесните то, о чём молчите... (от 12 до 666 символов)" class="w-full bg-[#080405] border border-red-500/30 focus:border-red-500 rounded-xl p-3 text-sm text-white outline-none resize-none font-mono-tech"></textarea>
+            <textarea id="new-pain-text" rows="5" minlength="13" maxlength="666" oninput="updateCharCount()" placeholder="Выплесните то, о чём молчите... (от 13 до 666 символов)" class="w-full bg-[#080405] border border-red-500/30 focus:border-red-500 rounded-xl p-3 text-sm text-white outline-none resize-none font-mono-tech"></textarea>
             <div id="post-error" class="hidden px-3 py-2 rounded-xl bg-red-950/50 border border-red-500/45 text-[11px] font-mono-tech text-red-200 leading-snug"></div>
             <div class="flex justify-between items-center text-[11px] text-gray-500 font-mono-tech">
                 <span id="post-quota-hint" class="text-amber-300/85">Доступно сегодня: 1 / 1</span>
-                <span id="char-count" class="text-red-400 font-bold">0 / 666</span>
+                <span id="char-count" class="text-red-400 font-bold">0 / 666 (мин. 13)</span>
             </div>
             <button id="send-btn" onclick="submitPainPost()" class="w-full py-3 bg-red-950 hover:bg-red-900 border border-red-500/60 text-red-200 font-bold text-xs font-mono-tech uppercase tracking-wider rounded-xl transition">
                 ОТПРАВИТЬ ЕДИНСТВЕННЫЙ СИГНАЛ ДНЯ
@@ -412,7 +421,7 @@
                     <div class="station-dial" aria-hidden="true"><span class="station-dial-needle"></span></div>
                     <canvas id="station-fx" class="station-fx" width="793" height="496" aria-hidden="true"></canvas>
                     <canvas id="station-deck" class="station-deck" width="110" height="72" aria-hidden="true"></canvas>
-                    <canvas id="station-plant" class="station-plant" width="360" height="380" aria-hidden="true"></canvas>
+                    <canvas id="station-plant" class="station-plant" width="440" height="460" aria-hidden="true"></canvas>
                     <button type="button" class="station-hit station-hit--terminal" data-obj="terminal" aria-label="Терминал NEEOSOMA — открыть тренажёр «Слушатель»" onclick="activateRoomObject('terminal', event)"></button>
                     <button type="button" class="station-hit station-hit--radio" data-obj="radio" aria-label="Приёмник NEEOSOMA // AV-88 — открыть фонотеку" onclick="activateRoomObject('radio', event)"></button>
                     <button type="button" class="station-hit station-hit--plant" data-obj="plant" aria-label="Растение — осмотреть" onclick="activateRoomObject('plant', event)"></button>
@@ -433,7 +442,7 @@
                     <!-- Ненавязчивый оверлей полноэкранного горизонтального режима -->
                     <div class="station-fs-hud" aria-label="Управление полноэкранным режимом">
                         <div class="station-fs-controls">
-                            <button type="button" id="station-fs-gh" class="station-fs-pill hidden" onclick="openGreenhouse(); bumpFullscreenHud()" aria-label="Открыть Оранжерею" title="Оранжерея">✿</button>
+                            <button type="button" id="station-fs-gh" class="station-fs-pill station-fs-pill--gh hidden" onclick="openGreenhouseFromFullscreen(event)" aria-label="Открыть Оранжерею станции" title="Открыть Оранжерею">✿ ОРАНЖЕРЕЯ</button>
                             <button type="button" id="station-fs-flip" class="station-fs-pill station-fs-flip" onclick="flipRoomFullscreen()" aria-label="Перевернуть экран на 180 градусов" title="Перевернуть на 180°">↻</button>
                             <button type="button" id="station-fs-snd" class="station-fs-pill" onclick="toggleSound(); bumpFullscreenHud()" aria-label="Звук станции">🔊</button>
                             <button type="button" class="station-fs-pill" onclick="exitRoomFullscreen()" aria-label="Выйти из полноэкранного режима">✕ ВЫЙТИ</button>
@@ -465,9 +474,15 @@
 
                     <!-- Диегетический VHS-видеоархив входящих анонимных «Шёпотов» (номер + ДД.ММ.ГГГГ) -->
                     <div id="station-deck-bar" class="station-ctx hidden" aria-label="Видеоархив VHS">
-                        <div class="station-ctx-head">
-                            <span>NEEOSOMA // VTR-90 · АРХИВ VHS-КАССЕТ</span>
-                            <span id="station-deck-count">ЛОТОК ПУСТ</span>
+                        <div class="station-ctx-head station-ctx-head--deck">
+                            <div class="station-deck-col">
+                                <span class="station-deck-brand">NEEOSOMA // VTR-90</span>
+                                <span class="station-deck-sub">АРХИВ VHS-КАССЕТ</span>
+                            </div>
+                            <div class="station-deck-col station-deck-col--right">
+                                <span id="station-deck-active" class="station-deck-active">ЛОТОК ПУСТ</span>
+                                <span id="station-deck-count" class="station-deck-total">ВСЕГО 0</span>
+                            </div>
                         </div>
                         <p id="station-deck-empty" class="station-ctx-empty">Плёнка чиста. Каждое анонимное тёплое послание для вас запишется на номерную VHS-кассету с полной датой ДД.ММ.ГГГГ.</p>
                         <div id="station-deck-list" class="station-ctx-row"></div>
@@ -491,7 +506,7 @@
                         <div id="station-greenhouse" class="station-gh hidden" aria-label="Оранжерея станции">
                             <div class="station-gh-head">
                                 <span>ОРАНЖЕРЕЯ СТАНЦИИ</span>
-                                <span id="station-gh-count">1/7 ВИДОВ</span>
+                                <span id="station-gh-count">1/8 ВИДОВ</span>
                             </div>
                             <div id="station-gh-slots" class="station-gh-slots"></div>
                         </div>
@@ -504,11 +519,11 @@
 
                     <!-- Сворачиваемый PTS-инспектор (строго скрыт для обычных игроков в релизе) -->
                     <div id="pts-panel" class="station-pts-wrap hidden">
-                        <button id="pts-drawer-toggle" type="button" class="station-pts" aria-expanded="false" onclick="togglePtsDrawer()">PTS // ИНСПЕКТОР (СТАДИИ 0–6 · 7 ВИДОВ · РАССВЕТ)</button>
+                        <button id="pts-drawer-toggle" type="button" class="station-pts" aria-expanded="false" onclick="togglePtsDrawer()">PTS // ИНСПЕКТОР (СТАДИИ 0–6 · 8 ВИДОВ · РАССВЕТ)</button>
                         <div id="pts-body" class="station-pts-body hidden">
                             <button id="pts-preview" type="button" onclick="togglePreview()" class="station-pts">PTS: ВКЛЮЧИТЬ МАКС. УРОВЕНЬ (СЕЗОН 90 ДН.)</button>
                             <div class="station-pts-row">
-                                <button type="button" id="station-kinds-toggle" class="station-pts-mini" aria-expanded="false" onclick="togglePlantGallery()">ВСЕ 7 ВИДОВ</button>
+                                <button type="button" id="station-kinds-toggle" class="station-pts-mini" aria-expanded="false" onclick="togglePlantGallery()">ВСЕ 8 ВИДОВ</button>
                                 <button type="button" id="pts-dew-btn" class="station-pts-mini" aria-pressed="false" onclick="togglePtsDew()">СВЕТЛЯЧКИ 7/7</button>
                                 <button type="button" id="pts-cat-btn" class="station-pts-mini" aria-pressed="false" onclick="cyclePtsCatCoat()">МАСТИ КОТА</button>
                                 <button type="button" id="pts-dog-btn" class="station-pts-mini" aria-pressed="false" onclick="cyclePtsDogBreed()">ПОРОДЫ ПСА</button>
@@ -526,7 +541,7 @@
                                 <button type="button" data-stage-btn="4" onclick="inspectPlantStage(4)"><b>5</b><span>бутоны</span></button>
                                 <button type="button" data-stage-btn="5" onclick="inspectPlantStage(5)"><b>6</b><span>цвет</span></button>
                             </div>
-                            <div id="station-plant-kinds" class="station-kinds hidden" role="group" aria-label="PTS: осмотр всех 7 видов растений">
+                            <div id="station-plant-kinds" class="station-kinds hidden" role="group" aria-label="PTS: осмотр всех 8 земных видов растений">
                                 <button type="button" data-kind-btn="0" onclick="inspectPlantKind(0)">Папоротник</button>
                                 <button type="button" data-kind-btn="1" onclick="inspectPlantKind(1)">Кактус</button>
                                 <button type="button" data-kind-btn="2" onclick="inspectPlantKind(2)">Суккулент</button>
@@ -534,6 +549,7 @@
                                 <button type="button" data-kind-btn="4" onclick="inspectPlantKind(4)">Лиана</button>
                                 <button type="button" data-kind-btn="5" onclick="inspectPlantKind(5)">Цветок</button>
                                 <button type="button" data-kind-btn="6" onclick="inspectPlantKind(6)">Бонсай</button>
+                                <button type="button" data-kind-btn="7" onclick="inspectPlantKind(7)">Орхидея</button>
                             </div>
                             <div class="station-presets" role="group" aria-label="PTS: атмосферы комнаты">
                                 <button type="button" data-preset onclick="equipStationPhase(0)">Дождь<span></span></button>
@@ -608,15 +624,15 @@
     </div>
 
 <script src="config.js"></script>
-<script src="scenarios.js?v=12"></script>
-<script src="music.js?v=12"></script>
-<script src="room.js?v=12"></script>
-<script src="cosmetics.js?v=12"></script>
-<script src="receiver.js?v=12"></script>
-<script src="vhs.js?v=12"></script>
-<script src="greenhouse.js?v=12"></script>
-<script src="blimp.js?v=12"></script>
-<script src="share.js?v=12"></script>
+<script src="scenarios.js?v=13"></script>
+<script src="music.js?v=13"></script>
+<script src="room.js?v=13"></script>
+<script src="cosmetics.js?v=13"></script>
+<script src="receiver.js?v=13"></script>
+<script src="vhs.js?v=13"></script>
+<script src="greenhouse.js?v=13"></script>
+<script src="blimp.js?v=13"></script>
+<script src="share.js?v=13"></script>
 <script>
     const cfg = window.SOMA_CONFIG || {};
     const SUPABASE_URL = cfg.SUPABASE_URL;
@@ -733,19 +749,28 @@
     }
     function togglePreview() { roomPreview = !roomPreview; resetStationPreview(); renderRoom(); }
 
-    // Удержание взгляда: 3 секунды живого внимания (тепло — до 2 постов в день, без бездумного фарма)
-    let held = {}, holding = false, holdT = null, holdRAF = null, feedShownAt = 0;
+    // Удержание взгляда: 3 секунды живого внимания (НЕ блокирует вертикальный скролл ленты!)
+    let held = {}, holding = false, holdT = null, holdRAF = null, feedShownAt = 0, holdStartY = 0, holdStartX = 0;
     try { held = JSON.parse(localStorage.getItem('soma_held') || '{}'); } catch (e) {}
-    function holdStart(id, el) {
+    function holdStart(id, el, ev) {
         if (held[id]) return;
+        holdCancel();
+        holdStartX = ev && typeof ev.clientX === 'number' ? ev.clientX : 0;
+        holdStartY = ev && typeof ev.clientY === 'number' ? ev.clientY : 0;
         // Мягкая защита от мгновенного прокликивания ленты не читая
         const dwell = performance.now() - feedShownAt;
         const holdMs = dwell < 1500 ? 3800 : 3000;
         holding = true; SFX.beat();
         const fill = el.querySelector('.hold-fill'), t0 = performance.now();
-        const step = () => { const p = Math.min(1, (performance.now() - t0) / holdMs); fill.style.transform = `scaleX(${p})`; if (p < 1) holdRAF = requestAnimationFrame(step); };
+        const step = () => { const p = Math.min(1, (performance.now() - t0) / holdMs); if (fill) fill.style.transform = `scaleX(${p})`; if (p < 1) holdRAF = requestAnimationFrame(step); };
         holdRAF = requestAnimationFrame(step);
         holdT = setTimeout(() => holdDone(id), holdMs);
+    }
+    function holdMove(ev) {
+        if (!holding || !ev) return;
+        const dx = (typeof ev.clientX === 'number' ? ev.clientX : holdStartX) - holdStartX;
+        const dy = (typeof ev.clientY === 'number' ? ev.clientY : holdStartY) - holdStartY;
+        if (dx * dx + dy * dy > 100) holdCancel();
     }
     function holdCancel() {
         clearTimeout(holdT); cancelAnimationFrame(holdRAF); holding = false;
@@ -1071,7 +1096,7 @@
     const POST_DAY_KEY = 'soma_post_day';
     const POST_DRAFT_KEY = 'soma_pain_draft';
     const MY_POSTS_KEY = 'soma_my_posts';
-    const POST_MIN_LEN = 12;
+    const POST_MIN_LEN = 13;
 
     function currentPostDayKey(nowMs) {
         const d = nowMs != null ? new Date(nowMs) : new Date();
@@ -1284,7 +1309,7 @@
                     : `<button onclick="triggerHelpBlock()" class="w-full py-2 bg-red-950/40 hover:bg-red-900/50 border border-red-500/40 rounded-xl text-[11px] font-mono-tech text-red-400 flex items-center justify-center space-x-2 transition">
                         <span>⛔ ПОМОЧЬ РЕАЛЬНО / НАПИСАТЬ В ЛС</span>
                     </button>
-                    ${heldState ? `<div class="text-center text-[11px] font-mono-tech text-amber-300/80">${heldLabel}</div>` : `<button onpointerdown="holdStart('${safeId(post.id)}', this)" onpointerup="holdCancel()" onpointerleave="holdCancel()" onpointercancel="holdCancel()" oncontextmenu="return false" class="relative overflow-hidden w-full py-2 bg-amber-950/20 border border-amber-400/30 rounded-xl text-[11px] font-mono-tech text-amber-300 select-none touch-none"><span class="hold-fill absolute inset-0 bg-amber-500/25" style="transform:scaleX(0);transform-origin:left"></span><span class="relative">${holdBtnLabel}</span></button>`}
+                    ${heldState ? `<div class="text-center text-[11px] font-mono-tech text-amber-300/80">${heldLabel}</div>` : `<button onpointerdown="holdStart('${safeId(post.id)}', this, event)" onpointermove="holdMove(event)" onpointerup="holdCancel()" onpointerleave="holdCancel()" onpointercancel="holdCancel()" oncontextmenu="return false" class="soma-hold-btn relative overflow-hidden w-full py-2 bg-amber-950/20 border border-amber-400/30 rounded-xl text-[11px] font-mono-tech text-amber-300 select-none"><span class="hold-fill absolute inset-0 bg-amber-500/25 pointer-events-none" style="transform:scaleX(0);transform-origin:left"></span><span class="relative pointer-events-none">${holdBtnLabel}</span></button>`}
                     <div class="pt-2 border-t border-red-500/10 space-y-2">
                         ${isReacted ? `
                             <div class="text-[11px] font-mono-tech text-red-400 flex justify-between items-center">
@@ -1395,14 +1420,26 @@
     }
     function closePostModal() {
         showPostError('');
+        const ae = document.activeElement;
+        if (ae && typeof ae.blur === 'function') { try { ae.blur(); } catch (e) {} }
         document.getElementById('post-modal').classList.add('hidden');
         updatePostQuotaUI();
+        restoreSomaScroll();
     }
 
     function updateCharCount(silent) {
-        const val = document.getElementById('new-pain-text').value;
+        const ta = document.getElementById('new-pain-text');
+        if (!ta) return;
+        if (ta.value.length > 666) ta.value = ta.value.slice(0, 666);
+        const val = ta.value;
         const len = val.length;
-        document.getElementById('char-count').innerText = `${len} / 666`;
+        const trimLen = val.replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim().length;
+        const cnt = document.getElementById('char-count');
+        if (cnt) {
+            cnt.innerText = trimLen < POST_MIN_LEN
+                ? `${len} / 666 (мин. ${POST_MIN_LEN})`
+                : `${len} / 666`;
+        }
         showPostError('');
         try {
             if (val.trim()) localStorage.setItem(POST_DRAFT_KEY, val.slice(0, 666));
@@ -1474,7 +1511,57 @@
         switchTab('feed');
     }
 
+    // Защита от залипания вертикального скролла в iOS Safari / Telegram WKWebView / Android WebView:
+    // 1) при касании у самого верха (0) или низа (max) сдвигает scrollTop на 1px внутрь, чтобы WebKit
+    //    никогда не передавал жест скролла наружному body (где скролл замирал до смены вкладки);
+    // 2) после закрытия клавиатуры, модальных окон и полного экрана возвращает окно и активную вкладку в живое состояние.
+    function restoreSomaScroll() {
+        try {
+            if (document.body && !document.body.classList.contains('soma-room-fs')) {
+                document.body.style.removeProperty('position');
+                document.body.style.removeProperty('top');
+                if (window.scrollY !== 0 || window.scrollX !== 0) window.scrollTo(0, 0);
+            }
+            ['view-feed', 'view-top', 'view-profile'].forEach(id => {
+                const el = document.getElementById(id);
+                if (!el || el.classList.contains('hidden')) return;
+                el.style.overflowY = 'auto';
+                const max = el.scrollHeight - el.clientHeight;
+                if (max > 2 && el.scrollTop > max) el.scrollTop = max;
+            });
+        } catch (e) {}
+    }
+    window.restoreSomaScroll = restoreSomaScroll;
+
+    (function initSomaScrollGuard() {
+        const attach = () => {
+            ['view-feed', 'view-top', 'view-profile'].forEach(id => {
+                const el = document.getElementById(id);
+                if (!el || el.dataset.scrollGuard) return;
+                el.dataset.scrollGuard = '1';
+                el.addEventListener('touchstart', () => {
+                    const max = el.scrollHeight - el.clientHeight;
+                    if (max <= 1) return;
+                    if (el.scrollTop <= 0) el.scrollTop = 1;
+                    else if (el.scrollTop >= max) el.scrollTop = max - 1;
+                }, { passive: true });
+            });
+        };
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', attach, { once: true });
+        else attach();
+        document.addEventListener('focusout', () => { setTimeout(restoreSomaScroll, 80); }, { passive: true });
+        document.addEventListener('visibilitychange', () => {
+            holdCancel();
+            if (!document.hidden) setTimeout(restoreSomaScroll, 60);
+        });
+        window.addEventListener('touchcancel', holdCancel, { passive: true });
+        if (window.Telegram && Telegram.WebApp && typeof Telegram.WebApp.onEvent === 'function') {
+            try { Telegram.WebApp.onEvent('viewportChanged', () => setTimeout(restoreSomaScroll, 50)); } catch (e) {}
+        }
+    })();
+
     function switchTab(tab, silent) {
+        holdCancel();
         if (tab !== 'profile' && typeof exitRoomFullscreen === 'function') exitRoomFullscreen(true);
         if (!silent) SFX.tab();
         ['feed', 'top', 'profile'].forEach(t => {
@@ -1489,12 +1576,21 @@
         if (tab === 'feed') updatePostQuotaUI();
         if (tab === 'top' && typeof renderLeaderboard === 'function') renderLeaderboard();
         if (tab === 'profile') updateHeader();
+        restoreSomaScroll();
     }
 
     document.addEventListener('keydown', e => {
         if (e.key !== 'Escape') return;
         if (window.SOMA_SHARE && typeof window.SOMA_SHARE.isOpen === 'function' && window.SOMA_SHARE.isOpen()) {
             window.SOMA_SHARE.close();
+            return;
+        }
+        if (window.SOMA_GREENHOUSE && typeof window.SOMA_GREENHOUSE.isOpen === 'function' && window.SOMA_GREENHOUSE.isOpen()) {
+            window.SOMA_GREENHOUSE.close();
+            return;
+        }
+        if (window.SOMA_BLIMP && typeof window.SOMA_BLIMP.isOpen === 'function' && window.SOMA_BLIMP.isOpen()) {
+            window.SOMA_BLIMP.close();
             return;
         }
         if (window.SOMA_VHS && typeof window.SOMA_VHS.isOpen === 'function' && window.SOMA_VHS.isOpen()) {

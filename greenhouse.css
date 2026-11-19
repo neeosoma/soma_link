@@ -18,14 +18,17 @@
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     opacity: 0;
+    visibility: hidden;
     pointer-events: none;
-    transition: opacity 0.28s ease;
+    transition: opacity 0.28s ease, visibility 0s linear 0.28s;
     font-family: 'JetBrains Mono', ui-monospace, monospace;
 }
 
 .gh-overlay.is-open {
     opacity: 1;
+    visibility: visible;
     pointer-events: auto;
+    transition: opacity 0.28s ease, visibility 0s linear 0s;
 }
 
 .gh-overlay.is-in-fs {
@@ -159,18 +162,23 @@
 
 .gh-stage-hint {
     position: absolute;
-    bottom: 7px;
+    bottom: 6px;
     left: 50%;
     transform: translateX(-50%);
-    padding: 3px 10px;
+    max-width: calc(100% - 16px);
+    padding: 3px 9px;
     border-radius: 999px;
-    background: rgba(8, 4, 15, 0.72);
+    background: rgba(8, 4, 15, 0.78);
     border: 1px solid rgba(226, 232, 240, 0.18);
-    font-size: 9px;
-    letter-spacing: 0.08em;
-    color: rgba(241, 245, 249, 0.82);
+    font-size: clamp(7.5px, 2.1vw, 9px);
+    line-height: 1.25;
+    letter-spacing: 0.05em;
+    text-align: center;
+    color: rgba(241, 245, 249, 0.85);
     pointer-events: none;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     transition: opacity 0.3s ease;
 }
 
@@ -185,29 +193,34 @@
     aspect-ratio: 16 / 10;
 }
 
-/* Полоска всех 7 земных пьедесталов + 8-й секретный алтарь */
+/* Идеальная сетка 4×2 всех 8 земных пьедесталов (0% обрезки на любом телефоне!) + 9-й тайный ряд после 8/8 */
 .gh-strip {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 5px;
-    overflow-x: auto;
-    padding-bottom: 2px;
-    scrollbar-width: thin;
+    min-width: 0;
 }
 
 .gh-chip {
-    flex: 0 0 auto;
+    min-width: 0;
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    padding: 5px 9px;
+    justify-content: center;
+    gap: 3px;
+    padding: 5px 5px;
     border-radius: 9px;
-    font-size: 10px;
+    font-size: 9.2px;
+    line-height: 1.2;
     font-family: inherit;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     background: rgba(20, 12, 28, 0.86);
     border: 1px solid rgba(148, 163, 184, 0.22);
     color: #cbd5e1;
     cursor: pointer;
+    touch-action: manipulation;
     transition: all 0.18s ease;
 }
 
@@ -222,8 +235,13 @@
 }
 
 .gh-chip.is-alien {
-    background: linear-gradient(135deg, rgba(46, 16, 82, 0.9), rgba(18, 10, 38, 0.94));
-    border-color: rgba(192, 132, 252, 0.55);
+    grid-column: 1 / -1;
+    padding: 6px 10px;
+    font-size: 9.8px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    background: linear-gradient(135deg, rgba(46, 16, 82, 0.92), rgba(18, 10, 38, 0.96));
+    border-color: rgba(192, 132, 252, 0.62);
     color: #f3e8ff;
 }
 
@@ -366,9 +384,63 @@
 
 .gh-rule-foot {
     font-size: 9.5px;
+    line-height: 1.35;
     color: rgba(203, 213, 225, 0.62);
-    letter-spacing: 0.04em;
+    letter-spacing: 0.03em;
     text-align: center;
+    overflow-wrap: anywhere;
+}
+
+/* Узкие смартфоны (320..430px): 0% обрезки заголовка, подсказки, 4×2 чипов и кнопок */
+@media (max-width: 440px) {
+    .gh-shell {
+        padding: 10px;
+        gap: 7px;
+    }
+    .gh-title {
+        font-size: 10px;
+        letter-spacing: 0.1em;
+    }
+    .gh-counter {
+        font-size: 8.8px;
+        padding: 2px 6px;
+        letter-spacing: 0.05em;
+    }
+    .gh-mood-btn,
+    .gh-zen-btn,
+    .gh-close-btn {
+        padding: 4px 7px;
+        font-size: 9px;
+        letter-spacing: 0.04em;
+    }
+    .gh-strip {
+        gap: 4px;
+    }
+    .gh-chip {
+        padding: 5px 4px;
+        font-size: 8.5px;
+        letter-spacing: 0.01em;
+    }
+    .gh-chip.is-alien {
+        font-size: 9px;
+        padding: 5px 8px;
+    }
+    .gh-btn {
+        font-size: 9.2px;
+        padding: 7px 8px;
+        letter-spacing: 0.04em;
+    }
+}
+
+/* Сверхкомпактные смартфоны 320..360px: чипы 2×4, чтобы каждое имя читалось целиком */
+@media (max-width: 358px) {
+    .gh-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .gh-chip {
+        font-size: 9px;
+        padding: 5px 6px;
+    }
 }
 
 /* Компактная адаптация для альбомного Fullscreen на смартфоне */

@@ -1,14 +1,51 @@
 const stationPhases = [
-    { at: 0, name: 'Дождь', entry: 'Город шумит за мокрым стеклом. Здесь можно остановиться.' },
-    { at: 5, name: 'Оттепель', entry: 'Дождь редеет. От круглого окна больше не тянет холодом.' },
-    { at: 15, name: 'Очаг', entry: 'Мягкий свет ночных окон и ночников сходится на ковре.' },
-    { at: 30, name: 'Рассвет', entry: 'Дождь стих. Из круглого окна в комнату медленно льётся алый рассвет.' }
+    { at: 0,   name: 'Дождь',    entry: 'Город шумит за мокрым стеклом. В пустом горшке тихо спит земля.' },
+    { at: 20,  name: 'Оттепель', entry: 'Дождь редеет. От круглого окна больше не тянет прежним холодом.' },
+    { at: 108, name: 'Очаг',     entry: 'Мягкий свет ночных окон и ночников сходится на тёплом ковре.' },
+    { at: 240, name: 'Рассвет',  entry: 'Дождь стих. Из круглого окна в комнату медленно льётся алый рассвет.' }
 ];
+
+// Сезонный ритм (~90 тёплых дней до цветения, без гринда и без наказаний за паузы)
+const PROGRESSION_RULES = {
+    DAILY_HOLD_CAP: 2,        // до +2 тепла/день за тихое дочитывание постов
+    DAILY_TRAINER_CAP: 2,     // до +2 тепла/день за точное слушание в терминале
+    DAILY_WARMTH_CAP: 4,      // потолок +4 тепла/день (нельзя зафармить комнату за 3 дня)
+    WHISPER_WARMTH_GATE: 20,  // допуск к пейджеру «Шёпот»: ~1-я неделя
+    WHISPER_TRAINER_GATE: 5,  // допуск к пейджеру «Шёпот»: 5 услышанных историй
+    WHISPER_BLOOM_ACKS: 5,    // для финального цветения 6/6 (после запуска «Шёпота»)
+    SPECIES_REVEAL_STAGE: 2,  // вид раскрывается на 3/6 (~1 месяц)
+    DRY_SOIL_DAYS: 5,         // мягкая заметка о подсохшей земле без потери прогресса
+    SEASON_WARMTH: 360        // полный сезон тепла (90 тёплых дней × 4)
+};
 
 // ===== УНИКАЛЬНОЕ РАСТЕНИЕ ИГРОКА (точная привязка к прежнему анонимному ID) =====
 const PLANT_KINDS = ['ПАПОРОТНИК', 'КАКТУС', 'СУККУЛЕНТ', 'БАМБУК', 'ЛИАНА', 'ЦВЕТОК', 'БОНСАЙ'];
 const PLANT_STAGES = ['росток', 'всходы', 'побеги', 'крона', 'бутоны', 'цветение'];
-const PLANT_WARMTH_STEPS = [0, 2, 5, 15, 22, 30];
+// Нелинейная сезонная шкала: нед. 1 (20) → нед. 2 (52) → 1 мес. (108) → 1.5 мес. (180) → 2 мес. (240) → 3 мес. (360)
+const PLANT_WARMTH_STEPS = [20, 52, 108, 180, 240, 360];
+// Шкала для новых семян в Оранжерее после расцвета родного вида (~75 тёплых дней на вид, год+ на все 7)
+const GREENHOUSE_WARMTH_STEPS = [16, 48, 96, 156, 216, 300];
+
+const EMPTY_POT_LINES = {
+    cold: [
+        'Пустой керамический горшок с тёмной землёй. От чужих драм здесь ничего не вырастет — росток проснётся, когда откроется «Шёпот».',
+        'Ладонь чувствует прохладную глину. Земля ждёт первого настоящего тепла, отданного живому человеку.'
+    ],
+    ready: [
+        'Земля в горшке согрелась и затаила дыхание. Когда заработает частота «Шёпот», ваш первый отклик разбудит здесь жизнь.',
+        'Допуск к тёплой линии получен — почва готова. Осталось дождаться сигнала на пейджере и согреть кого-то по-настоящему.'
+    ],
+    seed: [
+        'В свежей земле Оранжереи дремлет новое неизвестное семя. Дайте ему несколько тёплых вечеров — и покажется росток.',
+        'Тишина над новым горшком. Какой из видов станции спит внутри, откроется только со временем.'
+    ],
+    dry: 'Земля чуть подсохла за дни тишины, но терпеливо дождалась вас. Здесь ничто не вянет от паузы.'
+};
+
+const MYSTERY_STAGE_NOTES = [
+    'Сквозь тёмную землю пробилась первая живая точка. Ещё слишком рано угадывать, кем она станет.',
+    'Молодой побег окреп и потянулся к круглому окну — его истинный вид вот-вот начнёт угадываться.'
+];
 
 // Длины массивов (6, 6, 5) строго сохранены для 100% совпадения с прежней формулой ID
 // Живые природные оттенки листвы в тёплом чёрно-красном полумраке комнаты: [тень, база, живой зелёный, светлый блик]
@@ -175,18 +212,47 @@ function plantSpec(id) {
     };
 }
 
-function plantStage(warmth, rankIndex) {
+// Холодный XP и циничные ранги больше НИКОГДА не растят цветок.
+// Возвращает -1 (пустой горшок с землёй), пока не открыт и не отправлен первый «Шёпот», либо 0..5 (стадии 1/6..6/6).
+function plantStage(warmth, opts) {
     const w = Math.max(0, Number(warmth) || 0);
-    const r = Math.max(0, Math.min(5, Math.trunc(Number(rankIndex) || 0)));
-    const byWarmth = PLANT_WARMTH_STEPS.reduce((last, at, i) => w >= at ? i : last, 0);
-    return Math.min(5, Math.max(byWarmth, r));
+    const o = (opts && typeof opts === 'object') ? opts : {};
+    const steps = Array.isArray(o.steps) ? o.steps : PLANT_WARMTH_STEPS;
+    const sprouted = !!o.sprouted;
+    if (!sprouted || w < steps[0]) return -1;
+    let st = steps.reduce((last, at, i) => w >= at ? i : last, -1);
+    if (st >= 5 && o.requireAcks && (Number(o.bloomAcks) || 0) < PROGRESSION_RULES.WHISPER_BLOOM_ACKS) {
+        st = 4;
+    }
+    return Math.max(-1, Math.min(5, st));
 }
 
-function stationState(warmth, equipped) {
+function isWhisperLive() {
+    try { return !!(typeof window !== 'undefined' && window.SOMA_CONFIG && window.SOMA_CONFIG.WHISPER_LIVE); }
+    catch (_) { return false; }
+}
+
+function isPtsMode() {
+    try {
+        if (typeof cfg !== 'undefined' && cfg && cfg.ENV === 'pts') return true;
+        return !!(typeof window !== 'undefined' && window.SOMA_CONFIG && window.SOMA_CONFIG.ENV === 'pts');
+    } catch (_) { return false; }
+}
+
+function indifferenceIndex(warmth) {
+    const w = Math.max(0, Number(warmth) || 0);
+    const ratio = Math.min(1, w / PROGRESSION_RULES.SEASON_WARMTH);
+    return Math.max(0, Math.min(100, Math.round((1 - ratio) * 100)));
+}
+
+function stationState(warmth, equipped, seenMax) {
     const w = Math.max(0, Number(warmth) || 0);
     const unlocked = stationPhases.reduce((last, phase, i) => w >= phase.at ? i : last, 0);
-    const active = Number.isInteger(equipped) && equipped >= 0 && equipped <= unlocked ? equipped : unlocked;
-    return { unlocked, active, next: stationPhases[unlocked + 1] };
+    const justUnlocked = Number.isInteger(seenMax) && seenMax >= 0 && unlocked > seenMax;
+    const active = justUnlocked
+        ? unlocked
+        : (Number.isInteger(equipped) && equipped >= 0 && equipped <= unlocked ? equipped : unlocked);
+    return { unlocked, active, justUnlocked, next: stationPhases[unlocked + 1] };
 }
 
 // ===== БОТАНИЧЕСКАЯ ЖИВОПИСЬ ВЫСОКОГО РАЗРЕШЕНИЯ (7 ВИДОВ × 6 СТАДИЙ) =====
@@ -515,7 +581,8 @@ function drawLushFlower(g, x, y, radius, bl, opts) {
 }
 
 // Ручной керамический горшок с живой глазурью, рефлексом алого ковра и фактурным грунтом
-function drawCeramicPot(g, bx, baseY, sp, stage, lit) {
+function drawCeramicPot(g, bx, baseY, sp, stage, lit, soilOpts) {
+    const so = soilOpts || {};
     const shapes = [
         { topW: 102, botW: 66, h: 66, rimH: 11, belly: 1.05, feet: false }, // классическая терракота
         { topW: 128, botW: 88, h: 48, rimH: 9,  belly: 1.08, feet: true },  // широкая чаша бонсай/эхеверии
@@ -528,7 +595,7 @@ function drawCeramicPot(g, bx, baseY, sp, stage, lit) {
 
     // Глубокая мягкая тень горшка на ковре (прочно «сажает» растение в комнату)
     if (g.createRadialGradient) {
-        const sr = bw * 1.75 + stage * 5;
+        const sr = bw * 1.75 + Math.max(0, stage) * 5;
         const sg = g.createRadialGradient(bx, baseY + 3, bw * 0.2, bx, baseY + 4, sr);
         sg.addColorStop(0, 'rgba(4,1,2,0.88)');
         sg.addColorStop(0.55, 'rgba(9,2,4,0.56)');
@@ -615,29 +682,60 @@ function drawCeramicPot(g, bx, baseY, sp, stage, lit) {
     g.ellipse(bx, topY + 0.5, rw - 1, ry, 0, Math.PI * 1.05, Math.PI * 1.95);
     g.stroke();
 
-    // Глубокий живой грунт внутри горшка + мох или пустынная галька по виду растения
+    // Глубокий живой грунт внутри горшка:
+    // на стадии -1 (пустой горшок) — только тёмная спящая земля без мха и спойлера вида!
     const sw = tw - 3, sy = ry - 2.2;
-    g.fillStyle = '#140807';
+    g.fillStyle = so.dry ? '#211110' : '#140807';
     g.beginPath(); g.ellipse(bx, topY + 2, sw, sy, 0, 0, Math.PI * 2); g.fill();
 
     const sr2 = rng(sp.seed ^ 0x51a7);
-    const isDesert = sp.kind === 1 || sp.kind === 2;
-    for (let i = 0; i < 22; i++) {
-        const a = sr2() * Math.PI * 2, d = Math.sqrt(sr2()) * 0.88;
-        const gx = bx + Math.cos(a) * sw * d;
-        const gy = topY + 2 + Math.sin(a) * sy * d;
-        if (isDesert) {
-            // Тёплая терракотово-кварцевая галька вокруг кактуса и суккулента
-            g.fillStyle = i % 3 === 0 ? '#6e453c' : i % 3 === 1 ? '#472823' : '#946a5e';
+    if (stage < 0) {
+        // Бархатистые комочки тёмного чернозёма и крошечная лунка в центре, ждущая «Шёпота»
+        for (let i = 0; i < 26; i++) {
+            const a = sr2() * Math.PI * 2, d = Math.sqrt(sr2()) * 0.88;
+            const gx = bx + Math.cos(a) * sw * d;
+            const gy = topY + 2 + Math.sin(a) * sy * d;
+            g.fillStyle = so.dry
+                ? (i % 3 === 0 ? '#4d2e29' : i % 3 === 1 ? '#361d1a' : '#63413b')
+                : (i % 3 === 0 ? '#2f1614' : i % 3 === 1 ? '#1f0d0c' : '#43221e');
             g.beginPath();
-            g.ellipse(gx, gy, 2.2 + sr2() * 2.8, 1.3 + sr2() * 1.5, sr2(), 0, Math.PI * 2);
+            g.ellipse(gx, gy, 2.0 + sr2() * 3.4, 1.1 + sr2() * 1.5, sr2(), 0, Math.PI * 2);
             g.fill();
-        } else {
-            // Бархатные подушечки живого лесного мха и тёмной коры
-            g.fillStyle = i % 3 === 0 ? '#244529' : i % 3 === 1 ? '#182e1c' : '#2e1612';
-            g.beginPath();
-            g.ellipse(gx, gy, 2.8 + sr2() * 4.2, 1.4 + sr2() * 1.8, 0, 0, Math.PI * 2);
-            g.fill();
+        }
+        // Мягкая лунка в центре земли
+        g.fillStyle = 'rgba(8,2,3,0.52)';
+        g.beginPath();
+        g.ellipse(bx, topY + 2.3, sw * 0.26, sy * 0.34, 0, 0, Math.PI * 2);
+        g.fill();
+        if (so.ready) {
+            // Едва уловимое тёплое дыхание согретой земли (допуск получен, горшок ждёт первого «Шёпота»)
+            radialAura(g, bx, topY + 1, sw * 0.55, '#ff8d96', '#8c192b', 0.16);
+        }
+    } else {
+        const revealSoil = stage >= PROGRESSION_RULES.SPECIES_REVEAL_STAGE;
+        const isDesert = revealSoil && (sp.kind === 1 || sp.kind === 2);
+        for (let i = 0; i < 22; i++) {
+            const a = sr2() * Math.PI * 2, d = Math.sqrt(sr2()) * 0.88;
+            const gx = bx + Math.cos(a) * sw * d;
+            const gy = topY + 2 + Math.sin(a) * sy * d;
+            if (!revealSoil) {
+                g.fillStyle = i % 3 === 0 ? '#2b1815' : i % 3 === 1 ? '#1e2c1f' : '#3b201b';
+                g.beginPath();
+                g.ellipse(gx, gy, 2.2 + sr2() * 3.2, 1.2 + sr2() * 1.5, sr2(), 0, Math.PI * 2);
+                g.fill();
+            } else if (isDesert) {
+                // Тёплая терракотово-кварцевая галька вокруг кактуса и суккулента
+                g.fillStyle = i % 3 === 0 ? '#6e453c' : i % 3 === 1 ? '#472823' : '#946a5e';
+                g.beginPath();
+                g.ellipse(gx, gy, 2.2 + sr2() * 2.8, 1.3 + sr2() * 1.5, sr2(), 0, Math.PI * 2);
+                g.fill();
+            } else {
+                // Бархатные подушечки живого лесного мха и тёмной коры
+                g.fillStyle = i % 3 === 0 ? '#244529' : i % 3 === 1 ? '#182e1c' : '#2e1612';
+                g.beginPath();
+                g.ellipse(gx, gy, 2.8 + sr2() * 4.2, 1.4 + sr2() * 1.8, 0, 0, Math.PI * 2);
+                g.fill();
+            }
         }
     }
 
@@ -1588,7 +1686,8 @@ function drawPlantSprite(ctx, spec, stage, opts) {
     ctx.save();
     if (sx !== 1 || sy !== 1) ctx.scale(sx, sy);
 
-    const s = Math.max(0, Math.min(5, Math.trunc(stage || 0)));
+    const rawStage = (stage === undefined || stage === null) ? -1 : Math.trunc(Number(stage));
+    const s = Math.max(-1, Math.min(5, Number.isNaN(rawStage) ? -1 : rawStage));
     const sway = Number(o.sway) || 0;
     const pulse = Math.max(0, Math.min(1, Number(o.glow) || 0));
     const phase = Number.isInteger(o.phase) ? o.phase : 2;
@@ -1598,9 +1697,22 @@ function drawPlantSprite(ctx, spec, stage, opts) {
     const pal = roomToneLeaf(spec.leaf, phase);
     const bl = spec.bloom;
 
+    // Стадия -1: пустой именной керамический горшок со спящей землёй (до первого «Шёпота»)
+    if (s < 0) {
+        if (pulse > 0.04 || o.soilReady) {
+            radialAura(ctx, bx, baseY - 58, 62, '#ff7d8a', '#731122', pulse * 0.1 + (o.soilReady ? 0.045 : 0));
+        }
+        drawCeramicPot(ctx, bx, baseY, spec, -1, phase >= 2 || pulse > 0.15, {
+            dry: !!o.dry,
+            ready: !!o.soilReady
+        });
+        ctx.restore();
+        return;
+    }
+
     // Мягкий атмосферный ореол от света круглого окна за растением
-    if (s >= 3 || pulse > 0.04) {
-        const auraA = (s >= 3 ? (s - 2) * 0.045 : 0) + (phase === 3 ? 0.06 : 0) + pulse * 0.12;
+    if (s >= 3 || pulse > 0.04 || o.dew) {
+        const auraA = (s >= 3 ? (s - 2) * 0.045 : 0) + (phase === 3 ? 0.06 : 0) + pulse * 0.12 + (o.dew ? 0.05 : 0);
         radialAura(ctx, bx, baseY - 82 - s * 16, 78 + s * 18, bl[1], '#8c1428', auraA);
     }
 
@@ -1619,7 +1731,7 @@ function drawPlantSprite(ctx, spec, stage, opts) {
         });
     }
 
-    const pot = drawCeramicPot(ctx, bx, baseY, spec, s, phase >= 2 || pulse > 0.15);
+    const pot = drawCeramicPot(ctx, bx, baseY, spec, s, phase >= 2 || pulse > 0.15, { dry: !!o.dry });
     const by = pot.soilY;
 
     // Естественная физика по видам: кактус, розетка суккулента и ствол бонсая НЕ качаются из стороны в сторону!
@@ -1630,6 +1742,24 @@ function drawPlantSprite(ctx, spec, stage, opts) {
     else if (spec.kind === 4) drawSpeciesVine(ctx, bx, by, pot, spec, s, pal, bl, sway, pulse, r);
     else if (spec.kind === 5) drawSpeciesFlower(ctx, bx, by, spec, s, pal, bl, sway, pulse, r);
     else drawSpeciesBonsai(ctx, bx, by, spec, s, pal, bl, sway, pulse, r);
+
+    // Живая роса на сутки после подтверждённого «Шёпота» (лежит строго на листьях и лепестках каждого вида!)
+    if (o.dew && ctx.createRadialGradient) {
+        const dewAnchors = s === 0
+            ? [[0, -18, 2.2]]
+            : spec.kind === 1 // кактус: на рёбрах центрального ствола и макушке
+                ? [[-7, -42 - s * 14, 2.3], [6, -68 - s * 18, 2.5], [-4, -26 - s * 8, 2.1]]
+                : spec.kind === 2 // суккулент: на мясистых листьях каменной розы
+                    ? [[-18 - s * 4, -14 - s * 2, 2.4], [16 + s * 4, -16 - s * 2, 2.4], [0, -24 - s * 4, 2.2], [-8, -10, 2.0]]
+                    : spec.kind === 6 // бонсай: строго на вершинной шапке и боковых облаках кроны
+                        ? [[(spec.lean >= 0 ? 1 : -1) * (10 + s * 2), -64 - s * 24, 2.5], [-(spec.lean >= 0 ? 1 : -1) * (24 + s * 4), -48 - s * 14, 2.3], [(spec.lean >= 0 ? 1 : -1) * (26 + s * 4), -54 - s * 17, 2.3]]
+                        : [[-14 - s * 3, -34 - s * 14, 2.4], [13 + s * 3, -46 - s * 17, 2.5], [0, -28 - s * 11, 2.2], [-6, -54 - s * 20, 2.2]];
+        const cap = Math.min(dewAnchors.length, 1 + Math.ceil((s + 1) * 0.6));
+        for (let d = 0; d < cap; d++) {
+            const [ox, oy, dr] = dewAnchors[d];
+            drawDew(ctx, bx + ox, by + oy, dr);
+        }
+    }
 
     ctx.restore();
 }
@@ -1690,21 +1820,35 @@ const FX_MOTES = Array.from({ length: 22 }, (_, i) => ({
 const roomAnim = {
     raf: null,
     lastFrame: 0,
+    lastPlantFrame: 0,
     activePhase: 0,
+    unlockedPhase: 0,
     warmth: 0,
     rank: 0,
-    stage: 0,
-    liveStage: 0,
-    inspectStage: null, // ручной осмотр любой из 6 стадий (0..5)
-    inspectKind: null,  // ручной осмотр любого из 7 видов (0..6)
+    stage: -1,
+    liveStage: -1,
+    inspectStage: null, // PTS: ручной осмотр -1 (пустой горшок) и 0..5 (стадии 1/6..6/6)
+    inspectKind: null,  // PTS: ручной осмотр любого из 7 видов (0..6)
     galleryOpen: false,
+    ptsOpen: false,
+    ptsDew: false,
     previewStage: null,
-    lastStage: -1,
+    lastStage: -2,
     ownSpec: null,
     spec: null,
+    soilReady: false,
+    soilDry: false,
+    dewActive: false,
+    isSeedPot: false,
     radioLit: false,
     previewPhase: 3,
+    contextPanel: '', // '' | 'window' | 'deck'
+    activeCassetteId: '',
+    pagerStep: 0,
+    pagerMode: 'idle', // 'idle' | 'scan' | 'info'
+    pagerResetTimer: null,
     customEntry: '',
+    customMode: '',
     lineStep: {},
     lastTouchAt: 0,
     lastTouchObj: '',
@@ -1724,6 +1868,240 @@ const roomAnim = {
     ripples: [],
     spores: []
 };
+
+// ===== ДНЕВНОЙ РИТМ ТЕПЛА (АНТИ-ГРИНД), ДОПУСК К ПЕЙДЖЕРУ, ОРАНЖЕРЕЯ И КАССЕТЫ =====
+function localDayKey(dateObj) {
+    const d = dateObj instanceof Date ? dateObj : new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+}
+
+function lsGet(key) {
+    try { return typeof localStorage !== 'undefined' ? localStorage.getItem(key) : null; }
+    catch (_) { return null; }
+}
+
+function lsSet(key, val) {
+    try { if (typeof localStorage !== 'undefined') localStorage.setItem(key, val); return true; }
+    catch (_) { return false; }
+}
+
+function loadWarmthLedger(todayOverride) {
+    const today = todayOverride || localDayKey();
+    let raw = {};
+    try { raw = JSON.parse(lsGet('soma_warmth_ledger') || '{}') || {}; } catch (_) { raw = {}; }
+    const sameDay = raw.day === today;
+    return {
+        day: today,
+        hold: sameDay ? Math.max(0, Math.trunc(raw.hold || 0)) : 0,
+        trainer: sameDay ? Math.max(0, Math.trunc(raw.trainer || 0)) : 0,
+        total: sameDay ? Math.max(0, Math.trunc(raw.total || 0)) : 0,
+        trainedSessions: sameDay ? Math.max(0, Math.trunc(raw.trainedSessions || 0)) : 0,
+        warmDays: Math.max(0, Math.trunc(raw.warmDays || 0)),
+        lastWarmDay: typeof raw.lastWarmDay === 'string' ? raw.lastWarmDay : '',
+        trainedTotal: Math.max(0, Math.trunc(raw.trainedTotal || 0)),
+        whispersSent: Math.max(0, Math.trunc(raw.whispersSent || 0)),
+        whisperAcks: Math.max(0, Math.trunc(raw.whisperAcks || 0)),
+        dewUntil: Math.max(0, Number(raw.dewUntil) || 0)
+    };
+}
+
+function saveWarmthLedger(ledger) {
+    lsSet('soma_warmth_ledger', JSON.stringify(ledger));
+}
+
+// Начисляет тепло строго в рамках дневного потолка (не более 4/день: 2 чтение + 2 тренажёр)
+function claimDailyWarmth(source, todayOverride) {
+    const ledger = loadWarmthLedger(todayOverride);
+    if (source === 'trainer') {
+        ledger.trainedTotal += 1;
+    }
+    if (source === 'whisper') {
+        ledger.whispersSent += 1;
+    }
+    const srcCap = source === 'hold'
+        ? PROGRESSION_RULES.DAILY_HOLD_CAP
+        : source === 'trainer'
+            ? PROGRESSION_RULES.DAILY_TRAINER_CAP
+            : 1;
+    const used = source === 'hold' ? ledger.hold : source === 'trainer' ? ledger.trainer : 0;
+    const canGain = used < srcCap && ledger.total < PROGRESSION_RULES.DAILY_WARMTH_CAP;
+    if (canGain) {
+        if (source === 'hold') ledger.hold += 1;
+        else if (source === 'trainer') ledger.trainer += 1;
+        ledger.total += 1;
+        if (ledger.lastWarmDay !== ledger.day) {
+            ledger.warmDays += 1;
+            ledger.lastWarmDay = ledger.day;
+        }
+    }
+    saveWarmthLedger(ledger);
+    return { granted: canGain ? 1 : 0, ledger };
+}
+
+function recordWhisperEcho(nowMs) {
+    const ledger = loadWarmthLedger();
+    ledger.whisperAcks += 1;
+    ledger.dewUntil = (Number(nowMs) || Date.now()) + 86400000; // 24 часа живой росы на лепестках
+    saveWarmthLedger(ledger);
+    return ledger;
+}
+
+function daysSinceLastWarmth(ledger, todayOverride) {
+    const l = ledger || loadWarmthLedger(todayOverride);
+    if (!l.lastWarmDay) return 0;
+    const a = Date.parse(l.lastWarmDay + 'T00:00:00Z');
+    const b = Date.parse((todayOverride || l.day) + 'T00:00:00Z');
+    if (!Number.isFinite(a) || !Number.isFinite(b) || b <= a) return 0;
+    return Math.floor((b - a) / 86400000);
+}
+
+function whisperAdmission(warmth, ledger) {
+    const w = Math.max(0, Number(warmth) || 0);
+    const l = ledger || loadWarmthLedger();
+    const warmthMet = w >= PROGRESSION_RULES.WHISPER_WARMTH_GATE;
+    const trainerMet = l.trainedTotal >= PROGRESSION_RULES.WHISPER_TRAINER_GATE;
+    return {
+        admitted: warmthMet && trainerMet,
+        warmth: Math.min(w, PROGRESSION_RULES.WHISPER_WARMTH_GATE),
+        warmthNeed: PROGRESSION_RULES.WHISPER_WARMTH_GATE,
+        trained: Math.min(l.trainedTotal, PROGRESSION_RULES.WHISPER_TRAINER_GATE),
+        trainedNeed: PROGRESSION_RULES.WHISPER_TRAINER_GATE,
+        sprouted: l.whispersSent > 0,
+        whispersSent: l.whispersSent,
+        whisperAcks: l.whisperAcks,
+        live: isWhisperLive()
+    };
+}
+
+// Оранжерея (Гербарий всех 7 видов после расцвета родного растения — удержание на год+)
+function loadGreenhouse() {
+    let g = {};
+    try { g = JSON.parse(lsGet('soma_greenhouse') || '{}') || {}; } catch (_) { g = {}; }
+    const bloomed = Array.isArray(g.bloomed)
+        ? [...new Set(g.bloomed.map(Number).filter(k => Number.isInteger(k) && k >= 0 && k < PLANT_KINDS.length))]
+        : [];
+    const seed = (g.activeSeed && Number.isInteger(g.activeSeed.kind) && g.activeSeed.kind >= 0 && g.activeSeed.kind < PLANT_KINDS.length)
+        ? { kind: g.activeSeed.kind, startWarmth: Math.max(0, Number(g.activeSeed.startWarmth) || 0) }
+        : null;
+    const placed = (Number.isInteger(g.placed) && g.placed >= 0 && g.placed < PLANT_KINDS.length)
+        ? g.placed
+        : (g.placed === 'seed' ? 'seed' : null);
+    return { bloomed, activeSeed: seed, placed };
+}
+
+function saveGreenhouse(gh) {
+    lsSet('soma_greenhouse', JSON.stringify(gh));
+}
+
+function plantNewGreenhouseSeed(currentWarmth, ownSpec) {
+    const own = ownSpec || plantSpec();
+    const w = Math.max(0, Number(currentWarmth) ?? ((typeof player !== 'undefined' && player.warmth) || 0));
+    const gh = loadGreenhouse();
+    if (!gh.bloomed.includes(own.kind)) return null;
+    if (gh.activeSeed) {
+        gh.placed = 'seed';
+        saveGreenhouse(gh);
+        renderRoom();
+        return gh.activeSeed;
+    }
+    const remaining = PLANT_KINDS.map((_, i) => i).filter(i => !gh.bloomed.includes(i));
+    if (!remaining.length) return null;
+    const pickIdx = hashStr(`${own.seed}:${gh.bloomed.length}:${w}`) % remaining.length;
+    gh.activeSeed = { kind: remaining[pickIdx], startWarmth: w };
+    gh.placed = 'seed';
+    saveGreenhouse(gh);
+    roomAnim.customEntry = EMPTY_POT_LINES.seed[0];
+    roomAnim.customMode = 'ЖУРНАЛ // ОРАНЖЕРЕЯ';
+    animatePlantShift();
+    playObjectTone('plant');
+    renderRoom();
+    return gh.activeSeed;
+}
+
+function selectGreenhouseSlot(slot) {
+    const gh = loadGreenhouse();
+    if (slot === 'seed' && gh.activeSeed) {
+        gh.placed = 'seed';
+    } else {
+        const k = Math.trunc(Number(slot));
+        if (!gh.bloomed.includes(k)) return;
+        gh.placed = k;
+    }
+    saveGreenhouse(gh);
+    roomAnim.customEntry = '';
+    roomAnim.customMode = '';
+    animatePlantShift();
+    playObjectTone('plant');
+    renderRoom();
+}
+
+// Кассетный архив входящих «Шёпотов» в старом магнитофоне
+function loadCassettes() {
+    let list = [];
+    try { list = JSON.parse(lsGet('soma_cassettes') || '[]'); } catch (_) { list = []; }
+    if (!Array.isArray(list)) return [];
+    return list.filter(c => c && typeof c.text === 'string' && c.text.trim()).slice(0, 30);
+}
+
+function saveWhisperCassette(text, dateLabel) {
+    const clean = String(text || '').trim().slice(0, 320);
+    if (!clean) return null;
+    const list = loadCassettes();
+    const d = new Date();
+    const stamp = dateLabel || `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const item = { id: 'cas_' + Date.now(), date: stamp, text: clean };
+    list.unshift(item);
+    lsSet('soma_cassettes', JSON.stringify(list.slice(0, 30)));
+    return item;
+}
+
+function playCassette(id) {
+    const list = loadCassettes();
+    const found = list.find(c => c.id === id) || list[0];
+    if (!found) return;
+    const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    roomAnim.activeCassetteId = found.id;
+    roomAnim.contextPanel = 'deck';
+    if ((now - roomAnim.deckStart) > 2850) {
+        roomAnim.deckStart = now;
+        playObjectTone('shelf');
+    } else if (typeof SFX !== 'undefined' && SFX.tap) {
+        SFX.tap();
+    }
+    const idx = list.length - list.indexOf(found);
+    roomAnim.customMode = `КАССЕТА #${String(idx).padStart(2, '0')} · ${found.date}`;
+    roomAnim.customEntry = `«${found.text}»`;
+    renderRoom();
+}
+
+function togglePtsDemoCassette() {
+    const list = loadCassettes();
+    const hasDemo = list.some(c => c.id === 'cas_pts_demo');
+    if (hasDemo) {
+        const filtered = list.filter(c => c.id !== 'cas_pts_demo');
+        lsSet('soma_cassettes', JSON.stringify(filtered));
+        roomAnim.activeCassetteId = '';
+        roomAnim.customEntry = 'Тестовая кассета извлечена из деки.';
+    } else {
+        const next = [{
+            id: 'cas_pts_demo',
+            date: '18.11',
+            text: 'Я прочитал твою запись до конца и просто посидел рядом в тишине. Тебе не нужно справляться с этим в одиночку сегодня.'
+        }, ...list];
+        lsSet('soma_cassettes', JSON.stringify(next));
+        roomAnim.activeCassetteId = 'cas_pts_demo';
+        roomAnim.contextPanel = 'deck';
+        const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+        roomAnim.deckStart = now;
+        playObjectTone('shelf');
+        roomAnim.customMode = 'КАССЕТА #01 · 18.11';
+        roomAnim.customEntry = `«${next[0].text}»`;
+    }
+    renderRoom();
+}
 
 // Возвращает эталонный экземпляр любого из 7 видов для режима осмотра (не меняя личный ID игрока)
 function gallerySpecForKind(kind, ownSpec) {
@@ -2326,7 +2704,7 @@ function paintPlantFrame(now) {
     const touchGlow = still ? 0 : softBell(now - roomAnim.plantStart, 520, 420, 1250);
     const kind = roomAnim.spec.kind;
     let sway = 0;
-    if (!still && kind !== 1) {
+    if (!still && roomAnim.stage >= 0 && kind !== 1) {
         const elapsed = (now - roomAnim.plantStart) * 0.001;
         const rustle = (elapsed > 0 && elapsed < 2.4)
             ? Math.exp(-elapsed * 1.6) * Math.sin(elapsed * 5.2) * (kind === 6 || kind === 2 ? 1.5 : 3.8)
@@ -2337,7 +2715,10 @@ function paintPlantFrame(now) {
     drawPlantSprite(g, roomAnim.spec, roomAnim.stage, {
         sway,
         glow: touchGlow,
-        phase: roomAnim.activePhase
+        phase: roomAnim.activePhase,
+        soilReady: roomAnim.soilReady,
+        dry: roomAnim.soilDry,
+        dew: roomAnim.dewActive
     });
 }
 
@@ -2389,10 +2770,16 @@ function setStationEntry(text, pulse) {
 
 function playObjectTone(obj) {
     if (typeof tone !== 'function') return;
-    if (obj === 'plant') { tone(396, 0.38, 'sine', 0.025); tone(594, 0.46, 'sine', 0.017, 0.09); }
-    else if (obj === 'window') { tone(660, 0.28, 'sine', 0.018, 0, 520); }
-    else if (obj === 'lamp') { tone(480, 0.14, 'triangle', 0.015, 0, 410); tone(240, 0.45, 'sine', 0.014, 0.05); }
-    else if (obj === 'shelf') {
+    if (obj === 'pot') {
+        tone(196, 0.16, 'triangle', 0.022, 0, 168);
+        tone(294, 0.28, 'sine', 0.012, 0.04);
+    } else if (obj === 'plant') {
+        tone(396, 0.38, 'sine', 0.025); tone(594, 0.46, 'sine', 0.017, 0.09);
+    } else if (obj === 'window') {
+        tone(660, 0.28, 'sine', 0.018, 0, 520);
+    } else if (obj === 'lamp') {
+        tone(480, 0.14, 'triangle', 0.015, 0, 410); tone(240, 0.45, 'sine', 0.014, 0.05);
+    } else if (obj === 'shelf') {
         if (typeof noise === 'function') { noise(0.04, 0.02, 0.02, 1500); noise(0.035, 0.016, 2.32, 1350); }
         tone(210, 0.24, 'sine', 0.015, 0.15, 260);
         tone(250, 0.24, 'sine', 0.014, 1.55, 195);
@@ -2401,7 +2788,24 @@ function playObjectTone(obj) {
         tone(440, 0.75, 'sine', 0.013, 0.12);
     } else if (obj === 'bed') {
         tone(220, 0.55, 'sine', 0.02); tone(330, 0.65, 'sine', 0.014, 0.12);
+    } else if (obj === 'pager') {
+        if (typeof noise === 'function') noise(0.028, 0.025, 0, 2200);
+        tone(920, 0.055, 'square', 0.014, 0.02, 640);
+        tone(195, 0.22, 'sine', 0.016, 0.09, 155);
     }
+}
+
+function stageNoteForPlayer(spec, stage, revealKnown) {
+    if (stage < 0) {
+        if (roomAnim.soilDry) return EMPTY_POT_LINES.dry;
+        if (roomAnim.isSeedPot) return nextRoomLine('pot_seed', EMPTY_POT_LINES.seed);
+        if (roomAnim.soilReady) return nextRoomLine('pot_ready', EMPTY_POT_LINES.ready);
+        return nextRoomLine('pot_cold', EMPTY_POT_LINES.cold);
+    }
+    if (!revealKnown && stage < PROGRESSION_RULES.SPECIES_REVEAL_STAGE) {
+        return MYSTERY_STAGE_NOTES[stage] || PLANT_NOTES[spec.kind][stage];
+    }
+    return PLANT_NOTES[spec.kind][stage];
 }
 
 function nextRoomLine(key, list) {
@@ -2440,65 +2844,107 @@ function touchRoomObject(obj, event) {
     try { Telegram.WebApp.HapticFeedback.impactOccurred('soft'); } catch (_) {}
 
     let line = '';
+    let modeLabel = '';
     if (obj === 'terminal') {
         roomAnim.crtStart = now;
+        roomAnim.contextPanel = '';
+        modeLabel = 'ЖУРНАЛ // ТЕРМИНАЛ';
         line = ROOM_LINES.terminal;
     } else if (obj === 'radio') {
         roomAnim.radioStart = now;
+        roomAnim.contextPanel = '';
         const hasSignal = typeof musicFound === 'function' && musicFound();
+        modeLabel = 'ЖУРНАЛ // ПРИЁМНИК';
         line = hasSignal ? ROOM_LINES.radioOn : ROOM_LINES.radioOff;
     } else if (obj === 'plant') {
         roomAnim.plantStart = now;
+        roomAnim.contextPanel = '';
         const sp = roomAnim.spec || plantSpec();
-        const dropPetals = roomAnim.stage === 5 && (sp.kind === 6 || sp.kind === 5 || sp.kind === 4);
-        if (roomAnim.stage >= 3) spawnPlantSpores(4 + Math.floor(roomAnim.stage * 0.7), dropPetals);
-        line = PLANT_NOTES[sp.kind][roomAnim.stage];
-        playObjectTone('plant');
+        if (roomAnim.stage < 0) {
+            modeLabel = 'ЖУРНАЛ // ГОРШОК';
+            line = stageNoteForPlayer(sp, -1, false);
+            playObjectTone('pot');
+        } else {
+            const known = roomAnim.stage >= PROGRESSION_RULES.SPECIES_REVEAL_STAGE
+                || Number.isInteger(roomAnim.inspectKind)
+                || Number.isInteger(roomAnim.inspectStage)
+                || (typeof roomPreview !== 'undefined' && !!roomPreview);
+            const dropPetals = roomAnim.stage === 5 && (sp.kind === 6 || sp.kind === 5 || sp.kind === 4);
+            if (roomAnim.stage >= 3 || roomAnim.dewActive) spawnPlantSpores(4 + Math.floor(roomAnim.stage * 0.7), dropPetals);
+            modeLabel = 'ЖУРНАЛ // РАСТЕНИЕ';
+            line = stageNoteForPlayer(sp, roomAnim.stage, known);
+            playObjectTone('plant');
+        }
     } else if (obj === 'window') {
         roomAnim.winStart = now;
+        roomAnim.contextPanel = roomAnim.unlockedPhase >= 1 ? 'window' : '';
         const wx = fxX && insideWindow(fxX, fxY, 12) ? fxX : WIN_CX;
         const wy = fxY && insideWindow(fxX, fxY, 12) ? fxY : WIN_CY + 10;
         roomAnim.ripples.push({ x: wx, y: wy, maxR: 26, life: 1, speed: 0.022 });
+        modeLabel = 'ЖУРНАЛ // ОКНО';
         line = nextRoomLine('win_' + roomAnim.activePhase, ROOM_LINES.window[roomAnim.activePhase] || ROOM_LINES.window[0]);
         playObjectTone('window');
     } else if (obj === 'lamp') {
+        roomAnim.contextPanel = '';
         const running = (now - roomAnim.lampStart) * 0.001;
         if (running > 0.5 || running < 0) {
             roomAnim.lampDir = fxX ? (fxX > 188 ? 1 : -1) : -roomAnim.lampDir;
             roomAnim.lampAmp = 0.095; // ~5.4° мягкого реалистичного маятника
             roomAnim.lampStart = now;
         }
+        modeLabel = 'ЖУРНАЛ // ЛАМПА';
         line = nextRoomLine('lamp', ROOM_LINES.lamp);
         playObjectTone('lamp');
     } else if (obj === 'shelf') {
+        roomAnim.contextPanel = 'deck';
         if ((now - roomAnim.deckStart) > 2850) {
             roomAnim.deckStart = now;
             playObjectTone('shelf');
         }
-        line = nextRoomLine('shelf', ROOM_LINES.shelf);
+        const tapes = loadCassettes();
+        if (tapes.length) {
+            const current = tapes.find(c => c.id === roomAnim.activeCassetteId) || tapes[0];
+            roomAnim.activeCassetteId = current.id;
+            const num = tapes.length - tapes.indexOf(current);
+            modeLabel = `КАССЕТА #${String(num).padStart(2, '0')} · ${current.date}`;
+            line = `«${current.text}»`;
+        } else {
+            modeLabel = 'ЖУРНАЛ // МАГНИТОФОН';
+            line = nextRoomLine('shelf', ROOM_LINES.shelf);
+        }
     } else if (obj === 'nightlight') {
+        roomAnim.contextPanel = '';
         if ((now - roomAnim.nightLStart) > 900) {
             roomAnim.nightLStart = now;
             playObjectTone('nightlight');
         }
+        modeLabel = 'ЖУРНАЛ // НОЧНИК';
         line = nextRoomLine('nightlight', ROOM_LINES.nightlight);
     } else if (obj === 'nightlightR') {
+        roomAnim.contextPanel = '';
         if ((now - roomAnim.nightRStart) > 900) {
             roomAnim.nightRStart = now;
             playObjectTone('nightlightR');
         }
+        modeLabel = 'ЖУРНАЛ // НОЧНИК';
         line = nextRoomLine('nightlightR', ROOM_LINES.nightlightR);
     } else if (obj === 'bed') {
+        roomAnim.contextPanel = '';
         if ((now - roomAnim.nightRStart) > 900) roomAnim.nightRStart = now;
+        modeLabel = 'ЖУРНАЛ // КУШЕТКА';
         line = nextRoomLine('bed', ROOM_LINES.bed);
         playObjectTone('bed');
     }
 
     if (line) {
         roomAnim.customEntry = line;
+        roomAnim.customMode = modeLabel;
         setStationEntry(line, true);
     }
 
+    syncContextPanels();
+    const mEl = typeof document !== 'undefined' && document.getElementById('station-mode');
+    if (mEl && modeLabel) mEl.textContent = modeLabel;
     paintPlantFrame(now);
     drawStationFx(now, false);
     ensureStationLoop();
@@ -2519,10 +2965,181 @@ function animatePlantShift() {
     }
 }
 
-// Осмотр любой из 6 стадий роста (1/6 .. 6/6)
+// Диегетические панели окна (только открытые атмосферы!) и кассетного архива деки
+function syncContextPanels() {
+    if (typeof document === 'undefined') return;
+    const winBar = document.getElementById('station-window-bar');
+    if (winBar && winBar.classList) {
+        const showWin = roomAnim.contextPanel === 'window' && roomAnim.unlockedPhase >= 1;
+        winBar.classList.toggle('hidden', !showWin);
+        if (winBar.querySelectorAll) {
+            winBar.querySelectorAll('[data-win-phase]').forEach(btn => {
+                const idx = Number(btn.dataset.winPhase);
+                const isUnlocked = idx <= roomAnim.unlockedPhase;
+                btn.hidden = !isUnlocked;
+                if (btn.classList) btn.classList.toggle('hidden', !isUnlocked);
+                btn.disabled = !isUnlocked;
+                btn.setAttribute('aria-pressed', String(idx === roomAnim.activePhase));
+            });
+        }
+    }
+
+    const deckBar = document.getElementById('station-deck-bar');
+    if (deckBar && deckBar.classList) {
+        const showDeck = roomAnim.contextPanel === 'deck';
+        deckBar.classList.toggle('hidden', !showDeck);
+        const listEl = document.getElementById('station-deck-list');
+        const emptyEl = document.getElementById('station-deck-empty');
+        const countEl = document.getElementById('station-deck-count');
+        const tapes = loadCassettes();
+        if (countEl) countEl.textContent = tapes.length ? `${tapes.length} ЗАП.` : 'ЛОТОК ПУСТ';
+        if (emptyEl && emptyEl.classList) emptyEl.classList.toggle('hidden', tapes.length > 0);
+        if (listEl) {
+            listEl.textContent = '';
+            if (tapes.length && document.createElement) {
+                tapes.forEach((tape, idx) => {
+                    const num = String(tapes.length - idx).padStart(2, '0');
+                    const b = document.createElement('button');
+                    b.type = 'button';
+                    b.textContent = `#${num} · ${tape.date}`;
+                    b.setAttribute('aria-pressed', String(tape.id === roomAnim.activeCassetteId));
+                    b.onclick = () => playCassette(tape.id);
+                    listEl.appendChild(b);
+                });
+            }
+        }
+    }
+}
+
+// Тактильный чёрно-красный ретро-пейджер «Шёпота» (временно вне эфира, без дубля телефона)
+function pulsePagerScreen() {
+    const p = typeof document !== 'undefined' && document.getElementById('soma-pager');
+    if (!p || !p.classList) return;
+    p.classList.remove('is-ping');
+    void p.offsetWidth;
+    p.classList.add('is-ping');
+    if (typeof clearTimeout === 'function') clearTimeout(roomAnim.pagerResetTimer);
+    if (typeof setTimeout === 'function') {
+        roomAnim.pagerResetTimer = setTimeout(() => {
+            if (p.classList) p.classList.remove('is-ping');
+        }, 720);
+    }
+}
+
+function pressPagerScan() {
+    roomAnim.pagerStep = roomAnim.pagerMode === 'scan' ? (roomAnim.pagerStep + 1) % 3 : 0;
+    roomAnim.pagerMode = 'scan';
+    try { Telegram.WebApp.HapticFeedback.impactOccurred('light'); } catch (_) {}
+    playObjectTone('pager');
+    pulsePagerScreen();
+    renderPager();
+}
+
+function pressPagerInfo() {
+    roomAnim.pagerMode = roomAnim.pagerMode === 'info' ? 'idle' : 'info';
+    try { Telegram.WebApp.HapticFeedback.impactOccurred('soft'); } catch (_) {}
+    if (typeof SFX !== 'undefined' && SFX.tap) SFX.tap();
+    pulsePagerScreen();
+    renderPager();
+}
+
+function openWhisper() {
+    pressPagerScan();
+}
+
+function renderPager(warmthArg, ledgerArg, isWatchmanArg) {
+    if (typeof document === 'undefined') return;
+    const pager = document.getElementById('soma-pager');
+    if (!pager) return;
+    const w = warmthArg !== undefined ? warmthArg : roomAnim.warmth;
+    const ledger = ledgerArg || loadWarmthLedger();
+    const adm = whisperAdmission(w, ledger);
+    const gh = loadGreenhouse();
+    const own = roomAnim.ownSpec || plantSpec();
+    const watchman = isWatchmanArg !== undefined ? isWatchmanArg : gh.bloomed.includes(own.kind);
+
+    pager.dataset.state = adm.live ? (adm.admitted ? 'ready' : 'locked') : 'offline';
+    pager.dataset.admitted = adm.admitted ? '1' : '0';
+
+    const carrierEl = document.getElementById('pager-carrier');
+    const gateEl = document.getElementById('pager-gate');
+    const msgEl = document.getElementById('pager-msg');
+    const subEl = document.getElementById('pager-sub');
+
+    if (carrierEl) carrierEl.textContent = adm.live ? 'ЭФИР АКТИВЕН' : 'НЕТ НЕСУЩЕЙ';
+    if (gateEl) {
+        gateEl.textContent = watchman
+            ? 'ДОПУСК: СМОТРИТЕЛЬ'
+            : adm.admitted
+                ? 'ДОПУСК: ГОТОВ'
+                : `ДОПУСК ${adm.warmth}/${adm.warmthNeed} · ТРН ${adm.trained}/${adm.trainedNeed}`;
+    }
+
+    let mainLine = 'ЧАСТОТА «ШЁПОТ» ОТКЛЮЧЕНА';
+    let subLine = adm.admitted
+        ? 'допуск получен · приёмник ждёт запуска тёплой линии'
+        : 'линия временно молчит · готовьте допуск в тишине и терминале';
+
+    if (roomAnim.pagerMode === 'info') {
+        mainLine = watchman
+            ? 'РЕЗЕРВ // ВОЛНА «ПОТЕРЯННЫЙ СИГНАЛ»'
+            : 'ОДНОСТОРОННИЙ КАНАЛ // БЕЗ ИМЁН';
+        subLine = watchman
+            ? 'смотрители слышат голоса, оставшиеся без единого ответа'
+            : 'горшок пуст, пока молчит «Шёпот» — первый сигнал разбудит росток';
+    } else if (roomAnim.pagerMode === 'scan') {
+        const screens = [
+            [
+                'ПОИСК НЕСУЩЕЙ... ЭФИР ПУСТ',
+                'ретранслятор «Шёпота» в NEEO_CITY ещё не запущен'
+            ],
+            [
+                adm.admitted ? 'КЛЮЧ СЛУШАТЕЛЯ ПОДТВЕРЖДЁН' : `НУЖНО ${adm.warmthNeed} ТЕПЛА И ${adm.trainedNeed} СЕАНСОВ`,
+                adm.admitted
+                    ? 'когда канал оживёт, первый шёпот пробудит жизнь в горшке'
+                    : `сейчас: ${adm.warmth}/${adm.warmthNeed} тепла · услышано в терминале: ${adm.trained}/${adm.trainedNeed}`
+            ],
+            [
+                watchman ? 'ЧАСТОТА СМОТРИТЕЛЯ В ОЖИДАНИИ' : 'ВХОДЯЩИЕ ПИШУТСЯ НА КАССЕТЫ',
+                watchman
+                    ? 'после запуска вы сможете отвечать на забытые сигналы сети'
+                    : 'чужие шёпоты для вас сохранит магнитофон на левой полке'
+            ]
+        ];
+        const pick = screens[roomAnim.pagerStep % screens.length];
+        mainLine = pick[0];
+        subLine = pick[1];
+    }
+
+    if (msgEl) msgEl.textContent = mainLine;
+    if (subEl) subEl.textContent = subLine;
+}
+
+function togglePtsDrawer() {
+    roomAnim.ptsOpen = !roomAnim.ptsOpen;
+    if (!roomAnim.ptsOpen) {
+        roomAnim.inspectStage = null;
+        roomAnim.inspectKind = null;
+        roomAnim.galleryOpen = false;
+        roomAnim.ptsDew = false;
+        roomAnim.customEntry = '';
+        roomAnim.customMode = '';
+    }
+    if (typeof SFX !== 'undefined' && SFX.tap) SFX.tap();
+    renderRoom();
+}
+
+function togglePtsDew() {
+    roomAnim.ptsDew = !roomAnim.ptsDew;
+    if (typeof SFX !== 'undefined' && SFX.tap) SFX.tap();
+    renderRoom();
+}
+
+// PTS-осмотр стадий: -1 (пустой горшок) и 0..5 (стадии 1/6 .. 6/6)
 function inspectPlantStage(idx) {
     const s = Math.trunc(Number(idx));
-    if (!Number.isInteger(s) || s < 0 || s >= PLANT_STAGES.length) return;
+    if (!Number.isInteger(s) || s < -1 || s >= PLANT_STAGES.length) return;
+    roomAnim.ptsOpen = true;
     const previewing = typeof roomPreview !== 'undefined' && !!roomPreview;
     if (previewing) {
         roomAnim.previewStage = s;
@@ -2530,45 +3147,54 @@ function inspectPlantStage(idx) {
         roomAnim.inspectStage = (s === roomAnim.liveStage && roomAnim.inspectKind === null) ? null : s;
     }
     const sp = roomAnim.spec || plantSpec();
-    roomAnim.customEntry = PLANT_NOTES[sp.kind][s];
+    roomAnim.customMode = s < 0 ? 'PTS // ПУСТОЙ ГОРШОК' : `PTS // СТАДИЯ ${s + 1}/6`;
+    roomAnim.customEntry = s < 0 ? EMPTY_POT_LINES.cold[0] : PLANT_NOTES[sp.kind][s];
     animatePlantShift();
-    playObjectTone('plant');
+    playObjectTone(s < 0 ? 'pot' : 'plant');
     renderRoom();
 }
 
-// Открыть/скрыть панель осмотра всех 7 видов растений
+// PTS: открыть/скрыть панель осмотра всех 7 видов растений
 function togglePlantGallery() {
+    roomAnim.ptsOpen = true;
     roomAnim.galleryOpen = !roomAnim.galleryOpen;
     if (!roomAnim.galleryOpen && roomAnim.inspectKind !== null) {
         roomAnim.inspectKind = null;
         roomAnim.customEntry = '';
+        roomAnim.customMode = '';
         animatePlantShift();
     }
     if (typeof SFX !== 'undefined' && SFX.tap) SFX.tap();
     renderRoom();
 }
 
-// Посмотреть любой из 7 видов прямо на ковре (личное растение по ID сохраняется неизменным!)
+// PTS: посмотреть любой из 7 видов прямо на ковре (личное растение по ID сохраняется неизменным!)
 function inspectPlantKind(kindIdx) {
     const k = Math.trunc(Number(kindIdx));
     if (!Number.isInteger(k) || k < 0 || k >= PLANT_KINDS.length) return;
     const own = roomAnim.ownSpec || plantSpec();
+    roomAnim.ptsOpen = true;
     roomAnim.galleryOpen = true;
+    const previewing = typeof roomPreview !== 'undefined' && !!roomPreview;
     if (k === own.kind) {
         roomAnim.inspectKind = null;
+        if (!previewing && roomAnim.inspectStage === null && roomAnim.liveStage < 0) {
+            roomAnim.inspectStage = 5;
+        }
     } else {
         roomAnim.inspectKind = k;
-        // Если игрок ещё на 1-й стадии, сразу показываем цветущую 6-ю стадию чужого вида, а кнопки 1–6 переключают любую!
-        if (roomAnim.inspectStage === null && !(typeof roomPreview !== 'undefined' && roomPreview) && roomAnim.liveStage < 5) {
+        if (previewing && roomAnim.previewStage === -1) roomAnim.previewStage = 5;
+        if (!previewing && (roomAnim.inspectStage === null || roomAnim.inspectStage < 0)) {
             roomAnim.inspectStage = 5;
         }
     }
-    const nextStage = (typeof roomPreview !== 'undefined' && roomPreview)
-        ? (Number.isInteger(roomAnim.previewStage) ? roomAnim.previewStage : roomAnim.stage)
+    const nextStage = previewing
+        ? (Number.isInteger(roomAnim.previewStage) ? roomAnim.previewStage : 5)
         : (Number.isInteger(roomAnim.inspectStage) ? roomAnim.inspectStage : roomAnim.liveStage);
-    roomAnim.customEntry = PLANT_NOTES[k][nextStage];
+    roomAnim.customMode = `PTS // ${PLANT_KINDS[k]}`;
+    roomAnim.customEntry = nextStage < 0 ? EMPTY_POT_LINES.cold[0] : PLANT_NOTES[k][nextStage];
     animatePlantShift();
-    playObjectTone('plant');
+    playObjectTone(nextStage < 0 ? 'pot' : 'plant');
     renderRoom();
 }
 
@@ -2579,18 +3205,33 @@ function renderRoom() {
 
     const previewing = typeof roomPreview !== 'undefined' && !!roomPreview;
     const previewIdx = Number.isInteger(roomAnim.previewPhase) ? Math.max(0, Math.min(3, roomAnim.previewPhase)) : 3;
-    const warmth = previewing ? stationPhases[previewIdx].at : Math.max(0, (typeof player !== 'undefined' && player.warmth) || 0);
-    let equipped;
+    const demoWarmthByPhase = [0, 20, 108, PROGRESSION_RULES.SEASON_WARMTH];
+    const warmth = previewing
+        ? demoWarmthByPhase[previewIdx]
+        : Math.max(0, (typeof player !== 'undefined' && player.warmth) || 0);
+
+    let equipped, seenMax;
     if (!previewing) {
-        try {
-            const saved = localStorage.getItem('soma_station_phase');
-            if (saved !== null) equipped = Number(saved);
-        } catch (_) {}
+        const sEq = lsGet('soma_station_phase');
+        if (sEq !== null && sEq !== '') equipped = Number(sEq);
+        const sSeen = lsGet('soma_seen_phase');
+        if (sSeen !== null && sSeen !== '') seenMax = Number(sSeen);
     }
 
-    const { unlocked, active, next } = previewing
-        ? { unlocked: stationPhases.length - 1, active: previewIdx, next: stationPhases[previewIdx + 1] }
-        : stationState(warmth, equipped);
+    const stState = previewing
+        ? { unlocked: stationPhases.length - 1, active: previewIdx, justUnlocked: false, next: stationPhases[previewIdx + 1] }
+        : stationState(warmth, equipped, seenMax);
+    const { unlocked, active, justUnlocked, next } = stState;
+
+    // При первом открытии новой атмосферы комната САМА впускает её (катарсис), а дальше игрок выбирает через окно!
+    if (!previewing) {
+        if (!Number.isInteger(seenMax) || unlocked > seenMax) lsSet('soma_seen_phase', String(unlocked));
+        if (justUnlocked) {
+            lsSet('soma_station_phase', String(unlocked));
+            roomAnim.customEntry = stationPhases[unlocked].entry;
+            roomAnim.customMode = `НОВАЯ АТМОСФЕРА // ${stationPhases[unlocked].name.toUpperCase()}`;
+        }
+    }
 
     const totalRanks = typeof ranks !== 'undefined' ? ranks.length : 6;
     const rIdx = previewing
@@ -2599,12 +3240,65 @@ function renderRoom() {
     const stars = rIdx + 1;
     const phase = stationPhases[active];
 
-    const ownSpec = plantSpec();
-    const otherKind = Number.isInteger(roomAnim.inspectKind) && roomAnim.inspectKind !== ownSpec.kind;
-    const spec = otherKind ? gallerySpecForKind(roomAnim.inspectKind, ownSpec) : ownSpec;
-    const liveStage = plantStage(warmth, rIdx);
+    const ledger = loadWarmthLedger();
+    const adm = whisperAdmission(warmth, ledger);
+    const awayDays = previewing ? 0 : daysSinceLastWarmth(ledger);
+    const soilDry = awayDays >= PROGRESSION_RULES.DRY_SOIL_DAYS;
+    const nowMs = Date.now();
+    const dewActive = roomAnim.ptsDew || (ledger.dewUntil > nowMs);
 
-    const grew = roomAnim.lastStage >= 0 && liveStage > roomAnim.lastStage && !previewing;
+    // Родное растение строго по ID игрока + коллекция Оранжереи после его первого расцвета (6/6)
+    const ownSpec = plantSpec();
+    const nativeStage = previewing
+        ? [-1, 0, 2, 5][previewIdx]
+        : plantStage(warmth, {
+            sprouted: adm.sprouted,
+            requireAcks: adm.live,
+            bloomAcks: adm.whisperAcks
+        });
+
+    const gh = loadGreenhouse();
+    if (!previewing && nativeStage === 5 && !gh.bloomed.includes(ownSpec.kind)) {
+        gh.bloomed.push(ownSpec.kind);
+        if (gh.placed === null) gh.placed = ownSpec.kind;
+        saveGreenhouse(gh);
+    }
+    if (!previewing && gh.activeSeed) {
+        const seedGain = Math.max(0, warmth - gh.activeSeed.startWarmth);
+        const sStage = plantStage(seedGain, { sprouted: true, steps: GREENHOUSE_WARMTH_STEPS });
+        if (sStage === 5) {
+            if (!gh.bloomed.includes(gh.activeSeed.kind)) gh.bloomed.push(gh.activeSeed.kind);
+            gh.placed = gh.activeSeed.kind;
+            roomAnim.customMode = 'ОРАНЖЕРЕЯ // РАСЦВЕТ';
+            roomAnim.customEntry = PLANT_NOTES[gh.activeSeed.kind][5];
+            gh.activeSeed = null;
+            saveGreenhouse(gh);
+        }
+    }
+
+    let liveSpec = ownSpec;
+    let liveStage = nativeStage;
+    let isSeedPot = false;
+    let activeSteps = PLANT_WARMTH_STEPS;
+    let effectiveWarmth = warmth;
+
+    if (!previewing && gh.bloomed.includes(ownSpec.kind)) {
+        if (gh.placed === 'seed' && gh.activeSeed) {
+            liveSpec = gallerySpecForKind(gh.activeSeed.kind, ownSpec);
+            effectiveWarmth = Math.max(0, warmth - gh.activeSeed.startWarmth);
+            activeSteps = GREENHOUSE_WARMTH_STEPS;
+            liveStage = plantStage(effectiveWarmth, { sprouted: true, steps: GREENHOUSE_WARMTH_STEPS });
+            isSeedPot = true;
+        } else if (Number.isInteger(gh.placed) && gh.bloomed.includes(gh.placed)) {
+            liveSpec = gallerySpecForKind(gh.placed, ownSpec);
+            liveStage = 5;
+        }
+    }
+
+    const otherKind = Number.isInteger(roomAnim.inspectKind) && roomAnim.inspectKind !== liveSpec.kind;
+    const spec = otherKind ? gallerySpecForKind(roomAnim.inspectKind, ownSpec) : liveSpec;
+
+    const grew = roomAnim.lastStage >= -1 && liveStage > roomAnim.lastStage && !previewing && !isSeedPot;
     if (grew) {
         roomAnim.inspectStage = null;
         roomAnim.inspectKind = null;
@@ -2613,10 +3307,14 @@ function renderRoom() {
     const shownStage = previewing
         ? (Number.isInteger(roomAnim.previewStage) ? roomAnim.previewStage : liveStage)
         : (Number.isInteger(roomAnim.inspectStage) ? roomAnim.inspectStage : liveStage);
-    const isPeeking = otherKind || (!previewing && shownStage !== liveStage);
+    const isPeeking = previewing || otherKind || shownStage !== liveStage;
+    const speciesKnown = isPeeking
+        || gh.bloomed.includes(spec.kind)
+        || shownStage >= PROGRESSION_RULES.SPECIES_REVEAL_STAGE;
     const radioReady = typeof musicFound === 'function' && musicFound();
 
     roomAnim.activePhase = active;
+    roomAnim.unlockedPhase = unlocked;
     roomAnim.warmth = warmth;
     roomAnim.rank = rIdx;
     roomAnim.liveStage = liveStage;
@@ -2624,10 +3322,18 @@ function renderRoom() {
     roomAnim.lastStage = liveStage;
     roomAnim.ownSpec = ownSpec;
     roomAnim.spec = spec;
+    roomAnim.soilReady = !isSeedPot && adm.admitted && shownStage < 0;
+    roomAnim.soilDry = soilDry;
+    roomAnim.dewActive = dewActive && shownStage >= 0;
+    roomAnim.isSeedPot = isSeedPot;
     roomAnim.radioLit = radioReady;
-    if (grew) {
+
+    if (grew && liveStage >= 0) {
         roomAnim.plantStart = typeof performance !== 'undefined' ? performance.now() : Date.now();
-        roomAnim.customEntry = PLANT_NOTES[ownSpec.kind][liveStage];
+        roomAnim.customMode = liveStage === PROGRESSION_RULES.SPECIES_REVEAL_STAGE
+            ? `ОТКРЫТИЕ ВИДА // ${ownSpec.kindName}`
+            : 'ЖУРНАЛ // НОВЫЙ РОСТ';
+        roomAnim.customEntry = stageNoteForPlayer(ownSpec, liveStage, liveStage >= PROGRESSION_RULES.SPECIES_REVEAL_STAGE);
         if (liveStage >= 3) spawnPlantSpores(6, liveStage === 5 && ownSpec.kind >= 4);
     }
 
@@ -2637,31 +3343,194 @@ function renderRoom() {
 
     const wEl = document.getElementById('warmth-val');
     if (wEl) wEl.textContent = String(warmth);
-    const mEl = document.getElementById('station-mode');
-    if (mEl) mEl.textContent = previewing ? 'ДЕМОНСТРАЦИЯ // ЖУРНАЛ' : 'ЖУРНАЛ СТАНЦИИ';
-    setStationEntry(roomAnim.customEntry || phase.entry, grew);
 
+    // Таяние Индекса равнодушия в шапке от живого тепла (а не от пустого XP)
+    const indEl = document.getElementById('indiff-val');
+    if (indEl) indEl.textContent = `${indifferenceIndex(warmth)}%`;
+
+    const mEl = document.getElementById('station-mode');
+    if (mEl) {
+        mEl.textContent = roomAnim.customMode
+            || (previewing ? 'PTS // ДЕМОНСТРАЦИЯ' : 'ЖУРНАЛ СТАНЦИИ');
+    }
+
+    // Если игрок с цветущим растением вернул «Дождь» через окно — фраза без упоминания пустого горшка
+    const defaultEntry = (active === 0 && shownStage >= 0)
+        ? 'Город шумит за мокрым стеклом. Рядом с живым цветком ночь кажется теплее.'
+        : phase.entry;
+    setStationEntry(roomAnim.customEntry || defaultEntry, grew || justUnlocked);
+
+    // Блок горшка / растения (чистый и загадочный для игрока, информативный в PTS-осмотре)
     const plantInfo = document.getElementById('station-plant-info');
     if (plantInfo) {
-        const prefix = isPeeking ? 'ОСМОТР' : 'РОСТ';
-        plantInfo.textContent = `${spec.kindName} // ${prefix} ${shownStage + 1}/6 · ${PLANT_STAGES[shownStage].toUpperCase()}`;
+        if (shownStage < 0) {
+            plantInfo.textContent = isSeedPot
+                ? 'НОВОЕ СЕМЯ // ТИШИНА В ЗЕМЛЕ'
+                : (adm.admitted && !isPeeking ? 'ПУСТОЙ ГОРШОК // ПОЧВА СОГРЕТА' : 'ПУСТОЙ ГОРШОК // ОЖИДАНИЕ ЖИЗНИ');
+        } else {
+            const title = speciesKnown
+                ? spec.kindName
+                : (shownStage === 0 ? 'НЕИЗВЕСТНЫЙ РОСТОК' : 'НЕИЗВЕСТНЫЙ ПОБЕГ');
+            const prefix = (otherKind || (!previewing && shownStage !== liveStage)) ? 'ОСМОТР' : 'РОСТ';
+            const dewMark = roomAnim.dewActive ? ' · РОСА' : '';
+            plantInfo.textContent = `${title} // ${prefix} ${shownStage + 1}/6 · ${PLANT_STAGES[shownStage].toUpperCase()}${dewMark}`;
+        }
     }
+
     const plantSub = document.getElementById('station-plant-sub');
+    const rhythmTag = ledger.warmDays > 0
+        ? `сегодня +${ledger.total}/${PROGRESSION_RULES.DAILY_WARMTH_CAP} · тёплых дней: ${ledger.warmDays}`
+        : `сегодня +${ledger.total}/${PROGRESSION_RULES.DAILY_WARMTH_CAP} тепла`;
     if (plantSub) {
         if (otherKind) {
-            plantSub.textContent = `осмотр вида · ваш по ID: ${ownSpec.kindName.toLowerCase()} (стадия ${liveStage + 1}/6)`;
+            plantSub.textContent = `PTS-осмотр вида · ваш родной по ID: ${ownSpec.kindName.toLowerCase()}`;
         } else if (!previewing && shownStage !== liveStage) {
-            const need = PLANT_WARMTH_STEPS[shownStage];
-            plantSub.textContent = shownStage <= liveStage
-                ? `пройденный этап · сейчас у вас ${liveStage + 1}/6`
-                : `откроется на ${need} тепла (Ур. ${shownStage + 1}) · сейчас ${liveStage + 1}/6`;
+            plantSub.textContent = `PTS-осмотр стадии · в реальности сейчас: ${liveStage < 0 ? 'пустой горшок' : `${liveStage + 1}/6`}`;
         } else if (previewing) {
-            plantSub.textContent = `листайте стадии 1–6 и все 7 видов растений`;
-        } else if (liveStage < 5) {
-            plantSub.textContent = `след. стадия: ${PLANT_WARMTH_STEPS[liveStage + 1]} тепла · нажмите 1–6 для осмотра`;
+            plantSub.textContent = `демо сезона · коснитесь окна для смены атмосферы или листайте PTS ниже`;
+        } else if (shownStage < 0) {
+            if (soilDry) {
+                plantSub.textContent = `пауза ${awayDays} дн. без потерь · росток ждёт запуска «Шёпота»`;
+            } else if (isSeedPot) {
+                const left = Math.max(0, activeSteps[0] - effectiveWarmth);
+                plantSub.textContent = `до первого ростка: ещё ${left} тепла · ${rhythmTag}`;
+            } else if (adm.admitted) {
+                plantSub.textContent = `почва готова · росток проснётся с первым «Шёпотом» · ${rhythmTag}`;
+            } else {
+                plantSub.textContent = `росток проснётся, когда откроется «Шёпот» · ${rhythmTag}`;
+            }
+        } else if (shownStage < 5) {
+            const needNext = Math.max(0, activeSteps[shownStage + 1] - effectiveWarmth);
+            if (shownStage === 4 && !isSeedPot && adm.live && needNext === 0 && adm.whisperAcks < PROGRESSION_RULES.WHISPER_BLOOM_ACKS) {
+                plantSub.textContent = `для цветения нужны живые отклики «стало теплее»: ${adm.whisperAcks}/${PROGRESSION_RULES.WHISPER_BLOOM_ACKS}`;
+            } else {
+                const hint = shownStage + 1 === PROGRESSION_RULES.SPECIES_REVEAL_STAGE ? 'до открытия вида' : 'до след. стадии';
+                plantSub.textContent = `${hint}: ещё ${needNext} тепла · ${rhythmTag}`;
+            }
         } else {
-            plantSub.textContent = `полное цветение · все 6 стадий открыты`;
+            plantSub.textContent = roomAnim.dewActive
+                ? `полное цветение · на лепестках держится свежая роса`
+                : `полное цветение сезона · ${rhythmTag}`;
         }
+    }
+
+    // Тихая релизная шкала роста (6 точек без спойлеров — видна только после появления ростка!)
+    const trackEl = document.getElementById('station-growth-track');
+    if (trackEl && trackEl.classList) {
+        trackEl.classList.toggle('hidden', shownStage < 0);
+        if (trackEl.querySelectorAll) {
+            trackEl.querySelectorAll('i').forEach((dot, idx) => {
+                dot.classList.toggle('is-lit', idx <= shownStage);
+                dot.classList.toggle('is-now', idx === shownStage);
+            });
+        }
+    }
+
+    // Оранжерея игрока (открывается в релизе, когда родной цветок достиг 6/6)
+    const ghBox = document.getElementById('station-greenhouse');
+    if (ghBox && ghBox.classList) {
+        const hasGh = !previewing && gh.bloomed.includes(ownSpec.kind);
+        ghBox.classList.toggle('hidden', !hasGh);
+        const ghCount = document.getElementById('station-gh-count');
+        if (ghCount) ghCount.textContent = `${gh.bloomed.length}/7 ВИДОВ`;
+        const ghSlots = document.getElementById('station-gh-slots');
+        if (ghSlots && hasGh && document.createElement) {
+            ghSlots.textContent = '';
+            gh.bloomed.forEach(k => {
+                const b = document.createElement('button');
+                b.type = 'button';
+                const nm = PLANT_KINDS[k][0] + PLANT_KINDS[k].slice(1).toLowerCase();
+                b.textContent = k === ownSpec.kind ? `★ ${nm}` : nm;
+                const activeSlot = !isSeedPot && liveSpec.kind === k;
+                b.setAttribute('aria-pressed', String(activeSlot));
+                b.onclick = () => selectGreenhouseSlot(k);
+                ghSlots.appendChild(b);
+            });
+            if (gh.activeSeed) {
+                const sb = document.createElement('button');
+                sb.type = 'button';
+                const sg = Math.max(0, warmth - gh.activeSeed.startWarmth);
+                const ss = plantStage(sg, { sprouted: true, steps: GREENHOUSE_WARMTH_STEPS });
+                sb.textContent = ss >= PROGRESSION_RULES.SPECIES_REVEAL_STAGE
+                    ? `🌱 ${PLANT_KINDS[gh.activeSeed.kind][0] + PLANT_KINDS[gh.activeSeed.kind].slice(1).toLowerCase()} (${ss + 1}/6)`
+                    : `🌱 Семя (${ss < 0 ? '0' : ss + 1}/6)`;
+                sb.setAttribute('aria-pressed', String(isSeedPot));
+                sb.onclick = () => selectGreenhouseSlot('seed');
+                ghSlots.appendChild(sb);
+            } else if (gh.bloomed.length < PLANT_KINDS.length) {
+                const nb = document.createElement('button');
+                nb.type = 'button';
+                nb.className = 'is-seed-action';
+                nb.textContent = '+ Новое семя';
+                nb.onclick = () => plantNewGreenhouseSeed(warmth, ownSpec);
+                ghSlots.appendChild(nb);
+            }
+        }
+    }
+
+    // Доступность хотспота горшка / растения (без спойлера скрытого вида!)
+    const plantBtn = room.querySelector('[data-obj="plant"]');
+    if (plantBtn) {
+        if (shownStage < 0) {
+            plantBtn.setAttribute('aria-label', 'Пустой горшок с землёй — осмотреть');
+        } else if (!speciesKnown) {
+            plantBtn.setAttribute('aria-label', `Неизвестный росток, стадия ${shownStage + 1} из 6 — осмотреть`);
+        } else {
+            plantBtn.setAttribute('aria-label', `${spec.kindName[0] + spec.kindName.slice(1).toLowerCase()}, стадия ${shownStage + 1} из 6 — осмотреть`);
+        }
+    }
+
+    // Диегетические панели окна и магнитофона
+    syncContextPanels();
+
+    // Тихая строка прогресса комнаты (без спойлера названия будущих фаз до их открытия!)
+    const nextEl = document.getElementById('station-next');
+    if (nextEl) {
+        if (previewing) {
+            nextEl.textContent = `Атмосфера: «${phase.name}». Коснитесь круглого окна, чтобы сменить час как игрок.`;
+        } else if (next) {
+            const winHint = unlocked >= 1 ? ' · окно меняет открытые состояния' : '';
+            nextEl.textContent = `Воздух теплеет: ещё ${next.at - warmth} тепла до новой перемены за окном${winHint}.`;
+        } else {
+            nextEl.textContent = `Сейчас за окном: «${phase.name}». Коснитесь окна, чтобы выбрать любую атмосферу.`;
+        }
+    }
+
+    const meter = document.getElementById('station-meter');
+    if (meter) {
+        meter.hidden = previewing || !next;
+        if (!previewing && next) {
+            meter.max = next.at - stationPhases[unlocked].at;
+            meter.value = warmth - stationPhases[unlocked].at;
+        }
+    }
+
+    // На «Рассвете» звёзды растворяются в утреннем свете, в ночных фазах сияют по рангу (холодный XP)
+    room.querySelectorAll('.station-sky circle, .station-sky line').forEach(el => {
+        el.style.opacity = active === 3 ? 0 : (Number(el.dataset.star) <= stars ? 1 : 0);
+    });
+    const stEl = document.getElementById('station-stars');
+    if (stEl) {
+        stEl.textContent = active === 3
+            ? `Созвездие рангов: ${stars}/6 · растаяло в лучах рассвета (верните ночь через окно, чтобы увидеть).`
+            : `Созвездие рангов: ${stars}/6 · холодные звёзды опыта свидетеля.`;
+    }
+
+    // PTS-инспектор (строго скрыт в релизе; на PTS аккуратно сворачивается, чтобы видеть чистый интерфейс игрока)
+    const ptsWrap = document.getElementById('pts-panel');
+    const ptsBody = document.getElementById('pts-body');
+    const ptsToggle = document.getElementById('pts-drawer-toggle');
+    if (ptsWrap && ptsWrap.classList) {
+        ptsWrap.classList.toggle('hidden', !isPtsMode());
+    }
+    if (ptsToggle) {
+        ptsToggle.setAttribute('aria-expanded', String(!!roomAnim.ptsOpen));
+        ptsToggle.textContent = roomAnim.ptsOpen
+            ? 'PTS // СКРЫТЬ ИНСПЕКТОР (ЧИСТЫЙ ВИД ИГРОКА)'
+            : 'PTS // ИНСПЕКТОР (СТАДИИ 0–6 · 7 ВИДОВ · РАССВЕТ)';
+    }
+    if (ptsBody && ptsBody.classList) {
+        ptsBody.classList.toggle('hidden', !roomAnim.ptsOpen);
     }
 
     const toggleBtn = document.getElementById('station-kinds-toggle');
@@ -2681,38 +3550,18 @@ function renderRoom() {
         btn.setAttribute('aria-pressed', String(idx === spec.kind));
     });
 
-    room.querySelectorAll('[data-stage-btn]').forEach((btn, idx) => {
-        const reached = (previewing || idx <= liveStage) && !otherKind;
-        const selected = idx === shownStage;
+    room.querySelectorAll('[data-stage-btn]').forEach(btn => {
+        const sVal = Number(btn.dataset.stageBtn);
+        const reached = (previewing || sVal <= liveStage) && !otherKind;
+        const selected = sVal === shownStage;
         btn.classList.toggle('is-reached', reached);
-        btn.classList.toggle('is-live', !previewing && !otherKind && idx === liveStage);
+        btn.classList.toggle('is-live', !previewing && !otherKind && sVal === liveStage);
         btn.classList.toggle('is-peek', !reached && selected);
         btn.setAttribute('aria-pressed', String(selected));
-        btn.title = `Стадия ${idx + 1}/6: ${PLANT_STAGES[idx]} (${PLANT_WARMTH_STEPS[idx]} тепла)`;
+        btn.title = sVal < 0
+            ? 'Стадия 0: пустой горшок (до первого «Шёпота»)'
+            : `Стадия ${sVal + 1}/6: ${PLANT_STAGES[sVal]} (${PLANT_WARMTH_STEPS[sVal]} тепла)`;
     });
-
-    const plantBtn = room.querySelector('[data-obj="plant"]');
-    if (plantBtn) {
-        plantBtn.setAttribute('aria-label', `${spec.kindName[0] + spec.kindName.slice(1).toLowerCase()}, стадия ${shownStage + 1} из 6 — осмотреть`);
-    }
-
-    const nextEl = document.getElementById('station-next');
-    if (nextEl) {
-        nextEl.textContent = previewing
-            ? 'Режим осмотра: переключайте атмосферы, стадии 1–6 и все 7 видов.'
-            : next
-                ? `До атмосферы «${next.name}»: ещё ${next.at - warmth} тепла.`
-                : 'Все атмосферы открыты. За окном — живой рассвет.';
-    }
-
-    const meter = document.getElementById('station-meter');
-    if (meter) {
-        meter.hidden = previewing || !next;
-        if (!previewing && next) {
-            meter.max = next.at - stationPhases[unlocked].at;
-            meter.value = warmth - stationPhases[unlocked].at;
-        }
-    }
 
     room.querySelectorAll('[data-preset]').forEach((button, i) => {
         button.disabled = !previewing && i > unlocked;
@@ -2721,37 +3570,36 @@ function renderRoom() {
         if (sub) sub.textContent = !previewing && i > unlocked ? `${stationPhases[i].at} тепла` : i === active ? 'выбрано' : 'открыто';
     });
 
-    // На «Рассвете» звёзды растворяются в утреннем свете, в ночных фазах сияют по рангу
-    room.querySelectorAll('.station-sky circle, .station-sky line').forEach(el => {
-        el.style.opacity = active === 3 ? 0 : (Number(el.dataset.star) <= stars ? 1 : 0);
-    });
-    const stEl = document.getElementById('station-stars');
-    if (stEl) {
-        stEl.textContent = active === 3
-            ? `Карта неба: ${stars}/6. В лучах рассвета звёзды тают — они видны в ночных атмосферах.`
-            : `Карта неба: ${stars}/6. С каждым новым рангом загорается звезда.`;
+    const ptsMaxBtn = document.getElementById('pts-preview');
+    if (ptsMaxBtn) {
+        ptsMaxBtn.textContent = previewing ? 'PTS: ВЕРНУТЬСЯ В РЕЖИМ ИГРОКА' : 'PTS: ВКЛЮЧИТЬ МАКС. УРОВЕНЬ (СЕЗОН 90 ДН.)';
     }
+    const ptsDewBtn = document.getElementById('pts-dew-btn');
+    if (ptsDewBtn) ptsDewBtn.setAttribute('aria-pressed', String(!!roomAnim.ptsDew));
 
-    const appRadio = document.getElementById('app-radio');
-    if (appRadio) appRadio.style.opacity = radioReady ? 1 : 0.65;
-
+    renderPager(warmth, ledger, gh.bloomed.includes(ownSpec.kind));
     ensureStationLoop();
 }
 
 function resetStationPreview() {
+    const previewing = typeof roomPreview !== 'undefined' && !!roomPreview;
     roomAnim.previewPhase = stationPhases.length - 1;
     roomAnim.previewStage = null;
     roomAnim.inspectStage = null;
     roomAnim.inspectKind = null;
+    roomAnim.ptsOpen = previewing ? true : roomAnim.ptsOpen;
     roomAnim.customEntry = '';
+    roomAnim.customMode = '';
 }
 
-function equipStationPhase(i) {
+function equipStationPhase(i, fromWindow) {
     if (!Number.isInteger(i) || !stationPhases[i]) return;
     if (typeof roomPreview !== 'undefined' && roomPreview) {
         roomAnim.previewPhase = i;
-        roomAnim.previewStage = null;
+        if (!fromWindow) roomAnim.previewStage = null;
+        else if (roomAnim.previewStage === null) roomAnim.previewStage = 5; // как у игрока на максе: цветок остаётся при смене неба!
         roomAnim.customEntry = '';
+        roomAnim.customMode = fromWindow ? `ОКНО // ${stationPhases[i].name.toUpperCase()}` : '';
         if (typeof SFX !== 'undefined' && SFX.tap) SFX.tap();
         renderRoom();
         return;
@@ -2759,8 +3607,10 @@ function equipStationPhase(i) {
     const warmth = (typeof player !== 'undefined' && player.warmth) || 0;
     if (warmth < stationPhases[i].at) return;
     roomAnim.customEntry = '';
-    try { localStorage.setItem('soma_station_phase', String(i)); }
-    catch (_) { if (typeof notify === 'function') notify('Не удалось сохранить атмосферу на этом устройстве.'); }
+    roomAnim.customMode = fromWindow ? `ОКНО // ${stationPhases[i].name.toUpperCase()}` : '';
+    if (!lsSet('soma_station_phase', String(i)) && typeof notify === 'function') {
+        notify('Не удалось сохранить атмосферу на этом устройстве.');
+    }
     if (typeof SFX !== 'undefined' && SFX.tap) SFX.tap();
     renderRoom();
 }

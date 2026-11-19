@@ -8,30 +8,123 @@ const roomCode = readFileSync(require.resolve('../room.js'), 'utf8');
 const roomCss = readFileSync(require.resolve('../room.css'), 'utf8');
 const indexHtml = readFileSync(require.resolve('../index.html'), 'utf8');
 
+function makeStorage(initial = {}) {
+    const map = new Map(Object.entries(initial).map(([k, v]) => [k, String(v)]));
+    return {
+        getItem: k => (map.has(k) ? map.get(k) : null),
+        setItem: (k, v) => { map.set(k, String(v)); },
+        removeItem: k => { map.delete(k); },
+        dump: () => Object.fromEntries(map)
+    };
+}
+
 function loadRoom(env = {}) {
+    const localStorage = env.localStorage || makeStorage();
     return runInNewContext(
-        roomCode + ';({ stationPhases, stationState, equipStationPhase, inspectPlantStage, togglePlantGallery, inspectPlantKind, PLANT_KINDS, PLANT_STAGES, PLANT_WARMTH_STEPS, PLANT_LEAF, PLANT_BLOOM, PLANT_POTS, CITY_WINDOWS, hashStr, rng, plantSpec, plantStage, drawPlantSprite, drawStationFx, drawCassetteDeck, paintPlantFrame, renderRoom, touchRoomObject, activateRoomObject, resetStationPreview, roomAnim });',
-        { player: { uid: 'u_0123456789abcdef', name: 'AGENT_1001', warmth: 4 }, roomPreview: false, ...env }
+        roomCode + ';({ stationPhases, PROGRESSION_RULES, GREENHOUSE_WARMTH_STEPS, stationState, indifferenceIndex, equipStationPhase, inspectPlantStage, togglePlantGallery, inspectPlantKind, togglePtsDrawer, togglePtsDew, togglePtsDemoCassette, loadWarmthLedger, claimDailyWarmth, recordWhisperEcho, daysSinceLastWarmth, whisperAdmission, loadGreenhouse, plantNewGreenhouseSeed, selectGreenhouseSlot, loadCassettes, saveWhisperCassette, playCassette, pressPagerScan, pressPagerInfo, renderPager, PLANT_KINDS, PLANT_STAGES, PLANT_WARMTH_STEPS, PLANT_LEAF, PLANT_BLOOM, PLANT_POTS, CITY_WINDOWS, hashStr, rng, plantSpec, plantStage, drawPlantSprite, drawStationFx, drawCassetteDeck, paintPlantFrame, renderRoom, touchRoomObject, activateRoomObject, resetStationPreview, roomAnim });',
+        { player: { uid: 'u_0123456789abcdef', name: 'AGENT_1001', warmth: 0 }, roomPreview: false, localStorage, ...env }
     );
 }
 
-test('atmospheres unlock exactly at warmth thresholds', () => {
-    const { stationState } = loadRoom();
-    for (const [warmth, index, next] of [[0,0,5],[4,0,5],[5,1,15],[14,1,15],[15,2,30],[29,2,30],[30,3,undefined],[50,3,undefined]]) {
+test('seasonal atmospheres unlock at [0, 20, 108, 240], auto-switch on unlock, and allow choosing any unlocked phase', () => {
+    const { stationState, equipStationPhase } = loadRoom();
+    for (const [warmth, index, next] of [
+        [0, 0, 20], [19, 0, 20],
+        [20, 1, 108], [107, 1, 108],
+        [108, 2, 240], [239, 2, 240],
+        [240, 3, undefined], [360, 3, undefined]
+    ]) {
         const state = stationState(warmth);
         assert.equal(state.unlocked, index);
         assert.equal(state.active, index);
         assert.equal(state.next?.at, next);
     }
+
+    // Auto-catharsis when crossing into Dawn (seenMax = 2 -> unlocked = 3), even if Rain (0) was equipped before
+    const freshDawn = stationState(240, 0, 2);
+    assert.equal(freshDawn.justUnlocked, true);
+    assert.equal(freshDawn.active, 3);
+
+    // Once Dawn was already seen (seenMax = 3), player can freely switch back to Rain (0) or Hearth (2) at max level
+    const chosenRain = stationState(360, 0, 3);
+    assert.equal(chosenRain.justUnlocked, false);
+    assert.equal(chosenRain.active, 0);
+    assert.equal(stationState(360, 2, 3).active, 2);
+
+    // Invalid or locked choices safely fall back to highest unlocked
+    assert.equal(stationState(20, 3, 1).active, 1);
+    assert.equal(stationState(108, -1, 2).active, 2);
+    assert.equal(stationState(108, NaN, 2).active, 2);
+    assert.doesNotThrow(() => equipStationPhase(1));
 });
 
-test('a previously unlocked atmosphere can stay selected; invalid choices fall back', () => {
-    const { stationState, equipStationPhase } = loadRoom();
-    assert.equal(stationState(30, 0).active, 0);
-    assert.equal(stationState(5, 3).active, 1);
-    assert.equal(stationState(15, -1).active, 2);
-    assert.equal(stationState(15, NaN).active, 2);
-    assert.doesNotThrow(() => equipStationPhase(1));
+test('90-day anti-grind caps daily warmth at 4/day, decouples cold XP, keeps pot empty until Whisper, and unlocks Greenhouse + Cassettes', () => {
+    const ls = makeStorage();
+    const room = loadRoom({ localStorage: ls });
+    const {
+        PROGRESSION_RULES, PLANT_WARMTH_STEPS, claimDailyWarmth, daysSinceLastWarmth,
+        whisperAdmission, plantStage, indifferenceIndex, recordWhisperEcho,
+        loadGreenhouse, saveWhisperCassette, loadCassettes, plantNewGreenhouseSeed, selectGreenhouseSlot, plantSpec
+    } = room;
+
+    assert.equal(PROGRESSION_RULES.DAILY_WARMTH_CAP, 4);
+    assert.equal(PROGRESSION_RULES.SEASON_WARMTH, 360);
+    assert.equal(PROGRESSION_RULES.SEASON_WARMTH / PROGRESSION_RULES.DAILY_WARMTH_CAP, 90, 'full bloom takes 90 warm days');
+
+    // Mindless spam on Day 1: 20 holds + 10 trainer picks yields at most 4 warmth (2 hold + 2 trainer)
+    let day1Warmth = 0;
+    for (let i = 0; i < 20; i++) day1Warmth += claimDailyWarmth('hold', '2026-11-18').granted;
+    for (let i = 0; i < 10; i++) day1Warmth += claimDailyWarmth('trainer', '2026-11-18').granted;
+    assert.equal(day1Warmth, 4, 'cannot grind more than 4 warmth per day');
+
+    // 3 days of max play = 12 warmth: cannot even unlock phase 1 (20), let alone max level (360)
+    let total = day1Warmth;
+    for (const d of ['2026-11-19', '2026-11-20']) {
+        total += claimDailyWarmth('hold', d).granted + claimDailyWarmth('hold', d).granted;
+        total += claimDailyWarmth('trainer', d).granted + claimDailyWarmth('trainer', d).granted;
+    }
+    assert.equal(total, 12);
+    assert.equal(whisperAdmission(total).admitted, false);
+
+    // Skipping a full week never resets warmth or warmDays; only triggers gentle dry-soil indicator
+    const afterPause = room.loadWarmthLedger('2026-11-28');
+    assert.equal(afterPause.warmDays, 3);
+    assert.equal(daysSinceLastWarmth(afterPause, '2026-11-28'), 8);
+    assert.ok(daysSinceLastWarmth(afterPause, '2026-11-28') >= PROGRESSION_RULES.DRY_SOIL_DAYS);
+
+    // Pot stays strictly empty (-1) even with huge warmth or max rank until Whisper sprouts it
+    assert.equal(plantStage(0, { sprouted: false }), -1);
+    assert.equal(plantStage(360, { sprouted: false }), -1);
+    assert.equal(plantStage(19, { sprouted: true }), -1);
+
+    // Once Whisper sprouts it, follows seasonal steps [20, 52, 108, 180, 240, 360]
+    PLANT_WARMTH_STEPS.forEach((at, idx) => {
+        assert.equal(plantStage(at, { sprouted: true }), idx);
+    });
+    // Live Whisper gate holds final bloom at stage 4 (5/6 buds) until 5 real "стало теплее" echoes
+    assert.equal(plantStage(360, { sprouted: true, requireAcks: true, bloomAcks: 4 }), 4);
+    assert.equal(plantStage(360, { sprouted: true, requireAcks: true, bloomAcks: 5 }), 5);
+
+    // Echo grants 24h dew; Indifference Index melts from 100% to 0% across the season
+    const echoed = recordWhisperEcho(1000000);
+    assert.equal(echoed.whisperAcks, 1);
+    assert.ok(echoed.dewUntil > 1000000);
+    assert.equal(indifferenceIndex(0), 100);
+    assert.equal(indifferenceIndex(180), 50);
+    assert.equal(indifferenceIndex(360), 0);
+
+    // Cassettes store incoming anonymous Whispers cleanly
+    saveWhisperCassette('Я дочитал твой пост до конца. Ты не один.', '18.11');
+    assert.equal(loadCassettes().length, 1);
+
+    // Greenhouse unlocks a new mystery seed from the remaining 6 species after native blooms
+    const own = plantSpec();
+    ls.setItem('soma_greenhouse', JSON.stringify({ bloomed: [own.kind], activeSeed: null, placed: own.kind }));
+    const seed = plantNewGreenhouseSeed(360, own);
+    assert.ok(seed && seed.kind !== own.kind);
+    assert.equal(loadGreenhouse().placed, 'seed');
+    selectGreenhouseSlot(own.kind);
+    assert.equal(loadGreenhouse().placed, own.kind, 'player can place native bloomed plant back anytime');
 });
 
 test('unique plant binding matches legacy anonymous ID formula identically', () => {
@@ -89,16 +182,8 @@ test('unique plant binding matches legacy anonymous ID formula identically', () 
     assert.equal(emptyRoom.plantSpec().seed, legacySpec('', '').seed);
 });
 
-test('all 7 species grow visibly across all 6 stages and cactus never sways side to side', () => {
-    const { plantSpec, plantStage, drawPlantSprite } = loadRoom();
-    assert.equal(plantStage(0, 0), 0);
-    assert.equal(plantStage(2, 0), 1);
-    assert.equal(plantStage(5, 0), 2);
-    assert.equal(plantStage(15, 0), 3);
-    assert.equal(plantStage(22, 0), 4);
-    assert.equal(plantStage(30, 0), 5);
-    assert.equal(plantStage(0, 4), 4);
-    assert.equal(plantStage(0, 5), 5);
+test('empty pot (-1) and all 7 species across all 6 stages grow visibly and cactus never sways side to side', () => {
+    const { plantSpec, drawPlantSprite } = loadRoom();
 
     function tracePlant(spec, stage, sway) {
         let m = [1, 0, 0, 1, 0, 0];
@@ -147,7 +232,9 @@ test('all 7 species grow visibly across all 6 stages and cactus never sways side
             if (c.kind === kind) { spec = c; break; }
         }
         assert.ok(spec);
+        const emptyPot = tracePlant(spec, -1, 0);
         const stages = [0, 1, 2, 3, 4, 5].map(s => tracePlant(spec, s, 0));
+        assert.ok(emptyPot.height > 40 && emptyPot.height < stages[0].height, `${spec.kindName} empty pot must sit cleanly below stage 1 sprout`);
         for (let s = 1; s < 6; s++) {
             assert.ok(stages[s].height > stages[s - 1].height, `${spec.kindName} stage ${s + 1} must be taller than stage ${s}`);
         }
@@ -165,35 +252,64 @@ test('all 7 species grow visibly across all 6 stages and cactus never sways side
     }
 });
 
-test('all 6 plant stages are inspectable and scene uses smooth object animations without tap flashes', () => {
+test('release UI hides spoilers, pager replaces NEEO_PHONE, window picks unlocked phases, and PTS inspects stages 0..6 & 7 species', () => {
     assert.ok(!roomCss.includes('station-hit-pulse'), 'harsh radial tap flash must be removed');
     assert.ok(!roomCss.includes('station-plant-touch'), 'rigid whole-plant wobble animation must be removed');
+    assert.ok(!indexHtml.includes('NEEO_PHONE'), 'duplicate NEEO_PHONE panel must be removed');
+    assert.ok(indexHtml.includes('id="soma-pager"') && indexHtml.includes('SOMA // PGR-04'), 'retro Whisper pager must replace phone');
+    assert.ok(indexHtml.includes('id="station-window-bar"'), 'diegetic window atmosphere bar must exist');
+    assert.ok(indexHtml.includes('id="station-deck-bar"'), 'diegetic cassette deck archive bar must exist');
+    assert.ok(indexHtml.includes('id="station-greenhouse"'), 'greenhouse herbarium section must exist');
 
     const sceneMatch = indexHtml.match(/<div id="station-scene" class="station-scene">([\s\S]*?)<\/div>\s*<div class="station-log">/);
     assert.ok(sceneMatch);
     assert.equal(sceneMatch[1].replace(/<[^>]+>/g, '').trim(), '', 'scene must contain zero overlaid text');
 
-    const stageBtns = [...indexHtml.matchAll(/data-stage-btn="(\d)"/g)].map(m => Number(m[1]));
-    assert.deepEqual(stageBtns, [0, 1, 2, 3, 4, 5], 'bottom panel must expose all 6 growth stage buttons');
+    const stageBtns = [...indexHtml.matchAll(/data-stage-btn="(-?\d)"/g)].map(m => Number(m[1]));
+    assert.deepEqual(stageBtns, [-1, 0, 1, 2, 3, 4, 5], 'PTS inspector must expose empty pot (-1) + all 6 stages (0..5)');
     const kindBtns = [...indexHtml.matchAll(/data-kind-btn="(\d)"/g)].map(m => Number(m[1]));
-    assert.deepEqual(kindBtns, [0, 1, 2, 3, 4, 5, 6], 'bottom panel must allow inspecting all 7 plant species');
+    assert.deepEqual(kindBtns, [0, 1, 2, 3, 4, 5, 6], 'PTS inspector must allow inspecting all 7 plant species');
     assert.ok(indexHtml.includes('id="station-lamp"') && indexHtml.includes('assets/lamp.png'), 'lamp must be a dedicated cutout layer');
     assert.ok(!roomCode.includes('getLampSprite'), 'must not slice background image at runtime');
     assert.ok(roomCss.includes('.station[data-phase="3"] .station-sky') && /data-phase="3"\]\s*\.station-sky\s*\{\s*opacity:\s*0/.test(roomCss), 'constellation must fade out in dawn light');
 
+    // Trainer expanded to >=20 scenarios
+    const scenBlock = indexHtml.match(/const SCEN = \[([\s\S]*?)\n    \];/);
+    assert.ok(scenBlock);
+    assert.ok((scenBlock[1].match(/\{\s*t:\s*'/g) || []).length >= 20, 'trainer must have a rich seasonal bank of scenarios');
+
     let trainerCalls = 0, radioCalls = 0, fakeNow = 1000;
-    const entryEl = { textContent: '', offsetWidth: 0, classList: { remove() {}, add() {} } };
+    const makeClassList = (initHidden = false) => {
+        const set = new Set(initHidden ? ['hidden'] : []);
+        return {
+            remove: c => set.delete(c),
+            add: c => set.add(c),
+            toggle: (c, force) => (force === undefined ? (set.has(c) ? set.delete(c) : set.add(c)) : (force ? set.add(c) : set.delete(c))),
+            contains: c => set.has(c)
+        };
+    };
+    const entryEl = { textContent: '', offsetWidth: 0, classList: makeClassList() };
     const infoEl = { textContent: '' };
     const subEl = { textContent: '' };
+    const ptsWrapEl = { classList: makeClassList(true) };
+    const pagerEl = { dataset: {}, offsetWidth: 0, classList: makeClassList() };
+    const pagerMsgEl = { textContent: '' };
+    const pagerGateEl = { textContent: '' };
+    const winBtns = [0, 1, 2, 3].map(i => ({
+        dataset: { winPhase: String(i) }, hidden: false, disabled: false, pressed: 'false',
+        classList: makeClassList(),
+        setAttribute(k, v) { if (k === 'aria-pressed') this.pressed = v; }
+    }));
+    const winBarEl = { classList: makeClassList(true), querySelectorAll: () => winBtns };
     const starEl = { dataset: { star: '1' }, style: { opacity: 1 } };
-    const domStageBtns = [0, 1, 2, 3, 4, 5].map(() => ({
-        title: '', pressed: 'false',
-        classList: { toggle() {} },
+    const domStageBtns = [-1, 0, 1, 2, 3, 4, 5].map(s => ({
+        dataset: { stageBtn: String(s) }, title: '', pressed: 'false',
+        classList: makeClassList(),
         setAttribute(k, v) { if (k === 'aria-pressed') this.pressed = v; }
     }));
     const domKindBtns = [0, 1, 2, 3, 4, 5, 6].map(() => ({
         textContent: '', pressed: 'false',
-        classList: { toggle() {} },
+        classList: makeClassList(),
         setAttribute(k, v) { if (k === 'aria-pressed') this.pressed = v; }
     }));
     const roomEl = {
@@ -206,38 +322,60 @@ test('all 6 plant stages are inspectable and scene uses smooth object animations
             return [];
         }
     };
-    const { activateRoomObject, inspectPlantStage, togglePlantGallery, inspectPlantKind, renderRoom, roomAnim, PLANT_KINDS, CITY_WINDOWS } = loadRoom({
+    const domMap = {
+        'station': roomEl, 'station-entry': entryEl, 'station-plant-info': infoEl,
+        'station-plant-sub': subEl, 'pts-panel': ptsWrapEl, 'station-window-bar': winBarEl,
+        'soma-pager': pagerEl, 'pager-msg': pagerMsgEl, 'pager-gate': pagerGateEl
+    };
+
+    const ls = makeStorage();
+    const {
+        activateRoomObject, inspectPlantStage, togglePlantGallery, inspectPlantKind,
+        pressPagerScan, pressPagerInfo, equipStationPhase, renderRoom, roomAnim, PLANT_KINDS, CITY_WINDOWS
+    } = loadRoom({
+        localStorage: ls,
+        player: { uid: 'u_0123456789abcdef', name: 'AGENT_1001', warmth: 20 },
         performance: { now: () => (fakeNow += 4000) },
         openTrainer: () => { trainerCalls++; },
         openRadio: () => { radioCalls++; },
-        document: {
-            hidden: false,
-            getElementById(id) {
-                if (id === 'station') return roomEl;
-                if (id === 'station-entry') return entryEl;
-                if (id === 'station-plant-info') return infoEl;
-                if (id === 'station-plant-sub') return subEl;
-                return null;
-            }
-        }
+        document: { hidden: false, getElementById: id => domMap[id] || null }
     });
 
     assert.ok(CITY_WINDOWS.length >= 50, 'city skyscraper windows must be animated');
     renderRoom();
     const ownKind = roomAnim.ownSpec.kind;
-    assert.equal(roomAnim.liveStage, 1); // warmth 4 => stage 2/6
-    assert.equal(starEl.style.opacity, 1); // night phase => stars visible
+    assert.equal(ptsWrapEl.classList.contains('hidden'), true, 'PTS panel must stay hidden in release mode');
+    assert.equal(roomAnim.liveStage, -1, 'pot starts empty until Whisper awakens it');
+    assert.ok(infoEl.textContent.includes('ПУСТОЙ ГОРШОК'));
+    assert.equal(starEl.style.opacity, 1);
 
-    // Inspect every single one of the 6 stages (0..5)
-    for (let s = 0; s < 6; s++) {
+    // Tapping window at warmth 20 reveals ONLY unlocked phases (0 Дождь, 1 Оттепель) and hides future spoilers (2, 3)
+    activateRoomObject('window');
+    assert.equal(winBarEl.classList.contains('hidden'), false);
+    assert.deepEqual(winBtns.map(b => b.hidden), [false, false, true, true]);
+    equipStationPhase(0, true);
+    assert.equal(roomAnim.activePhase, 0, 'player can switch back to Rain via window');
+
+    // Offline retro pager cycles diagnostics silently without alerts
+    assert.equal(pagerEl.dataset.state, 'offline');
+    pressPagerScan();
+    assert.ok(pagerMsgEl.textContent.includes('ПОИСК НЕСУЩЕЙ'));
+    pressPagerInfo();
+    assert.ok(pagerMsgEl.textContent.includes('ОДНОСТОРОННИЙ'));
+
+    // Hidden species on stages 1/6 & 2/6, revealed at 3/6 for a sprouted player
+    ls.setItem('soma_warmth_ledger', JSON.stringify({ day: '2026-11-18', whispersSent: 1, trainedTotal: 5 }));
+    renderRoom();
+    assert.equal(roomAnim.liveStage, 0);
+    assert.ok(infoEl.textContent.startsWith('НЕИЗВЕСТНЫЙ РОСТОК'), 'species must stay a mystery at stage 1/6');
+
+    // PTS inspection covers empty pot (-1) + all 6 stages (0..5) + all 7 species without altering ID binding
+    for (let s = -1; s < 6; s++) {
         inspectPlantStage(s);
         assert.equal(roomAnim.stage, s);
         assert.equal(roomEl.dataset.stage, String(s));
-        assert.equal(domStageBtns[s].pressed, 'true');
-        assert.ok(infoEl.textContent.includes(`${s + 1}/6`));
+        assert.equal(domStageBtns[s + 1].pressed, 'true');
     }
-
-    // Inspect all 7 species without altering the player's own ID-bound plant
     togglePlantGallery();
     assert.equal(roomAnim.galleryOpen, true);
     for (let k = 0; k < 7; k++) {
@@ -249,13 +387,20 @@ test('all 6 plant stages are inspectable and scene uses smooth object animations
     togglePlantGallery();
     assert.equal(roomAnim.spec.kind, ownKind, 'closing gallery restores own ID-bound plant');
 
-    // Verify stars hide when dawn light pours through window (phase 3)
+    // Verify stars hide when dawn light pours through window (phase 3 at 240+ warmth), and return if player switches to Rain!
+    const dawnLs = makeStorage();
+    const dawnPlayer = { uid: 'u_0123456789abcdef', name: 'AGENT_1001', warmth: 360 };
     const dawnRoom = loadRoom({
-        player: { uid: 'u_0123456789abcdef', name: 'AGENT_1001', warmth: 30 },
-        document: { hidden: false, getElementById: id => id === 'station' ? roomEl : null }
+        localStorage: dawnLs,
+        player: dawnPlayer,
+        document: { hidden: false, getElementById: id => domMap[id] || null }
     });
     dawnRoom.renderRoom();
+    assert.equal(dawnRoom.roomAnim.activePhase, 3);
     assert.equal(starEl.style.opacity, 0, 'stars must hide at max dawn phase');
+    dawnRoom.equipStationPhase(0, true);
+    assert.equal(dawnRoom.roomAnim.activePhase, 0, 'max player can choose Rain atmosphere');
+    assert.equal(starEl.style.opacity, 1, 'stars return when max player switches to night Rain');
 
     // Smooth object timelines start cleanly on tap
     activateRoomObject('lamp');

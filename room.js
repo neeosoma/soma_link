@@ -3616,7 +3616,6 @@ function claimWhisperCassetteAck(whisperId, todayOverride) {
         roomAnim.customEntry = roomAnim.pagerNotice;
     }
     trackFirstSignalEvent('echo_received');
-    pulsePagerScreen();
     renderRoom();
     return { duplicate: false, grantedWarmth, ledger };
 }
@@ -9542,21 +9541,6 @@ function syncContextPanels() {
 
 }
 
-// ===== ТАКТИЛЬНЫЙ РЕТРО-ПЕЙДЖЕР «ШЁПОТА» NEEOSOMA // NMAV-04 (ЖИВОЙ ЭФИР ЭМПАТИИ + ПРИЁМ ВХОДЯЩИХ НА КАССЕТЫ VTR-90) =====
-function pulsePagerScreen() {
-    const p = typeof document !== 'undefined' && document.getElementById('soma-pager');
-    if (!p || !p.classList) return;
-    p.classList.remove('is-ping');
-    void p.offsetWidth;
-    p.classList.add('is-ping');
-    if (typeof clearTimeout === 'function') clearTimeout(roomAnim.pagerResetTimer);
-    if (typeof setTimeout === 'function') {
-        roomAnim.pagerResetTimer = setTimeout(() => {
-            if (p.classList) p.classList.remove('is-ping');
-        }, 720);
-    }
-}
-
 function getLocalMyPostIdsSafe() {
     if (typeof getMyPostIds === 'function') {
         try { return getMyPostIds().map(String); } catch (_) {}
@@ -9611,9 +9595,7 @@ function receiveIncomingWhisperLocal(whisperObj) {
     if (!existing.some(x => x.id === id)) {
         saveRawInboxWhispers([item, ...existing]);
         playObjectTone('pager');
-        pulsePagerScreen();
-    }
-    renderPager();
+        }
     if (roomAnim.pagerModalOpen) renderPagerModal();
     return item;
 }
@@ -9677,8 +9659,7 @@ async function blockIncomingWhisper(id) {
         saveRawInboxWhispers(loadRawInboxWhispers().filter(w => !removed.has(w.id)));
         roomAnim.pagerSafetyTarget = null;
         roomAnim.pagerModalNotice = 'Аккаунт заблокирован, его ожидающие шёпоты убраны. Кассеты сохранены. Другой аккаунт блокировка не охватывает.';
-        renderPager();
-    }
+        }
     return result;
 }
 
@@ -9723,7 +9704,6 @@ async function acceptIncomingWhisper(whisperId) {
     playObjectTone('deck');
     try { Telegram.WebApp.HapticFeedback.notificationOccurred('success'); } catch (_) {}
     renderRoom();
-    renderPager();
     if (roomAnim.pagerModalOpen) renderPagerModal();
     return { ok: true, cassette: cas, whisper: w };
 }
@@ -9741,7 +9721,6 @@ async function dismissIncomingWhisper(whisperId) {
 
     roomAnim.pagerModalNotice = '◌ Сигнал прочитан и бережно отпущен в ночной эфир без записи на кассету.';
     if (typeof SFX !== 'undefined' && SFX.tap) SFX.tap();
-    renderPager();
     if (roomAnim.pagerModalOpen) renderPagerModal();
     return { ok: true, whisper: w };
 }
@@ -9866,7 +9845,6 @@ async function sendWhisperToPostOnce(postObj, rawText, opts) {
     playObjectTone('pager');
     try { Telegram.WebApp.HapticFeedback.notificationOccurred('success'); } catch (_) {}
     renderRoom();
-    renderPager();
     if (roomAnim.pagerModalOpen) renderPagerModal();
     return { ok: true, whisper: wRow, firstSprout, ledger: sentRes.ledger };
 }
@@ -9906,8 +9884,7 @@ async function syncPagerWhispers() {
                 if (added) {
                     saveRawInboxWhispers([...map.values()]);
                     playObjectTone('pager');
-                    pulsePagerScreen();
-                }
+                                }
             }
         }
 
@@ -9926,7 +9903,6 @@ async function syncPagerWhispers() {
             }
         }
     } catch (_) {}
-    renderPager();
     if (roomAnim.pagerModalOpen) renderPagerModal();
 }
 
@@ -9936,77 +9912,22 @@ function pressPagerScan() {
         openPagerModal(inbox.length > 0 ? 'inbox' : 'feed');
         return;
     }
-    roomAnim.pagerStep = roomAnim.pagerMode === 'scan' ? (roomAnim.pagerStep + 1) % 3 : 0;
-    roomAnim.pagerMode = 'scan';
     try { Telegram.WebApp.HapticFeedback.impactOccurred('light'); } catch (_) {}
     playObjectTone('pager');
-    pulsePagerScreen();
-    renderPager();
+    openPagerModal('feed');
 }
 
 function pressPagerInfo() {
-    roomAnim.pagerMode = roomAnim.pagerMode === 'info' ? 'idle' : 'info';
     try { Telegram.WebApp.HapticFeedback.impactOccurred('soft'); } catch (_) {}
     if (typeof SFX !== 'undefined' && SFX.tap) SFX.tap();
-    pulsePagerScreen();
-    renderPager();
+    openPagerModal('feed');
 }
 
 function openWhisper() {
-    pressPagerScan();
+    openPagerModal();
 }
 
-function renderPager(warmthArg, ledgerArg, isWatchmanArg) {
-    if (typeof document === 'undefined') return;
-    const pager = document.getElementById('soma-pager');
-    if (!pager) return;
-    const w = warmthArg !== undefined ? warmthArg : roomAnim.warmth;
-    const ledger = ledgerArg || loadWarmthLedger();
-    const adm = whisperAdmission(w, ledger);
-    const gh = loadGreenhouse();
-    const own = roomAnim.ownSpec || plantSpec();
-    const watchman = isWatchmanArg !== undefined ? isWatchmanArg : gh.bloomed.includes(own.kind);
-    const inbox = getPendingInboxWhispers();
 
-    pager.dataset.state = adm.live
-        ? (inbox.length > 0 ? 'inbox' : (adm.admitted ? 'ready' : 'locked'))
-        : 'offline';
-    pager.dataset.admitted = adm.admitted ? '1' : '0';
-    if (pager.classList) pager.classList.toggle('has-inbox', inbox.length > 0);
-
-    const carrierEl = document.getElementById('pager-carrier');
-    const gateEl = document.getElementById('pager-gate');
-    const msgEl = document.getElementById('pager-msg');
-    const subEl = document.getElementById('pager-sub');
-    const scanBtn = document.getElementById('pager-scan-btn');
-
-    if (carrierEl) {
-        carrierEl.textContent = !adm.live
-            ? 'НЕТ НЕСУЩЕЙ'
-            : inbox.length > 0
-                ? `ВХОДЯЩИЙ ШЁПОТ (${inbox.length})`
-                : adm.admitted
-                    ? `ЭФИР АКТИВЕН · ${adm.whisperLeftToday}/${adm.whisperSendCap} ДН`
-                    : 'ПРИЁМ ВХОДЯЩИХ АКТИВЕН';
-    }
-    if (gateEl) gateEl.textContent = `СЕГОДНЯ: ${adm.whisperLeftToday}/${adm.whisperSendCap}`;
-    if (scanBtn) scanBtn.textContent = inbox.length ? `📥 ВХОДЯЩИЕ (${inbox.length})` : '◈ ОТКРЫТЬ ПЕЙДЖЕР';
-    let mainLine = 'ЧАСТОТА «ШЁПОТ» ВЫКЛЮЧЕНА';
-    let subLine = 'Можно вернуться позже.';
-    if (roomAnim.pagerMode === 'info') {
-        mainLine = 'КАНАЛ ЭМПАТИИ // БЕЗ ИМЁН';
-        subLine = 'До 3 шёпотов в сутки. Один на пост. Без ссылок и контактов.';
-    } else if (!adm.live && roomAnim.pagerMode === 'scan') {
-        mainLine = 'ПОИСК НЕСУЩЕЙ... ЭФИР ПУСТ';
-    } else if (adm.live) {
-        mainLine = inbox.length ? `ВХОДЯЩИЕ: ${inbox.length}` : 'ЖИВАЯ ЧАСТОТА · ВЫ НА СВЯЗИ';
-        subLine = inbox.length ? 'Прочитать, сохранить или отпустить — решать вам.'
-            : roomAnim.pagerNotice || 'Прочитайте историю. Ответьте, если хочется.';
-    }
-
-    if (msgEl) msgEl.textContent = mainLine;
-    if (subEl) subEl.textContent = subLine;
-}
 
 // ===== ИНТЕРАКТИВНЫЙ МАТРИЧНЫЙ ЭКРАН ПЕЙДЖЕРА NEEOSOMA // NMAV-04 (ЛЕНТА ЭМПАТИИ + ВХОДЯЩИЕ НА КАССЕТУ) =====
 function ensurePagerModal() {
@@ -10021,19 +9942,26 @@ function ensurePagerModal() {
     ov.setAttribute('aria-label', 'Пейджер NEEOSOMA // NMAV-04 — Канал Шёпот');
     ov.innerHTML = `
         <div class="soma-pager pager-modal-chassis" id="pager-modal-chassis">
+            <!-- ШАПКА УСТРОЙСТВА: бренд + LED + частота + закрыть -->
             <div class="pager-top pager-modal-top">
-                <span class="pager-brand"><i class="pager-led" aria-hidden="true"></i>NEEOSOMA // NMAV-04 · CH·04 «ШЁПОТ»</span>
+                <span class="pager-brand"><i class="pager-led" aria-hidden="true"></i>NEEOSOMA // NMAV-04</span>
+                <span class="pager-freq">CH·04 «ШЁПОТ»</span>
                 <button type="button" class="pager-modal-close" id="pager-modal-close" aria-label="Закрыть пейджер">✕</button>
             </div>
+            <!-- ЖИВЫЕ ПОЛОСКИ СИЛЫ СВЯЗИ -->
+            <div class="pager-sig-bar" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+            <!-- СЕГМЕНТНЫЕ ВКЛАЛКИ -->
             <div class="pager-modal-tabs" role="tablist">
                 <button type="button" class="pager-modal-tab" id="pager-tab-feed" role="tab" aria-selected="true">📡 ПОЙМАТЬ СИГНАЛ</button>
                 <button type="button" class="pager-modal-tab" id="pager-tab-inbox" role="tab" aria-selected="false">📥 ВХОДЯЩИЕ <span id="pager-inbox-badge" class="pager-inbox-badge hidden">0</span></button>
             </div>
+            <!-- LCD-ЭКРАН С CRT-ЭФФЕКТОМ -->
             <div class="pager-bezel pager-modal-bezel">
                 <div class="pager-lcd pager-modal-lcd">
                     <div class="pager-lcd-meta" id="pager-modal-meta"></div>
                     <div class="pager-modal-notice hidden" id="pager-modal-notice"></div>
                     <div class="pager-modal-body" id="pager-modal-body"></div>
+                    <div class="pager-lcd-scan" aria-hidden="true"></div>
                 </div>
             </div>
             <div class="pager-modal-foot" id="pager-modal-foot"></div>
@@ -11170,7 +11098,6 @@ function renderRoom() {
     }
     syncCompanionHotspots();
 
-    renderPager(warmth, ledger, gh.bloomed.includes(ownSpec.kind));
     ensureStationLoop();
 }
 

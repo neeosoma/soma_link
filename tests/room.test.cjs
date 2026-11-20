@@ -21,7 +21,7 @@ function makeStorage(initial = {}) {
 function loadRoom(env = {}) {
     const localStorage = env.localStorage || makeStorage();
     return runInNewContext(
-        roomCode + ';({ ...pagerApi, stationPhases, PROGRESSION_RULES, GREENHOUSE_WARMTH_STEPS, ALIEN_WARMTH_STEPS, ALIEN_KINDS, alienSpec, gallerySpecForKind, isGreenhouseUnlocked, plantSecretAlienSeed, feedActiveRoomPlant, openGreenhouse, openGreenhouseFromFullscreen, drawGreenhouseVines, bindSomaSceneScroll, somaClientToLocal, somaScreenDeltaToLocal, mixHex, cyclePtsAlienKind, getWhisperBreachCount, recordWhisperSent, syncWhisperBreachCounter, RARE_MALTESE_INDEX, RARE_MALTESE_BREED, RARE_MOON_CAT_INDEX, RARE_MOON_CAT_COAT, NEEO_SKY_POLY, HEARTH_LANTERNS, COSMIC_DAWN_STARS, stationState, indifferenceIndex, equipStationPhase, inspectPlantStage, togglePlantGallery, inspectPlantKind, togglePtsDrawer, togglePtsDew, cyclePtsCatCoat, cyclePtsDogBreed, togglePtsDemoCassette, loadWarmthLedger, claimDailyWarmth, fireflyState, recordWhisperEcho, daysSinceLastWarmth, whisperAdmission, loadGreenhouse, plantNewGreenhouseSeed, selectGreenhouseSlot, formatCassetteDate, formatCassetteNum, loadCassettes, saveWhisperCassette, toggleCassetteFav, ejectCassette, playCassette, openVhsArchive, pressPagerScan, pressPagerInfo, renderPager, PLANT_KINDS, PLANT_NOTES, PLANT_STAGES, PLANT_WARMTH_STEPS, PLANT_LEAF, PLANT_BLOOM, PLANT_POTS, CAT_COATS, catSpec, DOG_BREEDS, dogSpec, drawCompanionCat, drawCompanionDog, CITY_WINDOWS, hashStr, rng, plantSpec, plantStage, drawPlantSprite, drawCrtMonitor, drawRoomCosmetics, drawWindowWorld, drawWindowLightBeams, drawStationFx, drawCassetteDeck, paintPlantFrame, isRealTelegramMiniApp, getNativeFullscreenElement, requestNativeRoomFullscreen, getFullscreenViewport, computeFullscreenSceneBox, toggleRoomFullscreen, enterRoomFullscreen, exitRoomFullscreen, flipRoomFullscreen, renderRoom, touchRoomObject, activateRoomObject, resetStationPreview, roomAnim });',
+        roomCode + ';({ ...pagerApi, stationPhases, PROGRESSION_RULES, GREENHOUSE_WARMTH_STEPS, ALIEN_WARMTH_STEPS, ALIEN_KINDS, alienSpec, gallerySpecForKind, isGreenhouseUnlocked, plantSecretAlienSeed, feedActiveRoomPlant, openGreenhouse, openGreenhouseFromFullscreen, drawGreenhouseVines, bindSomaSceneScroll, somaClientToLocal, somaScreenDeltaToLocal, mixHex, cyclePtsAlienKind, getWhisperBreachCount, recordWhisperSent, syncWhisperBreachCounter, RARE_MALTESE_INDEX, RARE_MALTESE_BREED, RARE_MOON_CAT_INDEX, RARE_MOON_CAT_COAT, NEEO_SKY_POLY, HEARTH_LANTERNS, COSMIC_DAWN_STARS, stationState, indifferenceIndex, equipStationPhase, inspectPlantStage, togglePlantGallery, inspectPlantKind, togglePtsDrawer, togglePtsDew, cyclePtsCatCoat, cyclePtsDogBreed, togglePtsDemoCassette, loadWarmthLedger, claimDailyWarmth, fireflyState, recordWhisperEcho, daysSinceLastWarmth, whisperAdmission, loadGreenhouse, plantNewGreenhouseSeed, selectGreenhouseSlot, formatCassetteDate, formatCassetteNum, loadCassettes, saveWhisperCassette, toggleCassetteFav, ejectCassette, playCassette, openVhsArchive, pressPagerScan, pressPagerInfo, PLANT_KINDS, PLANT_NOTES, PLANT_STAGES, PLANT_WARMTH_STEPS, PLANT_LEAF, PLANT_BLOOM, PLANT_POTS, CAT_COATS, catSpec, DOG_BREEDS, dogSpec, drawCompanionCat, drawCompanionDog, CITY_WINDOWS, hashStr, rng, plantSpec, plantStage, drawPlantSprite, drawCrtMonitor, drawRoomCosmetics, drawWindowWorld, drawWindowLightBeams, drawStationFx, drawCassetteDeck, paintPlantFrame, isRealTelegramMiniApp, getNativeFullscreenElement, requestNativeRoomFullscreen, getFullscreenViewport, computeFullscreenSceneBox, toggleRoomFullscreen, enterRoomFullscreen, exitRoomFullscreen, flipRoomFullscreen, renderRoom, touchRoomObject, activateRoomObject, resetStationPreview, roomAnim });',
         { player: { uid: 'u_0123456789abcdef', name: 'AGENT_1001', warmth: 0 }, roomPreview: false, localStorage, ...env }
     );
 }
@@ -261,7 +261,8 @@ test('release UI hides spoilers, pager replaces NEEO_PHONE, window picks unlocke
     assert.ok(!roomCss.includes('station-hit-pulse'), 'harsh radial tap flash must be removed');
     assert.ok(!roomCss.includes('station-plant-touch'), 'rigid whole-plant wobble animation must be removed');
     assert.ok(!indexHtml.includes('NEEO_PHONE'), 'duplicate NEEO_PHONE panel must be removed');
-    assert.ok(indexHtml.includes('id="soma-pager"') && indexHtml.includes('NEEOSOMA // NMAV-04'), 'retro Whisper pager NEEOSOMA // NMAV-04 must replace phone');
+    assert.ok(!indexHtml.includes('id="soma-pager"'), 'retro Whisper pager removed from room — pager lives in its own tab');
+    assert.ok(roomCode.includes('NEEOSOMA // NMAV-04'), 'pager modal NEEOSOMA // NMAV-04 branding preserved');
     assert.ok(indexHtml.includes('id="station-window-bar"'), 'diegetic window atmosphere bar must exist');
     assert.ok(!indexHtml.includes('id="station-deck-bar"'), 'diegetic cassette deck archive bar must be removed entirely');
     assert.ok(indexHtml.includes('id="station-greenhouse"'), 'greenhouse herbarium section must exist');
@@ -330,9 +331,6 @@ test('release UI hides spoilers, pager replaces NEEO_PHONE, window picks unlocke
     const infoEl = { textContent: '' };
     const subEl = { textContent: '' };
     const ptsWrapEl = { classList: makeClassList(true) };
-    const pagerEl = { dataset: {}, offsetWidth: 0, classList: makeClassList() };
-    const pagerMsgEl = { textContent: '' };
-    const pagerGateEl = { textContent: '' };
     const winBtns = [0, 1, 2, 3].map(i => ({
         dataset: { winPhase: String(i) }, hidden: false, disabled: false, pressed: 'false',
         classList: makeClassList(),
@@ -362,8 +360,7 @@ test('release UI hides spoilers, pager replaces NEEO_PHONE, window picks unlocke
     };
     const domMap = {
         'station': roomEl, 'station-entry': entryEl, 'station-plant-info': infoEl,
-        'station-plant-sub': subEl, 'pts-panel': ptsWrapEl, 'station-window-bar': winBarEl,
-        'soma-pager': pagerEl, 'pager-msg': pagerMsgEl, 'pager-gate': pagerGateEl
+        'station-plant-sub': subEl, 'pts-panel': ptsWrapEl, 'station-window-bar': winBarEl
     };
 
     const ls = makeStorage();
@@ -394,12 +391,9 @@ test('release UI hides spoilers, pager replaces NEEO_PHONE, window picks unlocke
     equipStationPhase(0, true);
     assert.equal(roomAnim.activePhase, 0, 'player can switch back to Rain via window');
 
-    // Offline retro pager cycles diagnostics silently without alerts
-    assert.equal(pagerEl.dataset.state, 'offline');
+    // Pager scan/info now open the pager modal (room retro pager removed)
     pressPagerScan();
-    assert.ok(pagerMsgEl.textContent.includes('ПОИСК НЕСУЩЕЙ'));
     pressPagerInfo();
-    assert.ok(pagerMsgEl.textContent.includes('КАНАЛ ЭМПАТИИ'));
 
     // Hidden species on stages 1/6 & 2/6, revealed at 3/6 for a sprouted player
     ls.setItem('soma_warmth_ledger', JSON.stringify({ day: '2026-11-18', whispersSent: 1, trainedTotal: 5 }));
@@ -615,7 +609,7 @@ test('v8: body-portal FLIP fullscreen + 180 flip + rotated pointer mapping, Dawn
     const beforeSibling = makeContainer('tryon-bar');
     const roomEl = makeContainer('station');
     const sceneEl = makeContainer('station-scene');
-    const afterSibling = makeContainer('soma-pager');
+    const afterSibling = makeContainer('witness-card');
     const metaTheme = { content: '#0b0708', setAttribute(k, v) { this[k] = v; } };
     profileEl.appendChild(beforeSibling);
     profileEl.appendChild(roomEl);
@@ -706,7 +700,7 @@ test('v8: body-portal FLIP fullscreen + 180 flip + rotated pointer mapping, Dawn
     assert.ok(waapiCalls.some(c => c.el === 'scene') && waapiCalls.some(c => c.el === 'room'), 'exit animates both scene and backdrop via WAAPI');
     timers.pop().fn();
     assert.equal(roomEl.parentNode, profileEl, '#station must return cleanly to #view-profile after exit');
-    assert.deepEqual(profileEl.children.map(c => c.name), ['tryon-bar', 'station', 'soma-pager'], 'exact sibling order preserved');
+    assert.deepEqual(profileEl.children.map(c => c.name), ['tryon-bar', 'station', 'witness-card'], 'exact sibling order preserved');
     assert.equal(roomEl.classList.contains('is-fullscreen'), false);
     assert.equal(docEl.classList.contains('is-soma-fs'), false);
     assert.equal(metaTheme.content, '#0b0708');
@@ -1207,7 +1201,7 @@ test('v12: top-left fullscreen vinyl bar, unified NEEOSOMA/NEEO~CITY/SOMA~LINK b
     // 2. UNIFIED BRANDING ACROSS ENTIRE APP (NEEOSOMA // AV-88, VTR-90, NMAV-04, TRM-01, SKY-01; NEEO~CITY; SOMA~LINK)
     assert.ok(rxCode.includes('NEEOSOMA // AV-88') && indexHtml.includes('NEEOSOMA // AV-88'), 'audio receiver branded NEEOSOMA // AV-88');
     assert.ok(vhsCode.includes('NEEOSOMA // VTR-90') && roomCode.includes('NEEOSOMA // VTR-90'), 'video recorder branded NEEOSOMA // VTR-90');
-    assert.ok(indexHtml.includes('NEEOSOMA // NMAV-04') && cosmCode.includes('NEEOSOMA // NMAV-04'), 'Whisper pager branded NEEOSOMA // NMAV-04');
+    assert.ok(roomCode.includes('NEEOSOMA // NMAV-04') && cosmCode.includes('NEEOSOMA // NMAV-04'), 'Whisper pager branded NEEOSOMA // NMAV-04');
     assert.ok(indexHtml.includes('NEEOSOMA // TRM-01') && roomCode.includes('NEEOSOMA // TRM-01'), 'terminal branded NEEOSOMA // TRM-01');
     assert.ok(blimpCode.includes('NEEOSOMA // SKY-01'), 'window dirigible channel branded NEEOSOMA // SKY-01');
     assert.ok(ghCode.includes('NEEOSOMA // ОРАНЖЕРЕЯ'), 'conservatory branded NEEOSOMA // ОРАНЖЕРЕЯ');

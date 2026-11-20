@@ -387,13 +387,13 @@ function renderRoomTryOnBar() {
         return;
     }
     const pts = typeof isPtsMode === 'function' && isPtsMode();
-    let label = `ПРИМЕРКА: «${it.name}»`;
+    let label = `ПРИМЕРИТЬ: «${it.name}»`;
     const tryCat = it.id === 'room_cat' ? currentSelfCatSpec() : null;
     const tryDog = it.id === 'room_dog' ? currentSelfDogSpec() : null;
     if (tryCat && tryCat.coat) {
-        label = `ПРИМЕРКА: ВАШ КОТ · ${tryCat.coat.name.toUpperCase()}`;
+        label = `ПРИМЕРИТЬ: ВАШ КОТ · ${tryCat.coat.name.toUpperCase()}`;
     } else if (tryDog && tryDog.breed) {
-        label = `ПРИМЕРКА: ВАШ ПЁС · ${tryDog.breed.name.toUpperCase()}`;
+        label = `ПРИМЕРИТЬ: ВАШ ПЁС · ${tryDog.breed.name.toUpperCase()}`;
     }
     if (txt) txt.textContent = label;
     if (buyBtn) {
@@ -496,7 +496,7 @@ function tryCosmetic(id) {
         shopState.liveRoomTry = true;
         const m = document.getElementById('shop-modal');
         if (m) m.classList.add('hidden');
-        if (typeof switchTab === 'function') switchTab('profile');
+        if (typeof switchTab === 'function') switchTab('room');
         applyCosmeticsToUI();
         if (typeof renderRoom === 'function') renderRoom();
         if (it.id === 'room_cat' && typeof roomAnim !== 'undefined') {

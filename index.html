@@ -391,41 +391,35 @@
                 <span id="open-post-sub" class="feed-send-note">Один сигнал в день. Читать и откликаться можно всегда.</span>
             </div>
 
-            <!-- КОМПАКТНЫЙ INTERFACE ПЕЙДЖЕРА NEEOSOMA // NMAV-04 -->
-            <div class="feed-pager" id="feed-pager" data-state="locked" data-admitted="0">
+            <!-- ПЕЙДЖЕР NEEOSOMA // NMAV-04 — КАК БЫЛО -->
+            <div class="soma-pager" id="feed-pager" data-state="locked" data-admitted="0">
                 <!-- ШАПКА: бренд + LED + частота + полоски сигнала -->
-                <div class="feed-pager-top">
+                <div class="pager-top">
                     <span class="pager-brand"><i class="pager-led" aria-hidden="true"></i>NEEOSOMA // NMAV-04</span>
-                    <span class="feed-pager-freq">CH·04 «ШЁПОТ»</span>
+                    <span class="pager-freq">CH·04 «ШЁПОТ»</span>
                     <span class="pager-sig-bar" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
                 </div>
-                <!-- Метатирки: статус несущей + лимит -->
-                <div class="feed-pager-meta">
-                    <span id="feed-pager-carrier" class="pager-carrier">ПРИЁМ ВХОДЯЩИХ АКТИВЕН</span>
-                    <span id="feed-pager-gate">ДО 3 ШЁПОТОВ В СУТКИ</span>
-                </div>
                 <!-- LCD-ЭКРАН С CRT-ЭФФЕКТОМ -->
-                <div class="feed-pager-bezel">
-                    <div class="feed-pager-lcd">
-                        <p id="feed-pager-msg" class="feed-pager-main">ЖИВАЯ ЧАСТОТА · ВЫ НА СВЯЗИ</p>
-                        <p id="feed-pager-sub" class="feed-pager-sub">Читайте. Отвечайте, если хочется.</p>
-                        <!-- Фильтры: намерение отклика -->
-                        <div class="feed-pager-filters">
-                            <div id="contact-intent-filters" class="feed-filter-row"></div>
-                            <div class="feed-pager-filter-summary">
-                                <span id="feed-filter-status"></span>
-                            </div>
+                <div class="pager-bezel">
+                    <div class="pager-lcd">
+                        <!-- Метатирки: статус несущей + лимит -->
+                        <div class="pager-lcd-meta">
+                            <span id="feed-pager-carrier">ПРИЁМ ВХОДЯЩИХ АКТИВЕН</span>
+                            <span id="feed-pager-gate">ДО 3 ШЁПОТОВ В СУТКИ</span>
                         </div>
-                        <!-- Полезный контент -->
-                        <div id="pager-own-posts" class="feed-pager-own"></div>
-                        <div id="posts-container" class="feed-pager-posts"></div>
+                        <p id="feed-pager-msg" class="pager-lcd-main">ЖИВАЯ ЧАСТОТА · ВЫ НА СВЯЗИ</p>
+                        <p id="feed-pager-sub" class="pager-lcd-sub">Читайте. Отвечайте, если хочется.</p>
+                        <!-- Фильтры: намерение отклика -->
+                        <div id="contact-intent-filters" class="feed-filter-row"></div>
+                        <div id="feed-filter-status" class="pager-lcd-filter-status"></div>
+                        <div class="pager-lcd-scan" aria-hidden="true"></div>
                     </div>
-                    <div class="feed-pager-scan" aria-hidden="true"></div>
                 </div>
-                <!-- Кнопки пейджера -->
-                <div class="feed-pager-keys">
-                    <button type="button" id="feed-pager-scan-btn" class="feed-pager-key" onclick="openPagerModal()">◈ ОТКРЫТЬ ПЕЙДЖЕР</button>
-                    <button type="button" class="feed-pager-key feed-pager-key--alt" onclick="openPagerModal('inbox')">📥 ВХОДЯЩИЕ</button>
+                <!-- ПОДНОЖКА: старые памятки + памятка вместо кнопки "ВХОДЯЩИЕ" -->
+                <div class="pager-foot" id="feed-pager-foot">
+                    <span class="pager-foot-rule">⚖ 13–333 симв. · 1 шёпот на человека · кассета даёт +4 Тепла растению (1/день)</span>
+                    <button type="button" class="pager-foot-vhs" id="feed-pager-scan-btn" onclick="openPagerModal()">◈ ОТКРЫТЬ ПЕЙДЖЕР</button>
+                    <span class="pager-memorial">📥 ПАМЯТКА: входящие шёпоты появятся здесь, когда кто-то откликнётся на ваши истории</span>
                 </div>
             </div>
 
@@ -466,7 +460,7 @@
         <div id="view-room" class="hidden flex-1 overflow-y-auto p-3.5 sm:p-4 pb-24 space-y-4">
             <!-- Плашка живой примерки атрибутов комнаты / пейджера -->
             <div id="station-tryon-bar" class="station-tryon-bar hidden" role="region" aria-label="Живая примерка атрибута">
-                <span id="station-tryon-text">ПРИМЕРКА В КОМНАТЕ</span>
+                <span id="station-tryon-text">ПРИМЕРИТЬ</span>
                 <div class="station-tryon-actions">
                     <button type="button" id="station-tryon-buy" class="station-tryon-buy">ОТКРЫТЬ</button>
                     <button type="button" onclick="stopRoomTryOn()" class="station-tryon-exit">СБРОС</button>
@@ -1653,90 +1647,16 @@
         if (typeof roomAnim !== 'undefined' && roomAnim.pagerModalOpen) renderPagerModal();
         if (typeof renderFeedPager === 'function') renderFeedPager();
         const container = document.getElementById('posts-container');
-        if (!container) {
-            updatePostQuotaUI();
-            return;
-        }
-        container.innerHTML = '';
+        // Истории удалены из вкладки — оставляем только фильтры и интерфейс пейджера.
+        if (container) container.innerHTML = '';
         feedShownAt = performance.now();
         updatePostQuotaUI();
         renderContactFilters();
         renderFeedFilters();
         renderFeedFilterSummary();
-        const myIds = new Set(getMyPostIds());
+        // Собственные сигналы также не отображаются во вкладке (как было: только фильтры + пейджер).
         const ownContainer = document.getElementById('pager-own-posts');
-        if (ownContainer) {
-            ownContainer.innerHTML = ownPagerPosts.length ? ownPagerPosts.map(post => {
-                const id = window.SOMA_WITNESS && window.SOMA_WITNESS.safePostId(post.id);
-                const status = id && witnessStatuses.get(id);
-                const note = status && status.isAuthor && status.hasWitness
-                    ? '<div class="witness-author-note">◌ Кто-то оставил тихий знак.</div>' : '';
-                return `<article class="bg-[#14090c] border border-amber-400/35 rounded-2xl p-4 space-y-2"><p class="text-xs text-gray-200 whitespace-pre-line break-words">${esc(post.text)}</p>${note}</article>`;
-            }).join('') : '<p class="signal-caption">Ваших сигналов пока нет.</p>';
-        }
-
-        const visible = feedPosts.slice(0, 1);
-        const witnessApi = window.SOMA_WITNESS || {};
-
-        if (!visible.length) {
-            container.innerHTML = `<div class="text-center text-xs text-gray-500 py-10 font-mono-tech">${feedLoadFailed ? 'Не удалось загрузить сигналы. Попробуйте позже.' : 'Новых сигналов пока нет. Загляните позже.'}</div>`;
-            return;
-        }
-
-        visible.forEach(post => {
-            const heldState = held[post.id];
-            const safePostId = typeof witnessApi.safePostId === 'function' ? witnessApi.safePostId(post.id) : '';
-            const witnessStatus = safePostId ? witnessStatuses.get(safePostId) : null;
-            const isMine = myIds.has(post.id) || !!(witnessStatus && witnessStatus.isAuthor);
-            const hasVerifiedOwner = !witnessStatus || witnessStatus.isAuthor || witnessStatus.canMark || witnessStatus.iMarked;
-            const witnessAction = renderWitnessAction(post, isMine);
-            const age = formatPostAge(post.created_at);
-            const intentInfo = window.SOMA_SIGNALS.unpackTag(post.tag);
-            const responseHint = intentInfo.intent ? intentInfo.intent.hint : 'Советы не запрошены. Просто откликнитесь.';
-            const heldLabel = heldState === 2
-                ? '◌ Пауза отмечена здесь. Она согрела только вашу комнату; автор её не увидел.'
-                : '◌ Пауза отмечена только здесь. Автор её не увидел.';
-            const card = document.createElement('div');
-            card.className = isMine
-                ? "bg-[#14090c] border border-amber-400/35 rounded-2xl p-4 space-y-3 transition"
-                : "bg-[#12080a] border border-red-500/20 rounded-2xl p-4 space-y-3 transition";
-            card.innerHTML = `
-                <div class="flex justify-between items-center gap-2 text-[10px] font-mono-tech">
-                    <div class="flex items-center gap-1.5 min-w-0">
-                        <span class="text-red-400 font-bold truncate">${esc(displayAuthor(post.author))}</span>
-                        ${isMine ? '<span class="px-1.5 py-0.5 rounded bg-amber-950/60 text-amber-300 border border-amber-400/35 text-[8.5px] shrink-0">ВАШ СИГНАЛ</span>' : ''}
-                        ${age ? `<span class="text-gray-600 shrink-0">· ${esc(age)}</span>` : ''}
-                    </div>
-                    <span class="px-2 py-0.5 bg-red-950/60 text-red-300 rounded border border-red-500/20 shrink-0">${esc(window.SOMA_SIGNALS.tagLabel(post.tag))}</span>
-                </div>
-                <p class="text-xs sm:text-sm text-gray-200 leading-relaxed font-mono-tech whitespace-pre-line break-words">${esc(post.text)}</p>
-                <p class="signal-response-hint">${esc(responseHint)}</p>
-                ${isMine
-                    ? witnessAction
-                    : `${hasVerifiedOwner ? `<button onclick="openWhisperForPost('${safeId(post.id)}')" class="w-full py-2 bg-red-950/40 hover:bg-red-900/50 border border-red-500/40 rounded-xl text-[11px] font-mono-tech text-red-400 flex items-center justify-center space-x-2 transition">
-                        <span>✦ ОТВЕТИТЬ ЛИЧНЫМ ШЁПОТОМ</span>
-                    </button>` : ''}
-                    ${witnessAction}
-                    ${heldState ? `<div class="text-center text-[11px] font-mono-tech text-amber-300/80">${heldLabel}</div>` : `<div class="space-y-1.5">
-                        <button onpointerdown="holdStart('${safeId(post.id)}', this, event)" onpointermove="holdMove(event)" onpointerup="holdCancel()" onpointerleave="holdCancel()" onpointercancel="holdCancel()" oncontextmenu="return false" class="soma-hold-btn relative overflow-hidden w-full py-2 bg-amber-950/20 border border-amber-400/30 rounded-xl text-[11px] font-mono-tech text-amber-300 select-none"><span class="hold-fill absolute inset-0 bg-amber-500/25 pointer-events-none" style="transform:scaleX(0);transform-origin:left"></span><span class="relative pointer-events-none">◌ ПАУЗА ДЛЯ СЕБЯ · 3 СЕК.</span></button>
-                        <p class="text-[9px] leading-relaxed text-gray-500">При наличии дневного тепла пауза согревает только вашу комнату. Автор её не увидит.</p>
-                    </div>`}`
-                }
-            `;
-            if (!isMine) {
-                const read = document.createElement('button');
-                read.type = 'button'; read.className = 'contact-quiet';
-                read.textContent = 'ПРОЧИТАНО · СЛЕДУЮЩИЙ СИГНАЛ';
-                read.onclick = () => decidePagerStory(post.id, read);
-                card.appendChild(read);
-                const hide = document.createElement('button');
-                hide.type = 'button'; hide.className = 'contact-quiet';
-                hide.textContent = 'ПРОЙТИ МИМО';
-                hide.onclick = () => decidePagerStory(post.id, hide);
-                card.appendChild(hide);
-            }
-            container.appendChild(card);
-        });
+        if (ownContainer) ownContainer.innerHTML = '';
     }
 
     // Кнопка «Помочь» в ленте контакта НЕ считает срывы протокола (их считает только реальный «Шёпот»!) —
@@ -1973,16 +1893,21 @@
         if (tab !== 'room' && typeof exitRoomFullscreen === 'function') exitRoomFullscreen(true);
         if (!silent) SFX.tab();
         ['feed', 'room', 'greenhouse'].forEach(t => {
-            document.getElementById(`view-${t}`).classList.add('hidden');
-            document.getElementById(`tab-${t}`).removeAttribute('aria-current');
+            const v = document.getElementById(`view-${t}`);
+            if (v) v.classList.add('hidden');
+            const tb = document.getElementById(`tab-${t}`);
+            if (tb) tb.removeAttribute('aria-current');
         });
-        document.getElementById(`view-${tab}`).classList.remove('hidden');
-        document.getElementById(`tab-${tab}`).setAttribute('aria-current', 'page');
+        const targetView = document.getElementById(`view-${tab}`);
+        if (targetView) targetView.classList.remove('hidden');
+        const targetTab = document.getElementById(`tab-${tab}`);
+        if (targetTab) targetTab.setAttribute('aria-current', 'page');
 
         if (tab === 'feed') { updatePostQuotaUI(); }
         if (tab === 'room') {
             updateHeader();
             if (typeof syncPagerWhispers === 'function') syncPagerWhispers();
+            if (typeof renderRoom === 'function') renderRoom();
         }
         if (tab === 'greenhouse') { startGreenhouseTab(); }
         restoreSomaScroll();

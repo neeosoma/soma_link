@@ -84,8 +84,7 @@
 
     function getPlayerSnapshot() {
         const p = (typeof player !== 'undefined' && player) ? player : {};
-        const xp = Math.max(0, Number(p.xp) || 0);
-        const rank = (typeof rankOf === 'function') ? rankOf(xp) : 'НАБЛЮДАТЕЛЬ';
+        const warmth = Math.max(0, Number(p.warmth) || 0);
         const cosm = (typeof getActiveCosmetics === 'function') ? getActiveCosmetics() : {};
         let title = '';
         let titleGlyph = '✦';
@@ -106,9 +105,7 @@
         return {
             uid: p.uid || 'witness',
             callsign: callsign.slice(0, 26),
-            xp,
-            rank,
-            warmth: Math.max(0, Number(p.warmth) || 0),
+            warmth,
             trained: Math.max(0, Number(p.trained) || 0),
             phaseIdx,
             phaseName,
@@ -471,7 +468,7 @@
         let curY = 184;
         const badgeText = snap.title
             ? `${snap.titleGlyph} ${snap.title}  ·  ${snap.rank}`
-            : `РАНГ: ${snap.rank}  ·  ${snap.xp} XP`;
+            : `ХРАНИТЕЛЬ СТАНЦИИ  ·  ${snap.warmth} ТЕПЛО`;
         g.font = `700 13px ${MONO}`;
         const bw = Math.min(440, g.measureText(badgeText).width + 24);
         rr(g, 50, curY, bw, 30, 8);
@@ -542,7 +539,7 @@
         }
 
         // Подпись над живой комнатой в правом верхнем углу
-        const roomTag = `ТИХАЯ СТАНЦИЯ · ${snap.xp} XP`;
+        const roomTag = `ТИХАЯ СТАНЦИЯ · ${snap.warmth} ТЕПЛО`;
         g.font = `700 12px ${MONO}`;
         const rtw = g.measureText(roomTag).width + 22;
         rr(g, CARD_W - 48 - rtw, 46, rtw, 28, 8);
@@ -560,12 +557,12 @@
     // =========================================================================
     // 2. ТРИУМФ В ТОПЕ ЦИНИКОВ / ПАНОПТИКУМЕ (shareTopFlex)
     // =========================================================================
-    async function paintRankCard(cv, place, xpVal) {
+    async function paintRankCard(cv, place, warmthVal) {
         const g = cv.getContext('2d');
         const snap = getPlayerSnapshot();
         const rk = Math.max(1, Number(place) || 1);
-        const totalXp = Math.max(0, Number(xpVal) || snap.xp);
-        const rankName = (typeof rankOf === 'function') ? rankOf(totalXp) : snap.rank;
+        const totalWarmth = Math.max(0, Number(warmthVal) || snap.warmth);
+        const rankName = 'ХРАНИТЕЛЬ СТАНЦИИ';
         const dateStr = todayStamp();
 
         // Палитра пьедестала (#1 Золото Трона, #2 Лунное Серебро, #3 Тёплая Бронза, #4+ Багровый Рубин)
@@ -684,7 +681,7 @@
 
         g.font = `700 13px ${MONO}`;
         g.fillStyle = 'rgba(255, 224, 202, 0.78)';
-        g.fillText(`${totalXp} XP`, ox, oy + 78);
+        g.fillText(`${totalWarmth} ТЕПЛО`, ox, oy + 78);
         g.textAlign = 'left';
         g.textBaseline = 'alphabetic';
         g.restore();
@@ -761,7 +758,7 @@
         // Полоса показателей трибунала
         const pills = [
             { k: 'МЕСТО В ТОПЕ', v: `#${rk}`, c: tier.main },
-            { k: 'ОПЫТ ЭФИРА', v: `${totalXp} XP`, c: '#fff2ea' },
+            { k: 'ТЕПЛО ЭФИРА', v: `${totalWarmth} ТЕПЛО`, c: '#fff2ea' },
             { k: 'СТАТУС', v: rankName, c: '#ff9eaa' }
         ];
         pills.forEach((pl, idx) => {
@@ -940,7 +937,7 @@
         g.fillText('СВИДЕТЕЛЬ // СТАТУС ПРИСВОЕН', 74, 432);
         g.font = `700 22px ${MONO}`;
         g.fillStyle = '#ffe29c';
-        g.fillText(`${snap.callsign}  ·  +100 XP`, 74, 466);
+        g.fillText(`${snap.callsign}  ·  +100 ТЕПЛО`, 74, 466);
 
         g.font = `700 13px ${MONO}`;
         g.fillStyle = 'rgba(255, 204, 148, 0.75)';
@@ -1070,7 +1067,7 @@
         g.fillText('РАДИОПЕРЕХВАТ // ЧАСТОТА НАЙДЕНА', 74, 432);
         g.font = `700 22px ${MONO}`;
         g.fillStyle = '#ffd2b8';
-        g.fillText(`${snap.callsign}  ·  +50 XP`, 74, 466);
+        g.fillText(`${snap.callsign}  ·  +50 ТЕПЛО`, 74, 466);
 
         g.font = `700 13px ${MONO}`;
         g.fillStyle = 'rgba(255, 178, 188, 0.76)';
@@ -1663,20 +1660,20 @@
             heading: 'СНИМОК СТАНЦИИ И ОТЧЁТА',
             title: 'SOMA~LINK // Личная станция',
             filename: `soma-station-${snap.phaseIdx}.png`,
-            caption: `Моя тихая станция в SOMA~LINK · NEEO~CITY · ${snap.rank} (${snap.xp} XP)`
+            caption: `Моя тихая станция в SOMA~LINK · NEEO~CITY · ${snap.warmth} ТЕПЛО`
         }, paintWitnessCard);
     }
 
-    function shareRank(place, xpVal) {
+    function shareRank(place, warmthVal) {
         const rk = Math.max(1, Number(place) || 1);
         const snap = getPlayerSnapshot();
-        const xp = Math.max(0, Number(xpVal) || snap.xp);
+        const warmth = Math.max(0, Number(warmthVal) || snap.warmth);
         return openWithPainter({
             heading: `ДОСЬЕ ТРИБУНАЛА · #${rk}`,
             title: `SOMA~LINK // Топ #${rk}`,
             filename: `soma-top-${rk}.png`,
-            caption: `Место #${rk} в Пантеоне SOMA~LINK (${xp} XP). Попробуй сдвинуть меня:`
-        }, cv => paintRankCard(cv, rk, xp));
+            caption: `Место #${rk} в Пантеоне SOMA~LINK (${warmth} ТЕПЛО). Попробуй сдвинуть меня:`
+        }, cv => paintRankCard(cv, rk, warmth));
     }
 
     function shareEggCard() {
@@ -1746,7 +1743,7 @@
         renderCard: async (kind, payload) => {
             const cv = makeCanvas(CARD_W, CARD_H);
             if (kind === 'witness') await paintWitnessCard(cv);
-            else if (kind === 'rank') await paintRankCard(cv, payload && payload.place, payload && payload.xp);
+            else if (kind === 'rank') await paintRankCard(cv, payload && payload.place, payload && payload.warmth);
             else if (kind === 'egg') await paintEggCard(cv);
             else if (kind === 'signal') await paintSignalCard(cv);
             else if (kind === 'vhs') await paintVhsCard(cv, payload);

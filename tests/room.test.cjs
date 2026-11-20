@@ -1121,7 +1121,7 @@ test('v11: enlarged sleeping dogs with tucked front paws, clean RX-88 header, fu
     assert.ok(/function copyShareText\(\)[\s\S]{0,140}SOMA_SHARE\.shareWitness\(\)/.test(indexHtml), 'Witness report shares illustrated live room card');
     assert.ok(/function shareEgg\(\)[\s\S]{0,140}SOMA_SHARE\.shareEgg\(\)/.test(indexHtml), 'Protocol Breaker egg shares illustrated card');
     assert.ok(/function shareMusic\(\)[\s\S]{0,140}SOMA_SHARE\.shareSignal\(\)/.test(indexHtml), 'Secret frequency egg shares illustrated card');
-    assert.ok(/function shareTopFlex\(place, xpVal\)[\s\S]{0,160}SOMA_SHARE\.shareRank\(place, xpVal\)/.test(cosmCode), 'Top Cynics dossier shares illustrated rank card');
+    assert.ok(/function shareTopFlex\(place, warmthVal\)[\s\S]{0,160}SOMA_SHARE\.shareRank\(place, warmthVal\)/.test(cosmCode), 'Top Cynics dossier shares illustrated rank card');
     assert.ok(vhsCode.includes('SOMA_SHARE.shareVhs(cur)'), 'VTR-90 deck shares illustrated VHS CRT card');
 
     const makeMockCanvas = (w, h) => {
@@ -1989,8 +1989,8 @@ test('live Whisper validates 13..333 characters without a warmth or lesson gate'
     assert.equal(r.whisperAdmission(0, { trainedTotal: 0 }).admitted, true);
 });
 
-test('Whisper sends once per post, caps at three per day, and grants only send XP', async () => {
-    const player = { uid: 'u_0123456789abcdef', warmth: 100, xp: 0 };
+test('Whisper sends once per post, caps at three per day, and grants only warmth (no XP)', async () => {
+    const player = { uid: 'u_0123456789abcdef', warmth: 100 };
     const localStorage = makeStorage({ soma_signal_rules_v1: 'accepted', soma_warmth_ledger: JSON.stringify({ day: '2026-11-18', trainedTotal: 0 }) });
     const r = loadRoom({ player, localStorage });
     const opts = { today: '2026-11-18', skipCloud: true };
@@ -1999,8 +1999,8 @@ test('Whisper sends once per post, caps at three per day, and grants only send X
     assert.equal((await r.sendWhisperToPost({ id: 'post_1' }, text, opts)).code, 'already_whispered');
     for (const id of ['post_2', 'post_3']) assert.equal((await r.sendWhisperToPost({ id }, text, opts)).ok, true);
     assert.equal((await r.sendWhisperToPost({ id: 'post_4' }, text, opts)).code, 'daily_cap');
-    assert.equal(player.xp, 90);
-    assert.equal(player.warmth, 100);
+    assert.equal(player.xp, undefined, 'XP removed — player.xp must not exist');
+    assert.equal(player.warmth, 100, 'sending whispers grants warmth only, no XP');
     assert.equal((await r.sendWhisperToPost({ id: 'post_4' }, text, { ...opts, today: '2026-11-19' })).ok, true);
 });
 
@@ -2018,17 +2018,17 @@ test('incoming Whispers can be recorded or dismissed even without sender admissi
 });
 
 test('cassette echoes grant +4 plant warmth and no XP at most once daily and never twice per ID', () => {
-    const player = { uid: 'u_0123456789abcdef', warmth: 0, xp: 0 };
+    const player = { uid: 'u_0123456789abcdef', warmth: 0 };
     const r = loadRoom({ player });
     const a = r.claimWhisperCassetteAck('echo_1', '2026-11-18');
     assert.equal(a.grantedWarmth, 4);
-    assert.equal(a.grantedXp, 0);
+    assert.equal(a.grantedXp, undefined, 'XP removed — grantedXp no longer returned');
     assert.equal(r.claimWhisperCassetteAck('echo_2', '2026-11-18').grantedWarmth, 0);
     assert.equal(r.claimWhisperCassetteAck('echo_2', '2026-11-18').duplicate, true, 'the same saved Whisper ID cannot be claimed twice');
     assert.equal(r.claimWhisperCassetteAck('echo_1', '2026-11-19').duplicate, true);
     assert.equal(r.claimWhisperCassetteAck('echo_3', '2026-11-19').grantedWarmth, 4);
     assert.equal(player.warmth, 8);
-    assert.equal(player.xp, 0);
+    assert.equal(player.xp, undefined, 'XP removed — player.xp must not exist');
 });
 
 test('failed cloud cassette acknowledgement leaves the inbox retryable', async () => {
@@ -2300,7 +2300,7 @@ test('new names stay consistent without changing the top-13 or progression bindi
     assert.ok(indexHtml.includes('Отправить сигнал'));
     assert.ok(indexHtml.includes('ЖИВАЯ ЧАСТОТА'));
     assert.ok(!indexHtml.includes('ИНДЕКС РАВНОДУШИЯ'));
-    assert.ok(indexHtml.includes('class="top-heading">ЗВЁЗДЫ СТАНЦИИ'));
+    assert.ok(indexHtml.includes('class="top-heading">ХРАНИТЕЛИ СТАНЦИИ'));
     assert.ok(cosmetics.includes('ЗВЁЗДЫ СТАНЦИИ') && share.includes('ЗВЁЗДЫ СТАНЦИИ'));
     assert.ok(!/Лента контакта|ЛЕНТА КОНТАКТА|СОЗВЕЗДИЕ СТАНЦИИ/.test(indexHtml + cosmetics + share + roomCode));
 });

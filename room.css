@@ -2150,7 +2150,8 @@ html.is-soma-fs-closing .app-h {
 .app-user-line { gap: 7px; min-width: 0; color: #ead8d2; }
 .app-user-line #user-badge { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .app-pulse { width: 20px; height: 22px; display: grid; place-items: center; flex: 0 0 auto; }
-.app-pulse span { width: 6px; height: 6px; border-radius: 50%; background: #d27f7c; }
+.app-pulse span { width: 6px; height: 6px; border-radius: 50%; background: #ff586c; box-shadow: 0 0 6px rgba(255, 72, 94, 0.7); animation: pulse-led 2.4s ease-in-out infinite; }
+@keyframes pulse-led { 0%, 100% { opacity: 0.25; box-shadow: 0 0 3px rgba(255, 72, 94, 0.3); } 50% { opacity: 1; box-shadow: 0 0 8px rgba(255, 72, 94, 0.85); } }
 .app-sound { padding: 3px; color: #bfa7a8; font-size: 11px; }
 .app-rank { flex: 0 1 auto; overflow: hidden; color: #a9959a; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
 .app-xp-line { gap: 9px; margin-top: 4px; color: #988a90; font: 9px 'Share Tech Mono', monospace; }
@@ -2467,6 +2468,243 @@ html.is-soma-fs-closing .app-h {
 .visit-canvas { display: block; width: 100%; height: auto; }
 .visit-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
 .visit-note { color: #8a7a7d; font: 9px 'Share Tech Mono', monospace; }
+
+/* ===== Карточка визитов: минималистичный переключатель ===== */
+.visit-consent-card {
+    border: 1px solid rgba(138, 38, 54, 0.28);
+    border-radius: 14px;
+    background: linear-gradient(180deg, #160a0e 0%, #0d0507 100%);
+    padding: 14px 16px;
+    position: relative;
+    overflow: hidden;
+}
+.visit-consent-card::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 72, 94, 0.35), transparent);
+}
+.visit-consent-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+.visit-consent-label {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+.visit-consent-kicker {
+    color: #ff7c8d;
+    font: 10px 'Share Tech Mono', monospace;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+.visit-consent-state {
+    color: #8a7a7d;
+    font: 8px 'Share Tech Mono', monospace;
+    letter-spacing: 0.08em;
+}
+.visit-consent-hint {
+    margin: 10px 0 0;
+    color: #6b555a;
+    font: 9px 'Share Tech Mono', monospace;
+    line-height: 1.5;
+}
+.visit-consent-toggle {
+    flex: 0 0 auto;
+    width: 44px;
+    height: 24px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 72, 94, 0.35);
+    background: #1a070c;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.25s ease, border-color 0.25s ease;
+    padding: 0;
+}
+.visit-consent-toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    background: #4d2324;
+    transition: transform 0.25s ease, background 0.25s ease;
+}
+.visit-consent-toggle.is-on {
+    background: linear-gradient(180deg, #2a0d14 0%, #1a070c 100%);
+    border-color: rgba(255, 72, 94, 0.55);
+}
+.visit-consent-toggle.is-on::after {
+    transform: translateX(20px);
+    background: #ff586c;
+    box-shadow: 0 0 8px rgba(255, 72, 94, 0.6);
+}
+
+/* ===== Кнопка «Поделиться снимком станции» ===== */
+.share-station-btn {
+    width: 100%;
+    padding: 10px 16px;
+    background: linear-gradient(180deg, #2a0d14 0%, #1a070c 100%);
+    border: 1px solid rgba(255, 72, 94, 0.3);
+    color: #ffb8c2;
+    font: 10px 'Share Tech Mono', monospace;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: border-color 0.2s ease, color 0.2s ease;
+}
+.share-station-btn:hover {
+    border-color: rgba(255, 72, 94, 0.6);
+    color: #ffe1e6;
+}
+.share-station-btn:active {
+    transform: translateY(1px);
+}
+
+/* ===== Карточка профиля (witness-card): эстетичная карточка свидетеля ===== */
+.witness-card {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(138, 38, 54, 0.3);
+    background: #0a0405;
+}
+.witness-card-glow {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(80% 50% at 50% 0%, rgba(120, 20, 36, 0.2) 0%, transparent 70%),
+        radial-gradient(60% 40% at 80% 100%, rgba(255, 72, 94, 0.06) 0%, transparent 70%);
+    pointer-events: none;
+}
+.witness-card-inner {
+    position: relative;
+    padding: 18px 18px 16px;
+}
+.witness-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+.witness-card-kicker {
+    color: #8a555e;
+    font: 9px 'Share Tech Mono', monospace;
+    letter-spacing: 0.14em;
+}
+.witness-card-shop {
+    border: 1px solid rgba(255, 110, 130, 0.25);
+    background: transparent;
+    color: #ff7c8d;
+    border-radius: 7px;
+    padding: 3px 8px;
+    font: 9px 'Share Tech Mono', monospace;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: border-color 0.2s ease, color 0.2s ease;
+}
+.witness-card-shop:hover {
+    border-color: rgba(255, 110, 130, 0.5);
+    color: #ffe1e6;
+}
+.witness-card-id {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(138, 38, 54, 0.18);
+}
+.witness-seal {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 72, 94, 0.2);
+    background: #150709;
+}
+.witness-name-block {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.witness-label {
+    color: #8a555e;
+    font: 9px 'Share Tech Mono', monospace;
+    letter-spacing: 0.14em;
+    margin-bottom: 4px;
+}
+.witness-name-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.witness-name {
+    color: #fff;
+    font: 700 18px/1.2 'Inter', sans-serif;
+    letter-spacing: 0.02em;
+}
+.witness-custom-title {
+    color: #ff7c8d;
+    font: 11px 'Share Tech Mono', monospace;
+    letter-spacing: 0.04em;
+}
+.witness-epitaph {
+    margin: 4px 0 0;
+    color: #8a6569;
+    font: 10px 'Share Tech Mono', monospace;
+    line-height: 1.4;
+}
+.witness-card-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 14px;
+}
+.witness-stat {
+    border: 1px solid rgba(138, 38, 54, 0.18);
+    border-radius: 10px;
+    padding: 9px 11px;
+    background: linear-gradient(180deg, rgba(42, 13, 20, 0.3) 0%, rgba(20, 7, 12, 0.5) 100%);
+}
+.witness-stat-label {
+    color: #6b4548;
+    font: 8px 'Share Tech Mono', monospace;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+.witness-stat-value {
+    color: #c9a0a4;
+    font: 600 12px/1.3 'Inter', sans-serif;
+}
+.witness-stat-amber {
+    color: #e8c87a;
+}
+.witness-stat-red {
+    color: #ff8292;
+}
+.witness-stat-big {
+    color: #ff586c;
+    font: 700 20px/1 'Share Tech Mono', monospace;
+}
+.witness-stat-link {
+    display: inline-block;
+    text-decoration: none;
+    color: #e8c87a;
+}
+.witness-stat-link:hover {
+    text-decoration: underline;
+}
 
 /* ===== Вкладка Оранжерея ===== */
 .gh-tab-head { margin-bottom: 10px; }

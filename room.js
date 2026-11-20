@@ -15,9 +15,7 @@ const PROGRESSION_RULES = {
     WHISPER_MAX_LEN: 333,      // максимальная длина «Шёпота» (333 символа)
     DAILY_WHISPER_SEND_CAP: 3, // не более 3 отправленных «Шёпотов» в сутки
     DAILY_WHISPER_ACK_CAP: 1,  // бонус за сохранение твоего «Шёпота» на кассету — строго не более 1 раза в сутки!
-    WHISPER_SEND_XP: 30,       // +30 XP за отправленный «Шёпот» (+1 Срыв протокола)
     WHISPER_ACK_WARMTH: 4,     // +4 Тепла на рост растения (1 раз в сутки), когда твой «Шёпот» сохранили на кассету
-    WHISPER_ACK_XP: 0,         // сохранение кассеты больше не даёт XP
     SPECIES_REVEAL_STAGE: 2,   // вид раскрывается на 3/6 (~1 месяц)
     DRY_SOIL_DAYS: 5,          // мягкая заметка о подсохшей земле без потери прогресса
     SEASON_WARMTH: 360         // полный сезон тепла (90 тёплых дней × 4)
@@ -95,7 +93,7 @@ const ALIEN_STAGE_NOTES = [
 
 const EMPTY_POT_LINES = {
     cold: [
-        'Пустой керамический горшок с тёмной землёй. От чужих драм здесь ничего не вырастет — росток проснётся, когда откроется «Шёпот».',
+        'Пустой керамический горшок с тёмной землёй. От чужих драм здесь ничего не вырастет — росток проснётся с первым шепотом.',
         'Ладонь чувствует прохладную глину. Земля ждёт первого настоящего тепла, отданного живому человеку.'
     ],
     ready: [
@@ -3580,7 +3578,7 @@ function claimWhisperCassetteAck(whisperId, todayOverride) {
     const wid = String(whisperId || '').trim();
     if (wid) {
         if (getAckedWhispers().includes(wid)) {
-            return { duplicate: true, grantedWarmth: 0, grantedXp: 0, ledger: loadWarmthLedger(todayOverride) };
+            return { duplicate: true, grantedWarmth: 0, ledger: loadWarmthLedger(todayOverride) };
         }
         rememberAckedWhisper(wid);
     }
@@ -3589,12 +3587,10 @@ function claimWhisperCassetteAck(whisperId, todayOverride) {
 
     const alreadyClaimedToday = ledger.whisperAckDay === ledger.day;
     let grantedWarmth = 0;
-    let grantedXp = 0;
 
     if (!alreadyClaimedToday) {
         ledger.whisperAckDay = ledger.day;
         grantedWarmth = PROGRESSION_RULES.WHISPER_ACK_WARMTH; // +4 тепла
-        grantedXp = PROGRESSION_RULES.WHISPER_ACK_XP;         // без XP
     }
     saveWarmthLedger(ledger);
 
@@ -3611,18 +3607,6 @@ function claimWhisperCassetteAck(whisperId, todayOverride) {
             }
         }
     }
-    if (grantedXp > 0 && typeof player !== 'undefined' && player) {
-        player.xp = (Number(player.xp) || 0) + grantedXp;
-        if (typeof addWeeklyXp === 'function') {
-            try { addWeeklyXp(grantedXp); } catch (_) {}
-        }
-        if (typeof updateCloudProfile === 'function') {
-            try { updateCloudProfile(); } catch (_) {}
-        }
-        if (typeof updateHeader === 'function') {
-            try { updateHeader(); } catch (_) {}
-        }
-    }
 
     if (typeof roomAnim !== 'undefined' && roomAnim) {
         roomAnim.pagerNotice = grantedWarmth > 0
@@ -3634,7 +3618,7 @@ function claimWhisperCassetteAck(whisperId, todayOverride) {
     trackFirstSignalEvent('echo_received');
     pulsePagerScreen();
     renderRoom();
-    return { duplicate: false, grantedWarmth, grantedXp, ledger };
+    return { duplicate: false, grantedWarmth, ledger };
 }
 
 // ===== ОРАНЖЕРЕЯ + СЕКРЕТНОЕ ВНЕЗЕМНОЕ СЕМЯ (1 ИЗ 7 ПОСЛЕ 7/7) =====
@@ -9562,7 +9546,7 @@ function syncContextPanels() {
     const deckBar = document.getElementById('station-deck-bar');
     if (deckBar && deckBar.classList) {
         const tapes = loadCassettes();
-        const showDeck = roomAnim.contextPanel === 'deck' || (tapes.length > 0 && !!roomAnim.activeCassetteId);
+        const showDeck = roomAnim.contextPanel === 'deck';
         deckBar.classList.toggle('hidden', !showDeck);
         const listEl = document.getElementById('station-deck-list');
         const emptyEl = document.getElementById('station-deck-empty');
@@ -9898,10 +9882,6 @@ async function sendWhisperToPostOnce(postObj, rawText, opts) {
     }
 
     if (typeof player !== 'undefined' && player) {
-        player.xp = (Number(player.xp) || 0) + PROGRESSION_RULES.WHISPER_SEND_XP;
-        if (typeof addWeeklyXp === 'function') {
-            try { addWeeklyXp(PROGRESSION_RULES.WHISPER_SEND_XP); } catch (_) {}
-        }
         if (typeof updateCloudProfile === 'function') {
             try { updateCloudProfile(); } catch (_) {}
         }
@@ -10086,7 +10066,7 @@ function ensurePagerModal() {
                 <button type="button" class="pager-modal-close" id="pager-modal-close" aria-label="Закрыть пейджер">✕</button>
             </div>
             <div class="pager-modal-tabs" role="tablist">
-                <button type="button" class="pager-modal-tab" id="pager-tab-feed" role="tab" aria-selected="true">📡 ПОДДЕРЖАТЬ В ЭФИРЕ</button>
+                <button type="button" class="pager-modal-tab" id="pager-tab-feed" role="tab" aria-selected="true">📡 ПОЙМАТЬ СИГНАЛ</button>
                 <button type="button" class="pager-modal-tab" id="pager-tab-inbox" role="tab" aria-selected="false">📥 ВХОДЯЩИЕ <span id="pager-inbox-badge" class="pager-inbox-badge hidden">0</span></button>
             </div>
             <div class="pager-bezel pager-modal-bezel">
@@ -10738,10 +10718,9 @@ function renderRoom() {
         }
     }
 
-    const totalRanks = typeof ranks !== 'undefined' ? ranks.length : 6;
     const rIdx = previewing
-        ? [0, 2, 4, totalRanks - 1][previewIdx]
-        : (typeof rankIdx === 'function' ? rankIdx() : 0);
+        ? [0, 2, 4, stationPhases.length - 1][previewIdx]
+        : unlocked;
     const stars = rIdx + 1;
     const phase = stationPhases[active];
     if (!roomAnim.ptsPetsRestored && isPtsMode()) {
@@ -11144,8 +11123,8 @@ function renderRoom() {
     const stEl = document.getElementById('station-stars');
     if (stEl) {
         stEl.textContent = active === 3
-            ? `Созвездие рангов: ${stars}/6 · растаяло в лучах рассвета (верните ночь через окно, чтобы увидеть).`
-            : `Созвездие рангов: ${stars}/6 · холодные звёзды опыта свидетеля.`;
+            ? `Созвездие атмосфер: ${stars}/${stationPhases.length} · растаяло в лучах рассвета (верните ночь через окно, чтобы увидеть).`
+            : `Созвездие атмосфер: ${stars}/${stationPhases.length} · сияет по открытым фазам за окном.`;
     }
 
     // PTS-инспектор (строго скрыт в релизе; на PTS аккуратно сворачивается, чтобы видеть чистый интерфейс игрока)

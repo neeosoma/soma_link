@@ -188,7 +188,10 @@
                     <span class="ts-pilot" aria-hidden="true"></span>
                     <span class="ts-brand">NEEOSOMA // ПЕРЕДАТЧИК</span>
                 </div>
-                <button onclick="closePostModal()" class="ts-close" aria-label="Закрыть">✕</button>
+                <div class="flex items-center gap-1.5">
+                    <button onclick="hideKeyboard()" class="ts-kb" aria-label="Спрятать клавиатуру">⌨ СКРЫТЬ КЛАВИАТУРУ</button>
+                    <button onclick="closePostModal()" class="ts-close" aria-label="Закрыть">✕</button>
+                </div>
             </div>
             <!-- Многосегментный измеритель сигнала -->
             <div class="ts-vmeter" aria-hidden="true">
@@ -1764,6 +1767,19 @@
 
     function notify(msg) {
         try { Telegram.WebApp.showAlert(msg); } catch (e) { alert(msg); }
+    }
+
+    // Спрятать клавиатуру (Telegram WebApp + плавный фокус)
+    function hideKeyboard() {
+        try {
+            if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.hideKeyboard === 'function') {
+                window.Telegram.WebApp.hideKeyboard();
+            }
+        } catch (e) {}
+        const ae = document.activeElement;
+        if (ae && typeof ae.blur === 'function') {
+            try { ae.blur(); } catch (e) {}
+        }
     }
 
     async function submitPainPost() {

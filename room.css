@@ -2361,3 +2361,58 @@ html.is-soma-fs-closing .app-h {
 .signal-intents p { grid-column: 1 / -1; margin: 0; }
 .contact-filter:focus-visible,.contact-quiet:focus-visible { outline: 2px solid #ffe7c6; outline-offset: 3px; }
 @media (max-width: 360px) { .signal-intents { grid-template-columns: 1fr; } }
+
+/* ===== Случайный анонимный визит в чужую комнату ===== */
+.visit-entry {
+    border: 1px solid rgba(195, 169, 157, 0.18);
+    border-radius: 14px;
+    background: #120708;
+    padding: 12px;
+    space-y: 8px;
+}
+.visit-entry-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+.visit-entry-kicker {
+    color: #d27f7c; font: 8px 'Share Tech Mono', monospace; letter-spacing: 0.1em;
+}
+.visit-entry .visit-start, .visit-entry button.visit-start {
+    border: 1px solid rgba(201, 154, 130, 0.4); background: #1a1013; color: #efdbd0;
+    border-radius: 8px; padding: 5px 9px; font: 9px 'Share Tech Mono', monospace;
+    white-space: nowrap; cursor: pointer;
+}
+.visit-host { margin-top: 8px; }
+.visit-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px;
+}
+.visit-kicker { color: #b79382; font: 8px 'Share Tech Mono', monospace; letter-spacing: 0.1em; }
+.visit-next, .visit-enter {
+    border: 1px solid rgba(201, 154, 130, 0.4); background: #1a1013; color: #efdbd0;
+    border-radius: 8px; padding: 5px 9px; font: 9px 'Share Tech Mono', monospace; cursor: pointer; white-space: nowrap;
+}
+.visit-scene {
+    border-radius: 12px; overflow: hidden; background: #0d0507; border: 1px solid #481822;
+}
+.visit-canvas { display: block; width: 100%; height: auto; }
+.visit-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.visit-note { color: #8a7a7d; font: 9px 'Share Tech Mono', monospace; }
+
+/* ===== Вкладка Оранжерея ===== */
+.gh-tab-head { margin-bottom: 10px; }
+.gh-tab-kicker { color: #b79382; font: 8px 'Share Tech Mono', monospace; letter-spacing: 0.1em; }
+.gh-tab-title { margin: 2px 0 0; color: #f3e8ff; font: 600 21px/1.15 'Inter', sans-serif; }
+.gh-tab-scene-wrap {
+    border-radius: 14px; overflow: hidden; background: #0b0410;
+    border: 1px solid rgba(196, 181, 253, 0.25);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+.gh-tab-canvas { display: block; width: 100%; height: auto; }
+.gh-tab-bar {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    margin-top: 10px; flex-wrap: wrap;
+}
+.gh-tab-bar button {
+    border: 1px solid rgba(196, 181, 253, 0.35); background: #1a0f24; color: #e9d5ff;
+    border-radius: 9px; padding: 7px 11px; font: 9px 'Share Tech Mono', monospace; cursor: pointer;
+}
+.gh-tab-status { color: #9d9095; font: 8px 'Share Tech Mono', monospace; }

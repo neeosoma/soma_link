@@ -343,8 +343,8 @@
         <!-- ОСНОВНАЯ НАВИГАЦИЯ -->
         <nav class="app-tabs" aria-label="Разделы станции">
             <button id="tab-feed" onclick="switchTab('feed')" aria-current="page">ПЕЙДЖЕР</button>
-            <button id="tab-top" onclick="switchTab('top')">ЗВЁЗДЫ</button>
-            <button id="tab-profile" onclick="switchTab('profile')">КОМНАТА</button>
+            <button id="tab-room" onclick="switchTab('room')">МОЯ КОМНАТА</button>
+            <button id="tab-greenhouse" onclick="switchTab('greenhouse')">ОРАНЖЕРЕЯ</button>
         </nav>
 
         <button type="button" onclick="openSafety()" class="safety-link">🛟 Нужны варианты поддержки?</button>
@@ -408,32 +408,44 @@
                 <summary>МОИ СИГНАЛЫ · ТИХИЕ ЗНАКИ</summary>
                 <div id="pager-own-posts" class="space-y-3" aria-live="polite"></div>
             </details>
+            <!-- РЕТРО-ПЕЙДЖЕР «ШЁПОТА» NEEOSOMA // NMAV-04 -->
+            <section id="soma-pager" class="soma-pager" data-state="locked" data-admitted="0" aria-label="Пейджер частоты «Шёпот»">
+                <div class="pager-top">
+                    <span class="pager-brand"><i id="pager-led" class="pager-led" aria-hidden="true"></i>NEEOSOMA // NMAV-04</span>
+                    <span class="pager-sig">CH·04 ШЁПОТ<span class="pager-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span></span>
+                </div>
+                <div class="pager-bezel" onclick="openWhisper()" role="button" tabindex="0" aria-label="Открыть экран пейджера «Шёпот»">
+                    <div class="pager-lcd" aria-live="polite">
+                        <div class="pager-lcd-meta">
+                            <span id="pager-carrier" class="pager-carrier">ПРИЁМ ВХОДЯЩИХ АКТИВЕН</span>
+                            <span id="pager-gate">ДО 3 ШЁПОТОВ В СУТКИ</span>
+                        </div>
+                        <p id="pager-msg" class="pager-lcd-main">ЖИВАЯ ЧАСТОТА · ВЫ НА СВЯЗИ</p>
+                        <p id="pager-sub" class="pager-lcd-sub">Читайте. Отвечайте, если хочется.</p>
+                    </div>
+                </div>
+                <div class="pager-keys">
+                    <button type="button" id="pager-scan-btn" class="pager-key" onclick="pressPagerScan()">◈ ОТКРЫТЬ ПЕЙДЖЕР</button>
+                    <button type="button" class="pager-key pager-key--alt" onclick="pressPagerInfo()">◌ ПАМЯТКА</button>
+                </div>
+            </section>
+
+            <section id="visit-entry" class="visit-entry" aria-label="Случайная чужая комната">
+                <div class="visit-entry-head">
+                    <span class="visit-entry-kicker">СТАНЦИЯ ЧУЖОГО СЛУШАТЕЛЯ</span>
+                    <button type="button" id="visit-start" onclick="startRandomVisit()">▶ ЗАГЛЯНУТЬ В СЛЕДУЮЩУЮ КОМНАТУ</button>
+                </div>
+                <div id="visit-host" class="visit-host">
+                    <p class="signal-caption">Нажмите, чтобы заглянуть в случайную комнату станции.</p>
+                </div>
+            </section>
             <div id="feed-ritual-hint" class="feed-personal-note">
                 <span id="feed-warmth-status">Пауза по желанию согревает только вашу комнату. Автор её не увидит.</span>
             </div>
         </div>
 
-        <!-- ЭКРАН 2: СОЗВЕЗДИЕ (ПАНОПТИКУМ) -->
-        <div id="view-top" class="hidden flex-1 overflow-y-auto p-3.5 sm:p-4 pb-24 space-y-3">
-            <div class="top-head">
-                <div class="top-title-wrap">
-                    <span class="top-kicker">NEEO~CITY // ПАНОПТИКУМ</span>
-                    <h2 class="top-heading">ЗВЁЗДЫ СТАНЦИИ</h2>
-                </div>
-                <button type="button" onclick="openShop('frames')" class="top-shop-btn">✦ АТРИБУТЫ</button>
-            </div>
-            <div class="top-modes" role="tablist" aria-label="Режим рейтинга">
-                <button type="button" class="top-mode-btn" data-top-mode="all" aria-pressed="true" onclick="switchTopMode('all')">♛ ОПЫТ ЗА ВСЁ ВРЕМЯ</button>
-                <button type="button" class="top-mode-btn" data-top-mode="week" aria-pressed="false" onclick="switchTopMode('week')">✦ ОПЫТ НЕДЕЛИ</button>
-            </div>
-            <div id="top-subnote" class="top-subnote">Игровой опыт, не рейтинг доброты · нажмите на игрока для досье</div>
-            <div id="top-chase" class="top-chase"></div>
-            <div id="top-podium" class="top-podium"></div>
-            <div id="leaderboard-list" class="space-y-2"></div>
-        </div>
-
         <!-- ЭКРАН 3: ПРОФИЛЬ -->
-        <div id="view-profile" class="hidden flex-1 overflow-y-auto p-3.5 sm:p-4 pb-24 space-y-4">
+        <div id="view-room" class="hidden flex-1 overflow-y-auto p-3.5 sm:p-4 pb-24 space-y-4">
             <!-- Плашка живой примерки атрибутов комнаты / пейджера -->
             <div id="station-tryon-bar" class="station-tryon-bar hidden" role="region" aria-label="Живая примерка атрибута">
                 <span id="station-tryon-text">ПРИМЕРКА В КОМНАТЕ</span>
@@ -611,25 +623,15 @@
                 </div>
             </section>
 
-            <!-- РЕТРО-ПЕЙДЖЕР «ШЁПОТА» NEEOSOMA // NMAV-04 -->
-            <section id="soma-pager" class="soma-pager" data-state="locked" data-admitted="0" aria-label="Пейджер частоты «Шёпот»">
-                <div class="pager-top">
-                    <span class="pager-brand"><i id="pager-led" class="pager-led" aria-hidden="true"></i>NEEOSOMA // NMAV-04</span>
-                    <span class="pager-sig">CH·04 ШЁПОТ<span class="pager-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span></span>
+            <section id="visit-consent-card" class="bg-[#0a0506] border border-red-500/25 rounded-2xl p-4 space-y-3">
+                <div class="visit-entry-head">
+                    <span class="visit-entry-kicker">АНОНИМНЫЕ ВИЗИТЫ В КОМНАТУ</span>
+                    <span id="visit-consent-state" class="visit-note"></span>
                 </div>
-                <div class="pager-bezel" onclick="openWhisper()" role="button" tabindex="0" aria-label="Открыть экран пейджера «Шёпот»">
-                    <div class="pager-lcd" aria-live="polite">
-                        <div class="pager-lcd-meta">
-                            <span id="pager-carrier" class="pager-carrier">ПРИЁМ ВХОДЯЩИХ АКТИВЕН</span>
-                            <span id="pager-gate">ДО 3 ШЁПОТОВ В СУТКИ</span>
-                        </div>
-                        <p id="pager-msg" class="pager-lcd-main">ЖИВАЯ ЧАСТОТА · ВЫ НА СВЯЗИ</p>
-                        <p id="pager-sub" class="pager-lcd-sub">Читайте. Отвечайте, если хочется.</p>
-                    </div>
-                </div>
-                <div class="pager-keys">
-                    <button type="button" id="pager-scan-btn" class="pager-key" onclick="pressPagerScan()">◈ ОТКРЫТЬ ПЕЙДЖЕР</button>
-                    <button type="button" class="pager-key pager-key--alt" onclick="pressPagerInfo()">◌ ПАМЯТКА</button>
+                <p class="signal-caption">Если вы откроете визит, другие игроки смогут увидеть вашу комнату и Оранжерею анонимно — без вашего ника, без личных данных, без сообщений. Вы можете отключить это в любой момент, и снимок мгновенно исчезнет.</p>
+                <div class="flex gap-2 flex-wrap">
+                    <button type="button" id="visit-consent-on" class="visit-start" onclick="setVisitConsent(true)">ОТКРЫТЬ ВИЗИТЫ</button>
+                    <button type="button" id="visit-consent-off" class="visit-start" onclick="setVisitConsent(false)">ЗАКРЫТЬ ВИЗИТЫ</button>
                 </div>
             </section>
             <div id="witness-card" class="bg-[#12080a] border border-red-500/40 p-5 rounded-2xl space-y-4 relative overflow-hidden">
@@ -669,6 +671,39 @@
             <button onclick="copyShareText()" class="w-full py-3.5 bg-red-950 hover:bg-red-900 border border-red-500/50 text-red-200 font-bold text-xs font-mono-tech uppercase tracking-wider rounded-xl transition">
                 ПОДЕЛИТЬСЯ СНИМКОМ СТАНЦИИ
             </button>
+
+            <section id="leaderboard-card" class="bg-[#0a0506] border border-red-500/25 rounded-2xl p-4 space-y-3">
+                <div class="top-head">
+                    <div class="top-title-wrap">
+                        <span class="top-kicker">NEEO~CITY // ПАНОПТИКУМ</span>
+                        <h2 class="top-heading">ЗВЁЗДЫ СТАНЦИИ</h2>
+                    </div>
+                    <button type="button" onclick="openShop('frames')" class="top-shop-btn">✦ АТРИБУТЫ</button>
+                </div>
+                <div class="top-modes" role="tablist" aria-label="Режим рейтинга">
+                    <button type="button" class="top-mode-btn" data-top-mode="all" aria-pressed="true" onclick="switchTopMode('all')">♛ ОПЫТ ЗА ВСЁ ВРЕМЯ</button>
+                    <button type="button" class="top-mode-btn" data-top-mode="week" aria-pressed="false" onclick="switchTopMode('week')">✦ ОПЫТ НЕДЕЛИ</button>
+                </div>
+                <div id="top-subnote" class="top-subnote">Игровой опыт, не рейтинг доброты · нажмите на игрока для досье</div>
+                <div id="top-chase" class="top-chase"></div>
+                <div id="top-podium" class="top-podium"></div>
+                <div id="leaderboard-list" class="space-y-2"></div>
+            </section>
+        </div>
+
+        <!-- ЭКРАН 3: ОРАНЖЕРЕЯ -->
+        <div id="view-greenhouse" class="hidden flex-1 overflow-y-auto p-3.5 sm:p-4 pb-24 space-y-4">
+            <div class="gh-tab-head">
+                <span class="gh-tab-kicker">NEEOSOMA // ОРАНЖЕРЕЯ</span>
+                <h2 class="gh-tab-title">СТЕКЛЯННЫЙ КУПОЛ</h2>
+            </div>
+            <div class="gh-tab-scene-wrap">
+                <canvas id="gh-tab-canvas" class="gh-tab-canvas" width="960" height="564" aria-label="Стеклянный купол Оранжереи"></canvas>
+            </div>
+            <div class="gh-tab-bar">
+                <button type="button" id="gh-tab-open" onclick="openGreenhouseFromTab()">◈ ОТКРЫТЬ ОРАНЖЕРЕЮ</button>
+                <span id="gh-tab-status" class="gh-tab-status" role="status" aria-live="polite"></span>
+            </div>
         </div>
     </div>
 
@@ -1172,8 +1207,8 @@
         renderTagChips(); initContactUI(); initSoundUI();
         if (cfg.ENV === 'pts') showPts();
         const wantsRoom = () => new URLSearchParams(location.search).has('room') || /^#room\b/i.test(location.hash);
-        if (wantsRoom()) switchTab('profile', true);
-        window.addEventListener('hashchange', () => { if (wantsRoom()) switchTab('profile'); });
+        if (wantsRoom()) switchTab('room', true);
+        window.addEventListener('hashchange', () => { if (wantsRoom()) switchTab('room'); });
         const k = SUPABASE_ANON_KEY || '';
         if (!/^https:\/\/[a-z0-9]+\.supabase\.co\/?$/.test(SUPABASE_URL || '')) notify('В config.js неверный SUPABASE_URL. Нужен вид https://abcdefgh.supabase.co (без /dashboard, без пробелов).');
         else if (/^sb_secret_/.test(k)) notify('В config.js вставлен Secret-ключ. Нужен Publishable (sb_publishable_...). Secret-ключ лучше пересоздать в Supabase.');
@@ -1957,7 +1992,7 @@
                 document.body.style.removeProperty('top');
                 if (window.scrollY !== 0 || window.scrollX !== 0) window.scrollTo(0, 0);
             }
-            ['view-feed', 'view-top', 'view-profile'].forEach(id => {
+            ['view-feed', 'view-room', 'view-greenhouse'].forEach(id => {
                 const el = document.getElementById(id);
                 if (!el || el.classList.contains('hidden')) return;
                 el.style.overflowY = 'auto';
@@ -1970,7 +2005,7 @@
 
     (function initSomaScrollGuard() {
         const attach = () => {
-            ['view-feed', 'view-top', 'view-profile'].forEach(id => {
+            ['view-feed', 'view-room', 'view-greenhouse'].forEach(id => {
                 const el = document.getElementById(id);
                 if (!el || el.dataset.scrollGuard) return;
                 el.dataset.scrollGuard = '1';
@@ -1997,22 +2032,223 @@
 
     function switchTab(tab, silent) {
         holdCancel();
-        if (tab !== 'profile' && typeof exitRoomFullscreen === 'function') exitRoomFullscreen(true);
+        if (tab !== 'room' && typeof exitRoomFullscreen === 'function') exitRoomFullscreen(true);
         if (!silent) SFX.tab();
-        ['feed', 'top', 'profile'].forEach(t => {
+        ['feed', 'room', 'greenhouse'].forEach(t => {
             document.getElementById(`view-${t}`).classList.add('hidden');
             document.getElementById(`tab-${t}`).removeAttribute('aria-current');
         });
         document.getElementById(`view-${tab}`).classList.remove('hidden');
         document.getElementById(`tab-${tab}`).setAttribute('aria-current', 'page');
 
-        if (tab === 'feed') updatePostQuotaUI();
-        if (tab === 'top' && typeof renderLeaderboard === 'function') renderLeaderboard();
-        if (tab === 'profile') {
+        if (tab === 'feed') { updatePostQuotaUI(); }
+        if (tab === 'room') {
             updateHeader();
             if (typeof syncPagerWhispers === 'function') syncPagerWhispers();
+            if (typeof renderLeaderboard === 'function') renderLeaderboard();
+            if (typeof refreshVisitConsent === 'function') refreshVisitConsent();
         }
+        if (tab === 'greenhouse') { startGreenhouseTab(); }
         restoreSomaScroll();
+    }
+
+    // ===== Вкладка Оранжерея: живой купол без выхода из приложения =====
+    let ghTabRaf = 0;
+    function startGreenhouseTab() {
+        const cv = document.getElementById('gh-tab-canvas');
+        if (!cv) return;
+        if (ghTabRaf) cancelAnimationFrame(ghTabRaf);
+        const status = document.getElementById('gh-tab-status');
+        const draw = () => {
+            if (!document.getElementById('view-greenhouse') || document.getElementById('view-greenhouse').classList.contains('hidden')) {
+                if (ghTabRaf) { cancelAnimationFrame(ghTabRaf); ghTabRaf = 0; }
+                return;
+            }
+            const gh = window.SOMA_GREENHOUSE;
+            if (gh && typeof gh.paintScene === 'function' && cv.getContext) {
+                try { gh.paintScene(cv.getContext('2d'), cv.width, cv.height, performance.now()); } catch (_) {}
+            }
+            if (typeof isGreenhouseUnlocked === 'function' && !isGreenhouseUnlocked()) {
+                if (status) status.textContent = 'Оранжерея откроется после расцвета первого растения.';
+            }
+            ghTabRaf = requestAnimationFrame(draw);
+        };
+        ghTabRaf = requestAnimationFrame(draw);
+    }
+    function openGreenhouseFromTab() {
+        if (typeof openGreenhouse === 'function') openGreenhouse({});
+    }
+
+    // ===== Случайный анонимный визит в чужую комнату =====
+    let visitScene = null;
+    let visitRaf = 0;
+    async function startRandomVisit() {
+        const host = document.getElementById('visit-host');
+        if (!host) return;
+        if (!supabaseClient) { host.innerHTML = '<p class="signal-caption">Сеть не подключена. Проверьте config.js.</p>'; return; }
+        host.innerHTML = '<p class="signal-caption">Подключение к станции…</p>';
+        try {
+            const { data, error } = await supabaseClient.rpc('random_room_visit');
+            if (error || !data) {
+                host.innerHTML = '<p class="signal-caption">Станция пока не принимает визиты. Загляните позже.</p>';
+                return;
+            }
+            visitScene = data;
+            renderVisitRoom(host, data);
+            if (visitRaf) cancelAnimationFrame(visitRaf);
+            const draw = () => {
+                if (host.dataset.visiting !== '1') { if (visitRaf) { cancelAnimationFrame(visitRaf); visitRaf = 0; } return; }
+                const cv = host.querySelector('#visit-canvas');
+                if (cv && cv.getContext && visitScene) {
+                    try { renderVisitCanvas(cv.getContext('2d'), visitScene); } catch (_) {}
+                }
+                visitRaf = requestAnimationFrame(draw);
+            };
+            visitRaf = requestAnimationFrame(draw);
+        } catch (_) {
+            host.innerHTML = '<p class="signal-caption">Не удалось подключиться к станции.</p>';
+        }
+    }
+    function stopRandomVisit() {
+        if (visitRaf) { cancelAnimationFrame(visitRaf); visitRaf = 0; }
+        visitScene = null;
+    }
+    function renderVisitRoom(host, scene) {
+        host.dataset.visiting = '1';
+        host.innerHTML = `
+            <div class="visit-head">
+                <span class="visit-kicker">АНОНИМНЫЙ ВИЗИТ · СТАНЦИЯ ЧУЖОГО СЛУШАТЕЛЯ</span>
+                <button type="button" class="visit-next" onclick="startRandomVisit()">▶ СЛЕДУЮЩАЯ КОМНАТА</button>
+            </div>
+            <div class="visit-scene">
+                <canvas id="visit-canvas" class="visit-canvas" width="793" height="496" aria-label="Чужая комната"></canvas>
+            </div>
+            <div class="visit-bar">
+                <button type="button" class="visit-enter" onclick="enterVisitGreenhouse()">🌿 ВОЙТИ В ОРАНЖЕРЕЮ</button>
+                <span class="visit-note">Визит анонимный. Вы не видите владельца и его личные данные.</span>
+            </div>
+        `;
+    }
+    function enterVisitGreenhouse() {
+        const snap = visitScene && visitScene.greenhouse;
+        if (!snap) { notify('В этой комнате Оранжерея сейчас закрыта.'); return; }
+        if (!snap.open) { notify('Оранжерея этого слушателя сейчас закрыта.'); return; }
+        if (typeof openGreenhouse === 'function') {
+            const ownKind = Number((visitScene && visitScene.room && visitScene.room.plant_kind) || 0);
+            openGreenhouse({ visitSnapshot: { greenhouse: snap, own: { kind: ownKind, kindName: 'РАСТЕНИЕ', seed: (visitScene && visitScene.room && visitScene.room.plant_seed) || 42 } } });
+        }
+    }
+
+    // ===== Публикация снимка своей комнаты для анонимных визитов =====
+    async function buildVisitScene() {
+        const roomAnim = typeof roomAnim !== 'undefined' ? roomAnim : {};
+        const cosm = (typeof getActiveCosmetics === 'function') ? getActiveCosmetics() : {};
+        const phase = Number.isInteger(roomAnim.activePhase) ? roomAnim.activePhase : 0;
+        const stage = Number.isInteger(roomAnim.liveStage) ? roomAnim.liveStage : -1;
+        const own = (typeof plantSpec === 'function') ? plantSpec() : { kind: 0, seed: 42, leafIdx: 0, bloomIdx: 0, potIdx: 0, lean: 0, potShape: 0 };
+        const gh = (typeof loadGreenhouse === 'function') ? loadGreenhouse() : { bloomed: [], activeSeed: null, alienSeed: null, placed: null, pots: {} };
+        const cat = (typeof catSpec === 'function') ? catSpec() : { coatIdx: 0 };
+        const dog = (typeof dogSpec === 'function') ? dogSpec() : { breedIdx: 0 };
+        const scene = {
+            room: {
+                plant_kind: own.kind,
+                plant_stage: stage,
+                plant_seed: own.seed,
+                phase,
+                cat: cosm.cat ? String(cat.coatIdx) : 'none',
+                dog: cosm.dog ? String(dog.breedIdx) : 'none',
+                alien_kind: (gh.alienSeed && gh.alienSeed.kind !== undefined) ? gh.alienSeed.kind : null,
+                leaf: own.leafIdx || 0,
+                bloom: own.bloomIdx || 0,
+                pot_shape: own.potShape || 0,
+                pot_index: own.potIdx || 0,
+                lean: Math.round((own.lean || 0) * 10) / 10
+            },
+            greenhouse: {
+                open: !!(typeof isGreenhouseUnlocked === 'function' && isGreenhouseUnlocked()),
+                bloomed: Array.isArray(gh.bloomed) ? gh.bloomed : [],
+                pots: gh.pots || {},
+                active_seed: gh.activeSeed ? {
+                    kind: gh.activeSeed.kind,
+                    stage: gh.activeSeed.grownWarmth >= 0 ? Math.max(0, Math.min(5, Math.floor(gh.activeSeed.grownWarmth / 300 * 6))) : -1,
+                    seed: gh.activeSeed.kind,
+                    leaf: 0, bloom: 0, pot_shape: 0, pot_index: 0, lean: 0
+                } : null,
+                alien_seed: gh.alienSeed ? {
+                    kind: gh.alienSeed.kind,
+                    stage: gh.alienSeed.bloomed ? 5 : Math.max(0, Math.min(5, Math.floor((gh.alienSeed.grownWarmth || 0) / 760 * 6))),
+                    seed: gh.alienSeed.kind,
+                    leaf: 0, bloom: 0, pot_shape: 0, pot_index: 0, lean: 0
+                } : null,
+                placed: gh.placed
+            },
+            cosmetics: {
+                pot: cosm.pot || '',
+                garland: !!cosm.garland,
+                tape: !!cosm.tape,
+                steam: !!cosm.steam,
+                candles: !!cosm.candles
+            }
+        };
+        return scene;
+    }
+    async function refreshVisitConsent() {
+        const state = document.getElementById('visit-consent-state');
+        if (!supabaseClient || !state) return;
+        try {
+            const { data, error } = await supabaseClient.rpc('my_room_visit_consent');
+            if (error) return;
+            state.textContent = data ? 'Визиты открыты' : 'Визиты закрыты';
+        } catch (_) {}
+    }
+    async function setVisitConsent(enabled) {
+        if (!supabaseClient) { notify('Сеть не подключена. Проверьте config.js.'); return; }
+        try {
+            const scene = await buildVisitScene();
+            const { error } = await supabaseClient.rpc('set_room_visit_consent', { p_enabled: enabled, p_scene: scene });
+            if (error) { notify('Не удалось изменить настройки визита.'); return; }
+            await refreshVisitConsent();
+            notify(enabled ? 'Анонимные визиты открыто.' : 'Анонимные визиты закрыто.');
+        } catch (_) { notify('Не удалось изменить настройки визита.'); }
+    }
+
+    // Рендер чужой комнаты по серверному снимку. Использует те же рендерные
+    // функции, но со снимком гостя, без заимствования локального состояния.
+    function renderVisitCanvas(g, scene) {
+        const r = scene && scene.room || {};
+        const cosm = (scene && scene.cosmetics) || {};
+        const now = 4200;
+        const phase = Number.isInteger(Number(r.phase)) ? Math.max(0, Math.min(3, Number(r.phase))) : 0;
+        const W = 793, H = 496;
+        // Фон + лампа
+        try { if (typeof drawWindowWorld === 'function') drawWindowWorld(g, now, phase, 0); } catch (_) {}
+        try { if (typeof drawCrtMonitor === 'function') drawCrtMonitor(g, now, phase, 0); } catch (_) {}
+        // Косметика гостя (без локального shopState)
+        try { if (typeof drawRoomCosmetics === 'function') drawRoomCosmetics(g, now, phase, cosm); } catch (_) {}
+        try { if (typeof drawWindowLightBeams === 'function') drawWindowLightBeams(g, now, phase, 0); } catch (_) {}
+        // Лианы гостя (отображают открытость его Оранжереи)
+        const ghOpen = !!(scene && scene.greenhouse && scene.greenhouse.open);
+        try { if (typeof drawGreenhouseVines === 'function') drawGreenhouseVines(g, now, phase, { open: ghOpen }); } catch (_) {}
+        // Растение гостя
+        try {
+            const kind = Number(r.plant_kind) || 0;
+            const stage = Number(r.plant_stage);
+            if (typeof drawPlantSprite === 'function' && typeof plantSpec === 'function') {
+                const base = plantSpec('visit_' + (r.plant_seed || 42));
+                const spec = (typeof gallerySpecForKind === 'function') ? gallerySpecForKind(kind, base) : { ...base, kind };
+                const pcv = document.createElement('canvas');
+                pcv.width = 440; pcv.height = 460;
+                drawPlantSprite(pcv.getContext('2d'), spec, Number.isFinite(stage) ? stage : -1, { phase, now, potSkin: cosm.pot || '' });
+                g.drawImage(pcv, 0.35333 * W, 0.47488 * H, 0.29333 * W, 0.4939 * H);
+            }
+        } catch (_) {}
+        // Кот и пёс гостя
+        if (r.cat !== 'none' && Number(r.cat) >= 0 && typeof drawCompanionCat === 'function') {
+            try { drawCompanionCat(g, now, phase, false, catSpec('visit_' + (r.plant_seed || 42) + '_cat', Number(r.cat))); } catch (_) {}
+        }
+        if (r.dog !== 'none' && Number(r.dog) >= 0 && typeof drawCompanionDog === 'function') {
+            try { drawCompanionDog(g, now, phase, false, dogSpec('visit_' + (r.plant_seed || 42) + '_dog', Number(r.dog))); } catch (_) {}
+        }
     }
 
     document.addEventListener('keydown', e => {

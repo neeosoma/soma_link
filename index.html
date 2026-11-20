@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta id="soma-theme-color" name="theme-color" content="#0b0708">
-    <title>NEEOSOMA // SOMA~LINK · NEEO~CITY</title>
+    <title>АНОНИМНЫЙ ДНЕВНИК · NEEOSOMA // SOMA~LINK</title>
     <meta name="description" content="Ночная станция живого контакта. Разделите историю, маленькую победу или несколько слов с другим человеком. Отвечать не обязательно.">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -158,9 +158,183 @@
         ::-webkit-scrollbar { width: 3px; }
         ::-webkit-scrollbar-track { background: #12090b; }
         ::-webkit-scrollbar-thumb { background: #7f1d1d; }
+
+        /* ===== НАЧАЛЬНАЯ ЗАСТАВКА — вход в анонимный дневник ===== */
+        #splash {
+            position: fixed;
+            inset: 0;
+            z-index: 100000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background:
+                radial-gradient(120% 80% at 50% 18%, rgba(120, 20, 30, 0.18) 0%, rgba(8, 3, 4, 0) 60%),
+                radial-gradient(100% 100% at 50% 120%, rgba(60, 12, 18, 0.28) 0%, rgba(8, 3, 4, 0) 55%),
+                #080305;
+            overflow: hidden;
+            transition: opacity 0.9s ease, visibility 0.9s ease;
+        }
+        #splash.splash-out { opacity: 0; visibility: hidden; pointer-events: none; }
+        #splash::before {
+            content: "";
+            position: absolute;
+            inset: -20%;
+            background:
+                repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.025) 0 1px, rgba(0, 0, 0, 0) 1px 4px);
+            animation: splash-scan 8s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes splash-scan {
+            from { background-position: 0 0; }
+            to { background-position: 0 120px; }
+        }
+        #splash::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(60% 60% at 50% 50%, rgba(0, 0, 0, 0) 60%, rgba(0, 0, 0, 0.6) 100%);
+            pointer-events: none;
+        }
+        .splash-inner { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 22px; padding: 24px; }
+
+        .splash-glyph {
+            width: 74px; height: 74px;
+            display: flex; align-items: center; justify-content: center;
+            position: relative;
+            opacity: 0;
+            animation: splash-glyph-in 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) 0.1s forwards;
+        }
+        .splash-glyph svg { width: 100%; height: 100%; color: #ff4d5e; filter: drop-shadow(0 0 10px rgba(255, 77, 94, 0.55)); }
+        .splash-glyph .ring {
+            position: absolute; inset: 0; border-radius: 50%;
+            border: 1.5px solid rgba(255, 77, 94, 0.35);
+            animation: splash-ring 2.4s ease-out 0.1s forwards;
+        }
+        @keyframes splash-glyph-in {
+            0% { opacity: 0; transform: scale(0.6) rotate(-8deg); }
+            100% { opacity: 1; transform: scale(1) rotate(0); }
+        }
+        @keyframes splash-ring {
+            0% { transform: scale(0.5); opacity: 0.9; }
+            100% { transform: scale(1.8); opacity: 0; }
+        }
+
+        .splash-kicker {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 0.42em;
+            color: rgba(255, 77, 94, 0.7);
+            text-transform: uppercase;
+            opacity: 0;
+            animation: splash-fade-up 0.8s ease 0.45s forwards;
+        }
+        .splash-title {
+            font-family: 'Share Tech Mono', monospace;
+            font-weight: 700;
+            font-size: clamp(30px, 9vw, 52px);
+            letter-spacing: 0.04em;
+            color: #f4e9ea;
+            line-height: 1.05;
+            text-shadow: 0 0 18px rgba(255, 77, 94, 0.35);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0 0.02em;
+            min-height: 1.1em;
+        }
+        .splash-title .ltr {
+            display: inline-block;
+            opacity: 0;
+            transform: translateY(0.5em) rotateX(-90deg);
+            animation: splash-letter 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+        .splash-title .ltr.space { width: 0.28em; }
+        @keyframes splash-letter {
+            to { opacity: 1; transform: translateY(0) rotateX(0); }
+        }
+        @keyframes splash-fade-up {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .splash-sub {
+            font-size: clamp(13px, 3.4vw, 16px);
+            color: rgba(225, 200, 202, 0.78);
+            max-width: 320px;
+            line-height: 1.5;
+            opacity: 0;
+            animation: splash-fade-up 0.8s ease 1.5s forwards;
+        }
+        .splash-sub .typed { color: #ffb0a0; }
+
+        .splash-enter {
+            margin-top: 4px;
+            opacity: 0;
+            animation: splash-fade-up 0.8s ease 2.4s forwards;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+        .splash-progress {
+            width: 150px; height: 2px;
+            background: rgba(255, 77, 94, 0.18);
+            overflow: hidden;
+            border-radius: 2px;
+        }
+        .splash-progress i {
+            display: block;
+            height: 100%;
+            width: 0;
+            background: linear-gradient(90deg, #ff4d5e, #ff8a6b);
+            animation: splash-fill 3.4s ease forwards;
+        }
+        @keyframes splash-fill { to { width: 100%; } }
+        .splash-btn {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            letter-spacing: 0.28em;
+            color: #ffd9d9;
+            background: rgba(255, 77, 94, 0.08);
+            border: 1px solid rgba(255, 77, 94, 0.4);
+            padding: 9px 22px;
+            border-radius: 999px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+        }
+        .splash-btn:hover { background: rgba(255, 77, 94, 0.18); box-shadow: 0 0 18px rgba(255, 77, 94, 0.3); }
+        .splash-btn:active { transform: scale(0.96); }
+
+        @media (prefers-reduced-motion: reduce) {
+            #splash::before, .splash-glyph .ring, .splash-progress i { animation: none; }
+            .splash-title .ltr, .splash-kicker, .splash-sub, .splash-enter, .splash-glyph { opacity: 1; animation: none; transform: none; }
+        }
     </style>
 </head>
 <body class="crt h-full flex flex-col items-center justify-center p-0 md:p-4">
+
+    <!-- НАЧАЛЬНАЯ ЗАСТАВКА — вход в анонимный дневник -->
+    <div id="splash" aria-hidden="true">
+        <div class="splash-inner">
+            <div class="splash-glyph" aria-hidden="true">
+                <span class="ring"></span>
+                <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M24 4 L24 13 M24 35 L24 44 M9 15 L18 24 M30 24 L39 15 M9 33 L18 24 M30 24 L39 33"/>
+                    <circle cx="24" cy="24" r="4.5" fill="currentColor" stroke="none"/>
+                </svg>
+            </div>
+            <div class="splash-kicker">NEEOSOMA // SOMA~LINK</div>
+            <div class="splash-title" id="splash-title"></div>
+            <p class="splash-sub" id="splash-sub"></p>
+            <div class="splash-enter">
+                <div class="splash-progress" aria-hidden="true"><i></i></div>
+                <button type="button" class="splash-btn" id="splash-enter-btn" onclick="dismissSplash()">ВОЙТИ В ДНЕВНИК</button>
+            </div>
+        </div>
+    </div>
 
     <!-- БЛОКИРОВКА ПОМОЩИ ("ЧЕСОТКА БЕССИЛИЯ") -->
     <div id="block-modal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-6">
@@ -354,7 +528,7 @@
 
         <!-- ОСНОВНАЯ НАВИГАЦИЯ -->
         <nav class="app-tabs" aria-label="Разделы станции">
-            <button id="tab-feed" onclick="switchTab('feed')" aria-current="page">ПЕЙДЖЕР</button>
+            <button id="tab-feed" onclick="switchTab('feed')" aria-current="page">ДНЕВНИК</button>
             <button id="tab-room" onclick="switchTab('room')">МОЯ КОМНАТА</button>
             <button id="tab-greenhouse" onclick="switchTab('greenhouse')">ОРАНЖЕРЕЯ</button>
         </nav>
@@ -377,7 +551,7 @@
                     <span class="feed-send-label" id="open-post-title">Отправить сигнал</span>
                     <span class="feed-send-badge" id="open-post-badge">1 / день</span>
                 </button>
-                <span id="open-post-sub" class="feed-send-note">Один сигнал в день. Читать и откликаться можно всегда.</span>
+                <span id="open-post-sub" class="feed-send-note">Запишите, что было сегодня — яркое, живое. Другие прочтут анонимно.</span>
             </div>
 
             <!-- ПЕЙДЖЕР NEEOSOMA // NMAV-04 «ШЁПОТ» — ПЕРЕРАДОЧКА В МИРОВОМ УРОВНЕ -->
@@ -395,8 +569,8 @@
                             <span id="feed-pager-carrier">ПРИЁМ ВХОДЯЩИХ АКТИВЕН</span>
                             <span id="feed-pager-gate">ДО 3 ШЁПОТОВ В СУТКИ</span>
                         </div>
-                        <p id="feed-pager-msg" class="pager-lcd-main">ЖИВАЯ ЧАСТОТА · ВЫ НА СВЯЗИ</p>
-                        <p id="feed-pager-sub" class="pager-lcd-sub">Читайте. Отвечайте, если хочется.</p>
+                        <p id="feed-pager-msg" class="pager-lcd-main">АНОНИМНЫЙ ДНЕВНИК · ЧИТАТЬ МОЛЧА</p>
+                        <p id="feed-pager-sub" class="pager-lcd-sub">Читайте. Отвечайте, если захотите.</p>
                         <div class="pager-lcd-scan" aria-hidden="true"></div>
                         <div class="pager-lcd-glow" aria-hidden="true"></div>
                     </div>
@@ -415,7 +589,7 @@
                 <div class="witness-card-glow"></div>
                 <div class="witness-card-inner">
                     <div class="witness-card-top">
-                        <span class="witness-card-kicker">NEEOSOMA // SOMA~LINK</span>
+                        <span class="witness-card-kicker">NEEOSOMA // АНОНИМНЫЙ ДНЕВНИК</span>
                         <button type="button" onclick="openShop('room')" class="top-shop-btn">✦ АТРИБУТЫ</button>
                     </div>
                     <div class="witness-card-id">
@@ -510,7 +684,7 @@
                 </div>
                 <div class="station-log">
                     <div class="station-bar">
-                        <span id="station-mode" class="station-meta">ЖУРНАЛ СТАНЦИИ</span>
+                        <span id="station-mode" class="station-meta">АНОНИМНЫЙ ДНЕВНИК</span>
                         <div class="station-bar-right">
                             <span class="station-meta station-heat">ТЕПЛО <b id="warmth-val">0</b></span>
                         </div>
@@ -1186,6 +1360,11 @@
         await fetchPosts();
         refreshStationRitual();
         setInterval(refreshStationRitual, 60000);
+        // Загружаем кассеты-записи дневника из Supabase (cloud-синхронизация вместо
+        // локального хранения) и формируем архив.
+        if (typeof window !== 'undefined' && window.SOMA_ROOM && typeof window.SOMA_ROOM.hydrateJournalFromCloud === 'function') {
+            window.SOMA_ROOM.hydrateJournalFromCloud();
+        }
         if (typeof syncPagerWhispers === 'function') syncPagerWhispers();
         setInterval(refreshFeed, 8000);
         document.addEventListener('visibilitychange', () => {
@@ -1194,6 +1373,8 @@
             if (!document.hidden) refreshStationRitual();
             if (!document.hidden && typeof syncPagerWhispers === 'function') syncPagerWhispers();
         });
+        // Заставка уходит, когда приложение готово к работе.
+        if (typeof dismissSplash === 'function') dismissSplash();
     }
 
     function syncWitnessWarmthToLocal(serverWarmth) {
@@ -1499,7 +1680,7 @@
                 try { hasDraft = !!(localStorage.getItem(POST_DRAFT_KEY) || '').trim(); } catch (e) {}
                 title.textContent = hasDraft ? 'Продолжить черновик' : 'Отправить сигнал';
                 badge.textContent = hasDraft ? 'черновик' : '1 / день';
-                sub.textContent = 'Один сигнал в день. Читать и откликаться можно всегда.';
+                sub.textContent = 'Запись в дневник — один раз в день. Читать и откликаться можно всегда.';
             }
         }
         const qHint = document.getElementById('post-quota-hint');
@@ -1825,6 +2006,16 @@
         try { localStorage.setItem(POST_DAY_KEY, currentPostDayKey()); } catch (e) {}
         try { localStorage.removeItem(POST_DRAFT_KEY); } catch (e) {}
         rememberMyPostId(insertRow.id);
+        // Сохраняем собственную запись в дневник в Supabase (journal) — кассеты/записи
+        // синхронизируются между устройствами, а не только в localStorage.
+        try {
+            const journalApi = window.SOMA_ROOM;
+            if (journalApi && typeof journalApi.saveJournalEntry === 'function') {
+                const d = new Date();
+                const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                journalApi.saveJournalEntry('e_' + insertRow.id, text, today);
+            }
+        } catch (_) {}
         activeFeedTag = 'ВСЕ';
         contactIntent = 'all';
         closePostModal();
@@ -1999,6 +2190,60 @@
         try { navigator.clipboard.writeText(text + ' ' + BOT_LINK); notify('Отчёт соучастия скопирован!'); }
         catch (e) { notify(text + ' ' + BOT_LINK); }
     }
+
+    // ===== НАЧАЛЬНАЯ ЗАСТАВКА — анонимный дневник =====
+    (function splashBoot() {
+        const splash = document.getElementById('splash');
+        if (!splash) return;
+        const titleEl = document.getElementById('splash-title');
+        const subEl = document.getElementById('splash-sub');
+
+        // Побуквенная анимация заголовка со сдвигом по времени.
+        const TITLE = 'АНОНИМНЫЙ ДНЕВНИК';
+        if (titleEl) {
+            titleEl.innerHTML = '';
+            const chars = Array.from(TITLE);
+            chars.forEach((ch, i) => {
+                const span = document.createElement('span');
+                span.className = 'ltr' + (ch === ' ' ? ' space' : '');
+                span.textContent = ch === ' ' ? '\u00A0' : ch;
+                span.style.animationDelay = (0.7 + i * 0.055) + 's';
+                titleEl.appendChild(span);
+            });
+        }
+
+        // Легкий "печатный" текст подзаголовка.
+        const SUB = 'Вы заходите в свой личный дневник. Записывайте, что было — читайте других анонимно.';
+        let typed = '';
+        if (subEl) {
+            let idx = 0;
+            const typer = setInterval(() => {
+                idx += 1;
+                typed = SUB.slice(0, idx);
+                subEl.innerHTML = '<span class="typed">' + esc(typed) + '</span>';
+                if (idx >= SUB.length) clearInterval(typer);
+            }, 38);
+            // Если reduce-motion или таймер остановлен — показываем весь текст.
+            setTimeout(() => { if (subEl && !typed.length) subEl.textContent = SUB; }, 6000);
+        }
+
+        let dismissed = false;
+        function dismissSplash() {
+            if (dismissed) return;
+            dismissed = true;
+            if (splash) {
+                splash.classList.add('splash-out');
+                setTimeout(() => { if (splash && splash.parentNode) splash.parentNode.removeChild(splash); }, 950);
+            }
+        }
+        window.dismissSplash = dismissSplash;
+
+        // Клик/тап в любом месте — вход.
+        splash.addEventListener('click', dismissSplash);
+        splash.addEventListener('touchstart', dismissSplash, { passive: true });
+        // Авто-вход, если пользователь не кликнул.
+        setTimeout(dismissSplash, 4200);
+    })();
 
     window.addEventListener('load', initApp);
 </script>

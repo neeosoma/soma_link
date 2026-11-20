@@ -3928,6 +3928,20 @@ function formatCassetteNum(num) {
     return String(n).padStart(3, '0');
 }
 
+function normalizeJournalRow(row) {
+    const idStr = String(row.id || `cas_${Date.now()}`);
+    const date = formatCassetteDate(row.date_label, Number(row.created_at) ? new Date(row.created_at).getTime() : 0);
+    const num = Number.isInteger(Number(row.num)) && Number(row.num) >= 1 ? Number(row.num) : 1;
+    return {
+        id: idStr,
+        num,
+        date,
+        ts: Number(row.created_at) ? new Date(row.created_at).getTime() : parseCassetteDateTs(date, Date.now()),
+        text: String(row.text || '').trim().slice(0, 420),
+        fav: !!row.fav
+    };
+}
+
 function loadCassettes() {
     let list = [];
     try { list = JSON.parse(lsGet('soma_cassettes') || '[]'); } catch (_) { list = []; }
@@ -3953,6 +3967,30 @@ function loadCassettes() {
     });
 }
 
+function writeCassetteCache(list) {
+    lsSet('soma_cassettes', JSON.stringify(list.slice(0, 120)));
+    if (typeof window !== 'undefined' && window.SOMA_VHS && typeof window.SOMA_VHS.refresh === 'function') {
+        window.SOMA_VHS.refresh();
+    }
+}
+
+// Persist one cassette row to Supabase (security-definer RPC). Fire-and-forget:
+// the local cache is already updated synchronously, the cloud write is best-effort.
+function cloudSaveCassette(item) {
+    if (typeof supabaseClient === 'undefined' || !supabaseClient) return { ok: true, offline: true };
+    return supabaseClient.rpc('save_soma_journal_entry', {
+        p_id: item.id,
+        p_kind: 'cassette',
+        p_text: item.text,
+        p_date: item.date,
+        p_num: item.num,
+        p_fav: item.fav
+    }).then(({ error }) => ({ ok: !error, offline: !error, error }))
+      .catch(e => ({ ok: false, offline: false, error: e }));
+}
+
+// Save a cassette to the local cache immediately, then persist to the cloud in the
+// background. Returns the item synchronously (backward-compatible with callers).
 function saveWhisperCassette(text, dateLabel, opts) {
     const clean = String(text || '').trim().slice(0, 420);
     if (!clean) return null;
@@ -3969,24 +4007,76 @@ function saveWhisperCassette(text, dateLabel, opts) {
         fav: !!(opts && opts.fav)
     };
     list.unshift(item);
-    lsSet('soma_cassettes', JSON.stringify(list.slice(0, 120)));
-    if (typeof window !== 'undefined' && window.SOMA_VHS && typeof window.SOMA_VHS.refresh === 'function') {
-        window.SOMA_VHS.refresh();
-    }
+    writeCassetteCache(list);
+    cloudSaveCassette(item);
     return item;
 }
 
+// Sync cassette toggle: updates cache first, then the cloud in the background.
 function toggleCassetteFav(id) {
     const list = loadCassettes();
     const found = list.find(c => c.id === id);
     if (!found) return false;
     found.fav = !found.fav;
-    lsSet('soma_cassettes', JSON.stringify(list));
+    writeCassetteCache(list);
     renderRoom();
-    if (typeof window !== 'undefined' && window.SOMA_VHS && typeof window.SOMA_VHS.refresh === 'function') {
-        window.SOMA_VHS.refresh();
+    if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+        supabaseClient.rpc('set_soma_journal_fav', { p_id: id, p_fav: found.fav })
+            .catch(_ => {});
     }
     return found.fav;
+}
+
+// Delete a cassette from cache + cloud (cloud removal is best-effort).
+function deleteCassette(id) {
+    const list = loadCassettes();
+    const next = list.filter(c => c.id !== id);
+    writeCassetteCache(next);
+    renderRoom();
+    if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+        supabaseClient.rpc('delete_soma_journal_entry', { p_id: id })
+            .catch(_ => {});
+    }
+    return true;
+}
+
+// One-time hydration on app start: pull the player's journal from the cloud and
+// merge it into the local cache (cloud is authoritative; local additions kept).
+async function hydrateJournalFromCloud() {
+    if (typeof supabaseClient === 'undefined' || !supabaseClient) return;
+    try {
+        const { data, error } = await supabaseClient.rpc('get_my_soma_journal');
+        if (error || !Array.isArray(data)) return;
+        const cloud = data
+            .filter(r => r && r.kind === 'cassette' && r.author_auth_id)
+            .map(normalizeJournalRow);
+        if (!cloud.length) return;
+        const local = loadCassettes();
+        const byId = new Map(local.map(c => [c.id, c]));
+        cloud.forEach(c => {
+            const prev = byId.get(c.id);
+            if (!prev || !prev.text) byId.set(c.id, c);
+        });
+        const merged = [...byId.values()].sort((a, b) => b.num - a.num);
+        merged.forEach((c, idx) => { c.num = idx + 1; });
+        writeCassetteCache(merged);
+        renderRoom();
+    } catch (_) {}
+}
+
+// Save the player's own diary/journal entry (a signal they published).
+async function saveJournalEntry(id, text, dateLabel) {
+    const clean = String(text || '').trim().slice(0, 420);
+    if (!clean) return null;
+    if (typeof supabaseClient === 'undefined' || !supabaseClient) return { id, offline: true };
+    try {
+        const { error } = await supabaseClient.rpc('save_soma_journal_entry', {
+            p_id: id, p_kind: 'entry', p_text: clean, p_date: dateLabel, p_num: 0, p_fav: false
+        });
+        return { ok: !error, id, offline: !!error, error };
+    } catch (e) {
+        return { ok: false, id, offline: false, error: e };
+    }
 }
 
 function ejectCassette(silent) {
@@ -9686,7 +9776,7 @@ async function acceptIncomingWhisper(whisperId) {
 
     const cloud = await persistWhisperStatus(w.id, 'saved');
     if (!cloud.ok) return cloud;
-    const cas = saveWhisperCassette(w.text, undefined, { id: 'cas_' + w.id });
+    const cas = await saveWhisperCassette(w.text, undefined, { id: 'cas_' + w.id });
     markWhisperHandled(w.id, 'saved');
     trackFirstSignalEvent('cassette_saved');
     roomAnim.activeCassetteId = cas ? cas.id : roomAnim.activeCassetteId;
@@ -11277,7 +11367,8 @@ const pagerApi = {
     validateWhisperText, hasWhisperedToPost, rememberWhisperedPost,
     claimWhisperCassetteAck, getPendingInboxWhispers, receiveIncomingWhisperLocal,
     acceptIncomingWhisper, dismissIncomingWhisper, sendWhisperToPost,
-    syncPagerWhispers, openPagerModal, closePagerModal, renderPagerModal
+    syncPagerWhispers, openPagerModal, closePagerModal, renderPagerModal,
+    hydrateJournalFromCloud, saveJournalEntry, deleteCassette
 };
 if (typeof window !== 'undefined') window.SOMA_ROOM = Object.assign(window.SOMA_ROOM || {}, pagerApi);
 if (typeof module !== 'undefined' && module.exports) Object.assign(module.exports, pagerApi);

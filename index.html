@@ -181,14 +181,24 @@
 
     <!-- МОДАЛЬНОЕ ОКНО ПУБЛИКАЦИИ (1 СИГНАЛ В СУТКИ · ДО 666 СИМВОЛОВ) -->
     <div id="post-modal" class="hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="w-full max-w-md max-h-[90vh] overflow-y-auto bg-[#12080a] border border-red-500/50 p-5 rounded-2xl space-y-3.5 shadow-2xl">
-            <div class="flex justify-between items-center">
-                <span class="text-xs font-mono-tech text-red-400 uppercase">// РЕЖИМ «ЗОВ» · 1 РАЗ В СУТКИ</span>
-                <button onclick="closePostModal()" class="text-gray-500 hover:text-white text-sm">✕</button>
+        <div class="w-full max-w-md max-h-[90vh] overflow-y-auto bg-[#100608] border border-red-500/40 p-5 rounded-2xl shadow-2xl" id="post-modal-chassis">
+            <!-- ШАПКА: статус передатчика -->
+            <div class="flex justify-between items-center mb-3">
+                <div class="flex items-center gap-2">
+                    <span class="ts-indicator" aria-hidden="true"></span>
+                    <span class="text-xs font-mono-tech text-red-400 uppercase tracking-widest">// ПЕРЕДАТЧИК · РЕЖИМ «ЗОВ»</span>
+                </div>
+                <button onclick="closePostModal()" class="ts-close" aria-label="Закрыть">✕</button>
             </div>
-            <div class="bg-black/45 border border-amber-400/25 rounded-xl px-3 py-2 text-[11px] text-gray-300 leading-relaxed">
-                <b class="text-amber-300 font-mono-tech">Одна история в день.</b> Делитесь любым. Черновик сохранится; ответ не гарантирован.
+            <!-- Индикатор сигнала -->
+            <div class="ts-meter" aria-hidden="true">
+                <div class="ts-meter-bar" id="ts-meter-fill"></div>
             </div>
+            <!-- Подсказка -->
+            <div class="ts-brief">
+                <b>Одна история в день.</b> Делитесь любым. Черновик сохранится; ответ не гарантирован.
+            </div>
+            <!-- Намерение: выбор отклика -->
             <fieldset class="signal-intents">
                 <legend>Какой отклик вам сейчас нужен?</legend>
                 <label><input type="radio" name="signal-intent" value="N"> Побудь рядом</label>
@@ -197,20 +207,35 @@
                 <label><input type="radio" name="signal-intent" value="S" checked> Просто делюсь</label>
                 <p id="signal-intent-hint" class="signal-caption" aria-live="polite"></p>
             </fieldset>
+            <!-- Тема + чипсы -->
             <div class="space-y-1.5">
-                <input id="new-pain-tag" maxlength="24" placeholder="Тема, если хочется (необязательно)" class="w-full bg-[#080405] border border-red-500/30 focus:border-red-500 rounded-xl px-3 py-2 text-xs text-white outline-none font-mono-tech uppercase">
+                <input id="new-pain-tag" maxlength="24" placeholder="Тема, если хочется (необязательно)" class="ts-input" />
                 <div id="tag-chips" class="flex flex-wrap gap-1.5"></div>
             </div>
-            <textarea id="new-pain-text" rows="5" minlength="13" maxlength="666" oninput="updateCharCount()" placeholder="Что произошло? Что хочется разделить с другим человеком? (13–666 символов)" class="w-full bg-[#080405] border border-red-500/30 focus:border-red-500 rounded-xl p-3 text-sm text-white outline-none resize-none font-mono-tech"></textarea>
-            <div id="post-error" class="hidden px-3 py-2 rounded-xl bg-red-950/50 border border-red-500/45 text-[11px] font-mono-tech text-red-200 leading-snug"></div>
-            <div class="flex justify-between items-center text-[11px] text-gray-500 font-mono-tech">
+            <!-- Текст сигнала -->
+            <div class="ts-field-wrap">
+                <textarea id="new-pain-text" rows="5" minlength="13" maxlength="666" oninput="updateCharCount()" placeholder="Что произошло? Что хочется разделить с другим человеком? (13–666 символов)" class="ts-textarea"></textarea>
+                <div class="ts-field-glow" aria-hidden="true"></div>
+            </div>
+            <!-- Ошибка -->
+            <div id="post-error" class="ts-error hidden"></div>
+            <!-- Счетчик -->
+            <div class="flex justify-between items-center text-[11px] font-mono-tech">
                 <span id="post-quota-hint" class="text-amber-300/85">Доступно сегодня: 1 / 1</span>
                 <span id="char-count" class="text-red-400 font-bold">0 / 666 (мин. 13)</span>
             </div>
-            <button id="send-btn" onclick="submitPainPost()" class="w-full py-3 bg-red-950 hover:bg-red-900 border border-red-500/60 text-red-200 font-bold text-xs font-mono-tech uppercase tracking-wider rounded-xl transition">
-                ПОДЕЛИТЬСЯ НА СТАНЦИИ
+            <!-- Кнопка отправки -->
+            <button id="send-btn" onclick="submitPainPost()" class="ts-send-btn">
+                <span class="ts-send-glow" aria-hidden="true"></span>
+                <span class="ts-send-glyph" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2 L12 8 M12 16 L12 22 M4.5 6.5 L10 11 M14 13 L19.5 17.5 M3.5 17.5 L9 13 M14 11 L19.5 6.5"/>
+                    </svg>
+                </span>
+                <span class="ts-send-label">ПОДЧИНИТЬ СИГНАЛ</span>
             </button>
-            <button onclick="openSafety()" class="w-full text-[10px] text-gray-500 hover:text-red-300 font-mono-tech">🛟 мне тяжело — что делать?</button>
+            <!-- Поддержка -->
+            <button onclick="openSafety()" class="ts-support">🛟 мне тяжело — что делать?</button>
         </div>
     </div>
 
@@ -339,13 +364,19 @@
 
         <!-- ЛЕНТА ИСТОРИЙ -->
         <div id="view-feed" class="flex-1 overflow-y-auto p-3 space-y-3 pb-20 feed-content">
-            <!-- Верхняя панель: единственная кнопка «Отправить сигнал» -->
+            <!-- Верхняя панель: кнопка-передатчик «Отправить сигнал» -->
             <div class="feed-action-bar">
                 <button id="open-post-btn" type="button" onclick="openPostModal()" class="feed-send-btn">
-                    <span class="feed-send-glow" aria-hidden="true"></span>
-                    <span class="feed-send-glyph" aria-hidden="true">✦</span>
-                    <span id="open-post-title" class="feed-send-label">Отправить сигнал</span>
-                    <span id="open-post-badge" class="feed-send-badge">1 / день</span>
+                    <span class="feed-send-aura" aria-hidden="true"></span>
+                    <span class="feed-send-ripple" aria-hidden="true"></span>
+                    <span class="feed-send-shimmer" aria-hidden="true"></span>
+                    <span class="feed-send-glyph" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2 L12 8 M12 16 L12 22 M4.5 6.5 L10 11 M14 13 L19.5 17.5 M3.5 17.5 L9 13 M14 11 L19.5 6.5"/>
+                        </svg>
+                    </span>
+                    <span class="feed-send-label" id="open-post-title">Отправить сигнал</span>
+                    <span class="feed-send-badge" id="open-post-badge">1 / день</span>
                 </button>
                 <span id="open-post-sub" class="feed-send-note">Один сигнал в день. Читать и откликаться можно всегда.</span>
             </div>
@@ -1742,6 +1773,13 @@
         }
         SFX.tap();
         showPostError('');
+        // Сброс измерителя сигнала
+        const meterOpen = document.getElementById('ts-meter-fill');
+        if (meterOpen) {
+            meterOpen.style.transition = 'width 0.3s ease';
+            meterOpen.style.width = '0%';
+            meterOpen.style.background = 'linear-gradient(90deg, #4a1a24, #6a2838)';
+        }
         const ta = document.getElementById('new-pain-text');
         if (ta && !ta.value) {
             try { ta.value = localStorage.getItem(POST_DRAFT_KEY) || ''; } catch (e) {}
@@ -1771,6 +1809,16 @@
             cnt.innerText = trimLen < POST_MIN_LEN
                 ? `${len} / 666 (мин. ${POST_MIN_LEN})`
                 : `${len} / 666`;
+        }
+        // Сигнальный измеритель: заполнение пропорционально разметке текста
+        const meter = document.getElementById('ts-meter-fill');
+        if (meter) {
+            const pct = Math.min(100, Math.round((trimLen / POST_MIN_LEN) * 100));
+            meter.style.width = pct + '%';
+            const ready = trimLen >= POST_MIN_LEN;
+            meter.style.background = ready
+                ? 'linear-gradient(90deg, #e11d48, #fbbf24)'
+                : 'linear-gradient(90deg, #4a1a24, #6a2838)';
         }
         showPostError('');
         try {
@@ -1811,6 +1859,13 @@
         const label = btn.innerText;
         btn.disabled = true;
         btn.innerText = 'ОТПРАВКА В ЭФИР...';
+        // Анимация передачи: meter ведёт к 100%
+        const meter = document.getElementById('ts-meter-fill');
+        if (meter) {
+            meter.style.transition = 'width 0.9s cubic-bezier(0.4, 0, 0.2, 1)';
+            meter.style.width = '100%';
+            meter.style.background = 'linear-gradient(90deg, #e11d48, #fbbf24)';
+        }
         let failed = false, reason = '';
         try {
             if (!supabaseClient) throw new Error('Supabase не подключён');
@@ -1826,6 +1881,11 @@
 
         if (failed) {
             // При ошибке сети дневной сигнал НЕ сгорает, а черновик бережно сохраняется!
+            const meterFail = document.getElementById('ts-meter-fill');
+            if (meterFail) {
+                meterFail.style.transition = 'width 0.4s ease';
+                meterFail.style.width = '0%';
+            }
             showPostError('Сигнал не дошёл до сети (лимит дня сохранён): ' + reason);
             return;
         }

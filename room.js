@@ -10307,6 +10307,7 @@ function renderPagerModal() {
         footEl.innerHTML = `
             <span class="pager-foot-rule">⚖ 13–333 симв. · 1 шёпот на человека · кассета даёт +2 Тепла (1/день)</span>
             <button type="button" class="pager-foot-vhs" id="pager-open-vhs-btn">📼 КАССЕТЫ VTR-90 (${tapes.length})</button>
+            <a class="pager-foot-vhs" href="gift.html">ЗАПИСАТЬ СВОИ СЛОВА ДРУГУ →</a>
         `;
         const vhsBtn = footEl.querySelector('#pager-open-vhs-btn');
         if (vhsBtn) {

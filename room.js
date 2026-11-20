@@ -10,8 +10,6 @@ const PROGRESSION_RULES = {
     DAILY_HOLD_CAP: 2,         // до +2 тепла/день за тихое дочитывание постов
     DAILY_TRAINER_CAP: 2,      // до +2 тепла/день за точное слушание в терминале
     DAILY_WARMTH_CAP: 4,       // потолок +4 тепла/день за базовые ритуалы
-    WHISPER_WARMTH_GATE: 20,   // допуск к отправке «Шёпота»: 20 тепла
-    WHISPER_TRAINER_GATE: 13,  // допуск к отправке «Шёпота»: 13 пройденных уроков в терминале «Слушатель»
     WHISPER_BLOOM_ACKS: 5,     // обратная совместимость для опционального фильтра requireAcks
     WHISPER_MIN_LEN: 13,       // минимальная длина «Шёпота» (13 символов)
     WHISPER_MAX_LEN: 333,      // максимальная длина «Шёпота» (333 символа)
@@ -3360,7 +3358,7 @@ function signalResponseHint(tag) {
         const { intent } = window.SOMA_SIGNALS.unpackTag(tag);
         if (intent) return intent.hint;
     }
-    return 'Автор не указал, какой отклик ему нужен. Не предполагайте согласие на советы.';
+    return 'Советы не запрошены. Просто откликнитесь.';
 }
 function getFirstSignalCandidates(posts) {
     const mine = new Set(getLocalMyPostIdsSafe());
@@ -3379,24 +3377,16 @@ function openWhisperForPost(postId) {
     openPagerModal('feed');
 }
 
-function whisperAdmission(warmth, ledger) {
-    const w = Math.max(0, Number(warmth) || 0);
+function whisperAdmission(_warmth, ledger) {
     const l = ledger || loadWarmthLedger();
-    const warmthMet = w >= PROGRESSION_RULES.WHISPER_WARMTH_GATE;
-    const trainerMet = l.trainedTotal >= PROGRESSION_RULES.WHISPER_TRAINER_GATE;
     const sentToday = Math.max(0, Number(l.whisperSentToday) || 0);
     const sendCap = PROGRESSION_RULES.DAILY_WHISPER_SEND_CAP;
-    const testOpen = isWhisperLive() && typeof window !== 'undefined'
-        && window.SOMA_CONFIG.WHISPER_TEST_OPEN === true;
+    // First-send status changes presentation only, never sending eligibility.
     const firstAvailable = isWhisperLive() && (Number(l.whispersSent) || 0) === 0;
     const rulesAccepted = lsGet('soma_signal_rules_v1') === 'accepted';
     return {
-        testOpen, firstAvailable, rulesAccepted,
-        admitted: testOpen || (warmthMet && trainerMet) || (firstAvailable && rulesAccepted),
-        warmth: Math.min(w, PROGRESSION_RULES.WHISPER_WARMTH_GATE),
-        warmthNeed: PROGRESSION_RULES.WHISPER_WARMTH_GATE,
-        trained: Math.min(l.trainedTotal, PROGRESSION_RULES.WHISPER_TRAINER_GATE),
-        trainedNeed: PROGRESSION_RULES.WHISPER_TRAINER_GATE,
+        firstAvailable, rulesAccepted,
+        admitted: rulesAccepted,
         sprouted: l.whispersSent > 0,
         whispersSent: l.whispersSent,
         whisperSentToday: sentToday,
@@ -9624,7 +9614,7 @@ async function reportIncomingWhisper(id, reason) {
     if (result.ok) {
         roomAnim.pagerSafetyTarget = null;
         roomAnim.pagerModalNotice = result.data
-            ? 'Жалоба записана для ручного разбора владельцем станции. Это не экстренная служба; срок ответа не гарантирован. Заблокировать отправителя можно отдельно.'
+            ? 'Жалоба записана для ручного разбора владельцем. Срок не гарантирован. Блокировка — отдельно.'
             : 'Жалоба на это сообщение уже записана.';
     }
     return result;
@@ -9640,7 +9630,7 @@ async function blockIncomingWhisper(id) {
         result.data.forEach(wid => markWhisperHandled(wid, 'dismissed'));
         saveRawInboxWhispers(loadRawInboxWhispers().filter(w => !removed.has(w.id)));
         roomAnim.pagerSafetyTarget = null;
-        roomAnim.pagerModalNotice = 'Новые шёпоты от этой Auth-учётной записи заблокированы. Её ожидающие сообщения убраны, сохранённые кассеты не изменены. Другой аккаунт эта блокировка не охватывает.';
+        roomAnim.pagerModalNotice = 'Аккаунт заблокирован, его ожидающие шёпоты убраны. Кассеты сохранены. Другой аккаунт блокировка не охватывает.';
         renderPager();
     }
     return result;
@@ -9660,7 +9650,7 @@ async function unblockWhisperSender(anchorId) {
     if (result.ok && typeof result.data !== 'boolean') return { ok: false, error: 'Не удалось подтвердить снятие блокировки.' };
     if (result.ok) {
         roomAnim.pagerBlockList = (roomAnim.pagerBlockList || []).filter(x => x.anchor_id !== anchorId);
-        roomAnim.pagerModalNotice = 'Блокировка снята. Это разрешает будущие сообщения; старые отклонённые сообщения не возвращаются.';
+        roomAnim.pagerModalNotice = 'Блокировка снята. Старые сообщения не возвращаются.';
     }
     return result;
 }
@@ -9729,11 +9719,14 @@ async function sendWhisperToPostOnce(postObj, rawText, opts) {
     const ledger = loadWarmthLedger(o.today);
     const adm = whisperAdmission(warmthNow, ledger);
 
-    if (!adm.admitted && !isPtsMode() && !o.bypassGate) {
+    if (typeof window !== 'undefined' && window.SOMA_CONFIG && !adm.live && !o.skipCloud) {
+        return { ok: false, code: 'channel_disabled', error: 'Канал пока выключен.' };
+    }
+    if (!adm.admitted) {
         return {
             ok: false,
             code: 'locked',
-            error: `Допуск к отправке «Шёпота» открывается на ${adm.warmthNeed} тепла (сейчас ${adm.warmth}) и ${adm.trainedNeed} уроках в терминале «Слушатель» (сейчас ${adm.trained}).`
+            error: 'Прочитайте короткие правила перед первым шёпотом.'
         };
     }
 
@@ -9745,13 +9738,13 @@ async function sendWhisperToPostOnce(postObj, rawText, opts) {
         return { ok: false, code: 'own_post', error: 'Нельзя отправить «Шёпот» на собственный сигнал.' };
     }
     if (hasWhisperedToPost(postId)) {
-        return { ok: false, code: 'already_whispered', error: 'Вы уже поддержали этого человека. Одному сигналу можно шепнуть только 1 раз.' };
+        return { ok: false, code: 'already_whispered', error: 'На эту историю вы уже ответили. Один шёпот на пост.' };
     }
     if (ledger.whisperSentToday >= PROGRESSION_RULES.DAILY_WHISPER_SEND_CAP) {
         return {
             ok: false,
             code: 'daily_cap',
-            error: `Лимит эфира: не более ${PROGRESSION_RULES.DAILY_WHISPER_SEND_CAP} «Шёпотов» в сутки, чтобы каждое слово хранило настоящий вес.`
+            error: `Лимит эфира: не более ${PROGRESSION_RULES.DAILY_WHISPER_SEND_CAP} «Шёпотов» в сутки.`
         };
     }
 
@@ -9951,80 +9944,19 @@ function renderPager(warmthArg, ledgerArg, isWatchmanArg) {
                     ? `ЭФИР АКТИВЕН · ${adm.whisperLeftToday}/${adm.whisperSendCap} ДН`
                     : 'ПРИЁМ ВХОДЯЩИХ АКТИВЕН';
     }
-    if (gateEl) {
-        gateEl.textContent = watchman
-            ? 'ДОПУСК: СМОТРИТЕЛЬ'
-            : adm.firstAvailable
-                ? 'ПЕРВЫЙ ШЁПОТ · БЕЗ ПОРОГА'
-                : adm.admitted
-                ? 'ДОПУСК: ОТКРЫТ'
-                : `ДОПУСК ${adm.warmth}/${adm.warmthNeed} · УРОКИ ${adm.trained}/${adm.trainedNeed}`;
-    }
-    if (scanBtn) {
-        scanBtn.textContent = !adm.live
-            ? '◈ ПРОВЕРИТЬ ЧАСТОТУ'
-            : inbox.length > 0
-                ? `📥 ПРОЧЕСТЬ ШЁПОТ (${inbox.length})`
-                : adm.firstAvailable
-                    ? '◈ ПЕРВЫЙ СИГНАЛ'
-                    : adm.admitted
-                    ? '◈ ОТКРЫТЬ ЭФИР ШЁПОТА'
-                    : `◈ ОТКРЫТЬ ПЕЙДЖЕР (${adm.trained}/${adm.trainedNeed})`;
-    }
-
-    let mainLine = 'ЧАСТОТА «ШЁПОТ» ОТКЛЮЧЕНА';
-    let subLine = adm.admitted
-        ? 'допуск получен · приёмник ждёт запуска тёплой линии'
-        : 'линия временно молчит · готовьте допуск в тишине и терминале';
-
-    if (adm.live && roomAnim.pagerMode !== 'info') {
-        if (inbox.length > 0) {
-            mainLine = `ВХОДЯЩИЙ ШЁПОТ (${inbox.length}) // КТО-ТО ПОБЫЛ РЯДОМ`;
-            subLine = 'нажмите на пейджер, чтобы прочесть отклик и записать его на кассету VTR-90';
-        } else if (roomAnim.pagerNotice) {
-            mainLine = 'ОТКЛИК КАССЕТЫ // ТЕПЛО ВЕРНУЛОСЬ';
-            subLine = roomAnim.pagerNotice;
-        } else if (adm.firstAvailable) {
-            mainLine = 'ПЕРВЫЙ СИГНАЛ // МОЖНО ПРОСТО ПРОЧИТАТЬ';
-            subLine = 'один первый шёпот без тепла и уроков · откройте пейджер, когда будете готовы';
-        } else if (adm.admitted) {
-            mainLine = `КАНАЛ «ШЁПОТ» ОТКРЫТ // ${adm.whisperLeftToday} ИЗ ${adm.whisperSendCap} НА СЕГОДНЯ`;
-            subLine = adm.sprouted
-                ? 'поддержите человека в эфире (13–333 симв.) · если он сохранит кассету, вам вернётся +2 тепла'
-                : 'отправьте свой первый «Шёпот» (13–333 симв.), чтобы пробудить росток в сосуде';
-        } else {
-            mainLine = 'ПРИЁМ РАБОТАЕТ // ОТПРАВКА ПО ДОПУСКУ СЛУШАТЕЛЯ';
-            subLine = `принимайте шёпоты на свои посты уже сейчас · для отправки: ${adm.warmth}/${adm.warmthNeed} тепла и ${adm.trained}/${adm.trainedNeed} уроков`;
-        }
-    } else if (roomAnim.pagerMode === 'info') {
-        mainLine = watchman
-            ? 'РЕЗЕРВ // ВОЛНА «ПОТЕРЯННЫЙ СИГНАЛ»'
-            : 'КАНАЛ ЭМПАТИИ // 13–333 СИМВОЛА БЕЗ ИМЁН';
-        subLine = watchman
-            ? 'смотрители слышат голоса, оставшиеся без единого ответа'
-            : '1 шёпот на 1 человека · запись чужого шёпота на кассету VTR-90 возвращает автору +2 тепла (1/день)';
-    } else if (roomAnim.pagerMode === 'scan') {
-        const screens = [
-            [
-                'ПОИСК НЕСУЩЕЙ... ЭФИР ПУСТ',
-                'ретранслятор «Шёпота» в NEEO~CITY ещё не запущен'
-            ],
-            [
-                adm.admitted ? 'КЛЮЧ СЛУШАТЕЛЯ ПОДТВЕРЖДЁН' : `НУЖНО ${adm.warmthNeed} ТЕПЛА И ${adm.trainedNeed} СЕАНСОВ`,
-                adm.admitted
-                    ? 'когда канал оживёт, первый шёпот пробудит жизнь в горшке'
-                    : `сейчас: ${adm.warmth}/${adm.warmthNeed} тепла · услышано в терминале: ${adm.trained}/${adm.trainedNeed}`
-            ],
-            [
-                watchman ? 'ЧАСТОТА СМОТРИТЕЛЯ В ОЖИДАНИИ' : 'ВХОДЯЩИЕ ПИШУТСЯ НА КАССЕТЫ',
-                watchman
-                    ? 'после запуска вы сможете отвечать на забытые сигналы сети'
-                    : 'чужие шёпоты для вас сохранит магнитофон на левой полке'
-            ]
-        ];
-        const pick = screens[roomAnim.pagerStep % screens.length];
-        mainLine = pick[0];
-        subLine = pick[1];
+    if (gateEl) gateEl.textContent = `СЕГОДНЯ: ${adm.whisperLeftToday}/${adm.whisperSendCap}`;
+    if (scanBtn) scanBtn.textContent = inbox.length ? `📥 ВХОДЯЩИЕ (${inbox.length})` : '◈ ОТКРЫТЬ ПЕЙДЖЕР';
+    let mainLine = 'ЧАСТОТА «ШЁПОТ» ВЫКЛЮЧЕНА';
+    let subLine = 'Можно вернуться позже.';
+    if (roomAnim.pagerMode === 'info') {
+        mainLine = 'КАНАЛ ЭМПАТИИ // БЕЗ ИМЁН';
+        subLine = 'До 3 шёпотов в сутки. Один на пост. Без ссылок и контактов.';
+    } else if (!adm.live && roomAnim.pagerMode === 'scan') {
+        mainLine = 'ПОИСК НЕСУЩЕЙ... ЭФИР ПУСТ';
+    } else if (adm.live) {
+        mainLine = inbox.length ? `ВХОДЯЩИЕ: ${inbox.length}` : 'ЖИВАЯ ЧАСТОТА · ВЫ НА СВЯЗИ';
+        subLine = inbox.length ? 'Прочитать, сохранить или отпустить — решать вам.'
+            : roomAnim.pagerNotice || 'Прочитайте историю. Ответьте, если хочется.';
     }
 
     if (msgEl) msgEl.textContent = mainLine;
@@ -10160,8 +10092,7 @@ function renderPagerModal() {
         : (Number(roomAnim.warmth) || 0);
     const ledger = loadWarmthLedger();
     const adm = whisperAdmission(warmthNow, ledger);
-    const pts = isPtsMode();
-    const canSend = adm.admitted || pts;
+
     const inbox = getPendingInboxWhispers();
     const tapes = loadCassettes();
 
@@ -10192,8 +10123,7 @@ function renderPagerModal() {
     }
 
     if (noticeEl) {
-        const msg = roomAnim.pagerModalError || roomAnim.pagerModalNotice
-            || (adm.testOpen ? 'ТЕСТ КАНАЛА: порог тепла и 13 уроков временно снят. Лимит 3 шёпота в сутки сохранён.' : '');
+        const msg = roomAnim.pagerModalError || roomAnim.pagerModalNotice || '';
         noticeEl.textContent = msg;
         noticeEl.className = 'pager-modal-notice'
             + (msg ? '' : ' hidden')
@@ -10213,7 +10143,7 @@ function renderPagerModal() {
         if (roomAnim.pagerShowBlocks && isWhisperSafetyLive()) {
             const blocks = roomAnim.pagerBlockList || [];
             bodyEl.innerHTML = `<div class="pager-empty-title">БЛОКИРОВКИ ВХОДЯЩИХ</div>
-                <p class="pager-empty-sub">Личность отправителя скрыта. Блокируется его Auth-учётная запись, не человек на всех устройствах. Снятие не возвращает старые сообщения.</p>
+                <p class="pager-empty-sub">Блокируется аккаунт, не человек на всех устройствах. Старые сообщения не вернутся.</p>
                 ${blocks.length ? blocks.map((x, i) => `<div class="pager-card"><span>Отправитель ${i + 1} · ${escFn(formatCassetteDate(x.created_at))}</span><button type="button" class="pager-act-btn" data-act="unblock" data-id="${escFn(x.anchor_id)}">СНЯТЬ БЛОКИРОВКУ</button></div>`).join('') : '<p class="pager-empty-sub">Здесь пока нет загруженных блокировок.</p>'}
                 <button type="button" class="pager-act-btn" id="pager-blocks-back">НАЗАД К ВХОДЯЩИМ</button>`;
             bodyEl.querySelectorAll('[data-act="unblock"]').forEach(btn => {
@@ -10224,8 +10154,8 @@ function renderPagerModal() {
             bodyEl.innerHTML = `
                 <div class="pager-empty-box">
                     <div class="pager-empty-title">ВХОДЯЩИХ ШЁПОТОВ ПОКА НЕТ</div>
-                    <p class="pager-empty-sub">Когда кто-то из Слушателей станции прочитает ваш анонимный сигнал на «Живой частоте» и поддержит вас через пейджер, его тёплый отклик появится здесь.</p>
-                    <p class="pager-empty-sub">Вы сможете прочесть его и выбрать: <b>📼 Записать на кассету</b> в магнитофон VTR-90 (отправителю вернётся +2 Тепла) или <b>◌ Отпустить в эфир</b>.</p>
+                    <p class="pager-empty-sub">Здесь появятся отклики на ваши истории.</p>
+                    <p class="pager-empty-sub">Понравится — сохраните на кассету. Отвечать не обязательно.</p>
                 </div>
             `;
         } else {
@@ -10247,7 +10177,7 @@ function renderPagerModal() {
                     </div>` : ''}
                     ${isWhisperSafetyLive() && roomAnim.pagerSafetyTarget && roomAnim.pagerSafetyTarget.id === w.id ? `<div class="pager-compose">
                         ${roomAnim.pagerSafetyTarget.mode === 'report' ? `<label class="pager-empty-sub" for="pager-report-reason">Причина жалобы</label><select id="pager-report-reason" class="pager-compose-input"><option value="spam">Спам</option><option value="harassment">Оскорбления или преследование</option><option value="unsafe">Опасное содержание</option><option value="other">Другое</option></select>
-                        <p class="pager-empty-sub">Текст будет доступен владельцу станции для ручного разбора. Не экстренная помощь; срок ответа не гарантирован.</p>` : '<p class="pager-empty-sub">Сервер запретит новые шёпоты от этой учётной записи и уберёт её ожидающие сообщения. Кассеты останутся. Можно отменить блокировку в списке блокировок.</p>'}
+                        <p class="pager-empty-sub">Жалобу и текст увидит владелец станции. Не экстренная помощь; срок ответа не гарантирован.</p>` : '<p class="pager-empty-sub">Новые и ожидающие шёпоты этого аккаунта будут скрыты. Кассеты останутся. Блокировку можно снять.</p>'}
                         <button type="button" class="pager-act-btn" data-act="safety-confirm" data-id="${escFn(w.id)}">${roomAnim.pagerSafetyTarget.mode === 'report' ? 'ОТПРАВИТЬ ЖАЛОБУ' : 'ПОДТВЕРДИТЬ БЛОКИРОВКУ'}</button>
                         <button type="button" class="pager-act-btn pager-act-btn--dismiss" data-act="safety-cancel">ОТМЕНА</button>
                     </div>` : ''}
@@ -10278,14 +10208,14 @@ function renderPagerModal() {
             });
         }
     } else {
-        // A single early response, after explicit rules; no simulated strangers.
-        if (adm.firstAvailable && !adm.rulesAccepted) {
+        // Short rules once; warmth and lessons never gate contact.
+        if (!adm.rulesAccepted) {
             bodyEl.innerHTML = `
                 <div class="pager-gate-box">
                     <div class="pager-empty-title">НОЧНАЯ СТАНЦИЯ · ПЕРВЫЙ СИГНАЛ</div>
-                    <p class="pager-empty-sub">Можно прочитать, ответить или пройти мимо. Вы не обязаны решать чужую проблему.</p>
-                    <p class="pager-empty-sub">Перед ответом: без оценок и непрошеных советов. Не передавайте контакты и не просите их у другого человека. Пишите от себя — достаточно нескольких искренних слов.</p>
-                    <p class="pager-empty-sub">Один первый шёпот доступен без тепла и 13 уроков. Для следующих действует обычный допуск. Ответ и сохранение на кассету не гарантированы.</p>
+                    <p class="pager-empty-sub">Читайте или отвечайте — без обязательств.</p>
+                    <p class="pager-empty-sub">Пишите от себя. Без оценок, непрошеных советов, ссылок и контактов.</p>
+                    <p class="pager-empty-sub">До 3 шёпотов в сутки, один на пост. Ответ может не прийти.</p>
                     <button type="button" class="pager-act-btn" id="signal-rules-accept">ПОНЯТНО · ПОСМОТРЕТЬ СИГНАЛ</button>
                     <button type="button" class="pager-act-btn pager-act-btn--dismiss" id="signal-rules-later">НЕ СЕЙЧАС</button>
                 </div>`;
@@ -10296,32 +10226,8 @@ function renderPagerModal() {
             };
             const later = bodyEl.querySelector('#signal-rules-later');
             if (later) later.onclick = closePagerModal;
-        } else if (!canSend) {
-            const wPct = Math.min(100, Math.round((adm.warmth / adm.warmthNeed) * 100));
-            const tPct = Math.min(100, Math.round((adm.trained / adm.trainedNeed) * 100));
-            bodyEl.innerHTML = `
-                <div class="pager-gate-box">
-                    <div class="pager-empty-title">ДОПУСК К ОТПРАВКЕ «ШЁПОТА» ЗАКРЫТ</div>
-                    <p class="pager-empty-sub">Чтобы бережно поддерживать живых людей без советов и обесценивания, пройдите практику чуткого слушания в терминале и согрейте комнату:</p>
-                    <div class="pager-gate-meter">
-                        <div class="pager-gate-row"><span>1. ЖИВОЕ ТЕПЛО КОМНАТЫ</span><b>${adm.warmth} / ${adm.warmthNeed}</b></div>
-                        <div class="pager-gate-bar"><i style="width:${wPct}%"></i></div>
-                    </div>
-                    <div class="pager-gate-meter">
-                        <div class="pager-gate-row"><span>2. УРОКИ ТРЕНАЖЁРА «СЛУШАТЕЛЬ»</span><b>${adm.trained} / ${adm.trainedNeed}</b></div>
-                        <div class="pager-gate-bar"><i style="width:${tPct}%"></i></div>
-                    </div>
-                    <p class="pager-empty-sub">Принимать входящие «Шёпоты» на свои посты вы можете уже сейчас во вкладке <b>«📥 Входящие»</b>.</p>
-                    <button type="button" class="pager-act-btn pager-act-btn--save" id="pager-open-trainer-btn">▶ ОТКРЫТЬ ТРЕНАЖЁР «СЛУШАТЕЛЬ»</button>
-                </div>
-            `;
-            const trBtn = bodyEl.querySelector('#pager-open-trainer-btn');
-            if (trBtn) {
-                trBtn.onclick = () => {
-                    closePagerModal();
-                    if (typeof openTrainer === 'function') openTrainer();
-                };
-            }
+        } else if (!adm.live) {
+            bodyEl.innerHTML = '<div class="pager-empty-box">Канал пока выключен. Вернитесь позже.</div>';
         } else {
             const allPosts = (typeof feedPosts !== 'undefined' && Array.isArray(feedPosts)) ? feedPosts : [];
             const whisperedSet = new Set(getWhisperedPosts());
@@ -10337,7 +10243,7 @@ function renderPagerModal() {
                 bodyEl.innerHTML = `
                     <div class="pager-empty-box">
                         <div class="pager-empty-title">В ЭФИРЕ ПОКА ТИХО</div>
-                        <p class="pager-empty-sub">Сейчас новых сигналов для вас нет. Можно вернуться позже — ничего не потеряете. Мы не подменяем людей вымышленными сообщениями.</p>
+                        <p class="pager-empty-sub">Новых историй пока нет. Загляните позже.</p>
                     </div>
                 `;
             } else {
@@ -10360,10 +10266,10 @@ function renderPagerModal() {
                                 <button type="button" class="pager-act-btn pager-act-btn--dismiss" data-act="skip" data-post-id="${escFn(pid)}">ПРОПУСТИТЬ</button>
                             </div>` : ''}
                             ${done
-                                ? `<div class="pager-card-done">✓ Вы уже отправили «Шёпот» этому человеку (1 сигнал = 1 шёпот).</div>`
+                                ? `<div class="pager-card-done">✓ Ваш шёпот уже отправлен.</div>`
                                 : isComposing
                                     ? `<div class="pager-compose">
-                                        <div class="pager-compose-hint">Пишите от себя, учитывая пожелание автора. Без оценок, диагнозов и обещаний, которые не можете выполнить (${PROGRESSION_RULES.WHISPER_MIN_LEN}–${PROGRESSION_RULES.WHISPER_MAX_LEN} симв.).</div>
+                                        <div class="pager-compose-hint">Своими словами. Без оценок и непрошеных советов (${PROGRESSION_RULES.WHISPER_MIN_LEN}–${PROGRESSION_RULES.WHISPER_MAX_LEN} симв.).</div>
                                         <textarea id="pager-compose-input" class="pager-compose-input" rows="3" maxlength="${PROGRESSION_RULES.WHISPER_MAX_LEN}" placeholder="Напишите тёплый анонимный отклик (${PROGRESSION_RULES.WHISPER_MIN_LEN}–${PROGRESSION_RULES.WHISPER_MAX_LEN} симв.)...">${escFn(draft)}</textarea>
                                         <div class="pager-compose-bar">
                                             <span id="pager-compose-count" class="pager-compose-count">${draft.length} / ${PROGRESSION_RULES.WHISPER_MAX_LEN} (мин. ${PROGRESSION_RULES.WHISPER_MIN_LEN})</span>

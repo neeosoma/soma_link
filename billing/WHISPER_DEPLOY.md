@@ -1,8 +1,8 @@
 # Whisper deployment checklist
 
-The feature stays disabled (`config.js: WHISPER_LIVE: false`) until the database
-migration and participant-access tests below have passed. Do not merely toggle it
-on before migrating.
+For a fresh installation, keep `WHISPER_LIVE: false` until database migration
+and participant-access tests pass. Production is already enabled by owner request;
+do not rerun the base migration just to update the UI.
 
 1. Back up the database. Review and run `billing/setup_stars.sql` in Supabase SQL
    Editor. It runs transactionally and is intended to be rerunnable.
@@ -29,23 +29,20 @@ on before migrating.
   cross-device Telegram-auth link is implemented here.
 - Server limits apply per anonymous Auth identity, UTC day. A new identity can
   bypass per-account limits; CAPTCHA/rate limiting is necessary for abuse control.
-- The 13-lesson/warmth admission and XP/echo rewards are client-side gameplay,
-  not tamper-proof server-authoritative progression. Existing profile/post policies
+- Sending requires short rules only, not warmth or lessons. Rules acceptance and
+  XP/echo rewards are client-side, not server-authoritative progression. Existing profile/post policies
   elsewhere in this app are outside this Whisper hardening.
-- SQL access rules have not been executed against a real Supabase instance here.
-  The automated schema test is a structural regression check, not a database
-  integration test. No production database has been changed.
+- The owner reports production SQL applied successfully. PGlite integration tests
+  exercise PostgreSQL roles/RLS, not live Supabase Auth transport or concurrency.
+  Live two-account and third-party access verification remains unconfirmed.
 - A browser smoke check was attempted in the workspace but Chromium could not
   launch (`libnspr4.so` missing); visual verification remains a release gate.
 
-## Temporary production smoke test (owner requested)
+## Permanent open admission
 
-The owner reports SQL applied successfully and Anonymous Sign-Ins enabled.
-At their request production is now configured with `WHISPER_LIVE: true` and
-`WHISPER_TEST_OPEN: true`. The latter temporarily waives only warmth/lesson
-admission for EVERY player. Database authorization and send limits remain active.
-After the smoke test set `WHISPER_TEST_OPEN: false` and deploy; keep
-`WHISPER_LIVE: true` for normal operation. To stop the UI use
-`WHISPER_LIVE: false` (this is not a database/API kill switch).
-Visual and multi-account database verification remain pending; this is an
-explicit early rollout, not completion of the release gates above.
+Warmth/lesson gates and the temporary test-open flag have been removed. Anyone
+can send after acknowledging the short rules; practice remains voluntary.
+No new SQL is needed: existing Auth ownership, one-per-post uniqueness, contact
+validation and three-per-UTC-day limits remain. Reports and blocking remain enabled;
+see `WHISPER_SAFETY_DEPLOY.md` for migration history and verification caveats.
+`WHISPER_LIVE: false` stops the UI, not the database/API.

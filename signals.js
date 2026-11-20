@@ -2,10 +2,10 @@
 (function (root) {
     'use strict';
     const INTENTS = Object.freeze([
-        { id: 'N', title: 'Побудь рядом', hint: 'Хочется быть услышанным. Без советов, если автор сам их не попросит.', light: false },
-        { id: 'V', title: 'Хочу взгляд со стороны', hint: 'Автор открыт к вашему взгляду. Говорите от себя, без диагнозов и указаний.', light: false },
-        { id: 'W', title: 'Маленькая победа', hint: 'Разделите радость. Здесь не нужно искать проблему или давать совет.', light: true },
-        { id: 'S', title: 'Просто делюсь', hint: 'Можно откликнуться или просто прочитать. Советы не запрошены.', light: true }
+        { id: 'N', title: 'Побудь рядом', hint: 'Выслушайте. Советы не нужны.', light: false },
+        { id: 'V', title: 'Хочу взгляд со стороны', hint: 'Поделитесь своим взглядом. Без диагнозов.', light: false },
+        { id: 'W', title: 'Маленькая победа', hint: 'Разделите радость — без советов.', light: true },
+        { id: 'S', title: 'Просто делюсь', hint: 'Можно просто прочитать. Советы не запрошены.', light: true }
     ]);
     function packTag(intentId, rawTopic) {
         const intent = INTENTS.find(x => x.id === intentId);

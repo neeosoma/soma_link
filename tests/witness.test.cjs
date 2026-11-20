@@ -78,7 +78,8 @@ test('feed presents a real anonymous sign separately from private Whisper and si
     assert.match(indexHtml, /Кто-то оставил тихий знак\./);
     assert.match(indexHtml, /Автор увидит только факт знака/);
     assert.match(indexHtml, /Это не обещание помощи, продолжения общения или ответа/);
-    assert.match(indexHtml, /ОТВЕТИТЬ ЛИЧНЫМ ШЁПОТОМ/);
+    // Истории удалены из вкладки «ПЕЙДЖЕР» — рендер карт с сигналами больше не присутствует.
+    assert.doesNotMatch(indexHtml, /ОТВЕТИТЬ ЛИЧНЫМ ШЁПОТОМ/);
     assert.match(indexHtml, /Читать молча или пропустить/);
     assert.doesNotMatch(indexHtml, /function reactToPost|Реакций:|Откликов:|post\.likes\s*\|\||\.update\(\{\s*likes:/);
     assert.doesNotMatch(indexHtml, /onclick="reactToPost\(/);
@@ -99,7 +100,8 @@ test('feed presents a real anonymous sign separately from private Whisper and si
     assert.match(indexHtml, /function addWarmth\(n, syncCloud = true\)/);
     assert.match(indexHtml, /if \(syncCloud && typeof supabaseClient !== 'undefined' && supabaseClient\)/);
     assert.match(indexHtml, /soma_server_warmth_seen/);
-    assert.match(indexHtml, /Автор её не увидит/);
+    // Кнопка паузы была частью рендера историй — удалена вместе с историями из вкладки.
+    assert.doesNotMatch(indexHtml, /Автор её не увидит/);
 });
 
 test('SQL mark storage is private, Auth-only, duplicate-safe, and rewards authors without returning mark counts', () => {

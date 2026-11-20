@@ -1239,6 +1239,14 @@
     color: #9e727a;
 }
 
+/* Группа справа: полоски + крестик — gap совпадает с LED → NEEOSOMA */
+.pager-top-right {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    flex-shrink: 0;
+}
+
 .pager-modal-top .pager-brand {
     display: inline-flex;
     align-items: center;

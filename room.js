@@ -8529,7 +8529,7 @@ function paintPlantFrame(now) {
 }
 
 function stationLoop(now) {
-    const view = typeof document !== 'undefined' && document.getElementById('view-profile');
+    const view = typeof document !== 'undefined' && document.getElementById('view-room');
     if (!view || view.classList.contains('hidden') || document.hidden || prefersStillRoom()) {
         roomAnim.raf = null;
         return;
@@ -8557,7 +8557,7 @@ function ensureStationLoop() {
     paintPlantFrame(now);
     drawStationFx(now, false);
     if (prefersStillRoom() || typeof requestAnimationFrame !== 'function') return;
-    const view = typeof document !== 'undefined' && document.getElementById('view-profile');
+    const view = typeof document !== 'undefined' && document.getElementById('view-room');
     if (view && !view.classList.contains('hidden') && !document.hidden && !roomAnim.raf) {
         roomAnim.raf = requestAnimationFrame(stationLoop);
     }

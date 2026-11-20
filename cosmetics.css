@@ -206,8 +206,8 @@
     gap: 6px;
     font: 700 16px 'Share Tech Mono', monospace;
     letter-spacing: 0.05em;
-    color: #fff8f0;
-    text-shadow: 0 0 14px rgba(255, 190, 110, 0.26);
+    color: #ff7c8d;
+    text-shadow: 0 0 14px rgba(255, 72, 94, 0.32);
 }
 
 .top-custom-title {
@@ -297,7 +297,7 @@
     gap: 5px;
     min-width: 0;
     font: 700 12px 'Share Tech Mono', monospace;
-    color: #fff2f4;
+    color: #ff7c8d;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -376,7 +376,7 @@
     gap: 5px;
     font-size: 12px;
     font-weight: 700;
-    color: #fff2f4;
+    color: #ff7c8d;
 }
 
 .top-you-tag {
@@ -1227,7 +1227,7 @@
 .shop-tab[aria-pressed="true"] {
     background: #2b0b13;
     border-color: #ff6478;
-    color: #fff2f4;
+    color: #ff7c8d;
     font-weight: 700;
 }
 

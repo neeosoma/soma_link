@@ -9881,6 +9881,8 @@ function renderFeedPager(warmthArg, ledgerArg) {
                     : 'ПРИЁМ ВХОДЯЩИХ АКТИВЕН';
     }
     if (gateEl) gateEl.textContent = `СЕГОДНЯ: ${adm.whisperLeftToday}/${adm.whisperSendCap}`;
+    // Если ПАМЯТКА активна — не перезаписываем текст подсказок на дисплее.
+    if (pagerMemorialOpen) return;
     let mainLine = 'ЧАСТОТА «ШЁПОТ» ВЫКЛЮЧЕНА';
     let subLine = 'Можно вернуться позже.';
     if (!adm.live && roomAnim.pagerMode === 'scan') {
@@ -9894,37 +9896,54 @@ function renderFeedPager(warmthArg, ledgerArg) {
     if (subEl) subEl.textContent = subLine;
 }
 
-// ПАМЯТКА — показывает/скрывает подсказки на дисплее пейджера
+// ПАМЯТКА — цикл памяток по игре на дисплее пейджера
 let pagerMemorialOpen = false;
+let pagerMemorialStep = 0;
+const PAGER_MEMORIAL_LINES = [
+    { main: 'АНОНИМНОСТЬ', sub: 'Все входящие и исходящие сообщения полностью анонимны. Никто не узнает, кто вы.' },
+    { main: 'СЛУЧАЙНЫЙ КОНТАКТ', sub: 'Это игра о случайном контакте. Вы не знаете, с кем говорите — и это суть.' },
+    { main: 'КАССЕТА VTR-90', sub: 'Самые тёплые послания можно сохранить на кассету — и переслушать когда захотите.' },
+    { main: 'ШЁПОТ', sub: 'Личный шёпот — это ваш выбор. Отвечать не обязательно. Слушайте своё состояние.' }
+];
 function togglePagerMemorial() {
     if (typeof document === 'undefined') return;
-    const hints = document.getElementById('feed-pager-hints');
+    const msgEl = document.getElementById('feed-pager-msg');
+    const subEl = document.getElementById('feed-pager-sub');
     const btn = document.getElementById('feed-pager-memorial-btn');
-    if (!hints) return;
+    if (!msgEl || !subEl) return;
+
     pagerMemorialOpen = !pagerMemorialOpen;
     if (pagerMemorialOpen) {
-        const adm = (typeof roomAnim !== 'undefined')
-            ? whisperAdmission(Number(roomAnim.warmth) || 0, loadWarmthLedger())
-            : null;
-        const lines = [];
-        if (adm && adm.live) {
-            lines.push(`▸ Канал «Шёпот» активен. Сегодня осталось ${adm.whisperLeftToday}/${adm.whisperSendCap} отклика.`);
-            lines.push(`▸ Читайте истории в эфире. Отвечать не обязательно — слушайте своё состояние.`);
-            lines.push(`▸ Кассета VTR-90 даёт +4 Тепла растению (1 раз в день).`);
-        } else {
-            lines.push(`▸ Канал «Шёпот» сейчас выключен. Тепло вернёт его.`);
-            lines.push(`▸ Держите станцию в тепле — растение растёт от ваших откликов.`);
-        }
-        lines.push(`▸ Личные шёпоты — это ваш выбор, а не долг.`);
-        hints.innerHTML = lines.map(l => `<div>${l}</div>`).join('');
-        hints.classList.remove('hidden');
+        pagerMemorialStep = 0;
+        showPagerMemorialLine(0);
         if (btn) btn.classList.add('is-active');
     } else {
-        hints.classList.add('hidden');
-        hints.innerHTML = '';
         if (btn) btn.classList.remove('is-active');
+        // Восстанавливаем нормальный текст дисплея
+        renderFeedPager();
     }
     if (typeof SFX !== 'undefined' && SFX.tap) SFX.tap();
+}
+
+// Показывает памятку на дисплее по номеру шага
+function showPagerMemorialLine(step) {
+    if (typeof document === 'undefined') return;
+    const msgEl = document.getElementById('feed-pager-msg');
+    const subEl = document.getElementById('feed-pager-sub');
+    if (!msgEl || !subEl) return;
+    const line = PAGER_MEMORIAL_LINES[step % PAGER_MEMORIAL_LINES.length];
+    msgEl.textContent = line.main;
+    subEl.textContent = line.sub;
+    pagerMemorialStep = (step + 1) % PAGER_MEMORIAL_LINES.length;
+}
+
+// Продолжает цикл памяток при повторном нажатии на ПАМЯТКУ
+function cyclePagerMemorial() {
+    if (!pagerMemorialOpen) {
+        togglePagerMemorial();
+        return;
+    }
+    showPagerMemorialLine(pagerMemorialStep);
 }
 
 async function syncPagerWhispers() {

@@ -2047,3 +2047,20 @@ test('Whisper schema restricts participants and sender identity, with a serializ
     assert.ok(sql.includes('on public.soma_whispers(post_id, sender_auth_id)'));
     assert.ok(sql.trim().endsWith('commit;'));
 });
+
+test('temporary live test opens admission only with explicit flag and preserves send caps', async () => {
+    const window = { SOMA_CONFIG: { WHISPER_LIVE: true, WHISPER_TEST_OPEN: true } };
+    const r = loadRoom({ window });
+    assert.equal(r.whisperAdmission(0).admitted, true);
+    assert.equal(r.whisperAdmission(0).testOpen, true);
+    const opts = { today: '2026-11-18', skipCloud: true };
+    for (const id of ['test_a', 'test_b', 'test_c']) {
+        assert.equal((await r.sendWhisperToPost({ id }, 'Пусть сегодня станет немного легче.', opts)).ok, true);
+    }
+    assert.equal((await r.sendWhisperToPost({ id: 'test_d' }, 'Пусть сегодня станет немного легче.', opts)).code, 'daily_cap');
+    window.SOMA_CONFIG.WHISPER_TEST_OPEN = false;
+    assert.equal(r.whisperAdmission(0).admitted, false);
+    window.SOMA_CONFIG.WHISPER_TEST_OPEN = true;
+    window.SOMA_CONFIG.WHISPER_LIVE = false;
+    assert.equal(r.whisperAdmission(0).admitted, false);
+});

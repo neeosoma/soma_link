@@ -37,3 +37,15 @@ on before migrating.
   integration test. No production database has been changed.
 - A browser smoke check was attempted in the workspace but Chromium could not
   launch (`libnspr4.so` missing); visual verification remains a release gate.
+
+## Temporary production smoke test (owner requested)
+
+The owner reports SQL applied successfully and Anonymous Sign-Ins enabled.
+At their request production is now configured with `WHISPER_LIVE: true` and
+`WHISPER_TEST_OPEN: true`. The latter temporarily waives only warmth/lesson
+admission for EVERY player. Database authorization and send limits remain active.
+After the smoke test set `WHISPER_TEST_OPEN: false` and deploy; keep
+`WHISPER_LIVE: true` for normal operation. To stop the UI use
+`WHISPER_LIVE: false` (this is not a database/API kill switch).
+Visual and multi-account database verification remain pending; this is an
+explicit early rollout, not completion of the release gates above.

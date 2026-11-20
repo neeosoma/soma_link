@@ -3318,8 +3318,11 @@ function whisperAdmission(warmth, ledger) {
     const trainerMet = l.trainedTotal >= PROGRESSION_RULES.WHISPER_TRAINER_GATE;
     const sentToday = Math.max(0, Number(l.whisperSentToday) || 0);
     const sendCap = PROGRESSION_RULES.DAILY_WHISPER_SEND_CAP;
+    const testOpen = isWhisperLive() && typeof window !== 'undefined'
+        && window.SOMA_CONFIG.WHISPER_TEST_OPEN === true;
     return {
-        admitted: warmthMet && trainerMet,
+        testOpen,
+        admitted: testOpen || (warmthMet && trainerMet),
         warmth: Math.min(w, PROGRESSION_RULES.WHISPER_WARMTH_GATE),
         warmthNeed: PROGRESSION_RULES.WHISPER_WARMTH_GATE,
         trained: Math.min(l.trainedTotal, PROGRESSION_RULES.WHISPER_TRAINER_GATE),
@@ -10021,7 +10024,8 @@ function renderPagerModal() {
     }
 
     if (noticeEl) {
-        const msg = roomAnim.pagerModalError || roomAnim.pagerModalNotice || '';
+        const msg = roomAnim.pagerModalError || roomAnim.pagerModalNotice
+            || (adm.testOpen ? 'ТЕСТ КАНАЛА: порог тепла и 13 уроков временно снят. Лимит 3 шёпота в сутки сохранён.' : '');
         noticeEl.textContent = msg;
         noticeEl.className = 'pager-modal-notice'
             + (msg ? '' : ' hidden')

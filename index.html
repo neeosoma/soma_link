@@ -9,7 +9,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="room.css?v=16">
+    <link rel="stylesheet" href="room.css?v=17">
     <link rel="stylesheet" href="cosmetics.css?v=15">
     <link rel="stylesheet" href="receiver.css?v=15">
     <link rel="stylesheet" href="vhs.css?v=15">
@@ -324,75 +324,89 @@
     <!-- ОСНОВНОЙ ИНТЕРФЕЙС -->
     <div class="w-full max-w-md bg-[#0e0608] md:border md:border-red-500/30 md:rounded-3xl shadow-2xl flex flex-col app-h overflow-hidden relative">
         
-        <!-- СТАТУС-БАР -->
-        <div class="bg-[#12080a] px-4 py-3 border-b border-red-500/20 space-y-2">
-            <div class="flex justify-between items-center text-[11px] font-mono-tech">
-                <div class="flex items-center space-x-2 text-red-400">
-                    <button onclick="pulseTap()" class="w-6 h-6 flex items-center justify-center -ml-1"><span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span></button>
+        <!-- КОМПАКТНЫЙ СТАТУС -->
+        <header class="app-status-bar">
+            <div class="app-status-top">
+                <div class="app-user-line">
+                    <button type="button" onclick="pulseTap()" class="app-pulse" aria-label="Сигнал станции"><span aria-hidden="true"></span></button>
                     <span id="user-badge">@GUEST</span>
-                    <button id="snd-btn" onclick="toggleSound()" class="text-xs opacity-80 pl-1">🔊</button>
+                    <button id="snd-btn" onclick="toggleSound()" class="app-sound" aria-label="Переключить звук">🔊</button>
                 </div>
-                <div class="text-red-400 font-bold" id="rank-title">УР. 1 // ГОСТЬ СТАНЦИИ</div>
+                <span id="rank-title" class="app-rank">УР. 1 // ГОСТЬ СТАНЦИИ</span>
             </div>
-            <div class="w-full bg-[#080405] h-1.5 rounded-full overflow-hidden border border-red-950">
-                <div id="xp-bar" class="bg-gradient-to-r from-red-900 to-red-500 h-full transition-all duration-500" style="width: 10%;"></div>
+            <div class="app-xp-line">
+                <span id="xp-val">0 XP</span>
+                <div class="app-xp-track" aria-hidden="true"><div id="xp-bar" style="width: 10%;"></div></div>
             </div>
-            <div class="flex justify-between text-[10px] font-mono-tech text-gray-500">
-                <span>ОПЫТ СВИДЕТЕЛЯ: <b id="xp-val" class="text-gray-300">0 XP</b></span>
-                <span>ИНДЕКС РАВНОДУШИЯ: <b id="indiff-val" class="text-red-400">100%</b></span>
-            </div>
-        </div>
+        </header>
 
-        <!-- ВКЛАДКИ -->
-        <div class="bg-[#100709] px-2 py-2 border-b border-red-500/20 grid grid-cols-3 gap-1 text-center text-[11px] font-mono-tech">
-            <button id="tab-feed" onclick="switchTab('feed')" class="py-1.5 rounded-lg bg-red-950/60 text-red-400 font-bold border border-red-500/40 transition">ЖИВАЯ ЧАСТОТА</button>
-            <button id="tab-top" onclick="switchTab('top')" class="py-1.5 rounded-lg text-gray-400 hover:text-white transition">ЗВЁЗДЫ СТАНЦИИ</button>
-            <button id="tab-profile" onclick="switchTab('profile')" class="py-1.5 rounded-lg text-gray-400 hover:text-white transition">МОЯ КОМНАТА</button>
-        </div>
+        <!-- ОСНОВНАЯ НАВИГАЦИЯ -->
+        <nav class="app-tabs" aria-label="Разделы станции">
+            <button id="tab-feed" onclick="switchTab('feed')" aria-current="page">ИСТОРИИ</button>
+            <button id="tab-top" onclick="switchTab('top')">ЗВЁЗДЫ</button>
+            <button id="tab-profile" onclick="switchTab('profile')">КОМНАТА</button>
+        </nav>
 
-        <button onclick="openSafety()" class="w-full py-1.5 bg-[#0e0608] border-b border-red-500/10 text-[10px] font-mono-tech text-gray-500 hover:text-red-300 transition">🛟 ЕСЛИ ВАМ ТЯЖЕЛО — ПОМОЩЬ РЯДОМ</button>
+        <button type="button" onclick="openSafety()" class="safety-link">🛟 Нужны варианты поддержки?</button>
 
-        <!-- ЭКРАН 1: ЖИВАЯ ЧАСТОТА (1 СИГНАЛ В ДЕНЬ + ФИЛЬТР ЧАСТОТ) -->
-        <div id="view-feed" class="flex-1 overflow-y-auto p-3 space-y-2.5 pb-20">
-            <button id="open-post-btn" onclick="openPostModal()" class="soma-post-cta w-full py-3 px-4 rounded-xl text-left flex justify-between items-center gap-3 group">
-                <div class="min-w-0">
-                    <div class="flex items-center gap-2 flex-wrap">
-                        <span class="soma-post-beacon" aria-hidden="true"></span>
-                        <span id="open-post-title" class="text-[12.5px] font-bold text-red-100 group-hover:text-white tracking-tight">+ Рассказать свою историю</span>
-                        <span id="open-post-badge" class="px-1.5 py-0.5 rounded text-[9px] font-mono-tech bg-amber-950/60 text-amber-200 border border-amber-400/45 shrink-0">1 / ДЕНЬ</span>
+        <!-- ЛЕНТА ИСТОРИЙ -->
+        <div id="view-feed" class="flex-1 overflow-y-auto p-3 space-y-2.5 pb-20 feed-content">
+            <header class="feed-heading">
+                <div>
+                    <span class="feed-kicker">ЖИВАЯ ЧАСТОТА</span>
+                    <h1>Истории</h1>
+                    <p>Читайте, откликнитесь или пройдите мимо.</p>
+                </div>
+                <button id="open-post-btn" type="button" onclick="openPostModal()" class="soma-post-cta feed-write-btn">
+                    <span class="soma-post-beacon" aria-hidden="true"></span>
+                    <span id="open-post-title">＋ Рассказать</span>
+                    <span id="open-post-badge" class="feed-write-badge">1 / день</span>
+                    <span id="open-post-sub" class="sr-only">Любая тема — трудное, хорошее или обычный день.</span>
+                    <span id="open-post-arrow" class="sr-only">→</span>
+                </button>
+            </header>
+
+            <section id="first-signal-entry" class="first-session-card" hidden aria-label="Первый выбор">
+                <div class="first-session-kicker">ПЕРВЫЙ ШАГ</div>
+                <p id="first-session-copy">Одна настоящая история. Читать, отвечать или пройти мимо — ваш выбор.</p>
+                <div class="first-session-actions">
+                    <button type="button" id="first-session-open" onclick="openFirstSessionSignal()">ОТКРЫТЬ ИСТОРИЮ</button>
+                    <button type="button" id="first-session-look" onclick="completeFirstSession('look')">ОСМОТРЕТЬСЯ</button>
+                </div>
+            </section>
+
+            <section id="night-ritual-card" class="night-ritual-strip" aria-label="Общий отклик за последние 24 часа">
+                <span class="night-ritual-kicker">ОБЩИЙ ОТКЛИК</span>
+                <p id="night-ritual-copy" role="status" aria-live="polite">Общий счёт пока недоступен: серверные данные не получены. Число не показываем.</p>
+            </section>
+
+            <details id="feed-filters" class="feed-filters">
+                <summary>
+                    <span>ФИЛЬТРЫ</span>
+                    <span id="feed-filter-status">Все истории</span>
+                    <span class="feed-filter-chevron" aria-hidden="true">⌄</span>
+                </summary>
+                <div class="feed-filter-options">
+                    <section class="contact-boundaries" aria-label="Границы чтения">
+                        <label><input id="contact-light" type="checkbox"> Сегодня без тяжёлого</label>
+                        <p class="signal-caption">Покажем больше тем «Победа» и «Делюсь». Метки ставят авторы; они не гарантируют лёгкую тему.</p>
+                        <div id="contact-intent-filters" class="contact-filter-row" aria-label="Какой отклик вам сейчас нужен?"></div>
+                        <button id="contact-restore" type="button" class="contact-quiet">Вернуть скрытые истории</button>
+                        <span id="contact-status" class="signal-caption" role="status"></span>
+                    </section>
+                    <div class="feed-theme-filter">
+                        <span>ТЕМА</span>
+                        <div id="feed-filter-bar" role="tablist" aria-label="Фильтр историй по теме"></div>
                     </div>
-                    <div id="open-post-sub" class="text-[10.5px] text-rose-200/65 mt-0.5 leading-snug">Трудное, хорошее или обычный день — здесь есть место вашему голосу.</div>
                 </div>
-                <span id="open-post-arrow" class="soma-post-arrow font-mono-tech text-base shrink-0">→</span>
-            </button>
-            <section class="contact-welcome">
-                <h1>Живая частота</h1>
-                <p>Делитесь радостью или трудным. Слушайте друг друга.</p>
-                <p class="signal-caption">Один голос. Несколько минут рядом. Можно просто пройти мимо.</p>
-            </section>
-            <section class="contact-boundaries" aria-label="Границы чтения">
-                <label><input id="contact-light" type="checkbox"> Сегодня без тяжёлого</label>
-                <p class="signal-caption">Только «Победы» и «Делюсь». Метки ставят авторы — тяжёлая тема всё же возможна.</p>
-                <div id="contact-intent-filters" class="contact-filter-row" aria-label="Какой контакт ищете?"></div>
-                <button id="contact-restore" type="button" class="contact-quiet">Вернуть скрытые истории</button>
-                <span id="contact-status" class="signal-caption" role="status"></span>
-            </section>
-            <div id="feed-ritual-hint" class="px-3 py-1.5 rounded-lg bg-[#100709] border border-amber-400/15 flex items-center justify-between gap-2 text-[9.5px] font-mono-tech text-amber-200/75">
-                <span id="feed-warmth-status">✦ Зажмите «Удержать взгляд», чтобы зажечь Светлячков в комнате</span>
-                <span id="feed-warmth-quota" class="text-amber-300 font-bold shrink-0">0/2</span>
-            </div>
-            <section id="first-signal-entry" class="pager-card" hidden aria-label="Первый сигнал">
-                <div class="pager-empty-title">НОЧНАЯ СТАНЦИЯ · СИГНАЛЫ НЕЗНАКОМЦЕВ</div>
-                <p class="pager-card-text">Прочитайте историю. Ответьте, если хочется. До 3 шёпотов в сутки.</p>
-                <button type="button" class="pager-act-btn" onclick="openPagerModal('feed')">ОТКРЫТЬ ПЕЙДЖЕР</button>
-            </section>
-            <a href="gift.html" class="pager-card" style="text-decoration:none" aria-label="Записать кассету для друга">
-                <span class="pager-empty-title">📼 ЕСТЬ КОЕ-ЧТО ДЛЯ СВОЕГО ЧЕЛОВЕКА?</span>
-                <span class="pager-empty-sub">Ваши слова — другу по ссылке. Без регистрации →</span>
-            </a>
-            <div id="feed-filter-bar" class="flex gap-1.5 overflow-x-auto pb-0.5 text-[10px] font-mono-tech" role="tablist" aria-label="Фильтр историй по теме"></div>
+            </details>
+
             <div id="posts-container" class="space-y-3">
-                <div class="text-center text-xs text-gray-500 py-10 font-mono-tech">Загрузка данных NEEO~CITY...</div>
+                <div class="text-center text-xs text-gray-500 py-10 font-mono-tech">Загрузка историй…</div>
+            </div>
+            <div id="feed-ritual-hint" class="feed-personal-note">
+                <span id="feed-warmth-status">Удержание взгляда зажигает ваши светлячки — по желанию.</span>
+                <span id="feed-warmth-quota">0/2</span>
             </div>
         </div>
 
@@ -533,6 +547,8 @@
                                 <i></i><i></i><i></i><i></i><i></i><i></i><i></i>
                             </span>
                         </div>
+                        <div id="station-night-ritual-note" class="station-night-ritual-note" hidden aria-live="polite"></div>
+                        <p id="station-first-signal-note" class="station-first-signal-note" hidden>✦ ЛИЧНАЯ ОТМЕТКА · ПЕРВАЯ ИСТОРИЯ ЗАМЕЧЕНА</p>
                         <div id="station-greenhouse" class="station-gh hidden" aria-label="Оранжерея станции">
                             <div class="station-gh-head">
                                 <span>ОРАНЖЕРЕЯ СТАНЦИИ</span>
@@ -657,7 +673,8 @@
 <script src="scenarios.js?v=15"></script>
 <script src="music.js?v=15"></script>
 <script src="signals.js?v=2"></script>
-<script src="room.js?v=17"></script>
+<script src="station-ritual.js?v=1"></script>
+<script src="room.js?v=18"></script>
 <script src="cosmetics.js?v=16"></script>
 <script src="receiver.js?v=15"></script>
 <script src="vhs.js?v=15"></script>
@@ -961,6 +978,106 @@
         return api.filterPosts(feedPosts, api.readPrefs(localStorage), contactIntent);
     }
 
+    let stationRitualState = null;
+    let stationRitualRequest = null;
+    let stationRitualForceQueued = false;
+    let stationRitualLastAttempt = -Infinity;
+    let stationRitualRetryAfter = 0;
+
+    function renderStationRitual(status) {
+        const ritualApi = window.SOMA_RITUAL;
+        if (!ritualApi) return;
+        const view = ritualApi.describeStatus(status);
+        const copy = document.getElementById('night-ritual-copy');
+        if (copy) copy.textContent = view.copy;
+        const station = document.getElementById('station');
+        if (station && station.dataset) station.dataset.nightRitual = status && status.complete ? 'lit' : 'quiet';
+        const roomNote = document.getElementById('station-night-ritual-note');
+        if (roomNote) {
+            roomNote.hidden = !(status && status.complete);
+            roomNote.textContent = status && status.complete
+                ? '✦ ОБЩИЙ СВЕТ · 12+ ИСТОРИЙ ПОЛУЧИЛИ ОТКЛИК'
+                : '';
+        }
+    }
+
+    async function refreshStationRitual(force) {
+        if (stationRitualRequest) {
+            const pending = stationRitualRequest;
+            if (!force) return pending;
+            stationRitualForceQueued = true;
+            try { await pending; } catch (_) {}
+            if (stationRitualRequest && stationRitualRequest !== pending) return stationRitualRequest;
+            if (!stationRitualForceQueued) return stationRitualState;
+            stationRitualForceQueued = false;
+            return refreshStationRitual(true);
+        }
+        const now = Date.now();
+        if (!force && (now < stationRitualRetryAfter || now - stationRitualLastAttempt < 60000)) return stationRitualState;
+        stationRitualLastAttempt = now;
+        if (!supabaseClient || !window.SOMA_RITUAL) {
+            stationRitualState = null;
+            renderStationRitual(null);
+            stationRitualRetryAfter = now + 300000;
+            return null;
+        }
+        stationRitualRequest = Promise.resolve().then(async () => {
+            try {
+                const result = await supabaseClient.rpc('station_night_ritual_status');
+                if (!result || result.error) throw new Error('ritual unavailable');
+                const status = window.SOMA_RITUAL.normalizeStatus(result.data);
+                if (!status) throw new Error('invalid ritual status');
+                stationRitualState = status;
+                stationRitualRetryAfter = 0;
+                renderStationRitual(status);
+                return status;
+            } catch (_) {
+                stationRitualState = null;
+                stationRitualRetryAfter = Date.now() + 300000;
+                renderStationRitual(null);
+                return null;
+            }
+        }).finally(() => {
+            stationRitualRequest = null;
+        });
+        return stationRitualRequest;
+    }
+    window.refreshStationRitual = refreshStationRitual;
+
+    function visibleRitualCandidates() {
+        const roomApi = window.SOMA_ROOM || {};
+        const source = contactPosts();
+        const getCandidates = roomApi.getFirstSignalCandidates;
+        const hasWhispered = roomApi.hasWhisperedToPost;
+        const list = typeof getCandidates === 'function' ? getCandidates(source) : source;
+        return (Array.isArray(list) ? list : []).filter(post => post && post.id
+            && !(typeof hasWhispered === 'function' && hasWhispered(post.id)));
+    }
+
+    function openFirstSessionSignal() {
+        const roomApi = window.SOMA_ROOM || {};
+        const candidates = visibleRitualCandidates();
+        const preferred = stationRitualState && stationRitualState.candidatePostId
+            ? candidates.find(post => String(post.id) === stationRitualState.candidatePostId)
+            : null;
+        const candidate = preferred || candidates[0];
+        if (!candidate || typeof roomApi.openFirstSignalSession !== 'function') return false;
+        roomApi.openFirstSignalSession(candidate.id);
+        return true;
+    }
+
+    function openNightRitualSignal() {
+        const roomApi = window.SOMA_ROOM || {};
+        if (typeof roomApi.openFirstSignalSession !== 'function') return false;
+        const candidates = visibleRitualCandidates();
+        const preferred = stationRitualState && stationRitualState.candidatePostId
+            ? candidates.find(post => String(post.id) === stationRitualState.candidatePostId)
+            : null;
+        const selected = preferred || candidates[0];
+        roomApi.openFirstSignalSession(selected ? selected.id : '');
+        return true;
+    }
+
     // ===== ПОМОЩЬ РЯДОМ =====
     const CRISIS = /(суицид|самоубийств|покончить с собой|убить себя|не хочу жить|хочу умереть|свести счёты|свести счеты|вскрыть вены)/i;
     function openSafety(auto) {
@@ -1117,11 +1234,14 @@
         updatePostQuotaUI();
         setInterval(updatePostQuotaUI, 30000);
         await fetchPosts();
+        refreshStationRitual();
+        setInterval(refreshStationRitual, 60000);
         if (typeof syncPagerWhispers === 'function') syncPagerWhispers();
         setInterval(refreshFeed, 8000);
         document.addEventListener('visibilitychange', () => {
             updatePostQuotaUI();
             refreshFeed();
+            if (!document.hidden) refreshStationRitual();
             if (!document.hidden && typeof syncPagerWhispers === 'function') syncPagerWhispers();
         });
     }
@@ -1194,8 +1314,9 @@
         document.getElementById('stat-seen').innerText = player.seen;
         document.getElementById('stat-reacts').innerText = player.reacts;
         document.getElementById('stat-attempts').innerText = breaches;
-        if (typeof indifferenceIndex === 'function') {
-            document.getElementById('indiff-val').innerText = `${indifferenceIndex(player.warmth || 0)}%`;
+        const indiffEl = document.getElementById('indiff-val');
+        if (indiffEl && typeof indifferenceIndex === 'function') {
+            indiffEl.innerText = `${indifferenceIndex(player.warmth || 0)}%`;
         }
         if (typeof applyCosmeticsToUI === 'function') applyCosmeticsToUI();
         renderRoom();
@@ -1292,24 +1413,22 @@
         const arrow = document.getElementById('open-post-arrow');
         if (btn && title && badge && sub && arrow) {
             btn.dataset.locked = sent ? '1' : '0';
+            title.className = 'feed-write-title';
+            badge.className = 'feed-write-badge';
+            sub.className = 'sr-only';
+            arrow.className = 'sr-only';
             if (sent) {
-                title.textContent = '✓ Сигнал дня уже в эфире';
-                title.className = 'text-xs font-bold text-amber-300/90';
-                badge.textContent = `ЧЕРЕЗ ${left.toUpperCase()}`;
-                badge.className = 'px-1.5 py-0.5 rounded text-[9px] font-mono-tech bg-black/60 text-gray-400 border border-red-500/25 shrink-0';
-                sub.className = 'text-[10px] text-gray-400 mt-0.5 leading-snug';
-                sub.textContent = 'Новый пост будет доступен завтра. Можно читать, отвечать или просто отдохнуть.';
-                arrow.textContent = '⏳';
+                title.textContent = 'Сигнал дня уже опубликован';
+                badge.textContent = 'завтра';
+                sub.textContent = `Новая публикация будет доступна через ${left}. Читать и откликаться можно дальше.`;
+                arrow.textContent = '';
             } else {
                 let hasDraft = false;
                 try { hasDraft = !!(localStorage.getItem(POST_DRAFT_KEY) || '').trim(); } catch (e) {}
-                title.textContent = hasDraft ? '+ Дописать сигнал дня (черновик)' : '+ Рассказать свою историю';
-                title.className = 'text-[12.5px] font-bold text-red-100 group-hover:text-white tracking-tight';
-                badge.textContent = hasDraft ? 'ЧЕРНОВИК · 1/Д' : '1 / ДЕНЬ';
-                badge.className = 'px-1.5 py-0.5 rounded text-[9px] font-mono-tech bg-amber-950/60 text-amber-200 border border-amber-400/45 shrink-0';
-                sub.className = 'text-[10.5px] text-rose-200/65 mt-0.5 leading-snug';
-                sub.textContent = 'Трудное, хорошее или обычный день — здесь есть место вашему голосу.';
-                arrow.textContent = '→';
+                title.textContent = hasDraft ? 'Продолжить черновик' : 'Рассказать историю';
+                badge.textContent = hasDraft ? 'черновик' : '1 в день';
+                sub.textContent = 'Обычные дни, радость и трудные темы — всё можно рассказать.';
+                arrow.textContent = '';
             }
         }
         const qHint = document.getElementById('post-quota-hint');
@@ -1325,11 +1444,11 @@
             wQuota.textContent = `${done}/${cap}`;
             if (done >= cap) {
                 const ff = typeof fireflyState === 'function' ? fireflyState(lg) : { count: 1 };
-                wStatus.textContent = `✦ Светлячки тишины зажжены (${ff.count}/7) · ваша комната согрета`;
+                wStatus.textContent = `✦ Светлячки в комнате горят (${ff.count}/7) · на сегодня достаточно`;
             } else if (done > 0) {
-                wStatus.textContent = '✦ Первый огонёк зажжён · зажмите ещё 1 историю для полного тепла';
+                wStatus.textContent = '✦ Первый огонёк уже горит — можно остановиться';
             } else {
-                wStatus.textContent = '✦ Зажмите «Удержать взгляд» (3 с), чтобы зажечь Светлячков в комнате';
+                wStatus.textContent = '✦ По желанию: удерживайте взгляд 3 с, чтобы зажечь огонёк';
             }
         }
     }
@@ -1350,19 +1469,30 @@
         });
         const topTags = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8).map(x => x[0]);
         if (activeFeedTag !== 'ВСЕ' && !counts.has(activeFeedTag)) activeFeedTag = 'ВСЕ';
+        const themeSection = bar.parentElement;
+        if (themeSection) themeSection.hidden = topTags.length <= 1;
         if (topTags.length <= 1) { bar.innerHTML = ''; return; }
         const all = ['ВСЕ', ...topTags];
         bar.innerHTML = all.map(tg => {
             const on = tg === activeFeedTag;
-            const cls = on
-                ? 'px-2.5 py-1 rounded-lg bg-red-950/80 text-red-200 border border-red-500/50 font-bold shrink-0 transition'
-                : 'px-2.5 py-1 rounded-lg bg-[#12080a] text-gray-500 hover:text-gray-300 border border-red-500/15 shrink-0 transition';
-            const cnt = tg === 'ВСЕ' ? contactPosts().length : counts.get(tg);
-            return `<button type="button" role="tab" aria-selected="${on}" class="${cls}" data-feed-tag="${esc(tg)}">${esc(tg)} <span class="opacity-60">${cnt}</span></button>`;
+            return `<button type="button" role="tab" aria-selected="${on}" class="feed-topic-btn${on ? ' is-active' : ''}" data-feed-tag="${esc(tg)}">${esc(tg)}</button>`;
         }).join('');
         bar.querySelectorAll('[data-feed-tag]').forEach(b => {
             b.onclick = () => setFeedFilter(b.dataset.feedTag);
         });
+    }
+
+    function renderFeedFilterSummary() {
+        const summary = document.getElementById('feed-filter-status');
+        if (!summary) return;
+        const api = window.SOMA_SIGNALS;
+        const prefs = api.readPrefs(localStorage);
+        const intent = api.INTENTS.find(item => item.id === contactIntent);
+        const labels = [];
+        if (prefs.light) labels.push('Полегче*');
+        if (intent) labels.push(intent.title);
+        if (activeFeedTag !== 'ВСЕ') labels.push(activeFeedTag);
+        summary.textContent = labels.length ? labels.join(' · ') : 'Все истории';
     }
 
     function renderFeed() {
@@ -1374,6 +1504,7 @@
         updatePostQuotaUI();
         renderContactFilters();
         renderFeedFilters();
+        renderFeedFilterSummary();
         const myIds = new Set(getMyPostIds());
         const todayLedger = typeof loadWarmthLedger === 'function' ? loadWarmthLedger() : { hold: 0, total: 0 };
         const holdHasWarmth = typeof PROGRESSION_RULES !== 'undefined'
@@ -1689,12 +1820,10 @@
         if (!silent) SFX.tab();
         ['feed', 'top', 'profile'].forEach(t => {
             document.getElementById(`view-${t}`).classList.add('hidden');
-            document.getElementById(`tab-${t}`).classList.remove('bg-red-950/60', 'text-red-400', 'font-bold', 'border', 'border-red-500/40');
-            document.getElementById(`tab-${t}`).classList.add('text-gray-400');
+            document.getElementById(`tab-${t}`).removeAttribute('aria-current');
         });
         document.getElementById(`view-${tab}`).classList.remove('hidden');
-        document.getElementById(`tab-${tab}`).classList.add('bg-red-950/60', 'text-red-400', 'font-bold', 'border', 'border-red-500/40');
-        document.getElementById(`tab-${tab}`).classList.remove('text-gray-400');
+        document.getElementById(`tab-${tab}`).setAttribute('aria-current', 'page');
 
         if (tab === 'feed') updatePostQuotaUI();
         if (tab === 'top' && typeof renderLeaderboard === 'function') renderLeaderboard();

@@ -16,6 +16,10 @@ measured. Existing local event counters are QA instrumentation, not analytics.
 
 ## This increment
 
+- First session is led by one real signal: read, answer, skip, or look around.
+  No forced composer, fabricated message, XP bonus, or personal “you were needed” claim.
+- A read/reply changes only the visitor's room glow on that device; skipping has
+  no penalty. The short intro can be dismissed, while the pager stays available.
 - Main feed is **Живая частота**. It invites ordinary experiences and joy as well
   as difficult stories. Publishing stays one story per day; no new grind loops.
 - Author chooses one of four intents: presence, perspective, small victory, just
@@ -30,8 +34,10 @@ measured. Existing local event counters are QA instrumentation, not analytics.
   preferences too. A light label is NOT a content classifier or safety guarantee.
 - Hidden IDs and light preferences stay in `soma_contact_prefs_v1`, current browser
   only. Hiding is NOT reporting, account blocking, deletion or a moderation action.
-- A quiet nightly invitation ('one voice, a few minutes') replaces pressure; no
-  invented number of online players, unanswered signals or people helped.
+- Shared night ritual counts distinct stories that received a real Whisper in
+  the last 24 hours. It reveals only 5+, 10+, or 12+; totals below five stay
+  hidden. Twelve lights the window for everyone. No XP, streak, distress ranking,
+  or guilt copy. The client shows no count if the additive SQL RPC is unavailable.
 - Top-13 is presented as **Звёзды станции**, a ranking of game XP, not moral
   worth. Automatic rank names become station-themed with identical XP thresholds.
 - Profile/share copy no longer labels responses empty or people drama. Removed
@@ -70,9 +76,9 @@ Reader boundaries are never silently turned off after publishing.
    remain required. Current Whisper read privileges deliberately
    hide sender identity; real sender blocking must be implemented server-side,
    not by exposing sender IDs to the recipient. CAPTCHA needs client + Auth setup.
-2. **Real collective ritual:** authenticated aggregate of eligible unanswered
-   signals, with privacy/rate controls and no public ranking of distress. No global
-   counter is shown until that trustworthy server query exists.
+2. **Ritual rollout:** apply `billing/setup_station_ritual.sql` on production and
+   verify Auth-only RPC access, coarse buckets, owner exclusion, and the shared
+   window glow with independent sessions. Do not enable a count from client data.
 3. **Measurable experiment:** minimal aggregated events, retention cohorts,
    invitation conversion and opt-out/data-retention policy. Do not collect message
    contents. Review before adding an analytics service or endpoint.

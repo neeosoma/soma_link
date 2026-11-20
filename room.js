@@ -3125,6 +3125,10 @@ const roomAnim = {
     previewPhase: 3,
     contextPanel: '', // '' | 'window' | 'deck'
     activeCassetteId: '',
+    firstSessionCompleted: false,
+    firstSessionAction: '',
+    firstSessionCandidateId: '',
+    firstSignalSkipped: [],
     pagerStep: 0,
     pagerMode: 'idle', // 'idle' | 'scan' | 'info'
     pagerResetTimer: null,
@@ -3329,8 +3333,54 @@ function acceptFirstSignalRules() {
     return saved;
 }
 
+const FIRST_SESSION_KEY = 'soma_first_session_v1';
+const FIRST_SIGNAL_ROOM_KEY = 'soma_first_signal_room_v1';
+const FIRST_SESSION_ACTIONS = ['read', 'skip', 'reply', 'look'];
+
+function updateFirstSignalRoom() {
+    if (typeof document === 'undefined') return false;
+    const lit = lsGet(FIRST_SIGNAL_ROOM_KEY) === 'seen';
+    const station = document.getElementById('station');
+    if (station && station.dataset) {
+        if (lit) station.dataset.firstSignal = 'seen';
+        else delete station.dataset.firstSignal;
+    }
+    const note = document.getElementById('station-first-signal-note');
+    if (note) note.hidden = !lit;
+    return lit;
+}
+
+function completeFirstSession(action) {
+    const choice = String(action || '');
+    if (!FIRST_SESSION_ACTIONS.includes(choice)) return false;
+    roomAnim.firstSessionCompleted = true;
+    roomAnim.firstSessionAction = choice;
+    const saved = lsSet(FIRST_SESSION_KEY, choice);
+    if (choice === 'read' || choice === 'reply') lsSet(FIRST_SIGNAL_ROOM_KEY, 'seen');
+    updateFirstSignalRoom();
+    renderFirstSignalEntry();
+    return saved;
+}
+
+function getVisibleFirstSignalCandidates() {
+    let source = [];
+    try {
+        if (typeof contactPosts === 'function') {
+            source = contactPosts();
+        } else {
+            source = typeof feedPosts !== 'undefined' && Array.isArray(feedPosts) ? feedPosts : [];
+            const signalApi = typeof window !== 'undefined' ? window.SOMA_SIGNALS : null;
+            if (signalApi && typeof signalApi.visiblePosts === 'function') source = signalApi.visiblePosts(source);
+        }
+    } catch (_) {
+        return [];
+    }
+    return getFirstSignalCandidates(Array.isArray(source) ? source : []);
+}
+
 function renderFirstSignalEntry() {
     if (typeof document === 'undefined') return;
+    updateFirstSignalRoom();
     if (!roomAnim.signalSessionTracked) {
         roomAnim.signalSessionTracked = true;
         trackFirstSignalEvent('session_start');
@@ -3341,8 +3391,48 @@ function renderFirstSignalEntry() {
     }
     const entry = document.getElementById('first-signal-entry');
     if (!entry) return;
-    const show = isWhisperLive() && loadWarmthLedger().whispersSent === 0;
+
+    const ledger = loadWarmthLedger();
+    const cloudSends = typeof player !== 'undefined' && player ? Number(player.whispersSent) || 0 : 0;
+    const alreadySent = Math.max(ledger.whispersSent, cloudSends) > 0;
+    const savedAction = lsGet(FIRST_SESSION_KEY);
+    if (alreadySent && !FIRST_SESSION_ACTIONS.includes(savedAction)) {
+        lsSet(FIRST_SESSION_KEY, 'reply');
+        roomAnim.firstSessionCompleted = true;
+        roomAnim.firstSessionAction = 'reply';
+        lsSet(FIRST_SIGNAL_ROOM_KEY, 'seen');
+        updateFirstSignalRoom();
+    }
+    const completed = roomAnim.firstSessionCompleted || FIRST_SESSION_ACTIONS.includes(savedAction) || alreadySent;
+    const show = isWhisperLive() && !completed;
     entry.hidden = !show;
+
+    let candidate = null;
+    if (show) {
+        const skipped = new Set(roomAnim.firstSignalSkipped || []);
+        candidate = getVisibleFirstSignalCandidates().find(post => post
+            && !skipped.has(String(post.id)) && !hasWhisperedToPost(String(post.id))) || null;
+    }
+    roomAnim.firstSessionCandidateId = candidate ? String(candidate.id) : '';
+
+    const copy = document.getElementById('first-session-copy');
+    if (copy && show) {
+        const failed = typeof feedLoadFailed !== 'undefined' && feedLoadFailed;
+        copy.textContent = candidate
+            ? 'Одна настоящая история. Можно прочитать, ответить или пройти мимо.'
+            : failed
+                ? 'Истории не загрузились. Попробуйте позже.'
+                : 'Пока нет подходящей истории. Можно осмотреться или заглянуть позже.';
+    }
+    const openBtn = document.getElementById('first-session-open');
+    if (openBtn) {
+        openBtn.hidden = !show || !candidate;
+        openBtn.disabled = !show || !candidate;
+    }
+    const lookBtn = document.getElementById('first-session-look');
+    if (lookBtn) lookBtn.hidden = !show;
+    if (entry.dataset) entry.dataset.state = !show ? 'closed' : candidate ? 'ready' : 'quiet';
+
     if (show && !roomAnim.firstSignalEntrySeen) {
         roomAnim.firstSignalEntrySeen = true;
         trackFirstSignalEvent('entry_view');
@@ -3366,6 +3456,16 @@ function getFirstSignalCandidates(posts) {
         ? window.SOMA_SIGNALS.visiblePosts(posts) : posts;
     return (Array.isArray(visible) ? visible : []).filter(p => p && p.id
         && !String(p.id).startsWith('demo_') && !p.isDemo && !mine.has(String(p.id)));
+}
+
+function openFirstSignalSession(postId) {
+    const id = String(postId || '').trim();
+    roomAnim.pagerRequestedPostId = id;
+    roomAnim.firstSessionCandidateId = id;
+    roomAnim.pagerComposingPostId = '';
+    roomAnim.pagerDraftText = '';
+    roomAnim.firstSignalSkipped = (roomAnim.firstSignalSkipped || []).filter(x => x !== id);
+    openPagerModal('feed');
 }
 
 function openWhisperForPost(postId) {
@@ -9790,7 +9890,10 @@ async function sendWhisperToPostOnce(postObj, rawText, opts) {
     const sentRes = recordWhisperSent(o.today);
     const firstSprout = sentRes.ledger.whispersSent === 1;
     trackFirstSignalEvent('send_success');
-    renderFirstSignalEntry();
+    completeFirstSession('reply');
+    if (typeof window !== 'undefined' && typeof window.refreshStationRitual === 'function') {
+        try { window.refreshStationRitual(true); } catch (_) {}
+    }
 
     if (typeof player !== 'undefined' && player) {
         player.xp = (Number(player.xp) || 0) + PROGRESSION_RULES.WHISPER_SEND_XP;
@@ -10208,30 +10311,12 @@ function renderPagerModal() {
             });
         }
     } else {
-        // Short rules once; warmth and lessons never gate contact.
-        if (!adm.rulesAccepted) {
-            bodyEl.innerHTML = `
-                <div class="pager-gate-box">
-                    <div class="pager-empty-title">НОЧНАЯ СТАНЦИЯ · ПЕРВЫЙ СИГНАЛ</div>
-                    <p class="pager-empty-sub">Читайте или отвечайте — без обязательств.</p>
-                    <p class="pager-empty-sub">Пишите от себя. Без оценок, непрошеных советов, ссылок и контактов.</p>
-                    <p class="pager-empty-sub">До 3 шёпотов в сутки, один на пост. Ответ может не прийти.</p>
-                    <button type="button" class="pager-act-btn" id="signal-rules-accept">ПОНЯТНО · ПОСМОТРЕТЬ СИГНАЛ</button>
-                    <button type="button" class="pager-act-btn pager-act-btn--dismiss" id="signal-rules-later">НЕ СЕЙЧАС</button>
-                </div>`;
-            const accept = bodyEl.querySelector('#signal-rules-accept');
-            if (accept) accept.onclick = () => {
-                if (!acceptFirstSignalRules()) roomAnim.pagerModalError = 'Не удалось сохранить правила. Проверьте доступ к хранилищу браузера.';
-                renderPagerModal();
-            };
-            const later = bodyEl.querySelector('#signal-rules-later');
-            if (later) later.onclick = closePagerModal;
-        } else if (!adm.live) {
+        // Reading/skipping stay open; the short rules are required only after choosing to compose.
+        if (!adm.live) {
             bodyEl.innerHTML = '<div class="pager-empty-box">Канал пока выключен. Вернитесь позже.</div>';
         } else {
-            const allPosts = (typeof feedPosts !== 'undefined' && Array.isArray(feedPosts)) ? feedPosts : [];
             const whisperedSet = new Set(getWhisperedPosts());
-            let candidates = getFirstSignalCandidates(allPosts)
+            let candidates = getVisibleFirstSignalCandidates()
                 .sort((a, b) => Number(String(b.id) === roomAnim.pagerRequestedPostId) - Number(String(a.id) === roomAnim.pagerRequestedPostId)
                     || Number(whisperedSet.has(String(a.id))) - Number(whisperedSet.has(String(b.id))));
             if (adm.firstAvailable) {
@@ -10267,8 +10352,17 @@ function renderPagerModal() {
                             </div>` : ''}
                             ${done
                                 ? `<div class="pager-card-done">✓ Ваш шёпот уже отправлен.</div>`
-                                : isComposing
-                                    ? `<div class="pager-compose">
+                                : isComposing && !adm.rulesAccepted
+                                    ? `<div class="pager-gate-box">
+                                        <div class="pager-empty-title">ПЕРЕД ОТВЕТОМ · КОРОТКИЕ ПРАВИЛА</div>
+                                        <p class="pager-empty-sub">Читать и пропустить можно без подтверждения. Чтобы ответить, сначала примите правила.</p>
+                                        <p class="pager-empty-sub">Пишите от себя. Без оценок, непрошеных советов, ссылок и контактов.</p>
+                                        <p class="pager-empty-sub">До 3 шёпотов в сутки, один на пост. Ответ может не прийти.</p>
+                                        <button type="button" class="pager-act-btn" id="signal-rules-accept">ПОНЯТНО · ПРОДОЛЖИТЬ К ОТВЕТУ</button>
+                                        <button type="button" class="pager-act-btn pager-act-btn--dismiss" id="signal-rules-later">НЕ СЕЙЧАС</button>
+                                    </div>`
+                                    : isComposing
+                                        ? `<div class="pager-compose">
                                         <div class="pager-compose-hint">Своими словами. Без оценок и непрошеных советов (${PROGRESSION_RULES.WHISPER_MIN_LEN}–${PROGRESSION_RULES.WHISPER_MAX_LEN} симв.).</div>
                                         <textarea id="pager-compose-input" class="pager-compose-input" rows="3" maxlength="${PROGRESSION_RULES.WHISPER_MAX_LEN}" placeholder="Напишите тёплый анонимный отклик (${PROGRESSION_RULES.WHISPER_MIN_LEN}–${PROGRESSION_RULES.WHISPER_MAX_LEN} симв.)...">${escFn(draft)}</textarea>
                                         <div class="pager-compose-bar">
@@ -10289,9 +10383,26 @@ function renderPagerModal() {
                     `;
                 }).join('');
 
+                const rulesAccept = bodyEl.querySelector('#signal-rules-accept');
+                if (rulesAccept) rulesAccept.onclick = () => {
+                    roomAnim.pagerModalError = '';
+                    if (!acceptFirstSignalRules()) {
+                        roomAnim.pagerModalError = 'Не удалось сохранить правила. Проверьте доступ к хранилищу браузера.';
+                    }
+                    renderPagerModal();
+                };
+                const rulesLater = bodyEl.querySelector('#signal-rules-later');
+                if (rulesLater) rulesLater.onclick = () => {
+                    roomAnim.pagerComposingPostId = '';
+                    roomAnim.pagerDraftText = '';
+                    roomAnim.pagerModalError = '';
+                    renderPagerModal();
+                };
+
                 bodyEl.querySelectorAll('[data-act="read"], [data-act="skip"]').forEach(btn => {
                     btn.onclick = () => {
                         trackFirstSignalEvent(btn.dataset.act === 'read' ? 'signal_read' : 'signal_skip');
+                        if (adm.firstAvailable) completeFirstSession(btn.dataset.act);
                         roomAnim.firstSignalSkipped = [...(roomAnim.firstSignalSkipped || []), btn.dataset.postId];
                         roomAnim.pagerModalNotice = btn.dataset.act === 'read'
                             ? 'Можно просто прочитать. Отвечать не обязательно.' : 'Сигнал пропущен. Это нормально.';
@@ -10779,7 +10890,7 @@ function renderRoom() {
     const wEl = document.getElementById('warmth-val');
     if (wEl) wEl.textContent = String(warmth);
 
-    // Таяние Индекса равнодушия в шапке от живого тепла (а не от пустого XP)
+    // Необязательный старый показатель: не занимает место в новой основной шапке.
     const indEl = document.getElementById('indiff-val');
     if (indEl) indEl.textContent = `${indifferenceIndex(warmth)}%`;
 
@@ -11197,8 +11308,9 @@ if (typeof document !== 'undefined' && document.addEventListener) {
 // Public pager API for integrations and headless regression tests.
 const pagerApi = {
     isWhisperSafetyLive, reportIncomingWhisper, blockIncomingWhisper, loadWhisperBlocks, unblockWhisperSender,
-    openWhisperForPost, signalTagLabel, signalResponseHint,
-    acceptFirstSignalRules, trackFirstSignalEvent, renderFirstSignalEntry, getFirstSignalCandidates,
+    openFirstSignalSession, openWhisperForPost, signalTagLabel, signalResponseHint,
+    acceptFirstSignalRules, completeFirstSession, updateFirstSignalRoom, trackFirstSignalEvent,
+    renderFirstSignalEntry, getFirstSignalCandidates, getVisibleFirstSignalCandidates,
     validateWhisperText, hasWhisperedToPost, rememberWhisperedPost,
     claimWhisperCassetteAck, getPendingInboxWhispers, receiveIncomingWhisperLocal,
     acceptIncomingWhisper, dismissIncomingWhisper, sendWhisperToPost,

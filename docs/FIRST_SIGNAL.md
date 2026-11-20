@@ -2,25 +2,38 @@
 
 ## What changes
 
-- Feed entry card invites a visitor to the pager without claiming a stranger has
-  specifically contacted them. No auto-open, fabricated sender or simulated reply.
-- Before sending: explicit short rules and an equal right to leave.
+- A compact first-session card opens one real post in preview mode; it never
+  claims a stranger sent a personal message. No auto-open or simulated reply.
+- Read, reply, skip, and “look around” remain equal choices. Skipping is not
+  scored. The intro stays available until a choice, but the pager/feed stay open.
+- Reading or replying adds a small room glow stored only in this browser. It gives
+  no XP, is not public, and is not a signal that the author saw your visit.
+- Reading/skipping does not require rules acceptance. If someone chooses to compose,
+  show the short rules first and keep an equal right to leave.
 - With live Whisper enabled and accepted rules, sending is open regardless of
   warmth or lessons, including after reload. Training is optional.
-- The first flow shows one real candidate at a time. Read/skip are non-punitive,
-  unscored actions. Both move to another candidate for the current page session.
-- Demo and own posts are excluded. Empty/error feeds no longer inject a fake post.
-- Database errors and missing network never grant send XP or consume quota. A local in-flight guard prevents overlapping sends in the same page.
+- The pager shows one real candidate at a time. Demo and own posts are excluded;
+  empty/error feeds never inject a fake post.
+- Database errors and missing network never grant send XP or consume quota. A
+  local in-flight guard prevents overlapping sends in the same page.
 - Existing server Auth/RLS, unique post/sender and three-per-UTC-day limits remain.
 - Incoming messages remain readable/saveable at zero warmth; no reply is promised.
 
 ## Boundaries / deployment
 
-No new SQL, dependencies or production config changes are required. This is an
-onboarding change, not an Auth migration, cross-device entitlement service, or a
-server-authoritative reward system. Rules acceptance uses browser storage; clearing storage or another device
-requires accepting again. Do not claim this is abuse-proof or enforced account-wide.
-The existing server cap still applies per Auth identity.
+First-session state and its private room glow use browser storage. Clearing storage
+or switching devices restarts the intro; it does not change account eligibility.
+
+The shared night ritual needs the additive migration
+`billing/setup_station_ritual.sql` after the existing Auth/ownership schema. Until
+that RPC exists or is reachable, the UI shows no number and never invents a
+community total. The migration adds no content table: it returns only coarse
+24-hour buckets and one public post ID, never message text, owner IDs, or sender
+identity. See `billing/STATION_RITUAL_DEPLOY.md` before enabling it.
+
+This increment adds no CAPTCHA or crisis moderation. Reports/blocks and friend
+cassette links are documented separately. Existing limitations around legacy
+posts without verified owners remain; no unsafe ownership backfill is performed.
 
 Legacy posts without a verified recipient still cannot accept whispers; existing
 SQL rejects these. Candidate filtering here cannot certify ownership. No unsafe

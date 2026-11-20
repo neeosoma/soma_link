@@ -10042,8 +10042,10 @@ function ensurePagerModal() {
             <!-- ШАПКА УСТРОЙСТВА: бренд + код «ШЁПОТ» | полоски + закрыть -->
             <div class="pager-top pager-modal-top">
                 <span class="pager-brand"><i class="pager-led" aria-hidden="true"></i>NEEOSOMA // <span class="pager-code">NMAV-04 «ШЁПОТ»</span></span>
-                <span class="pager-sig-bar" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
-                <button type="button" class="pager-modal-close" id="pager-modal-close" aria-label="Закрыть пейджер">✕</button>
+                <div class="pager-top-right">
+                    <span class="pager-sig-bar" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+                    <button type="button" class="pager-modal-close" id="pager-modal-close" aria-label="Закрыть пейджер">✕</button>
+                </div>
             </div>
             <!-- СЕГМЕНТНЫЕ ВКЛАЛКИ -->
             <div class="pager-modal-tabs" role="tablist">
@@ -10162,7 +10164,6 @@ function renderPagerModal() {
     const adm = whisperAdmission(warmthNow, ledger);
 
     const inbox = getPendingInboxWhispers();
-    const tapes = loadCassettes();
 
     const tabFeed = ov.querySelector('#pager-tab-feed');
     const tabInbox = ov.querySelector('#pager-tab-inbox');
@@ -10435,7 +10436,6 @@ function renderPagerModal() {
 
     if (footEl) {
         footEl.innerHTML = `
-            <button type="button" class="pager-foot-vhs" id="pager-open-vhs-btn">📼 КАССЕТЫ VTR-90 (${tapes.length})</button>
             <a class="pager-foot-vhs" href="gift.html">ЗАПИСАТЬ СВОИ СЛОВА ДРУГУ →</a>
             ${isWhisperSafetyLive() ? '<button type="button" class="pager-foot-vhs" id="pager-manage-blocks">БЛОКИРОВКИ</button>' : ''}
         `;
@@ -10445,13 +10445,6 @@ function renderPagerModal() {
             if (result.ok) { roomAnim.pagerTab = 'inbox'; roomAnim.pagerShowBlocks = true; }
             return result;
         });
-        const vhsBtn = footEl.querySelector('#pager-open-vhs-btn');
-        if (vhsBtn) {
-            vhsBtn.onclick = () => {
-                closePagerModal();
-                openVhsArchive();
-            };
-        }
     }
 }
 

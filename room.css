@@ -716,59 +716,6 @@
     color: #cf9ea6;
 }
 
-/* Чистая двухколоночная шапка VHS-панели: слева NEEOSOMA // VTR-90 + АРХИВ VHS-КАССЕТ, справа В ДЕКЕ #001 + ВСЕГО N */
-.station-ctx-head--deck {
-    flex-wrap: nowrap;
-    align-items: flex-start;
-    gap: 10px;
-    padding-bottom: 4px;
-    border-bottom: 1px solid rgba(125, 41, 57, 0.28);
-}
-
-.station-deck-col {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-    line-height: 1.22;
-}
-
-.station-deck-col--right {
-    align-items: flex-end;
-    text-align: right;
-    flex-shrink: 0;
-}
-
-.station-deck-brand {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.09em;
-    color: #f5d0d7;
-    white-space: nowrap;
-}
-
-.station-deck-sub {
-    font-size: 8.8px;
-    letter-spacing: 0.08em;
-    color: #ab7d86;
-    white-space: nowrap;
-}
-
-.station-deck-active {
-    font-size: 9.8px;
-    font-weight: 700;
-    letter-spacing: 0.07em;
-    color: #ffcf9e;
-    white-space: nowrap;
-}
-
-.station-deck-total {
-    font-size: 8.8px;
-    letter-spacing: 0.08em;
-    color: #c89aa3;
-    white-space: nowrap;
-}
-
 .station-gh-slots,
 .station-ctx-row {
     display: flex;
@@ -827,25 +774,6 @@
     border-style: dashed;
     border-color: #7d2939;
     color: #ffb8c2;
-}
-
-.station-ctx-row button.station-vhs-chip.is-fav {
-    border-color: rgba(255, 198, 128, 0.44);
-    color: #ffe3bc;
-}
-
-.station-ctx-row button.station-vhs-open-btn {
-    background: linear-gradient(180deg, rgba(62, 18, 28, 0.92), rgba(32, 8, 14, 0.96));
-    border-color: rgba(255, 168, 132, 0.48);
-    color: #ffe8d6;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-}
-
-.station-ctx-row button.station-vhs-open-btn:hover {
-    background: linear-gradient(180deg, rgba(88, 24, 38, 0.95), rgba(44, 11, 20, 0.98));
-    border-color: rgba(255, 206, 152, 0.78);
-    color: #fff8f0;
 }
 
 /* Диегетические панели круглого окна (выбор открытых атмосфер) и кассетной деки */
@@ -2478,34 +2406,44 @@ html.is-soma-fs-closing .app-h {
     position: relative;
     overflow: hidden;
     background:
-        radial-gradient(120% 60% at 50% 0%, rgba(80, 16, 30, 0.35) 0%, transparent 60%),
+        radial-gradient(130% 70% at 50% 0%, rgba(80, 18, 32, 0.4) 0%, transparent 55%),
         #100608;
-    border: 1px solid rgba(255, 90, 110, 0.25);
+    border: 1px solid rgba(255, 90, 110, 0.22);
+    border-radius: 16px;
     box-shadow:
-        0 20px 50px rgba(0, 0, 0, 0.7),
-        inset 0 1px 0 rgba(255, 120, 140, 0.12),
+        0 24px 60px rgba(0, 0, 0, 0.75),
+        0 0 0 1px rgba(255, 90, 110, 0.04),
+        inset 0 1px 0 rgba(255, 120, 140, 0.1),
         inset 0 -1px 0 rgba(0, 0, 0, 0.4);
-    animation: ts-chassis-in 0.35s cubic-bezier(0.34, 1.2, 0.64, 1);
+    animation: ts-chassis-in 0.4s cubic-bezier(0.34, 1.2, 0.64, 1);
 }
 
 @keyframes ts-chassis-in {
-    from { opacity: 0; transform: translateY(12px) scale(0.97); }
+    from { opacity: 0; transform: translateY(16px) scale(0.96); }
     to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* Индикатор передатчика */
-.ts-indicator {
-    width: 8px;
-    height: 8px;
+/* ===== ШАПКА ===== */
+.ts-pilot {
+    width: 9px;
+    height: 9px;
     border-radius: 50%;
-    background: #ff5a6e;
-    box-shadow: 0 0 8px rgba(255, 90, 110, 0.8);
-    animation: ts-indicator-blink 2s ease-in-out infinite;
+    background: #ff4d62;
+    box-shadow: 0 0 8px rgba(255, 77, 98, 0.8), 0 0 16px rgba(255, 77, 98, 0.4);
+    animation: ts-pilot-blink 1.6s ease-in-out infinite;
+    flex-shrink: 0;
 }
 
-@keyframes ts-indicator-blink {
-    0%, 100% { opacity: 0.4; }
-    50% { opacity: 1; }
+@keyframes ts-pilot-blink {
+    0%, 100% { opacity: 0.35; transform: scale(0.85); }
+    50% { opacity: 1; transform: scale(1.1); }
+}
+
+.ts-brand {
+    font: 700 11px/1 'Share Tech Mono', monospace;
+    letter-spacing: 0.14em;
+    color: #ff8a9c;
+    text-shadow: 0 0 10px rgba(255, 90, 110, 0.35);
 }
 
 .ts-close {
@@ -2525,33 +2463,57 @@ html.is-soma-fs-closing .app-h {
     background: rgba(255, 90, 110, 0.1);
 }
 
-/* Полоса сигнала */
-.ts-meter {
-    height: 3px;
-    border-radius: 999px;
-    background: rgba(30, 8, 14, 0.8);
-    overflow: hidden;
+/* ===== МНОГОСЕГМЕНТНЫЙ ИЗМЕРИТЕЛЬ СИГНАЛА (VU-метр) ===== */
+.ts-vmeter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     margin-bottom: 14px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: rgba(5, 2, 4, 0.6);
     border: 1px solid rgba(201, 56, 76, 0.15);
 }
 
-.ts-meter-bar {
-    height: 100%;
-    width: 0%;
-    background: linear-gradient(90deg, #e11d48, #fbbf24);
-    border-radius: 999px;
-    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 0 6px rgba(255, 90, 110, 0.5);
+.ts-vmeter-seg {
+    flex: 1;
+    height: 4px;
+    border-radius: 2px;
+    transition: opacity 0.15s ease, box-shadow 0.15s ease;
+    opacity: 0.12;
 }
 
-/* Подсказка */
+.ts-vmeter-seg--g { background: #4ade80; }
+.ts-vmeter-seg--y { background: #fbbf24; }
+.ts-vmeter-seg--r { background: #ef4444; }
+
+.ts-vmeter-seg.is-active {
+    opacity: 1;
+    box-shadow: 0 0 6px currentColor;
+}
+
+.ts-vmeter-seg--g.is-active { box-shadow: 0 0 6px rgba(74, 222, 128, 0.7); }
+.ts-vmeter-seg--y.is-active { box-shadow: 0 0 6px rgba(251, 191, 36, 0.7); }
+.ts-vmeter-seg--r.is-active { box-shadow: 0 0 6px rgba(239, 68, 68, 0.7); }
+
+.ts-vmeter-label {
+    flex-shrink: 0;
+    font: 8px 'Share Tech Mono', monospace;
+    letter-spacing: 0.06em;
+    color: #6a4850;
+    white-space: nowrap;
+    min-width: 72px;
+    text-align: right;
+}
+
+/* ===== ПОДСКАЗКА ===== */
 .ts-brief {
-    padding: 10px 12px;
+    padding: 9px 12px;
     border-radius: 10px;
-    background: rgba(5, 2, 4, 0.6);
-    border: 1px solid rgba(251, 191, 36, 0.2);
+    background: rgba(5, 2, 4, 0.55);
+    border: 1px solid rgba(251, 191, 36, 0.18);
     color: #c798a0;
-    font-size: 11px;
+    font-size: 10.5px;
     line-height: 1.45;
     margin-bottom: 16px;
 }
@@ -2559,63 +2521,207 @@ html.is-soma-fs-closing .app-h {
 .ts-brief b {
     color: #fde68a;
     font-family: 'Share Tech Mono', monospace;
+    font-weight: 700;
 }
 
-/* Поля ввода */
-.ts-input {
-    width: 100%;
-    background: rgba(8, 4, 5, 0.9);
-    border: 1px solid rgba(255, 90, 110, 0.25);
+/* ===== ЧАСТОТНЫЙ ДИАПАЗОН: ВЫБОР ОТКЛИКА ===== */
+.ts-freq {
+    margin-bottom: 16px;
+}
+
+.ts-freq-label {
+    font: 600 9px 'Share Tech Mono', monospace;
+    letter-spacing: 0.1em;
+    color: #8a5a62;
+    margin-bottom: 8px;
+}
+
+.ts-freq-band {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+}
+
+.ts-freq-ch {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 11px;
     border-radius: 10px;
-    padding: 8px 12px;
-    text-size: 12px;
+    border: 1px solid rgba(120, 40, 55, 0.3);
+    background: rgba(8, 4, 5, 0.7);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.ts-freq-ch input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.ts-freq-ch:hover {
+    border-color: rgba(255, 90, 110, 0.4);
+    background: rgba(20, 6, 10, 0.8);
+}
+
+.ts-freq-ch input:checked + .ts-freq-num + .ts-freq-name,
+.ts-freq-ch:has(input:checked) {
+    border-color: rgba(255, 90, 110, 0.65);
+    background: linear-gradient(135deg, rgba(60, 14, 26, 0.85), rgba(30, 8, 14, 0.9));
+    box-shadow: 0 0 0 1px rgba(255, 90, 110, 0.2), inset 0 0 12px rgba(255, 90, 110, 0.12);
+}
+
+.ts-freq-num {
+    flex-shrink: 0;
+    font: 700 9px 'Share Tech Mono', monospace;
+    letter-spacing: 0.08em;
+    color: #6a4850;
+    transition: color 0.2s ease;
+}
+
+.ts-freq-ch:has(input:checked) .ts-freq-num {
+    color: #ff8a9c;
+}
+
+.ts-freq-name {
+    font-size: 11px;
+    line-height: 1.3;
+    color: #d4a0a8;
+    transition: color 0.2s ease;
+}
+
+.ts-freq-ch:has(input:checked) .ts-freq-name {
+    color: #ffe1e6;
+}
+
+.ts-freq-hint {
+    margin: 8px 2px 0;
+    font: 9.5px/1.4 'Inter', sans-serif;
+    color: #9e9093;
+}
+
+/* ===== ТЕМА + ЧИПСЫ ===== */
+.ts-tag-row {
+    margin-bottom: 16px;
+}
+
+.ts-tag-label {
+    display: block;
+    font: 600 9px 'Share Tech Mono', monospace;
+    letter-spacing: 0.1em;
+    color: #8a5a62;
+    margin-bottom: 6px;
+}
+
+.ts-tag-input {
+    width: 100%;
+    background: rgba(8, 4, 5, 0.8);
+    border: 1px solid rgba(255, 90, 110, 0.22);
+    border-radius: 8px;
+    padding: 7px 11px;
+    font-size: 11px;
     color: #fff1f2;
     outline: none;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
     font-family: 'Share Tech Mono', monospace;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.03em;
+    box-sizing: border-box;
 }
 
-.ts-input::placeholder {
-    color: #6a4850;
+.ts-tag-input::placeholder {
+    color: #5a3840;
+    text-transform: none;
+    font-size: 10px;
 }
 
-.ts-input:focus {
-    border-color: rgba(255, 90, 110, 0.6);
-    box-shadow: 0 0 0 3px rgba(255, 90, 110, 0.12);
+.ts-tag-input:focus {
+    border-color: rgba(255, 90, 110, 0.55);
+    box-shadow: 0 0 0 3px rgba(255, 90, 110, 0.1);
+}
+
+.ts-tag-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 7px;
+}
+
+/* ===== ТЕКСТОВОЕ ПОЛО ЖУРНАЛ ===== */
+.ts-field-wrap {
+    position: relative;
+}
+
+.ts-field-corners span {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-color: rgba(255, 90, 110, 0.4);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.ts-field-corners span:nth-child(1) {
+    top: 0; left: 0;
+    border-top: 2px solid; border-left: 2px solid;
+    border-top-left-radius: 4px;
+}
+.ts-field-corners span:nth-child(2) {
+    top: 0; right: 0;
+    border-top: 2px solid; border-right: 2px solid;
+    border-top-right-radius: 4px;
+}
+.ts-field-corners span:nth-child(3) {
+    bottom: 0; left: 0;
+    border-bottom: 2px solid; border-left: 2px solid;
+    border-bottom-left-radius: 4px;
+}
+.ts-field-corners span:nth-child(4) {
+    bottom: 0; right: 0;
+    border-bottom: 2px solid; border-right: 2px solid;
+    border-bottom-right-radius: 4px;
+}
+
+.ts-textarea:focus ~ .ts-field-corners span,
+.ts-textarea:focus ~ .ts-field-corners span {
+    opacity: 1;
 }
 
 .ts-textarea {
     position: relative;
+    z-index: 1;
     width: 100%;
-    background: rgba(8, 4, 5, 0.9);
+    background: rgba(8, 4, 5, 0.85);
     border: 1px solid rgba(255, 90, 110, 0.25);
     border-radius: 12px;
-    padding: 12px 14px;
+    padding: 13px 14px;
     font-size: 13px;
-    line-height: 1.5;
+    line-height: 1.55;
     color: #fff1f2;
     outline: none;
     resize: vertical;
     font-family: 'Share Tech Mono', monospace;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
-    min-height: 100px;
+    min-height: 110px;
+    box-sizing: border-box;
 }
 
 .ts-textarea::placeholder {
-    color: #6a4850;
+    color: #5a3840;
 }
 
 .ts-textarea:focus {
     border-color: rgba(255, 110, 130, 0.6);
     box-shadow:
         0 0 0 3px rgba(255, 90, 110, 0.1),
-        0 0 20px rgba(255, 90, 110, 0.08);
+        0 0 24px rgba(255, 90, 110, 0.08);
 }
 
-.ts-field-wrap {
-    position: relative;
+.ts-textarea:focus ~ .ts-field-corners span {
+    opacity: 1;
 }
 
 .ts-field-glow {
@@ -2632,19 +2738,43 @@ html.is-soma-fs-closing .app-h {
     opacity: 1;
 }
 
-/* Ошибка */
+.ts-field-scan {
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
+    pointer-events: none;
+    background: linear-gradient(
+        180deg,
+        transparent 0%,
+        rgba(255, 200, 210, 0.04) 50%,
+        transparent 100%
+    );
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    background-size: 100% 3px;
+    background-repeat: repeat;
+    background-image:
+        linear-gradient(transparent 95%, rgba(255, 90, 110, 0.04) 95%);
+    background-size: 100% 22px;
+}
+
+.ts-textarea:focus ~ .ts-field-scan {
+    opacity: 1;
+}
+
+/* ===== ОШИБКА ===== */
 .ts-error {
     padding: 8px 12px;
     border-radius: 10px;
     background: rgba(80, 10, 20, 0.5);
     border: 1px solid rgba(255, 90, 110, 0.3);
-    font-size: 11px;
+    font-size: 10.5px;
     line-height: 1.4;
     color: #fca5a5;
     font-family: 'Share Tech Mono', monospace;
 }
 
-/* Кнопка отправки сигнала (внутри модалки) */
+/* ===== КНОПКА ОТПРАВИТЬ В ЭФИР ===== */
 .ts-send-btn {
     position: relative;
     display: flex;
@@ -2652,22 +2782,22 @@ html.is-soma-fs-closing .app-h {
     justify-content: center;
     gap: 8px;
     width: 100%;
-    min-height: 48px;
+    min-height: 50px;
     margin-top: 16px;
-    padding: 12px 18px;
+    padding: 13px 18px;
     overflow: hidden;
     border: 1px solid rgba(255, 90, 110, 0.4);
     border-radius: 12px;
     background:
-        radial-gradient(120% 100% at 50% 0%, #541524 0%, #2d0a16 55%, #1a060c 100%);
+        radial-gradient(130% 100% at 50% 0%, #541524 0%, #2d0a16 55%, #1a060c 100%);
     box-shadow:
-        0 8px 24px rgba(0, 0, 0, 0.55),
+        0 10px 28px rgba(0, 0, 0, 0.55),
         0 0 0 1px rgba(255, 90, 110, 0.06),
         inset 0 1px 0 rgba(255, 130, 150, 0.25),
-        inset 0 -2px 0 rgba(0, 0, 0, 0.6);
+        inset 0 -3px 0 rgba(0, 0, 0, 0.6);
     color: #ffe8ec;
     font: 700 13px/1 'Share Tech Mono', monospace;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
     cursor: pointer;
     touch-action: manipulation;
@@ -2677,63 +2807,114 @@ html.is-soma-fs-closing .app-h {
         box-shadow 0.3s ease;
 }
 
-.ts-send-glow {
+.ts-send-aura {
     position: absolute;
-    inset: -40% -10% auto -10%;
-    height: 140%;
+    inset: -60% -15% auto -15%;
+    height: 160%;
     background: radial-gradient(55% 45% at 50% 0%,
-        rgba(255, 80, 105, 0.3), transparent 70%);
+        rgba(255, 80, 105, 0.35) 0%,
+        rgba(255, 60, 90, 0.18) 35%,
+        transparent 70%);
     pointer-events: none;
-    animation: ts-send-glow-pulse 3s ease-in-out infinite;
+    animation: ts-send-aura-pulse 3.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     z-index: 0;
 }
 
-@keyframes ts-send-glow-pulse {
-    0%, 100% { opacity: 0.5; }
-    50% { opacity: 1; }
+@keyframes ts-send-aura-pulse {
+    0%, 100% { opacity: 0.55; transform: scaleX(0.92) scaleY(0.9); }
+    15% { opacity: 0.85; transform: scaleX(1.04) scaleY(1.05); }
+    30% { opacity: 0.6; transform: scaleX(0.96) scaleY(0.95); }
+    50% { opacity: 1; transform: scaleX(1.06) scaleY(1.08); }
+    70% { opacity: 0.7; transform: scaleX(0.98) scaleY(0.97); }
+    85% { opacity: 0.9; transform: scaleX(1.03) scaleY(1.04); }
+}
+
+.ts-send-ripple {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.ts-send-btn:hover .ts-send-ripple {
+    opacity: 1;
+    animation: ts-send-ripple 2.4s linear infinite;
+}
+
+@keyframes ts-send-ripple {
+    0% { box-shadow: 0 0 0 0 rgba(255, 80, 105, 0.3), 0 0 0 0 rgba(255, 80, 105, 0.2); }
+    70% { box-shadow: 0 0 0 12px rgba(255, 80, 105, 0), 0 0 0 20px rgba(255, 80, 105, 0); }
+    100% { box-shadow: 0 0 0 12px rgba(255, 80, 105, 0), 0 0 0 20px rgba(255, 80, 105, 0); }
+}
+
+.ts-send-shimmer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    background: linear-gradient(
+        105deg,
+        transparent 30%,
+        rgba(255, 200, 210, 0.08) 45%,
+        rgba(255, 130, 150, 0.15) 50%,
+        rgba(255, 200, 210, 0.08) 55%,
+        transparent 70%
+    );
+    transform: translateX(-100%);
+    animation: ts-send-shimmer 4.5s ease-in-out infinite;
+}
+
+@keyframes ts-send-shimmer {
+    0%, 60% { transform: translateX(-100%); }
+    75% { transform: translateX(100%); }
+    100% { transform: translateX(100%); }
 }
 
 .ts-send-glyph {
     position: relative;
-    z-index: 1;
+    z-index: 2;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     color: #ff8a9c;
-    filter: drop-shadow(0 0 6px rgba(255, 90, 110, 0.7));
-    animation: ts-send-glyph-breathe 3s ease-in-out infinite;
+    filter: drop-shadow(0 0 6px rgba(255, 90, 110, 0.8))
+            drop-shadow(0 0 14px rgba(255, 60, 90, 0.4));
+    animation: ts-send-glyph-breathe 3.2s ease-in-out infinite;
 }
 
 @keyframes ts-send-glyph-breathe {
     0%, 100% { opacity: 0.85; transform: scale(1); }
-    50% { opacity: 1; transform: scale(1.1); }
+    50% { opacity: 1; transform: scale(1.12); }
 }
 
 .ts-send-label {
     position: relative;
-    z-index: 1;
-    text-shadow: 0 0 10px rgba(255, 80, 105, 0.3);
+    z-index: 2;
+    text-shadow: 0 0 12px rgba(255, 80, 105, 0.4);
 }
 
 .ts-send-btn:hover {
     border-color: rgba(255, 110, 135, 0.6);
     box-shadow:
-        0 10px 28px rgba(0, 0, 0, 0.6),
-        0 0 0 1px rgba(255, 90, 110, 0.12),
-        0 0 24px rgba(255, 70, 100, 0.18),
+        0 12px 32px rgba(0, 0, 0, 0.6),
+        0 0 0 1px rgba(255, 90, 110, 0.15),
+        0 0 28px rgba(255, 70, 100, 0.2),
         inset 0 1px 0 rgba(255, 150, 170, 0.3),
-        inset 0 -2px 0 rgba(0, 0, 0, 0.6);
+        inset 0 -3px 0 rgba(0, 0, 0, 0.6);
     transform: translateY(-1px);
 }
 
-.ts-send-btn:hover .ts-send-glow {
-    animation-duration: 1.6s;
+.ts-send-btn:hover .ts-send-aura {
+    animation-duration: 1.8s;
 }
 
 .ts-send-btn:active {
-    transform: translateY(1px) scale(0.99);
+    transform: translateY(1px) scale(0.985);
     box-shadow:
-        0 4px 12px rgba(0, 0, 0, 0.7),
+        0 4px 14px rgba(0, 0, 0, 0.7),
+        0 0 0 1px rgba(255, 90, 110, 0.2),
         inset 0 1px 0 rgba(255, 150, 170, 0.2),
         inset 0 -2px 0 rgba(0, 0, 0, 0.6);
 }
@@ -2754,9 +2935,10 @@ html.is-soma-fs-closing .app-h {
     cursor: not-allowed;
 }
 
-.ts-send-btn:disabled .ts-send-glow {
-    animation: none;
-    opacity: 0.15;
+.ts-send-btn:disabled .ts-send-aura,
+.ts-send-btn:disabled .ts-send-ripple,
+.ts-send-btn:disabled .ts-send-shimmer {
+    display: none;
 }
 
 .ts-send-btn:disabled .ts-send-glyph {
@@ -2765,7 +2947,7 @@ html.is-soma-fs-closing .app-h {
     filter: none;
 }
 
-/* Поддержка */
+/* ===== ПОДДЕРЖКА ===== */
 .ts-support {
     display: block;
     width: 100%;

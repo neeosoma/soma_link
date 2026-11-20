@@ -5490,12 +5490,12 @@ const DOG_BREEDS = [
 ];
 
 // УЛЬТРА-РЕДКАЯ ПОРОДА (РОВНО 0.1% — 1 ШАНС ИЗ 1000 ПРИ ПОЛУЧЕНИИ ПСА!):
-// Белоснежная Лунная Юна с шелковистыми фиолетовыми ушками и пышным фиолетовым хвостом!
+// Белоснежная Белая Юна с шелковистыми фиолетовыми ушками и пышным фиолетовым хвостом!
 const RARE_MALTESE_INDEX = 7;
 const RARE_MALTESE_BREED = {
     id: 'maltese_violet',
-    name: 'Лунная Юна',
-    short: 'Лунная Юна с фиолетовыми ушками',
+    name: 'Белая Юна',
+    short: 'Белая Юна с фиолетовыми ушками',
     rarity: '0.1%',
     rare: true,
     dark: '#6e5274', mid: '#d8c8de', light: '#f6eef9', cream: '#fffafe', rim: '#f8e6ff',
@@ -5536,7 +5536,7 @@ function dogSpec(rawId, overrideBreed) {
     const browSpot = !isRare && ((mix >>> 8) % 2) === 0;
     const woofHz = isRare ? 168 : (118 + ((mix >>> 11) % 34));
     const summary = isRare
-        ? 'Лунная Юна с фиолетовыми ушами и хвостом (✦ 0.1%)'
+        ? 'Белая Юна с фиолетовыми ушами и хвостом (✦ 0.1%)'
         : breed.name;
     return {
         breedIdx, breed, rare: isRare, rarity: isRare ? '0.1%' : '', browSpot, woofHz, seed: mix, summary
@@ -9317,7 +9317,7 @@ function touchRoomObject(obj, event) {
                 ])
             : (myDog.rare
                 ? [
-                    `Ваша редчайшая Лунная Юна (шанс 0.1%!) сонно дрогнула шелковистыми фиолетовыми ушками и мягко взмахнула фиолетовым хвостом сквозь дрёму!`,
+                    `Ваша редчайшая Белая Юна (шанс 0.1%!) сонно дрогнула шелковистыми фиолетовыми ушками и мягко взмахнула фиолетовым хвостом сквозь дрёму!`,
                     `Белоснежное чудо с фиолетовыми ушками и фиолетовым хвостом блаженно зажмурилось от ласки, ещё уютнее подогнув лапки на персидском коврике.`
                 ]
                 : [
@@ -10323,10 +10323,10 @@ function cyclePtsDogBreed() {
     const shown = activeDogSpec();
     roomAnim.dogPetStart = typeof performance !== 'undefined' ? performance.now() : Date.now();
     roomAnim.customMode = shown.rare
-        ? 'PTS // ✦ ПЁС 0.1% · ЛУННАЯ ЮНА'
+        ? 'PTS // ✦ ПЁС 0.1% · БЕЛАЯ ЮНА'
         : `PTS // ПЁС ${next + 1}/7 · ${shown.breed.name.toUpperCase()}`;
     roomAnim.customEntry = shown.rare
-        ? `Ультра-редкая порода (шанс 0.1%): Лунная Юна с фиолетовыми ушами и фиолетовым хвостом!`
+        ? `Ультра-редкая порода (шанс 0.1%): Белая Юна с фиолетовыми ушами и фиолетовым хвостом!`
         : (next === own.breedIdx
             ? `Ваш родной пёс: ${shown.summary}.`
             : `Осмотр породы «${shown.breed.name}» (родной: ${own.breed.name}).`);

@@ -9894,6 +9894,39 @@ function renderFeedPager(warmthArg, ledgerArg) {
     if (subEl) subEl.textContent = subLine;
 }
 
+// ПАМЯТКА — показывает/скрывает подсказки на дисплее пейджера
+let pagerMemorialOpen = false;
+function togglePagerMemorial() {
+    if (typeof document === 'undefined') return;
+    const hints = document.getElementById('feed-pager-hints');
+    const btn = document.getElementById('feed-pager-memorial-btn');
+    if (!hints) return;
+    pagerMemorialOpen = !pagerMemorialOpen;
+    if (pagerMemorialOpen) {
+        const adm = (typeof roomAnim !== 'undefined')
+            ? whisperAdmission(Number(roomAnim.warmth) || 0, loadWarmthLedger())
+            : null;
+        const lines = [];
+        if (adm && adm.live) {
+            lines.push(`▸ Канал «Шёпот» активен. Сегодня осталось ${adm.whisperLeftToday}/${adm.whisperSendCap} отклика.`);
+            lines.push(`▸ Читайте истории в эфире. Отвечать не обязательно — слушайте своё состояние.`);
+            lines.push(`▸ Кассета VTR-90 даёт +4 Тепла растению (1 раз в день).`);
+        } else {
+            lines.push(`▸ Канал «Шёпот» сейчас выключен. Тепло вернёт его.`);
+            lines.push(`▸ Держите станцию в тепле — растение растёт от ваших откликов.`);
+        }
+        lines.push(`▸ Личные шёпоты — это ваш выбор, а не долг.`);
+        hints.innerHTML = lines.map(l => `<div>${l}</div>`).join('');
+        hints.classList.remove('hidden');
+        if (btn) btn.classList.add('is-active');
+    } else {
+        hints.classList.add('hidden');
+        hints.innerHTML = '';
+        if (btn) btn.classList.remove('is-active');
+    }
+    if (typeof SFX !== 'undefined' && SFX.tap) SFX.tap();
+}
+
 async function syncPagerWhispers() {
     if (typeof supabaseClient === 'undefined' || !supabaseClient) return;
     try {

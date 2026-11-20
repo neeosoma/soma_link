@@ -421,8 +421,8 @@ function applyCosmeticsToUI() {
     if (typeof document === 'undefined') return;
     const c = getActiveCosmetics();
 
-    // 1) Скин пейджера SOMA // PGR-04
-    const pager = document.getElementById('soma-pager');
+    // 1) Скин пейджера SOMA // NMAV-04 (вкладка «ПЕЙДЖЕР» + модалка)
+    const pager = document.getElementById('feed-pager') || document.getElementById('soma-pager');
     if (pager) {
         if (c.pager) pager.dataset.skin = c.pager;
         else delete pager.dataset.skin;
@@ -490,15 +490,16 @@ function switchShopTab(tab) {
 function tryCosmetic(id) {
     const it = SOMA_ITEM_MAP[id];
     if (!it) return;
-    // Для атрибутов комнаты и пейджера сразу показываем живую примерку прямо в вашей комнате!
+    // Для атрибутов комнаты и пейджера сразу показываем живую примерку!
     if (it.tab === 'room' || it.tab === 'pager') {
         shopState.preview = id;
         shopState.liveRoomTry = true;
         const m = document.getElementById('shop-modal');
         if (m) m.classList.add('hidden');
-        if (typeof switchTab === 'function') switchTab('room');
+        // Пейджер живёт во вкладке «ПЕЙДЖЕР», комната — во вкладке «КОМНАТА»
+        if (typeof switchTab === 'function') switchTab(it.tab === 'pager' ? 'feed' : 'room');
         applyCosmeticsToUI();
-        if (typeof renderRoom === 'function') renderRoom();
+        if (it.tab === 'room' && typeof renderRoom === 'function') renderRoom();
         if (it.id === 'room_cat' && typeof roomAnim !== 'undefined') {
             roomAnim.catPetStart = typeof performance !== 'undefined' ? performance.now() : Date.now();
             if (typeof playObjectTone === 'function') playObjectTone('cat');
@@ -509,7 +510,7 @@ function tryCosmetic(id) {
             SFX.tap();
         }
         if (it.tab === 'pager') {
-            const pg = document.getElementById('soma-pager');
+            const pg = document.getElementById('feed-pager') || document.getElementById('soma-pager');
             if (pg && pg.scrollIntoView) try { pg.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (_) {}
         } else {
             const st = document.getElementById('station');
@@ -823,9 +824,9 @@ function renderShop() {
         const eqLabel = it.slot === 'epitaph_unlock'
             ? '✓ ПРАВО АКТИВНО (ПОЛЕ ВЫШЕ)'
             : (eq ? '✓ НАДЕТО (СНЯТЬ)' : 'НАДЕТЬ');
-        const tryLabel = (it.tab === 'room' || it.tab === 'pager')
-            ? 'В КОМНАТЕ'
-            : (trying ? 'СБРОС' : 'ПРИМЕРИТЬ');
+        const tryLabel = it.tab === 'pager'
+            ? 'ПРИМЕРИТЬ'
+            : (it.tab === 'room' ? 'В КОМНАТЕ' : (trying ? 'СБРОС' : 'ПРИМЕРИТЬ'));
         const motionNote = (it.slot === 'seal' && it.motion)
             ? `<span class="text-[8.5px] font-mono-tech text-rose-300/75">· ${esc(it.motion)}</span>`
             : '';

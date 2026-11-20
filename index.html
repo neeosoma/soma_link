@@ -350,64 +350,18 @@
         <button type="button" onclick="openSafety()" class="safety-link">🛟 Нужны варианты поддержки?</button>
 
         <!-- ЛЕНТА ИСТОРИЙ -->
-        <div id="view-feed" class="flex-1 overflow-y-auto p-3 space-y-2.5 pb-20 feed-content">
-            <header class="feed-heading">
-                <div>
-                    <span class="feed-kicker">ЖИВАЯ ЧАСТОТА</span>
-                    <h1>Пейджер</h1>
-                    <p>Один случайный сигнал. Читать, откликнуться или пройти мимо — ваш выбор.</p>
-                </div>
-                <button id="open-post-btn" type="button" onclick="openPostModal()" class="soma-post-cta feed-write-btn">
-                    <span class="soma-post-beacon" aria-hidden="true"></span>
-                    <span id="open-post-title">＋ Рассказать</span>
-                    <span id="open-post-badge" class="feed-write-badge">1 / день</span>
-                    <span id="open-post-sub" class="sr-only">Любая тема — трудное, хорошее или обычный день.</span>
-                    <span id="open-post-arrow" class="sr-only">→</span>
+        <div id="view-feed" class="flex-1 overflow-y-auto p-3 space-y-3 pb-20 feed-content">
+            <!-- Верхняя панель: единственная кнопка «Отправить сигнал» -->
+            <div class="feed-action-bar">
+                <button id="open-post-btn" type="button" onclick="openPostModal()" class="feed-send-btn">
+                    <span class="feed-send-glow" aria-hidden="true"></span>
+                    <span class="feed-send-glyph" aria-hidden="true">✦</span>
+                    <span id="open-post-title" class="feed-send-label">Отправить сигнал</span>
+                    <span id="open-post-badge" class="feed-send-badge">1 / день</span>
                 </button>
-            </header>
-
-            <section id="first-signal-entry" class="first-session-card" hidden aria-label="Первый выбор">
-                <div class="first-session-kicker">ПЕРВЫЙ ШАГ</div>
-                <p id="first-session-copy">Одна настоящая история. Читать, отвечать или пройти мимо — ваш выбор.</p>
-                <div class="first-session-actions">
-                    <button type="button" id="first-session-open" onclick="openFirstSessionSignal()">ОТКРЫТЬ ИСТОРИЮ</button>
-                    <button type="button" id="first-session-look" onclick="completeFirstSession('look')">ОСМОТРЕТЬСЯ</button>
-                </div>
-            </section>
-
-            <section id="night-ritual-card" class="night-ritual-strip" aria-label="Общая атмосфера станции">
-                <span class="night-ritual-kicker">ОБЩИЙ ЭФИР</span>
-                <p id="night-ritual-copy" role="status" aria-live="polite">Общий фон станции обновится позже. Ничего делать не нужно.</p>
-            </section>
-
-            <details id="feed-filters" class="feed-filters" hidden>
-                <summary>
-                    <span>ФИЛЬТРЫ</span>
-                    <span id="feed-filter-status">Все истории</span>
-                    <span class="feed-filter-chevron" aria-hidden="true">⌄</span>
-                </summary>
-                <div class="feed-filter-options">
-                    <section class="contact-boundaries" aria-label="Границы чтения">
-                        <label><input id="contact-light" type="checkbox"> Сегодня без тяжёлого</label>
-                        <p class="signal-caption">Покажем больше тем «Победа» и «Делюсь». Метки ставят авторы; они не гарантируют лёгкую тему.</p>
-                        <div id="contact-intent-filters" class="contact-filter-row" aria-label="Какой отклик вам сейчас нужен?"></div>
-                        <button id="contact-restore" type="button" class="contact-quiet">Вернуть скрытые истории</button>
-                        <span id="contact-status" class="signal-caption" role="status"></span>
-                    </section>
-                    <div class="feed-theme-filter">
-                        <span>ТЕМА</span>
-                        <div id="feed-filter-bar" role="tablist" aria-label="Фильтр историй по теме"></div>
-                    </div>
-                </div>
-            </details>
-
-            <div id="posts-container" class="space-y-3">
-                <div class="text-center text-xs text-gray-500 py-10 font-mono-tech">Загрузка историй…</div>
+                <span id="open-post-sub" class="feed-send-note">Один сигнал в день. Читать и откликаться можно всегда.</span>
             </div>
-            <details class="feed-filters">
-                <summary>МОИ СИГНАЛЫ · ТИХИЕ ЗНАКИ</summary>
-                <div id="pager-own-posts" class="space-y-3" aria-live="polite"></div>
-            </details>
+
             <!-- РЕТРО-ПЕЙДЖЕР «ШЁПОТА» NEEOSOMA // NMAV-04 -->
             <section id="soma-pager" class="soma-pager" data-state="locked" data-admitted="0" aria-label="Пейджер частоты «Шёпот»">
                 <div class="pager-top">
@@ -430,18 +384,19 @@
                 </div>
             </section>
 
-            <section id="visit-entry" class="visit-entry" aria-label="Случайная чужая комната">
-                <div class="visit-entry-head">
-                    <span class="visit-entry-kicker">СТАНЦИЯ ЧУЖОГО СЛУШАТЕЛЯ</span>
-                    <button type="button" id="visit-start" onclick="startRandomVisit()">▶ ЗАГЛЯНУТЬ В СЛЕДУЮЩУЮ КОМНАТУ</button>
+            <!-- Панель под пейджером: анонимный визит + тёплая заметка, в едином красно-чёрном стиле -->
+            <section class="feed-console" aria-label="Станция слушателей">
+                <div class="feed-console-head">
+                    <span class="feed-console-kicker">СТАНЦИЯ ЧУЖОГО СЛУШАТЕЛЯ</span>
+                    <button type="button" id="visit-start" onclick="startRandomVisit()" class="feed-console-btn">▶ ЗАГЛЯНУТЬ В СЛЕДУЮЩУЮ КОМНАТУ</button>
                 </div>
-                <div id="visit-host" class="visit-host">
+                <div id="visit-host" class="feed-console-host">
                     <p class="signal-caption">Нажмите, чтобы заглянуть в случайную комнату станции.</p>
                 </div>
+                <div id="feed-ritual-hint" class="feed-console-note">
+                    <span id="feed-warmth-status">Пауза по желанию согревает только вашу комнату. Автор её не увидит.</span>
+                </div>
             </section>
-            <div id="feed-ritual-hint" class="feed-personal-note">
-                <span id="feed-warmth-status">Пауза по желанию согревает только вашу комнату. Автор её не увидит.</span>
-            </div>
         </div>
 
         <!-- ЭКРАН 3: ПРОФИЛЬ -->
@@ -963,6 +918,7 @@
         const api = window.SOMA_SIGNALS;
         const prefs = api.readPrefs(localStorage);
         const light = document.getElementById('contact-light');
+        if (!light) return;
         light.checked = prefs.light;
         light.onchange = () => {
             const next = api.readPrefs(localStorage);
@@ -971,7 +927,8 @@
             catch (_) { light.checked = !light.checked; notify('Не удалось сохранить настройку чтения.'); }
             renderFeed();
         };
-        document.getElementById('contact-restore').onclick = () => {
+        const contactRestore = document.getElementById('contact-restore');
+        if (contactRestore) contactRestore.onclick = () => {
             const next = api.readPrefs(localStorage);
             next.hidden = [];
             try { api.writePrefs(localStorage, next); }
@@ -997,14 +954,18 @@
         const api = window.SOMA_SIGNALS;
         const prefs = api.readPrefs(localStorage);
         const bar = document.getElementById('contact-intent-filters');
-        const choices = [{ id: 'all', title: 'Все голоса' }, ...api.INTENTS];
-        bar.innerHTML = choices.map(x => `<button type="button" data-contact-intent="${x.id}" aria-pressed="${contactIntent === x.id}" class="contact-filter">${esc(x.title)}</button>`).join('');
-        bar.querySelectorAll('[data-contact-intent]').forEach(button => {
-            button.onclick = () => { contactIntent = button.dataset.contactIntent; activeFeedTag = 'ВСЕ'; renderFeed(); };
-        });
-        document.getElementById('contact-status').textContent = prefs.hidden.length
+        if (bar) {
+            const choices = [{ id: 'all', title: 'Все голоса' }, ...api.INTENTS];
+            bar.innerHTML = choices.map(x => `<button type="button" data-contact-intent="${x.id}" aria-pressed="${contactIntent === x.id}" class="contact-filter">${esc(x.title)}</button>`).join('');
+            bar.querySelectorAll('[data-contact-intent]').forEach(button => {
+                button.onclick = () => { contactIntent = button.dataset.contactIntent; activeFeedTag = 'ВСЕ'; renderFeed(); };
+            });
+        }
+        const contactStatus = document.getElementById('contact-status');
+        if (contactStatus) contactStatus.textContent = prefs.hidden.length
             ? `Скрыто здесь: ${prefs.hidden.length}. Не жалоба и не блокировка.` : '';
-        document.getElementById('contact-restore').hidden = prefs.hidden.length === 0;
+        const contactRestore = document.getElementById('contact-restore');
+        if (contactRestore) contactRestore.hidden = prefs.hidden.length === 0;
     }
     function hideContactPost(id) {
         const api = window.SOMA_SIGNALS;
@@ -1599,25 +1560,18 @@
         const title = document.getElementById('open-post-title');
         const badge = document.getElementById('open-post-badge');
         const sub = document.getElementById('open-post-sub');
-        const arrow = document.getElementById('open-post-arrow');
-        if (btn && title && badge && sub && arrow) {
+        if (btn && title && badge && sub) {
             btn.dataset.locked = sent ? '1' : '0';
-            title.className = 'feed-write-title';
-            badge.className = 'feed-write-badge';
-            sub.className = 'sr-only';
-            arrow.className = 'sr-only';
             if (sent) {
                 title.textContent = 'Сигнал дня уже опубликован';
                 badge.textContent = 'завтра';
                 sub.textContent = `Новая публикация будет доступна через ${left}. Читать и откликаться можно дальше.`;
-                arrow.textContent = '';
             } else {
                 let hasDraft = false;
                 try { hasDraft = !!(localStorage.getItem(POST_DRAFT_KEY) || '').trim(); } catch (e) {}
-                title.textContent = hasDraft ? 'Продолжить черновик' : 'Рассказать историю';
-                badge.textContent = hasDraft ? 'черновик' : '1 в день';
-                sub.textContent = 'Обычные дни, радость и трудные темы — всё можно рассказать.';
-                arrow.textContent = '';
+                title.textContent = hasDraft ? 'Продолжить черновик' : 'Отправить сигнал';
+                badge.textContent = hasDraft ? 'черновик' : '1 / день';
+                sub.textContent = 'Один сигнал в день. Читать и откликаться можно всегда.';
             }
         }
         const qHint = document.getElementById('post-quota-hint');
@@ -1746,6 +1700,10 @@
         if (typeof renderFirstSignalEntry === 'function') renderFirstSignalEntry();
         if (typeof roomAnim !== 'undefined' && roomAnim.pagerModalOpen) renderPagerModal();
         const container = document.getElementById('posts-container');
+        if (!container) {
+            updatePostQuotaUI();
+            return;
+        }
         container.innerHTML = '';
         feedShownAt = performance.now();
         updatePostQuotaUI();

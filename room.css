@@ -2205,37 +2205,99 @@ html.is-soma-fs-closing .app-h {
 }
 
 #view-feed.feed-content { padding: 10px 13px 80px; }
-.feed-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.feed-heading > div { min-width: 0; }
-.feed-kicker { color: #b79382; font: 8px 'Share Tech Mono', monospace; letter-spacing: 0.11em; }
-.feed-heading h1 { margin: 1px 0 0; color: #f2e4dc; font: 600 21px/1.15 'Inter', sans-serif; }
-.feed-heading p { margin: 3px 0 0; color: #ac9ba0; font: 10.5px/1.35 'Inter', sans-serif; }
 
-.soma-post-cta.feed-write-btn {
+/* ===== Верхняя панель: единственная кнопка «Отправить сигнал» ===== */
+.feed-action-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+.feed-send-btn {
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    flex: 0 0 auto;
-    min-height: 38px;
-    max-width: 138px;
-    padding: 7px 9px;
+    gap: 8px;
+    width: 100%;
+    min-height: 52px;
+    padding: 10px 16px;
     overflow: hidden;
-    border: 1px solid rgba(201, 154, 130, 0.34);
-    border-radius: 9px;
-    background: #171216;
-    box-shadow: none;
-    color: #efdbd0;
-    text-align: center;
+    border: 1px solid #8f2c3f;
+    border-radius: 12px;
+    background:
+        radial-gradient(120% 100% at 50% 0%, #4a121f 0%, #2a0913 55%, #19070b 100%);
+    box-shadow:
+        0 8px 22px rgba(0, 0, 0, 0.55),
+        inset 0 1px 0 rgba(255, 120, 140, 0.2),
+        inset 0 -2px 0 rgba(0, 0, 0, 0.6);
+    color: #ffe1e6;
+    font: 600 13px/1 'Share Tech Mono', monospace;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: transform 0.08s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
-
-.soma-post-cta.feed-write-btn::before,
-.soma-post-cta.feed-write-btn::after { display: none; }
-.soma-post-cta.feed-write-btn:active { transform: scale(0.98); }
-.soma-post-cta.feed-write-btn .soma-post-beacon { display: none; }
-.soma-post-cta.feed-write-btn[data-locked="1"] { border-color: rgba(201, 177, 152, 0.22); background: #141114; }
-.feed-write-title { overflow: hidden; color: #ecd6ca; font: 10px 'Share Tech Mono', monospace; text-overflow: ellipsis; white-space: nowrap; }
-.feed-write-badge { flex: 0 0 auto; color: #b99d8e; font: 8px 'Share Tech Mono', monospace; }
+.feed-send-btn::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255, 90, 110, 0.16), transparent 60%);
+    pointer-events: none;
+}
+.feed-send-btn:hover { border-color: #c9384c; }
+.feed-send-btn:active { transform: translateY(1.5px); box-shadow: 0 2px 10px rgba(0, 0, 0, 0.6); }
+.feed-send-btn[data-locked="1"] {
+    border-color: #4a1a24;
+    background: linear-gradient(180deg, #1d0a12 0%, #12060a 100%);
+    color: #b07d84;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+.feed-send-glow {
+    position: absolute;
+    inset: -40% -10% auto -10%;
+    height: 140%;
+    background: radial-gradient(60% 50% at 50% 0%, rgba(255, 90, 110, 0.28), transparent 70%);
+    pointer-events: none;
+    animation: feed-send-pulse 3.4s ease-in-out infinite;
+}
+.feed-send-btn[data-locked="1"] .feed-send-glow { animation: none; opacity: 0.4; }
+@keyframes feed-send-pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+.feed-send-glyph {
+    position: relative;
+    z-index: 1;
+    color: #ff7a8c;
+    font-size: 14px;
+    text-shadow: 0 0 8px rgba(255, 90, 110, 0.7);
+}
+.feed-send-label {
+    position: relative;
+    z-index: 1;
+    white-space: nowrap;
+}
+.feed-send-badge {
+    position: relative;
+    z-index: 1;
+    flex: 0 0 auto;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 130, 150, 0.35);
+    background: rgba(120, 18, 32, 0.5);
+    color: #ffb8c2;
+    font: 8px 'Share Tech Mono', monospace;
+    letter-spacing: 0.06em;
+}
+.feed-send-note {
+    text-align: center;
+    color: #8a5a62;
+    font: 9px/1.35 'Share Tech Mono', monospace;
+    letter-spacing: 0.04em;
+}
 
 .first-session-card {
     padding: 10px 11px;
@@ -2311,7 +2373,16 @@ html.is-soma-fs-closing .app-h {
 .feed-topic-btn.is-active { border-color: rgba(210, 171, 137, 0.68); background: #292023; color: #f1dfd2; }
 .feed-filters button:focus-visible { outline: 2px solid #e2c4a2; outline-offset: 2px; }
 
-.feed-personal-note { display: flex; align-items: center; justify-content: flex-start; gap: 8px; padding: 7px 9px; border: 1px solid rgba(195, 169, 157, 0.11); border-radius: 8px; color: #a99b93; font: 9px 'Share Tech Mono', monospace; }
+.feed-console-note {
+    margin-top: 10px;
+    padding: 8px 10px;
+    border: 1px solid rgba(138, 38, 54, 0.22);
+    border-radius: 9px;
+    background: #14090c;
+    color: #9a6b72;
+    font: 9px/1.4 'Share Tech Mono', monospace;
+    letter-spacing: 0.02em;
+}
 #feed-warmth-status { color: #b9aeb0; }
 
 .station-night-ritual-note,
@@ -2416,3 +2487,86 @@ html.is-soma-fs-closing .app-h {
     border-radius: 9px; padding: 7px 11px; font: 9px 'Share Tech Mono', monospace; cursor: pointer;
 }
 .gh-tab-status { color: #9d9095; font: 8px 'Share Tech Mono', monospace; }
+
+/* ===== Консоль под пейджером: единая красно-чёрная панель ===== */
+.feed-console {
+    border: 1px solid rgba(138, 38, 54, 0.28);
+    border-radius: 14px;
+    background:
+        radial-gradient(120% 60% at 50% 0%, rgba(120, 20, 36, 0.16) 0%, transparent 70%),
+        linear-gradient(180deg, #150a0e 0%, #100608 100%);
+    box-shadow:
+        0 10px 26px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 120, 140, 0.08);
+    overflow: hidden;
+}
+.feed-console-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 13px;
+    border-bottom: 1px solid rgba(138, 38, 54, 0.2);
+    background: rgba(60, 12, 22, 0.28);
+}
+.feed-console-kicker {
+    color: #c95869;
+    font: 9px 'Share Tech Mono', monospace;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+.feed-console-btn {
+    flex: 0 0 auto;
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 110, 130, 0.4);
+    background: linear-gradient(180deg, #2a0d14 0%, #1a070c 100%);
+    color: #ffb8c2;
+    font: 9px 'Share Tech Mono', monospace;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: border-color 0.2s ease, color 0.2s ease;
+}
+.feed-console-btn:hover { border-color: #ff7a8c; color: #ffe1e6; }
+.feed-console-btn:active { transform: translateY(1px); }
+.feed-console-host { padding: 12px 13px; }
+.feed-console .visit-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.feed-console .visit-kicker {
+    color: #b06a72;
+    font: 8px 'Share Tech Mono', monospace;
+    letter-spacing: 0.1em;
+}
+.feed-console .visit-next,
+.feed-console .visit-enter {
+    padding: 5px 9px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 110, 130, 0.4);
+    background: linear-gradient(180deg, #240b11 0%, #160609 100%);
+    color: #ffb8c2;
+    font: 9px 'Share Tech Mono', monospace;
+    white-space: nowrap;
+    cursor: pointer;
+}
+.feed-console .visit-scene {
+    border-radius: 12px;
+    overflow: hidden;
+    background: #0b0306;
+    border: 1px solid #481822;
+}
+.feed-console .visit-canvas { display: block; width: 100%; height: auto; }
+.feed-console .visit-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+.feed-console .visit-note { color: #7d555c; font: 9px 'Share Tech Mono', monospace; }

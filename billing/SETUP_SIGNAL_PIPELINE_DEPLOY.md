@@ -11,16 +11,25 @@
 на глубине: даже если RLS-политики сбились или не настроены, RPC-функции
 как `security definer` обходят их напрямую.
 
+**v2 (SETOF):** функции возвращают `RETURNS SETOF public.soma_posts` /
+`RETURNS SETOF public.soma_whispers` — тип берётся из реальной таблицы.
+Это исключает ошибку `42804 structure of query does not match function result type`,
+которая возникала при `RETURNS TABLE(...)` из-за расхождения типов колонок
+(например, `created_at`) между локальной схемой и реальной в Supabase.
+
 ## SQL-миграция
 
 Файл: `billing/setup_signal_pipeline.sql`
 
 ### Что создаёт миграция
 
+Все функции возвращают `SETOF` реальной таблицы (тип берётся из схемы —
+не вызывает `42804`):
+
 1. **`submit_soma_post(p_id, p_author, p_tag, p_text)`** — вставка сигнала
-   (`soma_posts`). Возвращает созданную строку.
+   (`soma_posts`). Возвращает созданную строку (`SETOF soma_posts`).
 2. **`send_soma_whisper(p_id, p_post_id, p_post_tag, p_post_preview, p_sender_uid, p_text)`** —
-   вставка шёпота (`soma_whispers`). Возвращает созданный шёпот.
+   вставка шёпота (`soma_whispers`). Возвращает созданный шёпот (`SETOF soma_whispers`).
 3. **`set_soma_whisper_status(p_id, p_status)`** — обновление статуса
    шёпота (`pending → saved/dismissed`). Возвращает обновлённую строку.
 4. **`get_my_pending_whispers(p_post_ids)`** — чтение входящих pending-шёпотов

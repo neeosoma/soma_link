@@ -1,9 +1,13 @@
 -- ======================================================================
--- SOMA~LINK // SIGNAL PIPELINE — все write-операции через RPC (service_role)
--- Решёт проблему RLS 42501: клиент не вписывает строки напрямую —
+-- SOMA~LINK // SIGNAL PIPELINE v2 — все write-операции через RPC (security definer)
+-- Решёт проблему RLS 42501 и 42804: клиент не вписывает строки напрямую —
 -- все вставки и обновления выполняются серверными функциями
 -- security definer, которые работают с правами владельца и
 -- НЕ зависят от политик RLS на таблицах.
+--
+-- v2: RETURNS SETOF <table> вместо RETURNS TABLE(explicit types) —
+-- гарантирует совпадение структуры с реальной схемой таблицы в Supabase
+-- (не вызывает 42804 при расхождении типов колонок, например created_at).
 --
 -- Применить в Supabase → SQL Editor → New query → Run (как owner).
 -- Идемпотентно: повторный запуск ничего не ломает.
@@ -14,12 +18,13 @@ begin;
 
 -- ======================================================================
 -- 1. Submit signal (player sends a story to the feed)
---    Возвращает строку с созданным постом (id, author, tag, text).
+--    RETURNS SETOF public.soma_posts — тип берётся из реальной таблицы,
+--    исключает 42804 при расхождении типов колонок.
 -- ======================================================================
 create or replace function public.submit_soma_post(
     p_id text, p_author text, p_tag text, p_text text
 )
-returns table(id text, author text, tag text, "text" text, created_at timestamptz)
+returns setof public.soma_posts
 language plpgsql
 security definer
 set search_path = public, pg_temp
@@ -40,7 +45,7 @@ begin
     values (p_id, p_author, p_tag, p_text);
 
     return query
-        select sp.id, sp.author, sp.tag, sp."text", sp.created_at
+        select sp.*
         from public.soma_posts sp
         where sp.id = p_id;
 end;
@@ -48,14 +53,14 @@ $$;
 
 -- ======================================================================
 -- 2. Send whisper (player whispers to a story)
---    Возвращает созданный шёпот (id, post_id, sender_uid, text, status).
+--    RETURNS SETOF public.soma_whispers — тип берётся из реальной таблицы.
 --    Предотвращает двойные шёпоты: unique (post_id, sender_uid).
 -- ======================================================================
 create or replace function public.send_soma_whisper(
     p_id text, p_post_id text, p_post_tag text, p_post_preview text,
     p_sender_uid text, p_text text
 )
-returns table(o_id text, o_post_id text, o_sender_uid text, o_text text, o_status text, o_created timestamptz)
+returns setof public.soma_whispers
 language plpgsql
 security definer
 set search_path = public, pg_temp
@@ -91,26 +96,24 @@ begin
 
     select * into r_row from public.soma_whispers where id = p_id;
 
-    return query select r_row.id as o_id, r_row.post_id as o_post_id, r_row.sender_uid as o_sender_uid,
-        r_row."text" as o_text, r_row.status as o_status, r_row.created_at as o_created;
+    return query select r_row.*;
 end;
 $$;
 
 -- ======================================================================
 -- 3. Set whisper status (saved / dismissed) — для кассет и ack
---    Возвращает обновлённую строку (id, status).
+--    RETURNS SETOF public.soma_whispers — тип берётся из реальной таблицы.
 -- ======================================================================
 create or replace function public.set_soma_whisper_status(
     p_id text, p_status text
 )
-returns table(o_id text, o_status text)
+returns setof public.soma_whispers
 language plpgsql
 security definer
 set search_path = public, pg_temp
 as $$
 declare
-    v_id text;
-    v_status text;
+    r_row public.soma_whispers%rowtype;
 begin
     if p_status not in ('saved', 'dismissed', 'pending') then
         raise exception 'invalid_status';
@@ -119,22 +122,23 @@ begin
     update public.soma_whispers
     set status = p_status
     where id = p_id
-    returning id, status
-    into v_id, v_status;
+    returning *
+    into r_row;
 
-    if v_id is null then
+    if r_row.id is null then
         raise exception 'whisper_not_found';
     end if;
 
-    return query select v_id as o_id, v_status as o_status;
+    return query select r_row.*;
 end;
 $$;
 
 -- ======================================================================
 -- 4. Get pending whispers for my posts (read — через definer для надёжности)
+--    RETURNS SETOF public.soma_whispers — тип берётся из реальной таблицы.
 -- ======================================================================
 create or replace function public.get_my_pending_whispers(p_post_ids text[])
-returns table(o_id text, o_post_id text, o_post_tag text, o_post_preview text, o_text text, o_created timestamptz, o_status text)
+returns setof public.soma_whispers
 language plpgsql
 security definer
 set search_path = public, pg_temp
@@ -145,9 +149,7 @@ begin
     end if;
 
     return query
-        select w.id as o_id, w.post_id as o_post_id, w.post_tag as o_post_tag,
-               w.post_preview as o_post_preview, w.text as o_text,
-               w.created_at as o_created, w.status as o_status
+        select w.*
         from public.soma_whispers w
         where w.post_id = any(p_post_ids)
           and w.status = 'pending'
@@ -158,16 +160,16 @@ $$;
 
 -- ======================================================================
 -- 5. Get saved whispers of the current Auth user (cassette echoes)
---    (дубликат my_saved_soma_whispers — для надёжности pipeline)
+--    RETURNS SETOF public.soma_whispers — тип берётся из реальной таблицы.
 -- ======================================================================
 create or replace function public.get_my_saved_whispers()
-returns table(id text, status text, created_at timestamptz)
+returns setof public.soma_whispers
 language sql
 security definer
 set search_path = public, pg_temp
 stable
 as $$
-    select w.id, w.status, w.created_at
+    select w.*
     from public.soma_whispers w
     where w.sender_auth_id = auth.uid()
       and w.status = 'saved'

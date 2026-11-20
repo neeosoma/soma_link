@@ -94,6 +94,7 @@
         moodIdx: 0,
         selected: 0,
         ptsDemo: null, // null | 'full' (только на PTS для превью 7/7 + пришелец без порчи сохранения)
+        visitSnapshot: null, // anonymous room snapshot for a visitor's greenhouse
         raf: 0,
         overlay: null,
         canvas: null,
@@ -136,6 +137,27 @@
     }
 
     function getSnapshot() {
+        // Guest snapshot from a visit: render the visitor's greenhouse, not ours.
+        if (state.visitSnapshot && state.visitSnapshot.greenhouse) {
+            const gh = state.visitSnapshot.greenhouse;
+            const own = state.visitSnapshot.own || { kind: gh.active_kind || 0, kindName: 'РАСТЕНИЕ', seed: 42 };
+            const activeSeed = gh.active_seed
+                ? { kind: gh.active_seed.kind, grownWarmth: gh.active_seed.stage >= 0 ? 1 : 0, startWarmth: 0 }
+                : null;
+            const alienSeed = gh.alien_seed && gh.alien_kind !== null
+                ? { kind: gh.alien_kind, grownWarmth: gh.alien_stage >= 0 ? 1 : 0, bloomed: gh.alien_stage >= 5 }
+                : null;
+            const placed = gh.placed === 'seed' && activeSeed ? 'seed'
+                : (gh.placed === 'alien' && alienSeed ? 'alien'
+                    : (Number.isInteger(gh.placed) ? gh.placed : null));
+            return {
+                own,
+                myAlien: typeof alienSpec === 'function' ? alienSpec('visit_' + (gh.alien_seed ? gh.alien_seed.seed : 42), gh.alien_kind) : null,
+                gh: { bloomed: Array.isArray(gh.bloomed) ? gh.bloomed : [], activeSeed, alienSeed, placed, pots: gh.pots || {} },
+                isDemo: false,
+                isVisit: true
+            };
+        }
         const own = typeof plantSpec === 'function' ? plantSpec() : { kind: 0, kindName: 'ПАПОРОТНИК', seed: 42 };
         const myAlien = typeof alienSpec === 'function' ? alienSpec() : null;
         if (state.ptsDemo && typeof isPtsMode === 'function' && isPtsMode()) {
@@ -1158,6 +1180,7 @@
         state.ptsDemo = ptsOk ? 'full' : null;
         state.ptsDemoAlien = null;
         state.zen = false;
+        state.visitSnapshot = o.visitSnapshot || null;
 
         const snap = getSnapshot();
         if (snap.gh.placed === 'alien') state.selected = 'alien';
@@ -1180,6 +1203,7 @@
         if (!state.open) return;
         state.open = false;
         state.ptsDemo = null;
+        state.visitSnapshot = null;
         if (state.raf) { cancelAnimationFrame(state.raf); state.raf = 0; }
         if (state.overlay) state.overlay.classList.remove('is-open');
         if (typeof renderRoom === 'function') renderRoom();

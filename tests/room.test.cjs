@@ -294,7 +294,7 @@ test('release UI hides spoilers, pager replaces NEEO_PHONE, window picks unlocke
         assert.equal(sc.o.length, 3, 'each scenario has 3 choices');
         assert.equal(sc.o.filter(o => o[1] === 1).length, 1, 'each scenario has exactly 1 empathetic choice');
     }
-    const profileMatch = indexHtml.match(/<div id="view-profile"[\s\S]*?<script src="config\.js">/);
+    const profileMatch = indexHtml.match(/<div id="view-room"[\s\S]*?<script src="config\.js">/);
     assert.ok(profileMatch && !profileMatch[0].includes('openSafety('), 'bottom safety button in room view must be removed while sticky top banner stays');
     assert.ok(indexHtml.includes('onclick="openSafety()"'), 'top sticky crisis help button must stay intact');
 

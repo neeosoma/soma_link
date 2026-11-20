@@ -326,34 +326,34 @@ function weekResetCountdown() {
     return days > 0 ? `${days}д ${hrs}ч` : `${hrs}ч`;
 }
 
-function addWeeklyXp(delta) {
+function addWeeklyWarmth(delta) {
     const n = Math.max(0, Math.trunc(Number(delta) || 0));
     if (!n) return 0;
     const wk = currentWeekKey();
     let cur = 0;
     try {
         const raw = JSON.parse(localStorage.getItem('soma_week') || '{}') || {};
-        cur = raw.key === wk ? (Math.trunc(raw.xp) || 0) : 0;
+        cur = raw.key === wk ? (Math.trunc(raw.warmth) || 0) : 0;
         cur += n;
-        localStorage.setItem('soma_week', JSON.stringify({ key: wk, xp: cur }));
+        localStorage.setItem('soma_week', JSON.stringify({ key: wk, warmth: cur }));
     } catch (_) { cur = n; }
     if (typeof player !== 'undefined' && player) {
-        player.weeklyXp = cur;
+        player.weeklyWarmth = cur;
         player.weeklyKey = wk;
     }
     try {
         if (typeof supabaseClient !== 'undefined' && supabaseClient && player && player.uid) {
-            supabaseClient.from('soma_users').update({ weekly_xp: cur, weekly_key: wk }).eq('username', player.uid).then(() => {}, () => {});
+            supabaseClient.from('soma_users').update({ weekly_warmth: cur, weekly_key: wk }).eq('username', player.uid).then(() => {}, () => {});
         }
     } catch (_) {}
     return cur;
 }
 
-function getMyWeeklyXp() {
+function getMyWeeklyWarmth() {
     const wk = currentWeekKey();
     try {
         const raw = JSON.parse(localStorage.getItem('soma_week') || '{}') || {};
-        if (raw.key === wk) return Math.max(0, Math.trunc(raw.xp) || 0);
+        if (raw.key === wk) return Math.max(0, Math.trunc(raw.warmth) || 0);
     } catch (_) {}
     return 0;
 }
@@ -368,9 +368,9 @@ function hydrateCosmeticsFromCloud(row) {
         const hasLocal = Object.values(shopState.equipped).some(Boolean);
         if (!hasLocal) shopState.equipped = normalizeEquipped(row.cosmetics, shopState.owned);
     }
-    if (row.weekly_key === currentWeekKey() && typeof row.weekly_xp === 'number') {
-        const best = Math.max(getMyWeeklyXp(), row.weekly_xp);
-        try { localStorage.setItem('soma_week', JSON.stringify({ key: row.weekly_key, xp: best })); } catch (_) {}
+    if (row.weekly_key === currentWeekKey() && typeof row.weekly_warmth === 'number') {
+        const best = Math.max(getMyWeeklyWarmth(), row.weekly_warmth);
+        try { localStorage.setItem('soma_week', JSON.stringify({ key: row.weekly_key, warmth: best })); } catch (_) {}
     }
     saveCosmeticsLocal();
     applyCosmeticsToUI();
@@ -804,7 +804,7 @@ function renderShop() {
         prev.innerHTML = `
             <div class="flex justify-between items-center gap-2">
                 <span class="top-row-name">${sealHtmlOf(c)}<span>${esc(myAnon)}</span>${shopState.preview ? '<span class="top-you-tag">ПРИМЕРКА</span>' : ''}</span>
-                <span class="top-row-xp">${(typeof player !== 'undefined' && player.xp) || 0} XP</span>
+                <span class="top-row-xp">${(typeof player !== 'undefined' && player.warmth) || 0} ТЕПЛО</span>
             </div>
             ${tl ? `<div class="top-custom-title">${titleSpanOf(c, true)}</div>` : '<div class="text-[9.5px] text-gray-500">ОБЛИК В СОЗВЕЗДИИ СТАНЦИИ И КОМНАТЕ</div>'}
             ${c.epitaph ? `<p class="top-epitaph">«${esc(c.epitaph)}»</p>` : ''}
@@ -952,20 +952,18 @@ function switchTopMode(mode) {
     renderLeaderboard();
 }
 
-function rankTitleForXp(xp) {
-    const val = Math.max(0, Number(xp) || 0);
-    if (typeof ranks === 'undefined' || !ranks.length) return 'УР. 1 // СЛУЧАЙНЫЙ ПРОХОЖИЙ';
-    let cur = ranks[0];
-    for (let i = 0; i < ranks.length; i++) if (val >= ranks[i].minXp) cur = ranks[i];
-    return cur.title;
+function rankTitleForWarmth(warmth) {
+    // Уровни убраны — только тепло и звёзды атмосферы. Возвращаем нейтральный титул.
+    return 'ХРАНИТЕЛЬ СТАНЦИИ';
 }
 
-function starsForXp(xp) {
-    const val = Math.max(0, Number(xp) || 0);
-    if (typeof ranks === 'undefined' || !ranks.length) return 1;
-    let idx = 0;
-    ranks.forEach((r, i) => { if (val >= r.minXp) idx = i; });
-    return idx + 1;
+function starsForWarmth(warmth) {
+    // Звёзды по атмосферам: 4 атмосферы = до 4 звёзд.
+    const w = Math.max(0, Number(warmth) || 0);
+    if (w >= 240) return 4;
+    if (w >= 108) return 3;
+    if (w >= 20) return 2;
+    return 1;
 }
 
 function entryCosmetics(row) {
@@ -986,8 +984,8 @@ async function renderLeaderboard() {
     const subnote = document.getElementById('top-subnote');
     if (subnote) {
         subnote.textContent = isWeek
-            ? `ОПЫТ НЕДЕЛИ · ОБНОВЛЕНИЕ ЧЕРЕЗ ${weekResetCountdown()} · ЭТО ИГРОВОЙ ОПЫТ, НЕ ОЦЕНКА ЭМПАТИИ`
-            : 'ЗВЁЗДЫ СТАНЦИИ · ИГРОВОЙ ОПЫТ, НЕ РЕЙТИНГ ДОБРОТЫ';
+            ? `ТЕПЛО НЕДЕЛИ · ОБНОВЛЕНИЕ ЧЕРЕЗ ${weekResetCountdown()} · ЭТО ТЕПЛО СТАНЦИИ, НЕ ОЦЕНКА ЭМПАТИИ`
+            : 'ХРАНИТЕЛИ СТАНЦИИ · ТЕПЛО СТАНЦИИ, НЕ РЕЙТИНГ ДОБРОТЫ';
     }
 
     let data = null, myRank = null, weekSupported = isWeek;
@@ -996,13 +994,13 @@ async function renderLeaderboard() {
             if (isWeek) {
                 const wRes = await supabaseClient
                     .from('soma_users')
-                    .select('username,xp,weekly_xp,weekly_key,help_attempts,cosmetics')
+                    .select('username,warmth,weekly_warmth,weekly_key,help_attempts,cosmetics')
                     .eq('weekly_key', wk)
-                    .gt('weekly_xp', 0)
-                    .order('weekly_xp', { ascending: false })
+                    .gt('weekly_warmth', 0)
+                    .order('weekly_warmth', { ascending: false })
                     .limit(LEADERBOARD_LIMIT);
                 if (!wRes.error && Array.isArray(wRes.data)) {
-                    data = wRes.data.map(r => ({ ...r, score: r.weekly_xp || 0 }));
+                    data = wRes.data.map(r => ({ ...r, score: r.weekly_warmth || 0 }));
                 } else {
                     weekSupported = false;
                 }
@@ -1011,29 +1009,29 @@ async function renderLeaderboard() {
                 // Пробуем расширенный запрос с cosmetics, а если колонка ещё не добавлена — мгновенный фолбэк!
                 let res = await supabaseClient
                     .from('soma_users')
-                    .select('username,xp,help_attempts,cosmetics')
-                    .order('xp', { ascending: false })
+                    .select('username,warmth,help_attempts,cosmetics')
+                    .order('warmth', { ascending: false })
                     .limit(LEADERBOARD_LIMIT);
                 if (res.error) {
                     res = await supabaseClient
                         .from('soma_users')
-                        .select('username,xp,help_attempts')
-                        .order('xp', { ascending: false })
+                        .select('username,warmth,help_attempts')
+                        .order('warmth', { ascending: false })
                         .limit(LEADERBOARD_LIMIT);
                 }
                 if (Array.isArray(res.data)) {
-                    data = res.data.map(r => ({ ...r, score: r.xp || 0 }));
+                    data = res.data.map(r => ({ ...r, score: r.warmth || 0 }));
                 }
-                const c = await supabaseClient.from('soma_users').select('username', { count: 'exact', head: true }).gt('xp', player.xp || 0);
+                const c = await supabaseClient.from('soma_users').select('username', { count: 'exact', head: true }).gt('warmth', player.warmth || 0);
                 if (typeof c.count === 'number') myRank = c.count + 1;
             }
         }
     } catch (_) {}
 
-    const myScore = (isWeek && weekSupported) ? getMyWeeklyXp() : (player.xp || 0);
+    const myScore = (isWeek && weekSupported) ? getMyWeeklyWarmth() : (player.warmth || 0);
     const meEntry = {
         username: player.uid || 'local_me',
-        xp: player.xp || 0,
+        warmth: player.warmth || 0,
         score: myScore,
         help_attempts: typeof getWhisperBreachCount === 'function' ? getWhisperBreachCount() : (player.whispersSent || 0),
         cosmetics: getActiveCosmetics()
@@ -1044,7 +1042,7 @@ async function renderLeaderboard() {
     } else {
         const idx = data.findIndex(x => x.username === player.uid);
         if (idx >= 0) {
-            data[idx] = { ...data[idx], score: Math.max(data[idx].score || 0, myScore), xp: Math.max(data[idx].xp || 0, player.xp || 0), cosmetics: getActiveCosmetics() };
+            data[idx] = { ...data[idx], score: Math.max(data[idx].score || 0, myScore), warmth: Math.max(data[idx].warmth || 0, player.warmth || 0), cosmetics: getActiveCosmetics() };
         } else if (isWeek && weekSupported && myScore > 0) {
             data.push(meEntry);
         }
@@ -1057,14 +1055,14 @@ async function renderLeaderboard() {
     shopState.lastBoard = data.map((r, i) => ({ ...r, place: i + 1 }));
     shopState.myRank = resolvedRank;
 
-    // 1) Плашка погони (мощнейший крючок азарта: сколько XP до соседа выше!)
+    // 1) Плашка погони (крючок азарта: сколько тепла до соседа выше!)
     const chaseEl = document.getElementById('top-chase');
     if (chaseEl) {
         let gapText = '', pct = 100;
         if (resolvedRank === 1) {
             const second = data[1];
             const lead = second ? Math.max(0, myScore - (second.score || 0)) : myScore;
-            gapText = second ? `ОТРЫВ ОТ #2: +${lead} XP` : 'ТРОН СВОБОДЕН — УДЕРЖИТЕ #1';
+            gapText = second ? `ОТРЫВ ОТ #2: +${lead} ТЕПЛО` : 'ТРОН СВОБОДЕН — УДЕРЖИТЕ #1';
             pct = 100;
         } else if (myIdx > 0) {
             const rival = data[myIdx - 1];
@@ -1072,17 +1070,17 @@ async function renderLeaderboard() {
             const need = Math.max(1, (rival.score || 0) - myScore + 1);
             const span = Math.max(1, (rival.score || 0) - prevScore);
             pct = Math.max(10, Math.min(96, Math.round(((myScore - prevScore) / span) * 100)));
-            gapText = `ДО #${myIdx} (${anonLabel(rival.username)}): ${need} XP`;
+            gapText = `ДО #${myIdx} (${anonLabel(rival.username)}): ${need} ТЕПЛО`;
         } else {
             const gate = data[data.length - 1];
             const need = gate ? Math.max(1, (gate.score || 0) - myScore + 1) : 10;
             pct = gate && gate.score > 0 ? Math.max(8, Math.min(94, Math.round((myScore / gate.score) * 100))) : 12;
-            gapText = `ДО ВХОДА В ТОП-${data.length}: ${need} XP`;
+            gapText = `ДО ВХОДА В ТОП-${data.length}: ${need} ТЕПЛО`;
         }
         chaseEl.onclick = () => openDossierByUid(player.uid || 'local_me', resolvedRank);
         chaseEl.innerHTML = `
             <div class="top-chase-row">
-                <span class="top-chase-me">ВАШЕ МЕСТО: #${resolvedRank} · ${myScore} XP</span>
+                <span class="top-chase-me">ВАШЕ МЕСТО: #${resolvedRank} · ${myScore} ТЕПЛО</span>
                 <span class="top-chase-gap">${esc(gapText)}</span>
             </div>
             <div class="top-chase-bar"><div class="top-chase-fill" style="width:${pct}%"></div></div>
@@ -1111,7 +1109,7 @@ async function renderLeaderboard() {
                 <div class="top-custom-title">${titleSpanOf(c1, true) || `✦ ${esc(t1)}`}</div>
                 <p class="top-epitaph">«${esc(ep1)}»</p>
                 <div class="top-throne-stats">
-                    <span class="top-throne-xp">${first.score || 0} XP</span>
+                    <span class="top-throne-xp">${first.score || 0} ТЕПЛО</span>
                     <span>·</span>
                     <span>ШЁПОТОВ: ${first.help_attempts || 0}</span>
                 </div>
@@ -1128,7 +1126,7 @@ async function renderLeaderboard() {
                     <div class="top-runner-place">#0${pl} // ТРИАДА ${meR ? '· ВЫ' : ''}</div>
                     <div class="top-runner-name">${sealHtmlOf(cr)}<span>${esc(anonLabel(r.username))}</span></div>
                     <div class="top-custom-title truncate">${titleSpanOf(cr, false) || esc(tr)}</div>
-                    <div class="top-runner-xp">${r.score || 0} XP</div>
+                    <div class="top-runner-xp">${r.score || 0} ТЕПЛО</div>
                 </div>`;
             }).join('') + `</div>`;
         }
@@ -1162,7 +1160,7 @@ async function renderLeaderboard() {
                     <div class="top-row-sub">${sub}</div>
                 </div>
             </div>
-            <div class="top-row-xp">${b.score || 0} XP</div>
+            <div class="top-row-xp">${b.score || 0} ТЕПЛО</div>
         </div>`;
     };
 
@@ -1193,8 +1191,8 @@ function openDossierByUid(uid, place) {
     openDossier({
         username: player.uid || 'local_me',
         place: place || shopState.myRank || 1,
-        xp: player.xp || 0,
-        score: player.xp || 0,
+        warmth: player.warmth || 0,
+        score: player.warmth || 0,
         help_attempts: typeof getWhisperBreachCount === 'function' ? getWhisperBreachCount() : (player.whispersSent || 0),
         cosmetics: getActiveCosmetics()
     });
@@ -1214,8 +1212,8 @@ function openDossier(entry) {
         card.className = `w-full max-w-sm bg-[#100508] border border-red-500/50 p-5 rounded-2xl space-y-3.5 shadow-2xl ${fc}`.trim();
     }
     const tl = titleLabelOf(c);
-    const totalXp = entry.xp ?? entry.score ?? 0;
-    const stCnt = starsForXp(totalXp);
+    const totalWarmth = entry.warmth ?? entry.score ?? 0;
+    const stCnt = starsForWarmth(totalWarmth);
     const starRow = '★'.repeat(stCnt) + '☆'.repeat(Math.max(0, 6 - stCnt));
 
     const gear = [];
@@ -1252,13 +1250,13 @@ function openDossier(entry) {
                 ${sealHtmlOf(c)}<span>${esc(anonLabel(entry.username))}</span>${me ? '<span class="top-you-tag">ВЫ</span>' : ''}
             </div>
             ${tl ? `<div class="top-custom-title mt-0.5">${titleSpanOf(c, true)}</div>` : ''}
-            <div class="text-[10.5px] font-mono-tech text-red-400/90 mt-0.5">${esc(rankTitleForXp(totalXp))}</div>
+            <div class="text-[10.5px] font-mono-tech text-red-400/90 mt-0.5">${esc(rankTitleForWarmth(totalWarmth))}</div>
         </div>
         ${c.epitaph ? `<p class="top-epitaph bg-black/40 border border-red-500/20 rounded-xl px-3 py-2">«${esc(c.epitaph)}»</p>` : ''}
         <div class="grid grid-cols-3 gap-1.5 font-mono-tech text-center">
             <div class="bg-black/50 border border-red-950 rounded-xl p-2">
-                <div class="text-[8.5px] text-gray-500">ОПЫТ</div>
-                <div class="text-xs font-bold text-white">${totalXp} XP</div>
+                <div class="text-[8.5px] text-gray-500">ТЕПЛО</div>
+                <div class="text-xs font-bold text-white">${totalWarmth} ТЕПЛО</div>
             </div>
             <div class="bg-black/50 border border-red-950 rounded-xl p-2">
                 <div class="text-[8.5px] text-gray-500">ЗВЁЗДЫ СТАНЦИИ</div>
@@ -1273,7 +1271,7 @@ function openDossier(entry) {
         <div class="space-y-1.5 pt-1">
             ${me
                 ? `<button type="button" onclick="closeDossier(); openShop()" class="w-full py-2.5 bg-red-950/80 hover:bg-red-900 border border-amber-400/45 text-amber-200 text-[11px] font-mono-tech font-bold rounded-xl transition">✦ НАСТРОИТЬ ОБЛИК И ТИТУЛ</button>
-                   <button type="button" onclick="shareTopFlex(${entry.place || 1}, ${totalXp})" class="w-full py-2 bg-black/50 hover:bg-red-950/40 border border-red-500/35 text-red-200 text-[10.5px] font-mono-tech rounded-xl transition">ПОДЕЛИТЬСЯ ОТКРЫТКОЙ ТОПА</button>`
+                   <button type="button" onclick="shareTopFlex(${entry.place || 1}, ${totalWarmth})" class="w-full py-2 bg-black/50 hover:bg-red-950/40 border border-red-500/35 text-red-200 text-[10.5px] font-mono-tech rounded-xl transition">ПОДЕЛИТЬСЯ ОТКРЫТКОЙ ТОПА</button>`
                 : `<button type="button" onclick="closeDossier(); openShop()" class="w-full py-2.5 bg-red-950/60 hover:bg-red-900/70 border border-amber-400/40 text-amber-200 text-[10.5px] font-mono-tech rounded-xl transition">✦ ХОЧУ ВЫДЕЛЯТЬСЯ ТАК ЖЕ</button>`}
             <button type="button" onclick="closeDossier()" class="w-full py-1.5 text-gray-500 hover:text-gray-300 text-xs font-mono-tech">ЗАКРЫТЬ</button>
         </div>
@@ -1286,15 +1284,15 @@ function closeDossier() {
     if (m) m.classList.add('hidden');
 }
 
-function shareTopFlex(place, xpVal) {
+function shareTopFlex(place, warmthVal) {
     if (typeof window !== 'undefined' && window.SOMA_SHARE && typeof window.SOMA_SHARE.shareRank === 'function') {
-        window.SOMA_SHARE.shareRank(place, xpVal);
+        window.SOMA_SHARE.shareRank(place, warmthVal);
         return;
     }
     const c = getActiveCosmetics();
     const tl = titleLabelOf(c);
     const ep = c.epitaph ? `\n«${c.epitaph}»` : '';
-    const text = `SOMA~LINK // ПАНТЕОН NEEO~CITY\nМесто: #${place} (${xpVal} XP)${tl ? ` · ${tl}` : ''}${ep}\n\nПопробуй сдвинуть меня с места:`;
+    const text = `SOMA~LINK // ПАНТЕОН NEEO~CITY\nМесто: #${place} (${warmthVal} ТЕПЛО)${tl ? ` · ${tl}` : ''}${ep}\n\nПопробуй сдвинуть меня с места:`;
     if (typeof window !== 'undefined' && window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) {
         Telegram.WebApp.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(BOT_LINK) + '&text=' + encodeURIComponent(text));
         return;

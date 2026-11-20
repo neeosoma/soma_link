@@ -220,7 +220,7 @@
             <div class="text-amber-400 font-mono-tech text-xs tracking-widest">// СБОЙ ПРОТОКОЛА</div>
             <h3 class="text-base font-bold text-white">Вы нарушитель</h3>
             <p class="text-xs text-gray-300 leading-relaxed">Вы искали возможность откликнуться. На станции есть пейджер для бережных слов. Игра не заменяет помощь близких или специалиста — и не требует от вас кого-то спасать.</p>
-            <div class="bg-black/50 p-3 rounded-xl text-[11px] font-mono-tech text-amber-300 border border-amber-400/30">Статус: НАРУШИТЕЛЬ ПРОТОКОЛА // +100 XP</div>
+            <div class="bg-black/50 p-3 rounded-xl text-[11px] font-mono-tech text-amber-300 border border-amber-400/30">Статус: НАРУШИТЕЛЬ ПРОТОКОЛА // ПРОТОКОЛ ОТКРЫТ</div>
             <button onclick="shareEgg()" class="w-full py-2.5 bg-amber-950/50 hover:bg-amber-900/60 border border-amber-400/50 text-amber-200 text-xs font-mono-tech rounded-xl transition">ПОДЕЛИТЬСЯ ОТКРЫТКОЙ</button>
             <button onclick="closeEgg()" class="w-full py-2 text-gray-500 text-xs font-mono-tech">ЗАКРЫТЬ</button>
         </div>
@@ -264,7 +264,7 @@
             <div id="music-eq" class="flex items-end justify-center gap-1 h-14"></div>
             <h3 id="music-name" class="text-lg font-bold text-white tracking-widest font-mono-tech">NEEOSOMA</h3>
             <p class="text-xs text-gray-300 leading-relaxed">Весь этот шум не случаен. У NEEO~CITY есть голос, и он звучит там, где нет ленты и реакций. Включи звук и просто послушай.</p>
-            <div id="music-bonus" class="hidden bg-black/50 p-2 rounded-xl text-[11px] font-mono-tech text-amber-300 border border-amber-400/30">Частота найдена // +50 XP</div>
+            <div id="music-bonus" class="hidden bg-black/50 p-2 rounded-xl text-[11px] font-mono-tech text-amber-300 border border-amber-400/30">Частота найдена // ОТКРЫТКА</div>
             <div id="music-links" class="space-y-2"></div>
             <button onclick="shareMusic()" class="w-full py-2 bg-red-950/50 border border-red-500/40 text-red-200 text-[11px] font-mono-tech rounded-xl">ПОДЕЛИТЬСЯ ОТКРЫТКОЙ</button>
             <button onclick="closeMusic()" class="w-full py-1.5 text-gray-500 text-xs font-mono-tech">ЗАКРЫТЬ</button>
@@ -332,11 +332,6 @@
                     <span id="user-badge">@GUEST</span>
                     <button id="snd-btn" onclick="toggleSound()" class="app-sound" aria-label="Переключить звук">🔊</button>
                 </div>
-                <span id="rank-title" class="app-rank">УР. 1 // ГОСТЬ СТАНЦИИ</span>
-            </div>
-            <div class="app-xp-line">
-                <span id="xp-val">0 XP</span>
-                <div class="app-xp-track" aria-hidden="true"><div id="xp-bar" style="width: 10%;"></div></div>
             </div>
         </header>
 
@@ -395,6 +390,46 @@
                 </div>
                 <div id="feed-ritual-hint" class="feed-console-note">
                     <span id="feed-warmth-status">Пауза по желанию согревает только вашу комнату. Автор её не увидит.</span>
+                </div>
+            </section>
+
+            <!-- Карточка профиля: свидетельสถานี, эстетичная карточка внизу пейджера -->
+            <section id="witness-card" class="witness-card">
+                <div class="witness-card-glow"></div>
+                <div class="witness-card-inner">
+                    <div class="witness-card-top">
+                        <span class="witness-card-kicker">NEEOSOMA // SOMA~LINK</span>
+                        <button type="button" onclick="openShop('room')" class="witness-card-shop">✦ АТРИБУТЫ</button>
+                    </div>
+                    <div class="witness-card-id">
+                        <span id="card-seal" class="witness-seal"></span>
+                        <div class="witness-name-block">
+                            <div class="witness-label">СВИДЕТЕЛЬ</div>
+                            <div class="witness-name-row">
+                                <span id="card-name" class="witness-name">@USER</span>
+                                <div id="card-custom-title" class="witness-custom-title"></div>
+                            </div>
+                            <p id="card-epitaph" class="witness-epitaph"></p>
+                        </div>
+                    </div>
+                    <div class="witness-card-stats">
+                        <div class="witness-stat">
+                            <div class="witness-stat-label">ТИХИЙ ЗНАК</div>
+                            <div class="witness-stat-value witness-stat-amber">«Я рядом» · анонимно</div>
+                        </div>
+                        <div class="witness-stat">
+                            <div class="witness-stat-label">ЛИЧНЫЙ ОТВЕТ</div>
+                            <div class="witness-stat-value witness-stat-red">«Шёпот» · по желанию</div>
+                        </div>
+                        <div class="witness-stat">
+                            <div class="witness-stat-label">ШЁПОТОВ ОТПРАВЛЕНО</div>
+                            <div id="stat-attempts" class="witness-stat-value witness-stat-big">0</div>
+                        </div>
+                        <div class="witness-stat">
+                            <div class="witness-stat-label">СВОЕМУ ЧЕЛОВЕКУ</div>
+                            <a href="gift.html" class="witness-stat-value witness-stat-amber witness-stat-link">ЗАПИСАТЬ КАССЕТУ →</a>
+                        </div>
+                    </div>
                 </div>
             </section>
         </div>
@@ -578,52 +613,17 @@
                 </div>
             </section>
 
-            <section id="visit-consent-card" class="bg-[#0a0506] border border-red-500/25 rounded-2xl p-4 space-y-3">
-                <div class="visit-entry-head">
-                    <span class="visit-entry-kicker">АНОНИМНЫЕ ВИЗИТЫ В КОМНАТУ</span>
-                    <span id="visit-consent-state" class="visit-note"></span>
+            <section id="visit-consent-card" class="visit-consent-card">
+                <div class="visit-consent-row">
+                    <div class="visit-consent-label">
+                        <span class="visit-consent-kicker">АНОНИМНЫЕ ВИЗИТЫ В КОМНАТУ</span>
+                        <span id="visit-consent-state" class="visit-consent-state">закрыты</span>
+                    </div>
+                    <button type="button" id="visit-consent-toggle" class="visit-consent-toggle" onclick="toggleVisitConsent()" aria-label="Переключить анонимные визиты"></button>
                 </div>
-                <p class="signal-caption">Если вы откроете визит, другие игроки смогут увидеть вашу комнату и Оранжерею анонимно — без вашего ника, без личных данных, без сообщений. Вы можете отключить это в любой момент, и снимок мгновенно исчезнет.</p>
-                <div class="flex gap-2 flex-wrap">
-                    <button type="button" id="visit-consent-on" class="visit-start" onclick="setVisitConsent(true)">ОТКРЫТЬ ВИЗИТЫ</button>
-                    <button type="button" id="visit-consent-off" class="visit-start" onclick="setVisitConsent(false)">ЗАКРЫТЬ ВИЗИТЫ</button>
-                </div>
+                <p class="visit-consent-hint">Откройте — и другие игроки увидят вашу комнату и Оранжерею анонимно. Без ника, без данных. Закрытие мгновенно удаляет снимок.</p>
             </section>
-            <div id="witness-card" class="bg-[#12080a] border border-red-500/40 p-5 rounded-2xl space-y-4 relative overflow-hidden">
-                <div class="flex justify-between items-center gap-2 text-[10px] font-mono-tech text-gray-500">
-                    <span>NEEOSOMA // SOMA~LINK</span>
-                    <button type="button" onclick="openShop('room')" class="top-shop-btn">✦ АТРИБУТЫ</button>
-                </div>
-                <div>
-                    <div class="text-xs text-gray-400 font-mono-tech">СВИДЕТЕЛЬ:</div>
-                    <div class="flex items-center gap-1.5 flex-wrap">
-                        <span id="card-seal" class="inline-flex items-center empty:hidden"></span>
-                        <span id="card-name" class="text-xl font-bold text-white tracking-wide">@USER</span>
-                    </div>
-                    <div id="card-custom-title" class="hidden top-custom-title mt-0.5"></div>
-                    <div id="card-rank" class="text-xs font-mono-tech text-red-400 mt-0.5">УР. 1 // ГОСТЬ СТАНЦИИ</div>
-                    <p id="card-epitaph" class="hidden top-epitaph mt-1"></p>
-                </div>
-                <div class="grid grid-cols-2 gap-2 pt-2 border-t border-red-500/20 font-mono-tech">
-                    <div class="bg-[#080405] p-2.5 rounded-xl border border-red-950">
-                        <div class="text-[10px] text-gray-500">ТИХИЙ ЗНАК</div>
-                        <div class="text-sm font-bold text-amber-200">«Я рядом» · анонимно</div>
-                    </div>
-                    <div class="bg-[#080405] p-2.5 rounded-xl border border-red-950">
-                        <div class="text-[10px] text-gray-500">ЛИЧНЫЙ ОТВЕТ</div>
-                        <div class="text-sm font-bold text-red-300">«Шёпот» · по желанию</div>
-                    </div>
-                    <div class="bg-[#080405] p-2.5 rounded-xl border border-red-950">
-                        <div class="text-[10px] text-gray-500">ШЁПОТОВ ОТПРАВЛЕНО</div>
-                        <div id="stat-attempts" class="text-lg font-bold text-red-600">0</div>
-                    </div>
-                    <div class="bg-[#080405] p-2.5 rounded-xl border border-red-950">
-                        <div class="text-[10px] text-gray-500">СВОЕМУ ЧЕЛОВЕКУ</div>
-                        <a href="gift.html" class="text-sm font-bold text-amber-200 underline">ЗАПИСАТЬ КАССЕТУ →</a>
-                    </div>
-                </div>
-            </div>
-            <button onclick="copyShareText()" class="w-full py-3.5 bg-red-950 hover:bg-red-900 border border-red-500/50 text-red-200 font-bold text-xs font-mono-tech uppercase tracking-wider rounded-xl transition">
+            <button onclick="copyShareText()" class="share-station-btn">
                 ПОДЕЛИТЬСЯ СНИМКОМ СТАНЦИИ
             </button>
 
@@ -631,15 +631,15 @@
                 <div class="top-head">
                     <div class="top-title-wrap">
                         <span class="top-kicker">NEEO~CITY // ПАНОПТИКУМ</span>
-                        <h2 class="top-heading">ЗВЁЗДЫ СТАНЦИИ</h2>
+                        <h2 class="top-heading">ХРАНИТЕЛИ СТАНЦИИ</h2>
                     </div>
                     <button type="button" onclick="openShop('frames')" class="top-shop-btn">✦ АТРИБУТЫ</button>
                 </div>
                 <div class="top-modes" role="tablist" aria-label="Режим рейтинга">
-                    <button type="button" class="top-mode-btn" data-top-mode="all" aria-pressed="true" onclick="switchTopMode('all')">♛ ОПЫТ ЗА ВСЁ ВРЕМЯ</button>
-                    <button type="button" class="top-mode-btn" data-top-mode="week" aria-pressed="false" onclick="switchTopMode('week')">✦ ОПЫТ НЕДЕЛИ</button>
+                    <button type="button" class="top-mode-btn" data-top-mode="all" aria-pressed="true" onclick="switchTopMode('all')">♛ ТЕПЛО ЗА ВСЁ ВРЕМЯ</button>
+                    <button type="button" class="top-mode-btn" data-top-mode="week" aria-pressed="false" onclick="switchTopMode('week')">✦ ТЕПЛО НЕДЕЛИ</button>
                 </div>
-                <div id="top-subnote" class="top-subnote">Игровой опыт, не рейтинг доброты · нажмите на игрока для досье</div>
+                <div id="top-subnote" class="top-subnote">Тёпло станции, не рейтинг доброты · нажмите на игрока для досье</div>
                 <div id="top-chase" class="top-chase"></div>
                 <div id="top-podium" class="top-podium"></div>
                 <div id="leaderboard-list" class="space-y-2"></div>
@@ -764,7 +764,6 @@
     // ===== КОМНАТА, ТЕПЛО, ТРЕНАЖЁР, УДЕРЖАНИЕ ВЗГЛЯДА =====
     const lsNum = k => { try { return parseInt(localStorage.getItem(k) || '0', 10) || 0; } catch (e) { return 0; } };
     const musicFound = () => { try { return !!localStorage.getItem('soma_music'); } catch (e) { return false; } };
-    function rankIdx() { let i = 0; ranks.forEach((r, n) => { if (player.xp >= r.minXp) i = n; }); return i; }
     function addWarmth(n, syncCloud = true) {
         player.warmth = (player.warmth || 0) + n;
         try { localStorage.setItem('soma_warmth', String(player.warmth)); } catch (e) {}
@@ -885,8 +884,6 @@
         let gainedWarmth = 0;
         if (o[1]) {
             SFX.react();
-            player.xp += 20;
-            if (typeof addWeeklyXp === 'function') addWeeklyXp(20);
             const res = typeof claimDailyWarmth === 'function' ? claimDailyWarmth('trainer') : { granted: 1 };
             gainedWarmth = res.granted;
             if (gainedWarmth) addWarmth(gainedWarmth);
@@ -897,8 +894,8 @@
         }
         updateTrainerMeta();
         const okBadge = gainedWarmth
-            ? '✓ Это живое слушание // +20 XP · +1 ТЕПЛО'
-            : '✓ Это живое слушание // +20 XP (тепло дня уже впиталось)';
+            ? '✓ Это живое слушание // +1 ТЕПЛО'
+            : '✓ Это живое слушание (тепло дня уже впиталось)';
         document.getElementById('trainer-body').innerHTML = `
             <div class="text-xs font-mono-tech font-bold ${o[1] ? 'text-amber-300' : 'text-red-400'}">${o[1] ? okBadge : '✕ Это совет, оценка или защита'}</div>
             <p class="text-xs text-gray-300 leading-relaxed">${esc(o[2])}</p>
@@ -1104,8 +1101,6 @@
         let first = false;
         try { first = !localStorage.getItem('soma_music'); if (first) localStorage.setItem('soma_music', '1'); } catch (e) {}
         if (first) {
-            player.xp += 50;
-            if (typeof addWeeklyXp === 'function') addWeeklyXp(50);
             updateCloudProfile(); updateHeader();
         }
         document.getElementById('music-bonus').classList.toggle('hidden', !first);
@@ -1143,7 +1138,7 @@
         }
     }
 
-    let player = { name: "GUEST", uid: "", warmth: lsNum('soma_warmth'), xp: 0, helpAttempts: 0 };
+    let player = { name: "GUEST", uid: "", warmth: lsNum('soma_warmth'), helpAttempts: 0 };
     let feedPosts = [];
     let ownPagerPosts = [];
     let witnessStatuses = new Map();
@@ -1152,15 +1147,6 @@
     let witnessStatusForceQueued = false;
     let witnessStatusCheckedAt = 0;
     const WITNESS_STATUS_REFRESH_MS = 30000;
-
-    const ranks = [
-        { minXp: 0, title: "УР. 1 // ГОСТЬ СТАНЦИИ" },
-        { minXp: 500, title: "УР. 2 // ЗНАКОМЫЙ ГОЛОС" },
-        { minXp: 1500, title: "УР. 3 // НОЧНОЙ СЛУШАТЕЛЬ" },
-        { minXp: 3000, title: "УР. 4 // ХРАНИТЕЛЬ ЧАСТОТЫ" },
-        { minXp: 5000, title: "УР. 5 // ОГОНЁК СТАНЦИИ" },
-        { minXp: 10000, title: "УР. 10 // ЗВЕЗДА СТАНЦИИ" }
-    ];
 
     async function initApp() {
         try { Telegram.WebApp.ready(); Telegram.WebApp.expand(); } catch (e) {}
@@ -1205,14 +1191,13 @@
         renderRoom();
 
         try {
-            let { data } = await supabaseClient.from('soma_users').select('username,xp,warmth,help_attempts,whispers_sent,weekly_xp,weekly_key,cosmetics,owned_cosmetics').eq('username', player.uid).single();
+            let { data } = await supabaseClient.from('soma_users').select('username,warmth,help_attempts,whispers_sent,weekly_warmth,weekly_key,cosmetics,owned_cosmetics').eq('username', player.uid).single();
             if (data) {
                 const whispers = typeof getWhisperBreachCount === 'function' ? getWhisperBreachCount() : 0;
                 const cloudWhispers = Number.isFinite(Number(data.whispers_sent)) ? Math.max(0, Number(data.whispers_sent)) : 0;
                 const breaches = Math.max(whispers, cloudWhispers);
                 player = {
                     ...player,
-                    xp: data.xp || 0,
                     whispersSent: breaches,
                     helpAttempts: breaches,
                     warmth: Math.max(0, Number(player.warmth) || 0)
@@ -1223,7 +1208,7 @@
                 const breaches = typeof getWhisperBreachCount === 'function' ? getWhisperBreachCount() : 0;
                 player.whispersSent = breaches;
                 player.helpAttempts = breaches;
-                const created = await supabaseClient.from('soma_users').insert([{ username: player.uid, xp: 0, help_attempts: breaches }]);
+                const created = await supabaseClient.from('soma_users').insert([{ username: player.uid, help_attempts: breaches }]);
                 if (!created.error) syncWitnessWarmthToLocal(0);
             }
         } catch(e) {}
@@ -1435,7 +1420,6 @@
         player.helpAttempts = breaches;
         try {
             await supabaseClient.from('soma_users').update({
-                xp: player.xp,
                 help_attempts: breaches
             }).eq('username', player.uid);
         } catch(e) {}
@@ -1443,21 +1427,8 @@
 
     function updateHeader() {
         document.getElementById('user-badge').innerText = `@${player.name}`;
-        document.getElementById('xp-val').innerText = `${player.xp} XP`;
-        
-        let currentRank = ranks[0], nextRank = ranks[1];
-        for (let i = 0; i < ranks.length; i++) {
-            if (player.xp >= ranks[i].minXp) {
-                currentRank = ranks[i];
-                nextRank = ranks[i + 1] || { minXp: player.xp + 500 };
-            }
-        }
-        document.getElementById('rank-title').innerText = currentRank.title;
-        const progress = Math.min(100, ((player.xp - currentRank.minXp) / (nextRank.minXp - currentRank.minXp)) * 100);
-        document.getElementById('xp-bar').style.width = `${Math.max(8, progress)}%`;
 
         document.getElementById('card-name').innerText = `@${player.name}`;
-        document.getElementById('card-rank').innerText = currentRank.title;
         const breaches = typeof getWhisperBreachCount === 'function'
             ? getWhisperBreachCount()
             : Math.max(0, Number(player.whispersSent) || 0);
@@ -1801,8 +1772,6 @@
         try { egg = helpClicks >= 10 && !localStorage.getItem('soma_egg'); } catch (e) {}
         if (egg) {
             try { localStorage.setItem('soma_egg', '1'); } catch (e) {}
-            player.xp += 100;
-            if (typeof addWeeklyXp === 'function') addWeeklyXp(100);
             try { Telegram.WebApp.HapticFeedback.notificationOccurred('success'); } catch (e) {}
             updateCloudProfile();
             updateHeader();
@@ -2152,12 +2121,21 @@
     }
     async function refreshVisitConsent() {
         const state = document.getElementById('visit-consent-state');
-        if (!supabaseClient || !state) return;
+        const toggle = document.getElementById('visit-consent-toggle');
+        if (!supabaseClient || (!state && !toggle)) return;
         try {
             const { data, error } = await supabaseClient.rpc('my_room_visit_consent');
             if (error) return;
-            state.textContent = data ? 'Визиты открыты' : 'Визиты закрыты';
+            const open = !!data;
+            if (state) state.textContent = open ? 'визиты открыты' : 'визиты закрыты';
+            if (toggle) toggle.classList.toggle('is-on', open);
         } catch (_) {}
+    }
+    async function toggleVisitConsent() {
+        const toggle = document.getElementById('visit-consent-toggle');
+        const currentOn = toggle && toggle.classList.contains('is-on');
+        if (currentOn) await setVisitConsent(false);
+        else await setVisitConsent(true);
     }
     async function setVisitConsent(enabled) {
         if (!supabaseClient) { notify('Сеть не подключена. Проверьте config.js.'); return; }
@@ -2247,8 +2225,7 @@
             window.SOMA_SHARE.shareWitness();
             return;
         }
-        const rank = document.getElementById('rank-title').innerText;
-        const text = `SOMA~LINK // NEEO~CITY\nСвидетель: @${player.name}\nРанг: ${rank}\nТихий знак «Я рядом» — анонимно. Личный «Шёпот» — по желанию.\n\nЗагляни на ночную станцию:`;
+        const text = `SOMA~LINK // NEEO~CITY\nСвидетель: @${player.name}\nТихий знак «Я рядом» — анонимно. Личный «Шёпот» — по желанию.\n\nЗагляни на ночную станцию:`;
         if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) {
             Telegram.WebApp.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(BOT_LINK) + '&text=' + encodeURIComponent(text));
             return;

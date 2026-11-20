@@ -10039,14 +10039,12 @@ function ensurePagerModal() {
     ov.setAttribute('aria-label', 'Пейджер NEEOSOMA // NMAV-04 — Канал Шёпот');
     ov.innerHTML = `
         <div class="soma-pager pager-modal-chassis" id="pager-modal-chassis">
-            <!-- ШАПКА УСТРОЙСТВА: бренд + LED + частота + закрыть -->
+            <!-- ШАПКА УСТРОЙСТВА: бренд + код «ШЁПОТ» | полоски + закрыть -->
             <div class="pager-top pager-modal-top">
-                <span class="pager-brand"><i class="pager-led" aria-hidden="true"></i>NEEOSOMA // NMAV-04</span>
-                <span class="pager-freq">CH·04 «ШЁПОТ»</span>
+                <span class="pager-brand"><i class="pager-led" aria-hidden="true"></i>NEEOSOMA // <span class="pager-code">NMAV-04 «ШЁПОТ»</span></span>
+                <span class="pager-sig-bar" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
                 <button type="button" class="pager-modal-close" id="pager-modal-close" aria-label="Закрыть пейджер">✕</button>
             </div>
-            <!-- ЖИВЫЕ ПОЛОСКИ СИЛЫ СВЯЗИ -->
-            <div class="pager-sig-bar" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
             <!-- СЕГМЕНТНЫЕ ВКЛАЛКИ -->
             <div class="pager-modal-tabs" role="tablist">
                 <button type="button" class="pager-modal-tab" id="pager-tab-feed" role="tab" aria-selected="true">📡 ПОЙМАТЬ СИГНАЛ</button>
@@ -10437,7 +10435,6 @@ function renderPagerModal() {
 
     if (footEl) {
         footEl.innerHTML = `
-            <span class="pager-foot-rule">⚖ 13–333 симв. · 1 шёпот на человека · кассета даёт +4 Тепла растению (1/день)</span>
             <button type="button" class="pager-foot-vhs" id="pager-open-vhs-btn">📼 КАССЕТЫ VTR-90 (${tapes.length})</button>
             <a class="pager-foot-vhs" href="gift.html">ЗАПИСАТЬ СВОИ СЛОВА ДРУГУ →</a>
             ${isWhisperSafetyLive() ? '<button type="button" class="pager-foot-vhs" id="pager-manage-blocks">БЛОКИРОВКИ</button>' : ''}

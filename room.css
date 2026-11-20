@@ -1227,15 +1227,83 @@
     width: min(94%, 520px);
 }
 
-/* ===== Header: бренд + LED + частота ===== */
+/* ===== Header: бренд + код «ШЁПОТ» | полоски + закрыть ===== */
 .pager-modal-top {
     display: flex;
     align-items: center;
-    gap: 10px;
+    justify-content: space-between;
+    gap: 8px;
     padding: 0 3px;
     font: 9.5px 'Share Tech Mono', monospace;
     letter-spacing: 0.1em;
     color: #9e727a;
+}
+
+.pager-modal-top .pager-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: #d6a4ad;
+    min-width: 0;
+}
+
+/* Код модели + «ШЁПОТ» — цвет бывшей частоты */
+.pager-modal-top .pager-code {
+    color: #c95869;
+    font-weight: 700;
+    text-shadow: 0 0 6px rgba(255, 80, 105, 0.3);
+    white-space: nowrap;
+}
+
+/* Полоски силы связи рядом с крестиком закрытия */
+.pager-modal-top .pager-sig-bar {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 12px;
+    padding: 0 2px;
+    flex-shrink: 0;
+}
+
+.pager-modal-top .pager-sig-bar i {
+    display: block;
+    width: 3px;
+    border-radius: 1px;
+    background: #c9384c;
+    opacity: 0.5;
+    transform-origin: bottom center;
+    box-shadow: 0 0 3px rgba(201, 56, 76, 0.4);
+}
+
+.pager-modal-top .pager-sig-bar i:nth-child(1) { height: 3px; }
+.pager-modal-top .pager-sig-bar i:nth-child(2) { height: 5px; }
+.pager-modal-top .pager-sig-bar i:nth-child(3) { height: 7px; }
+.pager-modal-top .pager-sig-bar i:nth-child(4) { height: 9px; }
+.pager-modal-top .pager-sig-bar i:nth-child(5) { height: 12px; }
+
+@keyframes pager-sig-breathe {
+    0%, 100% { opacity: 0.4; transform: scaleY(0.75); box-shadow: 0 0 2px rgba(201, 56, 76, 0.3); }
+    50% { opacity: 1; transform: scaleY(1.15); box-shadow: 0 0 6px rgba(201, 56, 76, 0.8); }
+}
+
+.soma-pager .pager-sig-bar i {
+    animation: pager-sig-breathe 2s ease-in-out infinite;
+}
+
+.soma-pager .pager-sig-bar i:nth-child(1) { animation-delay: 0s; }
+.soma-pager .pager-sig-bar i:nth-child(2) { animation-delay: 0.15s; }
+.soma-pager .pager-sig-bar i:nth-child(3) { animation-delay: 0.3s; }
+.soma-pager .pager-sig-bar i:nth-child(4) { animation-delay: 0.45s; }
+.soma-pager .pager-sig-bar i:nth-child(5) { animation-delay: 0.6s; }
+
+.soma-pager[data-state="inbox"] .pager-sig-bar i {
+    background: #fbbf24;
+    box-shadow: 0 0 6px rgba(251, 191, 36, 0.5);
+}
+
+.soma-pager[data-state="inbox"] .pager-led {
+    background: #fbbf24;
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.95);
 }
 
 .pager-freq {
@@ -1307,64 +1375,6 @@
 .pager-modal-close:active {
     transform: translateY(1px);
     box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.65);
-}
-
-/* ===== Signal strength bars (alive in every state) ===== */
-.pager-sig-bar {
-    display: flex;
-    align-items: flex-end;
-    gap: 3px;
-    height: 12px;
-    padding: 0 3px 2px;
-}
-
-.pager-sig-bar i {
-    display: block;
-    width: 3px;
-    border-radius: 1px;
-    background: #c9384c;
-    opacity: 0.5;
-    transform-origin: bottom center;
-    box-shadow: 0 0 3px rgba(201, 56, 76, 0.4);
-}
-
-.pager-sig-bar i:nth-child(1) { height: 3px; }
-.pager-sig-bar i:nth-child(2) { height: 5px; }
-.pager-sig-bar i:nth-child(3) { height: 7px; }
-.pager-sig-bar i:nth-child(4) { height: 9px; }
-.pager-sig-bar i:nth-child(5) { height: 12px; }
-
-@keyframes pager-sig-breathe {
-    0%, 100% {
-        opacity: 0.4;
-        transform: scaleY(0.75);
-        box-shadow: 0 0 2px rgba(201, 56, 76, 0.3);
-    }
-    50% {
-        opacity: 1;
-        transform: scaleY(1.15);
-        box-shadow: 0 0 6px rgba(201, 56, 76, 0.8);
-    }
-}
-
-.soma-pager .pager-sig-bar i {
-    animation: pager-sig-breathe 2s ease-in-out infinite;
-}
-
-.soma-pager .pager-sig-bar i:nth-child(1) { animation-delay: 0s; }
-.soma-pager .pager-sig-bar i:nth-child(2) { animation-delay: 0.15s; }
-.soma-pager .pager-sig-bar i:nth-child(3) { animation-delay: 0.3s; }
-.soma-pager .pager-sig-bar i:nth-child(4) { animation-delay: 0.45s; }
-.soma-pager .pager-sig-bar i:nth-child(5) { animation-delay: 0.6s; }
-
-.soma-pager[data-state="inbox"] .pager-sig-bar i {
-    background: #fbbf24;
-    box-shadow: 0 0 6px rgba(251, 191, 36, 0.5);
-}
-
-.soma-pager[data-state="inbox"] .pager-led {
-    background: #fbbf24;
-    box-shadow: 0 0 10px rgba(251, 191, 36, 0.95);
 }
 
 /* ===== Segmented tabs (physical toggle) ===== */
@@ -1796,17 +1806,11 @@
 /* ===== Footer ===== */
 .pager-modal-foot {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     flex-wrap: wrap;
     gap: 6px;
-    font: 9px 'Share Tech Mono', monospace;
-    color: #9e727a;
     padding: 0 3px;
-}
-
-.pager-foot-rule {
-    letter-spacing: 0.04em;
 }
 
 .pager-foot-vhs {
@@ -2632,6 +2636,31 @@ html.is-soma-fs-closing .app-h {
     font-weight: 700;
     text-shadow: 0 0 6px rgba(255, 80, 105, 0.3);
 }
+
+/* Базовые полоски силы связи (вкладка «ПЕЙДЖЕР») */
+.soma-pager .pager-sig-bar {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 12px;
+    padding: 0 3px 2px;
+}
+
+.soma-pager .pager-sig-bar i {
+    display: block;
+    width: 3px;
+    border-radius: 1px;
+    background: #c9384c;
+    opacity: 0.5;
+    transform-origin: bottom center;
+    box-shadow: 0 0 3px rgba(201, 56, 76, 0.4);
+}
+
+.soma-pager .pager-sig-bar i:nth-child(1) { height: 3px; }
+.soma-pager .pager-sig-bar i:nth-child(2) { height: 5px; }
+.soma-pager .pager-sig-bar i:nth-child(3) { height: 7px; }
+.soma-pager .pager-sig-bar i:nth-child(4) { height: 9px; }
+.soma-pager .pager-sig-bar i:nth-child(5) { height: 12px; }
 
 /* Метатирки внутри LCD — тонкая фосфорная сетка */
 .soma-pager .pager-lcd-meta {

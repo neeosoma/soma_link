@@ -16,6 +16,13 @@
 
 begin;
 
+-- Сначала удаляем старые функции (42P13: cannot change return type)
+drop function if exists public.submit_soma_post(text, text, text, text);
+drop function if exists public.send_soma_whisper(text, text, text, text, text, text);
+drop function if exists public.set_soma_whisper_status(text, text);
+drop function if exists public.get_my_pending_whispers(text[]);
+drop function if exists public.get_my_saved_whispers();
+
 -- ======================================================================
 -- 1. Submit signal (player sends a story to the feed)
 --    RETURNS SETOF public.soma_posts — тип берётся из реальной таблицы,
@@ -43,6 +50,15 @@ begin
 
     insert into public.soma_posts (id, author, tag, text)
     values (p_id, p_author, p_tag, p_text);
+
+    -- Захват владельца поста: без записи в soma_private.post_owners
+    -- next_soma_pager_story() не найдёт пост для пейджера других игроков
+    -- (он читает посты через join с post_owners и фильтр owner_id <> auth.uid()).
+    if auth.uid() is not null then
+        insert into soma_private.post_owners (post_id, owner_id)
+        values (p_id, auth.uid())
+        on conflict (post_id) do nothing;
+    end if;
 
     return query
         select sp.*

@@ -2622,6 +2622,261 @@ html.is-soma-fs-closing .app-h {
     letter-spacing: 0.04em;
 }
 
+/* ===== КОМПАКТНЫЙ ИНТЕРФЕЙС ПЕЙДЖЕРА В ВКЛАДКЕ ===== */
+
+.feed-pager {
+    position: relative;
+    background:
+        radial-gradient(circle at 8px 8px, #3d121b 0 1.5px, transparent 1.7px),
+        radial-gradient(circle at calc(100% - 8px) 8px, #3d121b 0 1.5px, transparent 1.7px),
+        radial-gradient(circle at 8px calc(100% - 8px), #3d121b 0 1.5px, transparent 1.7px),
+        radial-gradient(circle at calc(100% - 8px) calc(100% - 8px), #3d121b 0 1.5px, transparent 1.7px),
+        linear-gradient(180deg, #1a0810 0%, #120408 52%, #0a0204 100%);
+    border: 1px solid #531b26;
+    border-top-color: #752636;
+    border-radius: 16px;
+    padding: 12px 13px 13px;
+    display: grid;
+    gap: 9px;
+    box-shadow:
+        0 10px 28px rgba(0, 0, 0, 0.6),
+        inset 0 1px 0 rgba(255, 118, 134, 0.12),
+        inset 0 -2px 0 rgba(0, 0, 0, 0.72);
+}
+
+.feed-pager-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font: 9.5px 'Share Tech Mono', monospace;
+    letter-spacing: 0.1em;
+    color: #9e727a;
+}
+
+.feed-pager-freq {
+    flex: 1;
+    text-align: center;
+    color: #c95869;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-shadow: 0 0 6px rgba(255, 80, 105, 0.3);
+}
+
+/* Полоски сигнала */
+.feed-pager .pager-sig-bar {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 10px;
+}
+
+.feed-pager .pager-sig-bar i {
+    display: block;
+    width: 2.5px;
+    border-radius: 1px;
+    background: #c9384c;
+    opacity: 0.5;
+    transform-origin: bottom center;
+    box-shadow: 0 0 3px rgba(201, 56, 76, 0.4);
+}
+
+.feed-pager .pager-sig-bar i:nth-child(1) { height: 3px; }
+.feed-pager .pager-sig-bar i:nth-child(2) { height: 5px; }
+.feed-pager .pager-sig-bar i:nth-child(3) { height: 7px; }
+.feed-pager .pager-sig-bar i:nth-child(4) { height: 8.5px; }
+.feed-pager .pager-sig-bar i:nth-child(5) { height: 10px; }
+
+@keyframes feed-pager-sig-breathe {
+    0%, 100% { opacity: 0.4; transform: scaleY(0.75); box-shadow: 0 0 2px rgba(201, 56, 76, 0.3); }
+    50% { opacity: 1; transform: scaleY(1.15); box-shadow: 0 0 6px rgba(201, 56, 76, 0.8); }
+}
+
+.feed-pager .pager-sig-bar i {
+    animation: feed-pager-sig-breathe 2s ease-in-out infinite;
+}
+
+.feed-pager .pager-sig-bar i:nth-child(1) { animation-delay: 0s; }
+.feed-pager .pager-sig-bar i:nth-child(2) { animation-delay: 0.15s; }
+.feed-pager .pager-sig-bar i:nth-child(3) { animation-delay: 0.3s; }
+.feed-pager .pager-sig-bar i:nth-child(4) { animation-delay: 0.45s; }
+.feed-pager .pager-sig-bar i:nth-child(5) { animation-delay: 0.6s; }
+
+.feed-pager[data-state="inbox"] .pager-sig-bar i {
+    background: #fbbf24;
+    box-shadow: 0 0 6px rgba(251, 191, 36, 0.5);
+}
+
+/* Метатирки */
+.feed-pager-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 2px 8px;
+    font-size: 9px;
+    letter-spacing: 0.06em;
+    color: #9b606a;
+    border-bottom: 1px solid rgba(138, 38, 54, 0.24);
+    padding-bottom: 5px;
+}
+
+.feed-pager .pager-carrier {
+    color: #c95869;
+}
+
+/* LCD-экран */
+.feed-pager-bezel {
+    padding: 3px;
+    border-radius: 10px;
+    background: #060203;
+    border: 1px solid #351119;
+    box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.95);
+}
+
+.feed-pager-lcd {
+    position: relative;
+    overflow: hidden;
+    border-radius: 7px;
+    padding: 10px 11px;
+    display: grid;
+    gap: 8px;
+    background:
+        repeating-linear-gradient(
+            180deg,
+            rgba(255, 58, 78, 0.04) 0 1px,
+            rgba(5, 1, 3, 0.3) 1px 3px
+        ),
+        radial-gradient(ellipse 95% 100% at 50% 0%, #21070d 0%, #0d0306 68%, #090204 100%);
+    border: 1px solid #491620;
+    box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.85);
+    font-family: 'Share Tech Mono', monospace;
+}
+
+.feed-pager-lcd::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: 7px;
+    background: radial-gradient(ellipse 90% 90% at 50% 50%, transparent 60%, rgba(0, 0, 0, 0.35) 100%);
+}
+
+.feed-pager-scan {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(180deg, transparent 0%, rgba(255, 180, 190, 0.025) 50%, transparent 100%);
+    background-size: 100% 8px;
+    opacity: 0.5;
+    animation: pager-crt-scan 6s linear infinite;
+}
+
+@keyframes pager-crt-scan {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100%); }
+}
+
+.feed-pager-main {
+    margin: 0;
+    font-size: 11.5px;
+    line-height: 1.3;
+    letter-spacing: 0.06em;
+    color: #ff98a4;
+    text-shadow: 0 0 8px rgba(255, 64, 86, 0.32);
+    position: relative;
+    z-index: 1;
+}
+
+.feed-pager-sub {
+    margin: 0;
+    font-size: 9.8px;
+    line-height: 1.35;
+    letter-spacing: 0.02em;
+    color: #b4818a;
+    min-height: 2.5em;
+    position: relative;
+    z-index: 1;
+}
+
+/* Фильтры */
+.feed-pager-filters {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+    z-index: 1;
+}
+
+.feed-pager-filter-summary {
+    font-size: 9px;
+    color: #8a5a62;
+}
+
+.feed-pager-own {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+    z-index: 1;
+}
+
+.feed-pager-own:empty { display: none; }
+
+.feed-pager-posts {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+    z-index: 1;
+}
+
+.feed-pager-posts > div {
+    position: relative;
+    z-index: 1;
+}
+
+/* Кнопки пейджера */
+.feed-pager-keys {
+    display: grid;
+    grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
+    gap: 7px;
+}
+
+.feed-pager-key {
+    min-height: 42px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    font: 10px 'Share Tech Mono', monospace;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #f2ccd2;
+    background: linear-gradient(180deg, #240910 0%, #150509 100%);
+    border: 1px solid #5e1f2c;
+    box-shadow:
+        0 2px 0 #050102,
+        inset 0 1px 0 rgba(255, 132, 146, 0.16);
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.08s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.08s ease;
+}
+
+.feed-pager-key--alt {
+    color: #c798a0;
+    background: linear-gradient(180deg, #19060b 0%, #100407 100%);
+    border-color: #451721;
+}
+
+.feed-pager-key:hover {
+    border-color: #993246;
+    color: #fff0f2;
+}
+
+.feed-pager-key:active {
+    transform: translateY(1.5px);
+    box-shadow: 0 0 0 #050102, inset 0 1px 3px rgba(0, 0, 0, 0.65);
+}
+
 /* ===== ПЕРЕДАТЧИК СИГНАЛА — интерфейс отправки (post-modal) ===== */
 
 #post-modal-chassis {

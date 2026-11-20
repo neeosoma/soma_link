@@ -9850,6 +9850,50 @@ async function sendWhisperToPostOnce(postObj, rawText, opts) {
 }
 
 // Синхронизирует входящие «Шёпоты» на посты игрока и проверяет, сохранили ли получатели отправленные им «Шёпоты» на кассету
+// Обновляет компактный интерфейс пейджера во вкладке «ПЕЙДЖЕР»
+function renderFeedPager(warmthArg, ledgerArg) {
+    if (typeof document === 'undefined') return;
+    const pager = document.getElementById('feed-pager');
+    if (!pager) return;
+    const w = warmthArg !== undefined ? warmthArg : roomAnim.warmth;
+    const ledger = ledgerArg || loadWarmthLedger();
+    const adm = whisperAdmission(w, ledger);
+    const inbox = getPendingInboxWhispers();
+
+    pager.dataset.state = adm.live
+        ? (inbox.length > 0 ? 'inbox' : (adm.admitted ? 'ready' : 'locked'))
+        : 'offline';
+    pager.dataset.admitted = adm.admitted ? '1' : '0';
+    if (pager.classList) pager.classList.toggle('has-inbox', inbox.length > 0);
+
+    const carrierEl = document.getElementById('feed-pager-carrier');
+    const gateEl = document.getElementById('feed-pager-gate');
+    const msgEl = document.getElementById('feed-pager-msg');
+    const subEl = document.getElementById('feed-pager-sub');
+
+    if (carrierEl) {
+        carrierEl.textContent = !adm.live
+            ? 'НЕТ НЕСУЩЕЙ'
+            : inbox.length > 0
+                ? `ВХОДЯЩИЙ ШЁПОТ (${inbox.length})`
+                : adm.admitted
+                    ? `ЭФИР АКТИВЕН · ${adm.whisperLeftToday}/${adm.whisperSendCap} ДН`
+                    : 'ПРИЁМ ВХОДЯЩИХ АКТИВЕН';
+    }
+    if (gateEl) gateEl.textContent = `СЕГОДНЯ: ${adm.whisperLeftToday}/${adm.whisperSendCap}`;
+    let mainLine = 'ЧАСТОТА «ШЁПОТ» ВЫКЛЮЧЕНА';
+    let subLine = 'Можно вернуться позже.';
+    if (!adm.live && roomAnim.pagerMode === 'scan') {
+        mainLine = 'ПОИСК НЕСУЩЕЙ... ЭФИР ПУСТ';
+    } else if (adm.live) {
+        mainLine = inbox.length ? `ВХОДЯЩИЕ: ${inbox.length}` : 'ЖИВАЯ ЧАСТОТА · ВЫ НА СВЯЗИ';
+        subLine = inbox.length ? 'Прочитать, сохранить или отпустить — решать вам.'
+            : roomAnim.pagerNotice || 'Прочитайте историю. Ответьте, если хочется.';
+    }
+    if (msgEl) msgEl.textContent = mainLine;
+    if (subEl) subEl.textContent = subLine;
+}
+
 async function syncPagerWhispers() {
     if (typeof supabaseClient === 'undefined' || !supabaseClient) return;
     try {
@@ -9904,6 +9948,7 @@ async function syncPagerWhispers() {
         }
     } catch (_) {}
     if (roomAnim.pagerModalOpen) renderPagerModal();
+    renderFeedPager();
 }
 
 function pressPagerScan() {

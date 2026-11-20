@@ -188,10 +188,7 @@
                     <span class="ts-pilot" aria-hidden="true"></span>
                     <span class="ts-brand">NEEOSOMA // ПЕРЕДАТЧИК</span>
                 </div>
-                <div class="flex items-center gap-1.5">
-                    <button onclick="hideKeyboard()" class="ts-kb" aria-label="Спрятать клавиатуру">⌨ СКРЫТЬ КЛАВИАТУРУ</button>
-                    <button onclick="closePostModal()" class="ts-close" aria-label="Закрыть">✕</button>
-                </div>
+                <button onclick="closePostModal()" class="ts-close" aria-label="Закрыть">✕</button>
             </div>
             <!-- Многосегментный измеритель сигнала -->
             <div class="ts-vmeter" aria-hidden="true">
@@ -914,7 +911,15 @@
         try { saved = localStorage.getItem('soma_signal_draft_intent') || 'S'; } catch (_) {}
         const topic = document.getElementById('new-pain-tag');
         try { topic.value = localStorage.getItem('soma_signal_draft_topic') || ''; } catch (_) {}
-        topic.oninput = () => { try { localStorage.setItem('soma_signal_draft_topic', topic.value.slice(0, 24)); } catch (_) {} };
+        topic.oninput = () => {
+            try {
+                const t = topic.value.slice(0, 24);
+                clearTimeout(topicDraftTimer);
+                topicDraftTimer = setTimeout(() => {
+                    try { localStorage.setItem('soma_signal_draft_topic', t); } catch (_) {}
+                }, 500);
+            } catch (_) {}
+        };
         const selected = api.INTENTS.some(x => x.id === saved) ? saved : 'S';
         document.querySelectorAll('[name="signal-intent"]').forEach(radio => {
             radio.checked = radio.value === selected;
@@ -1425,6 +1430,8 @@
     let activeFeedTag = 'ВСЕ';
     const POST_DAY_KEY = 'soma_post_day';
     const POST_DRAFT_KEY = 'soma_pain_draft';
+    let saveDraftTimer = 0;
+    let topicDraftTimer = 0;
     const MY_POSTS_KEY = 'soma_my_posts';
     const POST_MIN_LEN = 13;
 
@@ -1757,12 +1764,22 @@
         }
         // V-метр сигнала: segmented indicator proportional to text length
         updateTsVmeter(trimLen);
-        showPostError('');
+        // Скрыть ошибку, если она была — без повторного скрытия, если уже скрыта
+        const errEl = document.getElementById('post-error');
+        if (errEl && !errEl.classList.contains('hidden')) showPostError('');
+        // Черновик сохраняется с дебаунсом (не на каждый символ — это лагоит)
         try {
-            if (val.trim()) localStorage.setItem(POST_DRAFT_KEY, val.slice(0, 666));
-            else localStorage.removeItem(POST_DRAFT_KEY);
+            const draft = val.slice(0, 666);
+            if (draft.trim()) {
+                clearTimeout(saveDraftTimer);
+                saveDraftTimer = setTimeout(() => {
+                    try { localStorage.setItem(POST_DRAFT_KEY, draft); } catch (e) {}
+                }, 500);
+            } else {
+                clearTimeout(saveDraftTimer);
+                try { localStorage.removeItem(POST_DRAFT_KEY); } catch (e) {}
+            }
         } catch (e) {}
-        if (!silent && len) SFX.key();
     }
 
     function notify(msg) {

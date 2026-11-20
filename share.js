@@ -108,11 +108,6 @@
             callsign: callsign.slice(0, 26),
             xp,
             rank,
-            seen: Math.max(0, Number(p.seen) || 0),
-            reacts: Math.max(0, Number(p.reacts) || 0),
-            attempts: typeof getWhisperBreachCount === 'function'
-                ? getWhisperBreachCount()
-                : Math.max(0, Number(p.whispersSent || 0)),
             warmth: Math.max(0, Number(p.warmth) || 0),
             trained: Math.max(0, Number(p.trained) || 0),
             phaseIdx,
@@ -502,12 +497,12 @@
         });
         curY += qLines.length * qLh + (qLines.length > 2 ? 18 : 26);
 
-        // Сетка 2×2 живых метрик Свидетеля
+        // Atmosphere and consent, not counts of stories or replies.
         const stats = [
-            { k: 'ВСТРЕЧ С ИСТОРИЯМИ', v: String(snap.seen), col: '#fff2f4' },
-            { k: 'ТЕПЛО СТАНЦИИ',  v: String(snap.warmth), col: '#ffd58e' },
-            { k: 'ОТКЛИКОВ', v: String(snap.reacts), col: '#ff8597' },
-            { k: 'ШЁПОТОВ', v: String(snap.attempts), col: '#ff5c74' }
+            { k: 'ТИХИЙ ЗНАК', v: 'АНОНИМНО', col: '#fff2f4' },
+            { k: 'ТЕПЛО СТАНЦИИ', v: String(snap.warmth), col: '#ffd58e' },
+            { k: 'ЛИЧНЫЙ ОТВЕТ', v: 'ПО ЖЕЛАНИЮ', col: '#ff8597' },
+            { k: 'АТМОСФЕРА', v: String(snap.phaseName || 'Ночь').toUpperCase(), col: '#ff5c74' }
         ];
         const boxW = 196, boxH = 74, gap = 12;
         stats.forEach((st, i) => {
@@ -524,7 +519,7 @@
             g.fillStyle = 'rgba(235, 188, 194, 0.66)';
             g.fillText(st.k, bx + 14, by + 23);
 
-            g.font = `700 28px ${MONO}`;
+            g.font = `700 ${st.v.length > 8 ? 20 : 28}px ${MONO}`;
             g.fillStyle = st.col;
             g.fillText(st.v, bx + 14, by + 57);
         });

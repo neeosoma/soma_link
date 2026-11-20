@@ -996,7 +996,7 @@ async function renderLeaderboard() {
             if (isWeek) {
                 const wRes = await supabaseClient
                     .from('soma_users')
-                    .select('username,xp,weekly_xp,weekly_key,help_attempts,reacts,seen,cosmetics')
+                    .select('username,xp,weekly_xp,weekly_key,help_attempts,cosmetics')
                     .eq('weekly_key', wk)
                     .gt('weekly_xp', 0)
                     .order('weekly_xp', { ascending: false })
@@ -1011,7 +1011,7 @@ async function renderLeaderboard() {
                 // Пробуем расширенный запрос с cosmetics, а если колонка ещё не добавлена — мгновенный фолбэк!
                 let res = await supabaseClient
                     .from('soma_users')
-                    .select('username,xp,help_attempts,reacts,seen,cosmetics')
+                    .select('username,xp,help_attempts,cosmetics')
                     .order('xp', { ascending: false })
                     .limit(LEADERBOARD_LIMIT);
                 if (res.error) {
@@ -1036,8 +1036,6 @@ async function renderLeaderboard() {
         xp: player.xp || 0,
         score: myScore,
         help_attempts: typeof getWhisperBreachCount === 'function' ? getWhisperBreachCount() : (player.whispersSent || 0),
-        reacts: player.reacts || 0,
-        seen: player.seen || 0,
         cosmetics: getActiveCosmetics()
     };
 
@@ -1198,8 +1196,6 @@ function openDossierByUid(uid, place) {
         xp: player.xp || 0,
         score: player.xp || 0,
         help_attempts: typeof getWhisperBreachCount === 'function' ? getWhisperBreachCount() : (player.whispersSent || 0),
-        reacts: player.reacts || 0,
-        seen: player.seen || 0,
         cosmetics: getActiveCosmetics()
     });
 }

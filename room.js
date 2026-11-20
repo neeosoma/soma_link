@@ -16,8 +16,8 @@ const PROGRESSION_RULES = {
     DAILY_WHISPER_SEND_CAP: 3, // не более 3 отправленных «Шёпотов» в сутки
     DAILY_WHISPER_ACK_CAP: 1,  // бонус за сохранение твоего «Шёпота» на кассету — строго не более 1 раза в сутки!
     WHISPER_SEND_XP: 30,       // +30 XP за отправленный «Шёпот» (+1 Срыв протокола)
-    WHISPER_ACK_WARMTH: 2,     // +2 бонусного Тепла (1 раз в сутки), когда твой «Шёпот» сохранили на кассету
-    WHISPER_ACK_XP: 50,        // +50 XP (1 раз в сутки), когда твой «Шёпот» сохранили на кассету
+    WHISPER_ACK_WARMTH: 4,     // +4 Тепла на рост растения (1 раз в сутки), когда твой «Шёпот» сохранили на кассету
+    WHISPER_ACK_XP: 0,         // сохранение кассеты больше не даёт XP
     SPECIES_REVEAL_STAGE: 2,   // вид раскрывается на 3/6 (~1 месяц)
     DRY_SOIL_DAYS: 5,          // мягкая заметка о подсохшей земле без потери прогресса
     SEASON_WARMTH: 360         // полный сезон тепла (90 тёплых дней × 4)
@@ -3498,7 +3498,7 @@ function whisperAdmission(_warmth, ledger) {
     };
 }
 
-// ===== ЖИВОЙ КАНАЛ «ШЁПОТ» (13..333 СИМВ., 1 ШЁПОТ НА ПОСТ, БОНУС КАССЕТЫ +2 ТЕПЛА / +50 XP МАКС. 1 РАЗ В СУТКИ) =====
+// ===== ЖИВОЙ КАНАЛ «ШЁПОТ» (13..333 СИМВ., 1 ШЁПОТ НА ПОСТ, БОНУС КАССЕТЫ +4 ТЕПЛА МАКС. 1 РАЗ В СУТКИ) =====
 function validateWhisperText(rawText) {
     const text = String(rawText || '').replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
     if (!text) {
@@ -3575,7 +3575,7 @@ function rememberAckedWhisper(whisperId) {
 }
 
 // Когда ваш «Шёпот» другой человек сохранил себе на кассету VTR-90:
-// даёт +2 Тепла (в комнату и активное растение) и +50 XP, но СТРОГО НЕ БОЛЕЕ 1 РАЗА В СУТКИ!
+// даёт +4 Тепла для роста растения (без XP), но СТРОГО НЕ БОЛЕЕ 1 РАЗА В СУТКИ!
 function claimWhisperCassetteAck(whisperId, todayOverride) {
     const wid = String(whisperId || '').trim();
     if (wid) {
@@ -3593,8 +3593,8 @@ function claimWhisperCassetteAck(whisperId, todayOverride) {
 
     if (!alreadyClaimedToday) {
         ledger.whisperAckDay = ledger.day;
-        grantedWarmth = PROGRESSION_RULES.WHISPER_ACK_WARMTH; // +2 тепла
-        grantedXp = PROGRESSION_RULES.WHISPER_ACK_XP;         // +50 XP
+        grantedWarmth = PROGRESSION_RULES.WHISPER_ACK_WARMTH; // +4 тепла
+        grantedXp = PROGRESSION_RULES.WHISPER_ACK_XP;         // без XP
     }
     saveWarmthLedger(ledger);
 
@@ -3626,7 +3626,7 @@ function claimWhisperCassetteAck(whisperId, todayOverride) {
 
     if (typeof roomAnim !== 'undefined' && roomAnim) {
         roomAnim.pagerNotice = grantedWarmth > 0
-            ? `✦ Человек сохранил ваш «Шёпот» на кассету! Вам вернулось +${grantedWarmth} Тепла и +${grantedXp} XP.`
+            ? `✦ Человек сохранил ваш «Шёпот» на кассету! +${grantedWarmth} Тепла пошли на рост растения.`
             : '✦ Ещё один ваш «Шёпот» бережно сохранён на кассету (бонус тепла 1/1 за сегодня уже впитался).';
         roomAnim.customMode = 'ПЕЙДЖЕР // ОТКЛИК С КАССЕТЫ';
         roomAnim.customEntry = roomAnim.pagerNotice;
@@ -5882,10 +5882,10 @@ function getRoomCosmeticsSafe() {
     return roomAnim.cosmeticsOverride || {};
 }
 
-function drawCompanionCat(g, now, phase, still) {
+function drawCompanionCat(g, now, phase, still, specOverride) {
     const uid = (typeof player !== 'undefined' && (player.uid || player.name)) || 'guest';
     const override = Number.isInteger(roomAnim.inspectCatCoat) ? roomAnim.inspectCatCoat : null;
-    const cat = catSpec(uid, override);
+    const cat = specOverride || catSpec(uid, override);
     const c = cat.coat;
     const t = still ? 1.2 : now * 0.001;
 
@@ -6381,10 +6381,10 @@ function drawDogPersianRug(g, cx, cy, phase, glowBoost) {
 }
 
 // ===== ЖИВОЙ ПЁС-ХРАНИТЕЛЬ С НАСТОЯЩЕЙ СОБАЧЬЕЙ АНАТОМИЕЙ И МАСШТАБОМ (У ПЛЕДА КУШЕТКИ РЯДОМ С КОТОМ!) =====
-function drawCompanionDog(g, now, phase, still) {
+function drawCompanionDog(g, now, phase, still, specOverride) {
     const uid = (typeof player !== 'undefined' && (player.uid || player.name)) || 'guest';
     const override = Number.isInteger(roomAnim.inspectDogBreed) ? roomAnim.inspectDogBreed : null;
-    const dog = dogSpec(uid, override);
+    const dog = specOverride || dogSpec(uid, override);
     const b = dog.breed;
     const isRareMaltese = b.pattern === 'maltese';
     const isSamoyed = b.pattern === 'samoyed';
@@ -7643,8 +7643,8 @@ function drawCompanionDog(g, now, phase, still) {
     }
 }
 
-function drawRoomCosmetics(g, now, phase) {
-    const cosm = getRoomCosmeticsSafe();
+function drawRoomCosmetics(g, now, phase, cosmOverride) {
+    const cosm = cosmOverride || getRoomCosmeticsSafe();
     const still = prefersStillRoom();
     const t = still ? 1.5 : now * 0.001;
 
@@ -7997,18 +7997,20 @@ function drawVineHeartLeaf(g, x, y, size, ang, darkCol, midCol, lightCol, rimCol
     g.restore();
 }
 
-function drawGreenhouseVines(g, now, phase) {
+function drawGreenhouseVines(g, now, phase, opts) {
+    const o = opts || {};
     const still = prefersStillRoom();
     const t = still ? 1.8 : now * 0.001;
-    const gh = loadGreenhouse();
-    const ghOpen = isGreenhouseUnlocked() || isPtsMode();
-    const allEarth = gh.bloomed.length >= PLANT_KINDS.length;
-    const secretAwait = ghOpen && allEarth && !(gh.alienSeed && gh.alienSeed.bloomed);
+    const gh = o.gh || loadGreenhouse();
+    const ghOpen = o.open !== undefined ? o.open : (isGreenhouseUnlocked() || isPtsMode());
+    const allEarth = o.allEarth !== undefined ? o.allEarth : gh.bloomed.length >= PLANT_KINDS.length;
+    const secretAwait = o.secretAwait !== undefined ? o.secretAwait : (ghOpen && allEarth && !(gh.alienSeed && gh.alienSeed.bloomed));
 
     // Органичный шелест при касании (затухающий маятник по всей длине плетей)
-    const touchDt = Math.max(0, (now - (roomAnim.vinesStart || -1e9)) * 0.001);
+    const vinesStart = o.vinesStart !== undefined ? o.vinesStart : roomAnim.vinesStart;
+    const touchDt = Math.max(0, (now - (vinesStart || -1e9)) * 0.001);
     const rustleEnv = touchDt < 2.6 ? Math.exp(-touchDt * 1.45) * Math.sin(touchDt * 7.4) : 0;
-    const touchGlow = softBell(now - (roomAnim.vinesStart || -1e9), 280, 420, 1200);
+    const touchGlow = softBell(now - (vinesStart || -1e9), 280, 420, 1200);
 
     // Единая живая багряно-гранатовая палитра лиан (без чужеродной зелени!):
     // тон-в-тон продолжает родные тёмно-бордовые плети на стене, так что оба слоя сливаются
@@ -10217,8 +10219,8 @@ function renderPagerModal() {
 
     if (metaEl) {
         const bonusTxt = adm.ackBonusClaimedToday
-            ? 'БОНУС КАССЕТЫ ДНЯ: ✓ ПОЛУЧЕН (1/1)'
-            : `БОНУС КАССЕТЫ: +${PROGRESSION_RULES.WHISPER_ACK_WARMTH} ТЕПЛА · +${PROGRESSION_RULES.WHISPER_ACK_XP} XP (1/ДЕНЬ)`;
+            ? 'ТЕПЛО ОТ КАССЕТЫ СЕГОДНЯ: ✓ ПОЛУЧЕНО (1/1)'
+            : `КАССЕТА ДАЁТ +${PROGRESSION_RULES.WHISPER_ACK_WARMTH} ТЕПЛА ДЛЯ РАСТЕНИЯ (1/ДЕНЬ)`;
         metaEl.innerHTML = `
             <span>ШЁПОТОВ СЕГОДНЯ: <b>${adm.whisperLeftToday}/${adm.whisperSendCap}</b></span>
             <span>${bonusTxt}</span>
@@ -10400,10 +10402,13 @@ function renderPagerModal() {
                 };
 
                 bodyEl.querySelectorAll('[data-act="read"], [data-act="skip"]').forEach(btn => {
-                    btn.onclick = () => {
+                    btn.onclick = async () => {
                         trackFirstSignalEvent(btn.dataset.act === 'read' ? 'signal_read' : 'signal_skip');
                         if (adm.firstAvailable) completeFirstSession(btn.dataset.act);
-                        roomAnim.firstSignalSkipped = [...(roomAnim.firstSignalSkipped || []), btn.dataset.postId];
+                        if (typeof decidePagerStory === 'function') {
+                            btn.disabled = true;
+                            await decidePagerStory(btn.dataset.postId, btn);
+                        }
                         roomAnim.pagerModalNotice = btn.dataset.act === 'read'
                             ? 'Можно просто прочитать. Отвечать не обязательно.' : 'Сигнал пропущен. Это нормально.';
                         renderPagerModal();
@@ -10455,6 +10460,9 @@ function renderPagerModal() {
                             roomAnim.pagerModalError = '⛔ ' + res.error;
                             if (typeof SFX !== 'undefined' && SFX.block) SFX.block();
                             renderPagerModal();
+                        } else if (typeof decidePagerStory === 'function' && targetPost) {
+                            await decidePagerStory(targetPost.id);
+                            renderPagerModal();
                         }
                     };
                 }
@@ -10464,7 +10472,7 @@ function renderPagerModal() {
 
     if (footEl) {
         footEl.innerHTML = `
-            <span class="pager-foot-rule">⚖ 13–333 симв. · 1 шёпот на человека · кассета даёт +2 Тепла (1/день)</span>
+            <span class="pager-foot-rule">⚖ 13–333 симв. · 1 шёпот на человека · кассета даёт +4 Тепла растению (1/день)</span>
             <button type="button" class="pager-foot-vhs" id="pager-open-vhs-btn">📼 КАССЕТЫ VTR-90 (${tapes.length})</button>
             <a class="pager-foot-vhs" href="gift.html">ЗАПИСАТЬ СВОИ СЛОВА ДРУГУ →</a>
             ${isWhisperSafetyLive() ? '<button type="button" class="pager-foot-vhs" id="pager-manage-blocks">БЛОКИРОВКИ</button>' : ''}

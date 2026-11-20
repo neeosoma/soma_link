@@ -1,4 +1,8 @@
-# Shared night ritual rollout
+# Legacy shared night ritual rollout
+
+> **Legacy only.** `setup_station_ritual.sql` exposes the old Whisper-based 5+/10+/12+ aggregate and is not used by the current UI. For the accepted quiet-presence atmosphere, use [PRESENCE_DEPLOY.md](./PRESENCE_DEPLOY.md) and its witness-mark migrations. Do not apply this legacy SQL as part of the current rollout. If already installed, it can remain idle; the current UI uses `station_presence_atmosphere_status()` instead.
+
+## Historical behavior (legacy implementation)
 
 ## What the additive migration does
 

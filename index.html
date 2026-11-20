@@ -342,7 +342,7 @@
 
         <!-- ОСНОВНАЯ НАВИГАЦИЯ -->
         <nav class="app-tabs" aria-label="Разделы станции">
-            <button id="tab-feed" onclick="switchTab('feed')" aria-current="page">ИСТОРИИ</button>
+            <button id="tab-feed" onclick="switchTab('feed')" aria-current="page">ПЕЙДЖЕР</button>
             <button id="tab-top" onclick="switchTab('top')">ЗВЁЗДЫ</button>
             <button id="tab-profile" onclick="switchTab('profile')">КОМНАТА</button>
         </nav>
@@ -354,8 +354,8 @@
             <header class="feed-heading">
                 <div>
                     <span class="feed-kicker">ЖИВАЯ ЧАСТОТА</span>
-                    <h1>Истории</h1>
-                    <p>Читайте, откликнитесь или пройдите мимо.</p>
+                    <h1>Пейджер</h1>
+                    <p>Один случайный сигнал. Читать, откликнуться или пройти мимо — ваш выбор.</p>
                 </div>
                 <button id="open-post-btn" type="button" onclick="openPostModal()" class="soma-post-cta feed-write-btn">
                     <span class="soma-post-beacon" aria-hidden="true"></span>
@@ -375,12 +375,12 @@
                 </div>
             </section>
 
-            <section id="night-ritual-card" class="night-ritual-strip" aria-label="Общий отклик за последние 24 часа">
-                <span class="night-ritual-kicker">ОБЩИЙ ОТКЛИК</span>
-                <p id="night-ritual-copy" role="status" aria-live="polite">Общий счёт пока недоступен: серверные данные не получены. Число не показываем.</p>
+            <section id="night-ritual-card" class="night-ritual-strip" aria-label="Общая атмосфера станции">
+                <span class="night-ritual-kicker">ОБЩИЙ ЭФИР</span>
+                <p id="night-ritual-copy" role="status" aria-live="polite">Общий фон станции обновится позже. Ничего делать не нужно.</p>
             </section>
 
-            <details id="feed-filters" class="feed-filters">
+            <details id="feed-filters" class="feed-filters" hidden>
                 <summary>
                     <span>ФИЛЬТРЫ</span>
                     <span id="feed-filter-status">Все истории</span>
@@ -404,9 +404,12 @@
             <div id="posts-container" class="space-y-3">
                 <div class="text-center text-xs text-gray-500 py-10 font-mono-tech">Загрузка историй…</div>
             </div>
+            <details class="feed-filters">
+                <summary>МОИ СИГНАЛЫ · ТИХИЕ ЗНАКИ</summary>
+                <div id="pager-own-posts" class="space-y-3" aria-live="polite"></div>
+            </details>
             <div id="feed-ritual-hint" class="feed-personal-note">
-                <span id="feed-warmth-status">Удержание взгляда зажигает ваши светлячки — по желанию.</span>
-                <span id="feed-warmth-quota">0/2</span>
+                <span id="feed-warmth-status">Пауза по желанию согревает только вашу комнату. Автор её не увидит.</span>
             </div>
         </div>
 
@@ -561,7 +564,7 @@
                     <p id="station-next"></p>
                     <progress id="station-meter" aria-label="Прогресс до следующей перемены за окном"></progress>
                     <p id="station-stars"></p>
-                    <p class="station-note">Тепло рождается в тишине — от дочитанных историй и тренажёра в терминале (до 4 в день). Пустые реакции его не дают.</p>
+                    <p class="station-note">Тепло — атмосфера вашей комнаты, не счёт откликов. Пауза в ленте согревает только вашу станцию; автор её не увидит.</p>
 
                     <!-- Сворачиваемый PTS-инспектор (строго скрыт для обычных игроков в релизе) -->
                     <div id="pts-panel" class="station-pts-wrap hidden">
@@ -646,12 +649,12 @@
                 </div>
                 <div class="grid grid-cols-2 gap-2 pt-2 border-t border-red-500/20 font-mono-tech">
                     <div class="bg-[#080405] p-2.5 rounded-xl border border-red-950">
-                        <div class="text-[10px] text-gray-500">ВСТРЕЧ С ИСТОРИЯМИ</div>
-                        <div id="stat-seen" class="text-lg font-bold text-white">0</div>
+                        <div class="text-[10px] text-gray-500">ТИХИЙ ЗНАК</div>
+                        <div class="text-sm font-bold text-amber-200">«Я рядом» · анонимно</div>
                     </div>
                     <div class="bg-[#080405] p-2.5 rounded-xl border border-red-950">
-                        <div class="text-[10px] text-gray-500">ОТКЛИКОВ</div>
-                        <div id="stat-reacts" class="text-lg font-bold text-red-400">0</div>
+                        <div class="text-[10px] text-gray-500">ЛИЧНЫЙ ОТВЕТ</div>
+                        <div class="text-sm font-bold text-red-300">«Шёпот» · по желанию</div>
                     </div>
                     <div class="bg-[#080405] p-2.5 rounded-xl border border-red-950">
                         <div class="text-[10px] text-gray-500">ШЁПОТОВ ОТПРАВЛЕНО</div>
@@ -673,7 +676,8 @@
 <script src="scenarios.js?v=15"></script>
 <script src="music.js?v=15"></script>
 <script src="signals.js?v=2"></script>
-<script src="station-ritual.js?v=1"></script>
+<script src="station-ritual.js?v=2"></script>
+<script src="witness.js?v=2"></script>
 <script src="room.js?v=18"></script>
 <script src="cosmetics.js?v=16"></script>
 <script src="receiver.js?v=15"></script>
@@ -771,12 +775,15 @@
     const lsNum = k => { try { return parseInt(localStorage.getItem(k) || '0', 10) || 0; } catch (e) { return 0; } };
     const musicFound = () => { try { return !!localStorage.getItem('soma_music'); } catch (e) { return false; } };
     function rankIdx() { let i = 0; ranks.forEach((r, n) => { if (player.xp >= r.minXp) i = n; }); return i; }
-    function addWarmth(n) {
+    function addWarmth(n, syncCloud = true) {
         player.warmth = (player.warmth || 0) + n;
         try { localStorage.setItem('soma_warmth', String(player.warmth)); } catch (e) {}
         // Растение растёт СТРОГО только пока стоит в комнате!
         if (typeof feedActiveRoomPlant === 'function') feedActiveRoomPlant(n, player.warmth);
-        try { supabaseClient.from('soma_users').update({ warmth: player.warmth }).eq('username', player.uid).then(() => {}, () => {}); } catch (e) {}
+        if (syncCloud && typeof supabaseClient !== 'undefined' && supabaseClient) {
+            try { localStorage.setItem('soma_server_warmth_seen', String(player.warmth)); } catch (e) {}
+            try { supabaseClient.from('soma_users').update({ warmth: player.warmth }).eq('username', player.uid).then(() => {}, () => {}); } catch (e) {}
+        }
     }
     // Ламповый приёмник NEEOSOMA // AV-88 — личная фонотека и коллекционный винил 7" (БЕЗ выхода из Fullscreen и БЕЗ промо)
     function openRadio() {
@@ -826,15 +833,14 @@
     }
     function holdDone(id) {
         holding = false;
-        const res = typeof claimDailyWarmth === 'function' ? claimDailyWarmth('hold') : { granted: 1 };
+        const res = typeof claimDailyWarmth === 'function' ? claimDailyWarmth('hold') : { granted: 0 };
         held[id] = res.granted ? 2 : 1;
         try { localStorage.setItem('soma_held', JSON.stringify(held)); } catch (e) {}
-        try { Telegram.WebApp.HapticFeedback.notificationOccurred('success'); } catch (e) {}
-        SFX.react();
-        player.xp += 15;
-        if (typeof addWeeklyXp === 'function') addWeeklyXp(15);
-        if (res.granted) addWarmth(res.granted);
-        updateCloudProfile(); updateHeader(); renderFeed();
+        try { Telegram.WebApp.HapticFeedback.impactOccurred('light'); } catch (e) {}
+        SFX.tap();
+        if (res.granted) addWarmth(res.granted, false);
+        updateHeader();
+        renderFeed();
     }
 
     // Тренажёр «Слушатель» в терминале: 60 живых ситуаций в scenarios.js (до +2 тепла и 4 разборов в день)
@@ -974,8 +980,7 @@
         renderFeed();
     }
     function contactPosts() {
-        const api = window.SOMA_SIGNALS;
-        return api.filterPosts(feedPosts, api.readPrefs(localStorage), contactIntent);
+        return feedPosts.slice(0, 1);
     }
 
     let stationRitualState = null;
@@ -991,12 +996,12 @@
         const copy = document.getElementById('night-ritual-copy');
         if (copy) copy.textContent = view.copy;
         const station = document.getElementById('station');
-        if (station && station.dataset) station.dataset.nightRitual = status && status.complete ? 'lit' : 'quiet';
+        if (station && station.dataset) station.dataset.nightRitual = status && status.lit ? 'lit' : 'quiet';
         const roomNote = document.getElementById('station-night-ritual-note');
         if (roomNote) {
-            roomNote.hidden = !(status && status.complete);
-            roomNote.textContent = status && status.complete
-                ? '✦ ОБЩИЙ СВЕТ · 12+ ИСТОРИЙ ПОЛУЧИЛИ ОТКЛИК'
+            roomNote.hidden = !(status && status.lit);
+            roomNote.textContent = status && status.lit
+                ? '✦ ОБЩИЙ СВЕТ · НЕ ОТМЕТКА О КОНКРЕТНОЙ ИСТОРИИ'
                 : '';
         }
     }
@@ -1023,7 +1028,7 @@
         }
         stationRitualRequest = Promise.resolve().then(async () => {
             try {
-                const result = await supabaseClient.rpc('station_night_ritual_status');
+                const result = await supabaseClient.rpc('station_presence_atmosphere_status');
                 if (!result || result.error) throw new Error('ritual unavailable');
                 const status = window.SOMA_RITUAL.normalizeStatus(result.data);
                 if (!status) throw new Error('invalid ritual status');
@@ -1056,11 +1061,7 @@
 
     function openFirstSessionSignal() {
         const roomApi = window.SOMA_ROOM || {};
-        const candidates = visibleRitualCandidates();
-        const preferred = stationRitualState && stationRitualState.candidatePostId
-            ? candidates.find(post => String(post.id) === stationRitualState.candidatePostId)
-            : null;
-        const candidate = preferred || candidates[0];
+        const candidate = visibleRitualCandidates()[0];
         if (!candidate || typeof roomApi.openFirstSignalSession !== 'function') return false;
         roomApi.openFirstSignalSession(candidate.id);
         return true;
@@ -1069,11 +1070,7 @@
     function openNightRitualSignal() {
         const roomApi = window.SOMA_ROOM || {};
         if (typeof roomApi.openFirstSignalSession !== 'function') return false;
-        const candidates = visibleRitualCandidates();
-        const preferred = stationRitualState && stationRitualState.candidatePostId
-            ? candidates.find(post => String(post.id) === stationRitualState.candidatePostId)
-            : null;
-        const selected = preferred || candidates[0];
+        const selected = visibleRitualCandidates()[0];
         roomApi.openFirstSignalSession(selected ? selected.id : '');
         return true;
     }
@@ -1150,8 +1147,15 @@
         }
     }
 
-    let player = { name: "GUEST", uid: "", warmth: lsNum('soma_warmth'), xp: 0, seen: 0, reacts: 0, helpAttempts: 0, reactedPosts: {} };
+    let player = { name: "GUEST", uid: "", warmth: lsNum('soma_warmth'), xp: 0, helpAttempts: 0 };
     let feedPosts = [];
+    let ownPagerPosts = [];
+    let witnessStatuses = new Map();
+    let witnessStatusError = 'loading';
+    let witnessStatusRequest = null;
+    let witnessStatusForceQueued = false;
+    let witnessStatusCheckedAt = 0;
+    const WITNESS_STATUS_REFRESH_MS = 30000;
 
     const ranks = [
         { minXp: 0, title: "УР. 1 // ГОСТЬ СТАНЦИИ" },
@@ -1170,7 +1174,6 @@
         const wantsRoom = () => new URLSearchParams(location.search).has('room') || /^#room\b/i.test(location.hash);
         if (wantsRoom()) switchTab('profile', true);
         window.addEventListener('hashchange', () => { if (wantsRoom()) switchTab('profile'); });
-        try { player.reactedPosts = JSON.parse(localStorage.getItem('soma_reacted') || '{}'); } catch (e) {}
         const k = SUPABASE_ANON_KEY || '';
         if (!/^https:\/\/[a-z0-9]+\.supabase\.co\/?$/.test(SUPABASE_URL || '')) notify('В config.js неверный SUPABASE_URL. Нужен вид https://abcdefgh.supabase.co (без /dashboard, без пробелов).');
         else if (/^sb_secret_/.test(k)) notify('В config.js вставлен Secret-ключ. Нужен Publishable (sb_publishable_...). Secret-ключ лучше пересоздать в Supabase.');
@@ -1206,7 +1209,7 @@
         renderRoom();
 
         try {
-            let { data } = await supabaseClient.from('soma_users').select('*').eq('username', player.uid).single();
+            let { data } = await supabaseClient.from('soma_users').select('username,xp,warmth,help_attempts,whispers_sent,weekly_xp,weekly_key,cosmetics,owned_cosmetics').eq('username', player.uid).single();
             if (data) {
                 const whispers = typeof getWhisperBreachCount === 'function' ? getWhisperBreachCount() : 0;
                 const cloudWhispers = Number.isFinite(Number(data.whispers_sent)) ? Math.max(0, Number(data.whispers_sent)) : 0;
@@ -1214,20 +1217,31 @@
                 player = {
                     ...player,
                     xp: data.xp || 0,
-                    seen: data.seen || 0,
-                    reacts: data.reacts || 0,
                     whispersSent: breaches,
                     helpAttempts: breaches,
-                    warmth: Math.max(player.warmth || 0, data.warmth || 0)
+                    warmth: Math.max(0, Number(player.warmth) || 0)
                 };
+                syncWitnessWarmthToLocal(data.warmth);
                 if (typeof hydrateCosmeticsFromCloud === 'function') hydrateCosmeticsFromCloud(data);
             } else {
                 const breaches = typeof getWhisperBreachCount === 'function' ? getWhisperBreachCount() : 0;
                 player.whispersSent = breaches;
                 player.helpAttempts = breaches;
-                await supabaseClient.from('soma_users').insert([{ username: player.uid, xp: 0, seen: 0, reacts: 0, help_attempts: breaches }]);
+                const created = await supabaseClient.from('soma_users').insert([{ username: player.uid, xp: 0, help_attempts: breaches }]);
+                if (!created.error) syncWitnessWarmthToLocal(0);
             }
         } catch(e) {}
+
+        if (supabaseClient && player.uid) {
+            try {
+                const binding = await supabaseClient.rpc('bind_my_soma_profile', { p_username: player.uid });
+                if (!binding.error && binding.data === true) {
+                    const { data: boundProfile } = await supabaseClient.from('soma_users')
+                        .select('warmth').eq('username', player.uid).maybeSingle();
+                    if (boundProfile) syncWitnessWarmthToLocal(boundProfile.warmth);
+                }
+            } catch (_) {}
+        }
 
         updateHeader();
         if (typeof applyCosmeticsToUI === 'function') applyCosmeticsToUI();
@@ -1246,31 +1260,175 @@
         });
     }
 
-    async function refreshFeed() {
-        if (!supabaseClient || document.hidden || holding) return;
+    function syncWitnessWarmthToLocal(serverWarmth) {
+        if (!player || !Number.isFinite(Number(serverWarmth))) return false;
+        const remote = Math.max(0, Number(serverWarmth));
+        const current = Math.max(0, Number(player.warmth) || 0);
+        let seen = null;
         try {
-            if (typeof syncPagerWhispers === 'function') syncPagerWhispers();
-            const { data, error } = await supabaseClient.from('soma_posts').select('*').order('created_at', { ascending: false }).limit(50);
-            if (error || !Array.isArray(data)) return;
-            const wasFailed = feedLoadFailed;
-            feedLoadFailed = false;
-            const sig = d => d.map(p => p.id + ':' + p.likes).join('|');
-            if (wasFailed || sig(data) !== sig(feedPosts)) { feedPosts = data; renderFeed(); }
-        } catch (e) {}
+            const raw = localStorage.getItem('soma_server_warmth_seen');
+            if (raw !== null && raw !== '') seen = Math.max(0, Number(raw) || 0);
+        } catch (_) {}
+
+        // A fresh device starts at the cloud baseline; on an existing device,
+        // only the increase since that baseline is a new server-side reward.
+        if (seen === null) {
+            const delta = Math.max(0, remote - current);
+            player.warmth = Math.max(current, remote);
+            try {
+                localStorage.setItem('soma_server_warmth_seen', String(remote));
+                localStorage.setItem('soma_warmth', String(player.warmth));
+            } catch (_) {}
+            if (delta > 0 && typeof feedActiveRoomPlant === 'function') {
+                try { feedActiveRoomPlant(delta, player.warmth); } catch (_) {}
+            }
+            if (delta > 0) updateHeader();
+            return delta > 0;
+        }
+
+        if (remote > seen) {
+            const delta = remote - seen;
+            player.warmth = Math.max(current, seen) + delta;
+            try {
+                localStorage.setItem('soma_server_warmth_seen', String(remote));
+                localStorage.setItem('soma_warmth', String(player.warmth));
+            } catch (_) {}
+            if (typeof feedActiveRoomPlant === 'function') {
+                try { feedActiveRoomPlant(delta, player.warmth); } catch (_) {}
+            }
+            updateHeader();
+            return true;
+        }
+        if (current < seen) {
+            player.warmth = seen;
+            try { localStorage.setItem('soma_warmth', String(seen)); } catch (_) {}
+            updateHeader();
+            return true;
+        }
+        return false;
+    }
+
+    function sameWitnessStatuses(a, b) {
+        if (!(a instanceof Map) || !(b instanceof Map) || a.size !== b.size) return false;
+        for (const [id, next] of b) {
+            const prev = a.get(id);
+            if (!prev || prev.isAuthor !== next.isAuthor || prev.canMark !== next.canMark
+                || prev.hasWitness !== next.hasWitness || prev.iMarked !== next.iMarked
+                || prev.authorWarmth !== next.authorWarmth) return false;
+        }
+        return true;
+    }
+
+    async function refreshWitnessStatuses(force) {
+        if (witnessStatusRequest) {
+            const pending = witnessStatusRequest;
+            if (!force) return pending;
+            witnessStatusForceQueued = true;
+            const previous = await pending;
+            if (!witnessStatusForceQueued) return previous;
+            witnessStatusForceQueued = false;
+            return refreshWitnessStatuses(true);
+        }
+        const now = Date.now();
+        if (!force && now - witnessStatusCheckedAt < WITNESS_STATUS_REFRESH_MS) {
+            return { ok: witnessStatusError === '', changed: false };
+        }
+        witnessStatusCheckedAt = now;
+        const api = window.SOMA_WITNESS;
+        if (!api || typeof api.fetchStatuses !== 'function' || typeof api.safePostId !== 'function' || !supabaseClient) {
+            const changed = witnessStatusError !== 'unavailable';
+            witnessStatusError = 'unavailable';
+            return { ok: false, code: witnessStatusError, changed };
+        }
+        const ids = [...new Set([...feedPosts, ...ownPagerPosts].map(post => api.safePostId(post && post.id)).filter(Boolean))].slice(0, 50);
+        if (!ids.length) {
+            const changed = witnessStatuses.size > 0 || witnessStatusError !== '';
+            witnessStatuses = new Map();
+            witnessStatusError = '';
+            return { ok: true, changed };
+        }
+        witnessStatusRequest = Promise.resolve().then(async () => {
+            try {
+                const result = await api.fetchStatuses(supabaseClient, ids);
+                if (!result || !result.ok || !(result.statuses instanceof Map)) {
+                    const code = result && result.code || 'unavailable';
+                    const changed = witnessStatusError !== code;
+                    witnessStatusError = code;
+                    return { ok: false, code, changed };
+                }
+                const changed = !sameWitnessStatuses(witnessStatuses, result.statuses) || witnessStatusError !== '';
+                witnessStatuses = result.statuses;
+                witnessStatusError = '';
+                for (const status of result.statuses.values()) {
+                    if (status.isAuthor && status.authorWarmth !== null) {
+                        syncWitnessWarmthToLocal(status.authorWarmth);
+                        break;
+                    }
+                }
+                return { ok: true, changed };
+            } catch (_) {
+                const changed = witnessStatusError !== 'unavailable';
+                witnessStatusError = 'unavailable';
+                return { ok: false, code: witnessStatusError, changed };
+            }
+        }).finally(() => { witnessStatusRequest = null; });
+        return witnessStatusRequest;
     }
 
     let feedLoadFailed = false;
+    let pagerFetchGeneration = 0;
+    let pagerDecisionBusy = false;
     async function fetchPosts() {
+        const generation = ++pagerFetchGeneration;
         try {
             if (!supabaseClient) throw new Error('Network unavailable');
-            const { data, error } = await supabaseClient.from('soma_posts').select('*').order('created_at', { ascending: false }).limit(50);
-            if (error || !Array.isArray(data)) throw error || new Error('Invalid response');
-            feedPosts = data;
+            const [current, own] = await Promise.all([
+                supabaseClient.rpc('next_soma_pager_story'),
+                supabaseClient.rpc('my_soma_pager_stories')
+            ]);
+            if (current.error || !Array.isArray(current.data) || own.error || !Array.isArray(own.data)) throw current.error || own.error || new Error('Invalid response');
+            if (generation !== pagerFetchGeneration) return;
+            const next = current.data.slice(0, 1);
+            const changed = feedLoadFailed || String(feedPosts[0]?.id || '') !== String(next[0]?.id || '')
+                || ownPagerPosts.map(p => p.id).join('|') !== own.data.map(p => p.id).join('|');
+            feedPosts = next;
+            ownPagerPosts = own.data;
             feedLoadFailed = false;
+            if (changed) {
+                witnessStatuses = new Map();
+                witnessStatusError = 'loading';
+                renderFeed();
+            }
+            const result = await refreshWitnessStatuses(changed);
+            if (generation === pagerFetchGeneration && result.changed) renderFeed();
         } catch (_) {
+            if (generation !== pagerFetchGeneration) return;
             feedLoadFailed = true;
+            renderFeed();
         }
-        renderFeed();
+    }
+
+    async function refreshFeed() {
+        if (!supabaseClient || document.hidden || holding || pagerDecisionBusy) return;
+        if (typeof syncPagerWhispers === 'function') syncPagerWhispers();
+        await fetchPosts();
+    }
+
+    async function decidePagerStory(postId, button) {
+        if (pagerDecisionBusy || !feedPosts[0] || String(feedPosts[0].id) !== String(postId)) return;
+        pagerDecisionBusy = true;
+        ++pagerFetchGeneration;
+        if (button) button.disabled = true;
+        try {
+            const { error } = await supabaseClient.rpc('decide_soma_pager_story', { p_post_id: String(postId) });
+            if (error) throw error;
+            feedPosts = [];
+            witnessStatuses = new Map();
+            await fetchPosts();
+        } catch (_) {
+            if (button) button.disabled = false;
+            notify('Не удалось сохранить выбор. Попробуйте ещё раз.');
+        } finally { pagerDecisionBusy = false; }
     }
 
     async function updateCloudProfile() {
@@ -1282,8 +1440,6 @@
         try {
             await supabaseClient.from('soma_users').update({
                 xp: player.xp,
-                seen: player.seen,
-                reacts: player.reacts,
                 help_attempts: breaches
             }).eq('username', player.uid);
         } catch(e) {}
@@ -1311,8 +1467,6 @@
             : Math.max(0, Number(player.whispersSent) || 0);
         player.whispersSent = breaches;
         player.helpAttempts = breaches;
-        document.getElementById('stat-seen').innerText = player.seen;
-        document.getElementById('stat-reacts').innerText = player.reacts;
         document.getElementById('stat-attempts').innerText = breaches;
         const indiffEl = document.getElementById('indiff-val');
         if (indiffEl && typeof indifferenceIndex === 'function') {
@@ -1434,23 +1588,8 @@
         const qHint = document.getElementById('post-quota-hint');
         if (qHint) qHint.textContent = sent ? `Лимит исчерпан · новый через ${left}` : 'Доступно сегодня: 1 / 1';
 
-        // Синхронизируем подсказку тёплого чтения (связь «Живой частоты» со Светлячками в комнате!)
         const wStatus = document.getElementById('feed-warmth-status');
-        const wQuota = document.getElementById('feed-warmth-quota');
-        if (wStatus && wQuota && typeof loadWarmthLedger === 'function' && typeof PROGRESSION_RULES !== 'undefined') {
-            const lg = loadWarmthLedger();
-            const cap = PROGRESSION_RULES.DAILY_HOLD_CAP;
-            const done = Math.min(cap, lg.hold || 0);
-            wQuota.textContent = `${done}/${cap}`;
-            if (done >= cap) {
-                const ff = typeof fireflyState === 'function' ? fireflyState(lg) : { count: 1 };
-                wStatus.textContent = `✦ Светлячки в комнате горят (${ff.count}/7) · на сегодня достаточно`;
-            } else if (done > 0) {
-                wStatus.textContent = '✦ Первый огонёк уже горит — можно остановиться';
-            } else {
-                wStatus.textContent = '✦ По желанию: удерживайте взгляд 3 с, чтобы зажечь огонёк';
-            }
-        }
+        if (wStatus) wStatus.textContent = 'Пауза по желанию согревает только вашу комнату. Автор её не увидит.';
     }
 
     function setFeedFilter(tag) {
@@ -1495,6 +1634,79 @@
         summary.textContent = labels.length ? labels.join(' · ') : 'Все истории';
     }
 
+    function witnessUnavailableCopy(code) {
+        if (code === 'migration') return 'Тихий знак пока недоступен. Читать молча или пропустить можно без него.';
+        if (code === 'auth') return 'Для тихого знака нужен защищённый сеанс. Читать и пропустить можно без него.';
+        if (code === 'loading') return 'Состояние знака загружается. Читать молча или пропустить можно уже сейчас.';
+        return 'Анонимный знак сейчас недоступен. Читать молча или пропустить можно уже сейчас.';
+    }
+
+    function witnessMarkErrorCopy(code) {
+        if (code === 'daily-limit') return 'Новый знак сейчас недоступен. Читать или пройти мимо можно как обычно.';
+        if (code === 'own-post') return 'На собственный сигнал знак оставить нельзя.';
+        if (code === 'post-unavailable') return 'Для этой истории знак недоступен. Ничего не отправлено.';
+        if (code === 'auth') return 'Защищённый сеанс недоступен. Ничего не отправлено; читать и пропускать можно без него.';
+        if (code === 'migration') return 'Тихий знак пока недоступен. Ничего не отправлено.';
+        return 'Не удалось сохранить знак. Ничего не отправлено — попробуйте позже.';
+    }
+
+    function renderWitnessAction(post, isMine) {
+        const api = window.SOMA_WITNESS;
+        const postId = api && typeof api.safePostId === 'function' ? api.safePostId(post && post.id) : '';
+        const status = postId ? witnessStatuses.get(postId) : null;
+        if (isMine || (status && status.isAuthor)) {
+            return status && status.hasWitness
+                ? '<div class="witness-author-note" role="status">◌ Кто-то оставил тихий знак.</div>'
+                : '';
+        }
+        if (status && status.iMarked) {
+            return '<div class="witness-reader-note" role="status">✓ Вы оставили тихий знак. Автор увидит его в ленте, без вашего имени.</div>';
+        }
+        if (status && status.canMark && postId) {
+            return `<div class="witness-action-wrap">
+                <button type="button" onclick="markPostWitness('${postId}', this)" class="witness-mark-btn">◌ ОСТАВИТЬ ЗНАК «Я РЯДОМ»</button>
+                <p class="witness-caption">Автор увидит только факт знака. Для него вы останетесь анонимны. Это не обещание помощи, продолжения общения или ответа.</p>
+                <p data-witness-feedback class="witness-feedback" role="status" aria-live="polite"></p>
+            </div>`;
+        }
+        const copy = status
+            ? 'Знак «Я рядом» для этой истории недоступен. Читать молча или пройти мимо можно в любом случае.'
+            : witnessUnavailableCopy(witnessStatusError);
+        return `<p class="witness-unavailable" role="status">${esc(copy)}</p>`;
+    }
+
+    async function markPostWitness(postId, button) {
+        const api = window.SOMA_WITNESS;
+        const id = api && typeof api.safePostId === 'function' ? api.safePostId(postId) : '';
+        const status = id ? witnessStatuses.get(id) : null;
+        if (!button || button.disabled || !id || !status || !status.canMark) return;
+        const feedback = button.parentElement && button.parentElement.querySelector('[data-witness-feedback]');
+        const originalLabel = button.textContent;
+        button.disabled = true;
+        button.textContent = 'СОХРАНЯЕМ ТИХИЙ ЗНАК…';
+        if (feedback) feedback.textContent = '';
+
+        const result = await api.markPost(supabaseClient, id);
+        if (!result || !result.ok) {
+            button.disabled = false;
+            button.textContent = originalLabel;
+            if (feedback) feedback.textContent = witnessMarkErrorCopy(result && result.code);
+            return;
+        }
+
+        witnessStatuses.set(id, Object.freeze({
+            isAuthor: false,
+            canMark: false,
+            hasWitness: false,
+            iMarked: true
+        }));
+        try { Telegram.WebApp.HapticFeedback.impactOccurred('light'); } catch (e) {}
+        SFX.tap();
+        renderFeed();
+        await decidePagerStory(id);
+        if (typeof refreshStationRitual === 'function') refreshStationRitual(true);
+    }
+
     function renderFeed() {
         if (typeof renderFirstSignalEntry === 'function') renderFirstSignalEntry();
         if (typeof roomAnim !== 'undefined' && roomAnim.pagerModalOpen) renderPagerModal();
@@ -1506,33 +1718,38 @@
         renderFeedFilters();
         renderFeedFilterSummary();
         const myIds = new Set(getMyPostIds());
-        const todayLedger = typeof loadWarmthLedger === 'function' ? loadWarmthLedger() : { hold: 0, total: 0 };
-        const holdHasWarmth = typeof PROGRESSION_RULES !== 'undefined'
-            ? (todayLedger.hold < PROGRESSION_RULES.DAILY_HOLD_CAP && todayLedger.total < PROGRESSION_RULES.DAILY_WARMTH_CAP)
-            : true;
+        const ownContainer = document.getElementById('pager-own-posts');
+        if (ownContainer) {
+            ownContainer.innerHTML = ownPagerPosts.length ? ownPagerPosts.map(post => {
+                const id = window.SOMA_WITNESS && window.SOMA_WITNESS.safePostId(post.id);
+                const status = id && witnessStatuses.get(id);
+                const note = status && status.isAuthor && status.hasWitness
+                    ? '<div class="witness-author-note">◌ Кто-то оставил тихий знак.</div>' : '';
+                return `<article class="bg-[#14090c] border border-amber-400/35 rounded-2xl p-4 space-y-2"><p class="text-xs text-gray-200 whitespace-pre-line break-words">${esc(post.text)}</p>${note}</article>`;
+            }).join('') : '<p class="signal-caption">Ваших сигналов пока нет.</p>';
+        }
 
-        const available = contactPosts();
-        const visible = activeFeedTag === 'ВСЕ' ? available
-            : available.filter(p => (window.SOMA_SIGNALS.unpackTag(p.tag).topic || 'БЕЗ ТЕМЫ').toUpperCase() === activeFeedTag);
+        const visible = feedPosts.slice(0, 1);
+        const witnessApi = window.SOMA_WITNESS || {};
 
         if (!visible.length) {
-            container.innerHTML = `<div class="text-center text-xs text-gray-500 py-10 font-mono-tech">${feedLoadFailed ? 'Не удалось загрузить сигналы. Попробуйте позже.' : 'Историй пока нет. Смените фильтр или загляните позже.'}</div>`;
+            container.innerHTML = `<div class="text-center text-xs text-gray-500 py-10 font-mono-tech">${feedLoadFailed ? 'Не удалось загрузить сигналы. Попробуйте позже.' : 'Новых сигналов пока нет. Загляните позже.'}</div>`;
             return;
         }
 
         visible.forEach(post => {
-            const isReacted = player.reactedPosts[post.id];
             const heldState = held[post.id];
-            const isMine = myIds.has(post.id);
+            const safePostId = typeof witnessApi.safePostId === 'function' ? witnessApi.safePostId(post.id) : '';
+            const witnessStatus = safePostId ? witnessStatuses.get(safePostId) : null;
+            const isMine = myIds.has(post.id) || !!(witnessStatus && witnessStatus.isAuthor);
+            const hasVerifiedOwner = !witnessStatus || witnessStatus.isAuthor || witnessStatus.canMark || witnessStatus.iMarked;
+            const witnessAction = renderWitnessAction(post, isMine);
             const age = formatPostAge(post.created_at);
             const intentInfo = window.SOMA_SIGNALS.unpackTag(post.tag);
             const responseHint = intentInfo.intent ? intentInfo.intent.hint : 'Советы не запрошены. Просто откликнитесь.';
             const heldLabel = heldState === 2
-                ? '👁 Вы прочитали эту историю'
-                : '👁 Вы побыли рядом';
-            const holdBtnLabel = holdHasWarmth
-                ? '👁 УДЕРЖАТЬ ВЗГЛЯД (3 с)'
-                : '👁 ПОБЫТЬ РЯДОМ В ТИШИНЕ (3 с)';
+                ? '◌ Пауза отмечена здесь. Она согрела только вашу комнату; автор её не увидел.'
+                : '◌ Пауза отмечена только здесь. Автор её не увидел.';
             const card = document.createElement('div');
             card.className = isMine
                 ? "bg-[#14090c] border border-amber-400/35 rounded-2xl p-4 space-y-3 transition"
@@ -1549,66 +1766,31 @@
                 <p class="text-xs sm:text-sm text-gray-200 leading-relaxed font-mono-tech whitespace-pre-line break-words">${esc(post.text)}</p>
                 <p class="signal-response-hint">${esc(responseHint)}</p>
                 ${isMine
-                    ? `<div class="py-1.5 px-3 rounded-xl bg-black/40 border border-amber-400/20 text-[10.5px] font-mono-tech text-amber-200/80 flex justify-between items-center">
-                        <span>◌ Ваш голос звучит в сети SOMA~LINK · NEEO~CITY</span>
-                        <span class="text-amber-300">Откликов: ${post.likes || 0}</span>
-                       </div>`
-                    : `<button onclick="openWhisperForPost('${safeId(post.id)}')" class="w-full py-2 bg-red-950/40 hover:bg-red-900/50 border border-red-500/40 rounded-xl text-[11px] font-mono-tech text-red-400 flex items-center justify-center space-x-2 transition">
+                    ? witnessAction
+                    : `${hasVerifiedOwner ? `<button onclick="openWhisperForPost('${safeId(post.id)}')" class="w-full py-2 bg-red-950/40 hover:bg-red-900/50 border border-red-500/40 rounded-xl text-[11px] font-mono-tech text-red-400 flex items-center justify-center space-x-2 transition">
                         <span>✦ ОТВЕТИТЬ ЛИЧНЫМ ШЁПОТОМ</span>
-                    </button>
-                    ${heldState ? `<div class="text-center text-[11px] font-mono-tech text-amber-300/80">${heldLabel}</div>` : `<button onpointerdown="holdStart('${safeId(post.id)}', this, event)" onpointermove="holdMove(event)" onpointerup="holdCancel()" onpointerleave="holdCancel()" onpointercancel="holdCancel()" oncontextmenu="return false" class="soma-hold-btn relative overflow-hidden w-full py-2 bg-amber-950/20 border border-amber-400/30 rounded-xl text-[11px] font-mono-tech text-amber-300 select-none"><span class="hold-fill absolute inset-0 bg-amber-500/25 pointer-events-none" style="transform:scaleX(0);transform-origin:left"></span><span class="relative pointer-events-none">${holdBtnLabel}</span></button>`}
-                    <div class="pt-2 border-t border-red-500/10 space-y-2">
-                        ${isReacted ? `
-                            <div class="text-[11px] font-mono-tech text-red-400 flex justify-between items-center">
-                                <span>✓ Ваш отклик: «${esc(isReacted)}»</span>
-                                <span class="text-amber-400">Реакций: ${post.likes || 0}</span>
-                            </div>
-                        ` : `
-                            <div class="flex justify-between items-center">
-                                <div class="flex space-x-1.5">
-                                    <button onclick="reactToPost('${safeId(post.id)}', '❤️', 10)" class="px-2.5 py-1 bg-[#1a0b0e] hover:bg-red-950 rounded-lg text-sm border border-red-500/20">❤️</button>
-                                    <button onclick="reactToPost('${safeId(post.id)}', '🤗', 10)" class="px-2.5 py-1 bg-[#1a0b0e] hover:bg-red-950 rounded-lg text-sm border border-red-500/20">🤗</button>
-                                    <button onclick="reactToPost('${safeId(post.id)}', '🙏', 10)" class="px-2.5 py-1 bg-[#1a0b0e] hover:bg-red-950 rounded-lg text-sm border border-red-500/20">🙏</button>
-                                </div>
-                                <span class="text-[10px] font-mono-tech text-gray-500">Реакций: ${post.likes || 0}</span>
-                            </div>
-                        `}
-                    </div>`
+                    </button>` : ''}
+                    ${witnessAction}
+                    ${heldState ? `<div class="text-center text-[11px] font-mono-tech text-amber-300/80">${heldLabel}</div>` : `<div class="space-y-1.5">
+                        <button onpointerdown="holdStart('${safeId(post.id)}', this, event)" onpointermove="holdMove(event)" onpointerup="holdCancel()" onpointerleave="holdCancel()" onpointercancel="holdCancel()" oncontextmenu="return false" class="soma-hold-btn relative overflow-hidden w-full py-2 bg-amber-950/20 border border-amber-400/30 rounded-xl text-[11px] font-mono-tech text-amber-300 select-none"><span class="hold-fill absolute inset-0 bg-amber-500/25 pointer-events-none" style="transform:scaleX(0);transform-origin:left"></span><span class="relative pointer-events-none">◌ ПАУЗА ДЛЯ СЕБЯ · 3 СЕК.</span></button>
+                        <p class="text-[9px] leading-relaxed text-gray-500">При наличии дневного тепла пауза согревает только вашу комнату. Автор её не увидит.</p>
+                    </div>`}`
                 }
             `;
             if (!isMine) {
+                const read = document.createElement('button');
+                read.type = 'button'; read.className = 'contact-quiet';
+                read.textContent = 'ПРОЧИТАНО · СЛЕДУЮЩИЙ СИГНАЛ';
+                read.onclick = () => decidePagerStory(post.id, read);
+                card.appendChild(read);
                 const hide = document.createElement('button');
                 hide.type = 'button'; hide.className = 'contact-quiet';
-                hide.textContent = 'Не хочу сейчас это читать · скрыть';
-                hide.onclick = () => hideContactPost(post.id);
+                hide.textContent = 'ПРОЙТИ МИМО';
+                hide.onclick = () => decidePagerStory(post.id, hide);
                 card.appendChild(hide);
             }
             container.appendChild(card);
         });
-    }
-
-    async function reactToPost(postId, reactionText, xpGain) {
-        if (player.reactedPosts[postId]) return;
-        player.reactedPosts[postId] = reactionText;
-        try { localStorage.setItem('soma_reacted', JSON.stringify(player.reactedPosts)); } catch (e) {}
-        try { Telegram.WebApp.HapticFeedback.impactOccurred('light'); } catch (e) {}
-        SFX.react();
-        player.xp += xpGain;
-        if (typeof addWeeklyXp === 'function') addWeeklyXp(xpGain);
-        player.reacts++;
-        player.seen++;
-
-        const post = feedPosts.find(p => p.id === postId);
-        if (post) {
-            post.likes = (post.likes || 0) + 1;
-            try {
-                await supabaseClient.from('soma_posts').update({ likes: post.likes }).eq('id', postId);
-            } catch(e) {}
-        }
-
-        await updateCloudProfile();
-        updateHeader();
-        renderFeed();
     }
 
     // Кнопка «Помочь» в ленте контакта НЕ считает срывы протокола (их считает только реальный «Шёпот»!) —
@@ -1722,7 +1904,7 @@
         const intent = document.querySelector('[name="signal-intent"]:checked');
         if (!intent) { showPostError('Выберите, какой отклик вам нужен.'); return; }
         const tag = window.SOMA_SIGNALS.packTag(intent.value, document.getElementById('new-pain-tag').value);
-        const insertRow = { id: 'p_' + Date.now(), author: randAnon(), tag: tag, text: text, likes: 0 };
+        const insertRow = { id: 'p_' + Date.now(), author: randAnon(), tag: tag, text: text };
 
         const label = btn.innerText;
         btn.disabled = true;
@@ -1750,7 +1932,6 @@
         rememberMyPostId(insertRow.id);
         activeFeedTag = 'ВСЕ';
         contactIntent = 'all';
-        feedPosts.unshift({ ...insertRow, created_at: new Date().toISOString() });
         closePostModal();
         textareaEl.value = '';
         document.getElementById('new-pain-tag').value = '';
@@ -1873,7 +2054,7 @@
             return;
         }
         const rank = document.getElementById('rank-title').innerText;
-        const text = `SOMA~LINK // NEEO~CITY\nСвидетель: @${player.name}\nРанг: ${rank}\nВстреч с историями: ${player.seen} | Откликов: ${player.reacts} | Шёпотов: ${player.whispersSent || 0}.\n\nЗагляни на ночную станцию:`;
+        const text = `SOMA~LINK // NEEO~CITY\nСвидетель: @${player.name}\nРанг: ${rank}\nТихий знак «Я рядом» — анонимно. Личный «Шёпот» — по желанию.\n\nЗагляни на ночную станцию:`;
         if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) {
             Telegram.WebApp.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(BOT_LINK) + '&text=' + encodeURIComponent(text));
             return;

@@ -325,8 +325,8 @@
         const snap = o.snapshot || getSnapshot();
         const { own, myAlien, gh } = snap;
         const t = (Number(now) || 0) * 0.001;
-        const cosm = typeof getActiveCosmetics === 'function' ? getActiveCosmetics() : {};
-        const potSkin = cosm.pot || '';
+        const cosm = o.cosmetics || (typeof getActiveCosmetics === 'function' ? getActiveCosmetics() : {});
+        const potSkin = o.potSkin || cosm.pot || '';
 
         g.save();
         g.scale(W / SCENE_W, H / SCENE_H);
@@ -551,6 +551,7 @@
                 const inRoom = gh.placed === 'alien';
                 drawPedestalBase(g, p, { selected: isSel, inRoom, isAlien: true, unlocked: true });
                 if (gh.alienSeed && myAlien) {
+                    const alienSpec = gh.alienSeed.spec || myAlien;
                     const aStage = gh.alienSeed.bloomed
                         ? 5
                         : (typeof plantStage === 'function' && typeof ALIEN_WARMTH_STEPS !== 'undefined'
@@ -572,7 +573,7 @@
                     const alienPot = typeof potSkinForFlower === 'function'
                         ? potSkinForFlower('alien', potSkin, gh)
                         : 'pot_kintsugi';
-                    const spCanvas = renderSpecimenCanvas(`alien_${myAlien.alienKind}`, myAlien, aStage, nowBucket, alienPot);
+                    const spCanvas = renderSpecimenCanvas(`alien_${alienSpec.alienKind || myAlien.alienKind}`, alienSpec, aStage, nowBucket, alienPot);
                     const dw = 440 * p.scale, dh = 460 * p.scale;
                     g.drawImage(spCanvas, p.x - dw * 0.5, p.y - 434 * p.scale, dw, dh);
                     if (!gh.alienSeed.bloomed && !inRoom) {
@@ -612,7 +613,9 @@
                 const dw = 440 * p.scale, dh = 460 * p.scale;
                 g.drawImage(spCanvas, p.x - dw * 0.5, p.y - 434 * p.scale, dw, dh);
             } else if (isActiveSeed) {
-                const spec = typeof gallerySpecForKind === 'function' ? gallerySpecForKind(kind, own) : own;
+                const spec = gh.activeSeed && gh.activeSeed.spec
+                    ? gh.activeSeed.spec
+                    : (typeof gallerySpecForKind === 'function' ? gallerySpecForKind(kind, own) : own);
                 const sStage = typeof plantStage === 'function' && typeof GREENHOUSE_WARMTH_STEPS !== 'undefined'
                     ? plantStage(gh.activeSeed.grownWarmth || 0, { sprouted: true, steps: GREENHOUSE_WARMTH_STEPS })
                     : -1;
@@ -650,7 +653,8 @@
         });
 
         // Мягкие световые круги от прикосновения к цветам
-        for (let i = state.ripples.length - 1; i >= 0; i--) {
+        const ripples = o.ripples || state.ripples;
+        for (let i = ripples.length - 1; i >= 0; i--) {
             const rp = state.ripples[i];
             rp.life -= 0.025;
             if (rp.life <= 0) { state.ripples.splice(i, 1); continue; }

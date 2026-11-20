@@ -2477,21 +2477,6 @@ html.is-soma-fs-closing .app-h {
     font: 9px 'Share Tech Mono', monospace;
     letter-spacing: 0.14em;
 }
-.witness-card-shop {
-    border: 1px solid rgba(255, 110, 130, 0.25);
-    background: transparent;
-    color: #ff7c8d;
-    border-radius: 7px;
-    padding: 3px 8px;
-    font: 9px 'Share Tech Mono', monospace;
-    letter-spacing: 0.06em;
-    cursor: pointer;
-    transition: border-color 0.2s ease, color 0.2s ease;
-}
-.witness-card-shop:hover {
-    border-color: rgba(255, 110, 130, 0.5);
-    color: #ffe1e6;
-}
 .witness-card-id {
     display: flex;
     align-items: flex-start;
@@ -2567,9 +2552,6 @@ html.is-soma-fs-closing .app-h {
 }
 .witness-stat-amber {
     color: #e8c87a;
-}
-.witness-stat-red {
-    color: #ff8292;
 }
 .witness-stat-big {
     color: #ff586c;

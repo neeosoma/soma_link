@@ -1,0 +1,54 @@
+# Fix: восстановить RLS-политики для `soma_posts` (ошибка 42501 при отправке сигнала)
+
+## Симптом
+
+При попытке отправить сигнал («ОТПРАВИТЬ В ЭФИР») сервер отвечает:
+
+```
+New row violates row-level security policy for table "soma_posts" | 42501
+```
+
+Клиент показывает: «Сигнал не дошёл до сети (лимит дня сохранён): …».
+
+## Причина
+
+В базе включён **Row Level Security**, но политика вставки
+(`soma_posts_insert`) на таблице `public.soma_posts` отсутствует. Она
+определяется в базовой миграции `billing/setup_stars.sql`, но может быть
+потеряна, если миграция применялась частично, в разные этапы, или после
+поздних `revoke`-блоков (например, из `setup_witness_marks.sql`).
+
+Без политики `insert` PostgreSQL rejects вставку строки с `42501` —
+даже если данные client-а полностью корректны (автор `Аноним #1234`,
+текст 13–666 симв., `likes = 0`).
+
+## Фик
+
+Файл [`billing/fix_soma_posts_rls.sql`](./fix_soma_posts_rls.sql)
+явно и идемпотентно пересоздаёт политики для `soma_posts`:
+
+- `soma_posts_select` — чтение для `anon`/`authenticated`;
+- `soma_posts_insert` — вставка с CHECK (13–666 симв., `likes = 0`,
+  автор `^Аноним( #[0-9]{4})?$`);
+- `soma_posts_update_likes` — лайки (если тоже пропали).
+
+## Применение
+
+1. Supabase → **SQL Editor** → **New query**.
+2. Вставить содержимое `billing/fix_soma_posts_rls.sql`.
+3. Нажать **Run** (как project owner — роль `service_role`/`postgres`).
+4. Повторный запуск безопасен: все `drop policy if exists` + `create policy`
+   идемпотентны.
+5. После применения отправить сигнал заново — он должен пройти.
+
+## Проверка
+
+- `node tests/pager.integration.cjs` (с pglite) валидирует политики
+  `setup_stars.sql` + `setup_witness_marks.sql` + `setup_pager.sql`.
+- По после применения фикса — проверить отправку сигнала в проде
+  (пост-модал «ОТПРАВИТЬ В ЭФИР»).
+
+## Note
+
+Фикс не меняет правила безопасности: CHECK-политика остаётся прежней —
+только анонимные авторы, без лайков на вставку, текст 13–666 симв.

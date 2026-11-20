@@ -1844,7 +1844,11 @@
         if (failed) {
             // При ошибке сети дневной сигнал НЕ сгорает, а черновик бережно сохраняется!
             updateTsVmeter(0);
-            showPostError('Сигнал не дошёл до сети (лимит дня сохранён): ' + reason);
+            if (/42501|row-level security|row_level_security/i.test(reason)) {
+                showPostError('Сервер拒绝信号: нарушена политика безопасности базы (RLS). Нужно применить фикс-миграцию для soma_posts — см. billing/FIX_SOMA_POSTS_RLS_DEPLOY.md.');
+            } else {
+                showPostError('Сигнал не дошёл до сети (лимит дня сохранён): ' + reason);
+            }
             return;
         }
         try { localStorage.setItem(POST_DAY_KEY, currentPostDayKey()); } catch (e) {}

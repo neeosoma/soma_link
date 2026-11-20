@@ -2229,16 +2229,16 @@ test('funnel metrics accept only fixed event names and never save supplied messa
 
 test('concurrent sends are serialized without locking subsequent zero-warmth sends', async () => {
     let finish;
-    const insert = new Promise(resolve => { finish = resolve; });
+    const rpc = new Promise(resolve => { finish = resolve; });
     const r = loadRoom({
         window: { SOMA_CONFIG: { WHISPER_LIVE: true } },
-        supabaseClient: { from: () => ({ insert: () => insert }) }
+        supabaseClient: { rpc: () => rpc }
     });
     r.acceptFirstSignalRules();
     const text = 'Пусть сегодня станет немного легче.';
     const pending = r.sendWhisperToPost({ id: 'post_a' }, text);
     assert.equal((await r.sendWhisperToPost({ id: 'post_b' }, text)).code, 'busy');
-    finish({ error: null });
+    finish({ data: [{ o_id: 'w_test', o_status: 'pending' }], error: null });
     assert.equal((await pending).ok, true);
     assert.equal((await r.sendWhisperToPost({ id: 'post_b' }, text)).ok, true);
 });

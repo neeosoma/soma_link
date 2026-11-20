@@ -391,12 +391,11 @@
                 <span id="open-post-sub" class="feed-send-note">Один сигнал в день. Читать и откликаться можно всегда.</span>
             </div>
 
-            <!-- ПЕЙДЖЕР NEEOSOMA // NMAV-04 — ПЕРЕРАДОЧКА В МИРОВОМ УРОВНЕ -->
+            <!-- ПЕЙДЖЕР NEEOSOMA // NMAV-04 «ШЁПОТ» — ПЕРЕРАДОЧКА В МИРОВОМ УРОВНЕ -->
             <div class="soma-pager" id="feed-pager" data-state="locked" data-admitted="0">
-                <!-- ШАПКА УСТРОЙСТВА: бренд + LED + частота + полоски силы связи -->
+                <!-- ШАПКА УСТРОЙСТВА: бренд + LED + полоски силы связи -->
                 <div class="pager-top">
-                    <span class="pager-brand"><i class="pager-led" aria-hidden="true"></i>NEEOSOMA // NMAV-04</span>
-                    <span class="pager-freq">CH·04 «ШЁПОТ»</span>
+                    <span class="pager-brand"><i class="pager-led" aria-hidden="true"></i>NEEOSOMA // <span class="pager-code">NMAV-04 «ШЁПОТ»</span></span>
                     <span class="pager-sig-bar" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
                 </div>
                 <!-- LCD-ЭКРАН: CRT-люминофорная матрица -->
@@ -409,23 +408,15 @@
                         </div>
                         <p id="feed-pager-msg" class="pager-lcd-main">ЖИВАЯ ЧАСТОТА · ВЫ НА СВЯЗИ</p>
                         <p id="feed-pager-sub" class="pager-lcd-sub">Читайте. Отвечайте, если хочется.</p>
-                        <!-- Подсказки ПАМЯТКИ (скрыты до нажатия) -->
-                        <div id="feed-pager-hints" class="pager-lcd-hints hidden"></div>
-                        <!-- Фильтры: намерение отклика -->
-                        <div id="contact-intent-filters" class="feed-filter-row"></div>
-                        <div id="feed-filter-status" class="pager-lcd-filter-status"></div>
                         <div class="pager-lcd-scan" aria-hidden="true"></div>
                         <div class="pager-lcd-glow" aria-hidden="true"></div>
                     </div>
                 </div>
                 <!-- АППАРАТНЫЕ КНОПКИ -->
                 <div class="pager-keys">
-                    <div class="pager-foot">
-                        <span class="pager-foot-rule">⚖ 13–333 симв. · 1 шёпот на человека · кассета +4 Тепла (1/день)</span>
-                    </div>
                     <div class="pager-key-row">
                         <button type="button" class="pager-key" id="feed-pager-scan-btn" onclick="openPagerModal()">◈ ОТКРЫТЬ ПЕЙДЖЕР</button>
-                        <button type="button" class="pager-key pager-key--memorial" id="feed-pager-memorial-btn" onclick="togglePagerMemorial()">ПАМЯТКА</button>
+                        <button type="button" class="pager-key pager-key--memorial" id="feed-pager-memorial-btn" onclick="cyclePagerMemorial()">ПАМЯТКА</button>
                     </div>
                 </div>
             </div>
@@ -1653,15 +1644,11 @@
         if (typeof renderFirstSignalEntry === 'function') renderFirstSignalEntry();
         if (typeof roomAnim !== 'undefined' && roomAnim.pagerModalOpen) renderPagerModal();
         if (typeof renderFeedPager === 'function') renderFeedPager();
+        // Истории и фильтры удалены из вкладки — остаётся только интерфейс пейджера.
         const container = document.getElementById('posts-container');
-        // Истории удалены из вкладки — оставляем только фильтры и интерфейс пейджера.
         if (container) container.innerHTML = '';
         feedShownAt = performance.now();
         updatePostQuotaUI();
-        renderContactFilters();
-        renderFeedFilters();
-        renderFeedFilterSummary();
-        // Собственные сигналы также не отображаются во вкладке (как было: только фильтры + пейджер).
         const ownContainer = document.getElementById('pager-own-posts');
         if (ownContainer) ownContainer.innerHTML = '';
     }

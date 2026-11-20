@@ -1886,6 +1886,13 @@
         holdCancel();
         if (tab !== 'room' && typeof exitRoomFullscreen === 'function') exitRoomFullscreen(true);
         if (!silent) SFX.tab();
+        // Вкладка Оранжерея закрыта до расцвета перлового растения (максимальный этап)
+        if (tab === 'greenhouse' && typeof isGreenhouseUnlocked === 'function' && !isGreenhouseUnlocked()) {
+            if (!silent && typeof notify === 'function') {
+                notify('Оранжерея откроется, когда ваше растение расцветёт.');
+            }
+            return;
+        }
         ['feed', 'room', 'greenhouse'].forEach(t => {
             const v = document.getElementById(`view-${t}`);
             if (v) v.classList.add('hidden');
@@ -1931,6 +1938,12 @@
         ghTabRaf = requestAnimationFrame(draw);
     }
     function openGreenhouseFromTab() {
+        if (typeof isGreenhouseUnlocked === 'function' && !isGreenhouseUnlocked()) {
+            if (typeof notify === 'function') {
+                notify('Оранжерея откроется, когда ваше растение расцветёт.');
+            }
+            return;
+        }
         if (typeof openGreenhouse === 'function') openGreenhouse({});
     }
 

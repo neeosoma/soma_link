@@ -9,7 +9,7 @@
   <meta name="description" content="Кассета с несколькими словами для своего человека. SOMA~LINK — ночная станция.">
   <title>Кассета для тебя · SOMA~LINK</title>
   <link rel="stylesheet" href="gift.css">
-  <script src="gift.js" defer></script>
+  <script src="gift.js?v=2" defer></script>
 </head>
 <body>
   <main class="chassis">
@@ -19,32 +19,32 @@
     <section id="gift-received" hidden aria-labelledby="received-title">
       <p class="eyebrow">ТЕБЕ ОСТАВИЛИ КАССЕТУ</p>
       <h1 id="received-title">Нажми «Воспроизвести».</h1>
-      <p class="muted">Регистрация не нужна. Здесь текстовое послание, не аудиозапись. Авторство отправителя не подтверждается.</p>
+      <p class="muted">Текст, не аудио. Без регистрации. Авторство отправителя не подтверждается.</p>
       <button id="gift-play" type="button">▶ ВОСПРОИЗВЕСТИ</button>
       <blockquote id="gift-message" hidden></blockquote>
       <div id="gift-received-actions" hidden>
         <button id="gift-save" type="button">📼 СОХРАНИТЬ В ЭТОМ БРАУЗЕРЕ</button>
         <button id="gift-reply" class="secondary" type="button">ЗАПИСАТЬ ОТВЕТНУЮ КАССЕТУ</button>
-        <p class="muted">Сохранение — только на этом устройстве в этом браузере. Оно не сообщает отправителю о прочтении и не даёт XP.</p>
+        <p class="muted">Только в этом браузере. Без XP и уведомления отправителю.</p>
         <a class="station-link" href="index.html#room">ОТКРЫТЬ СВОЮ КОМНАТУ →</a>
       </div>
     </section>
     <section id="gift-compose" aria-labelledby="compose-title">
       <p class="eyebrow">КАССЕТА ДЛЯ СВОЕГО ЧЕЛОВЕКА</p>
       <h1 id="compose-title">Что хочется сказать?</h1>
-      <p class="muted">Благодарность, воспоминание или просто «я рядом». Только ваши слова — не чужое признание из ленты.</p>
+      <p class="muted">Скажите своё: «Спасибо», «Помню», «Я рядом». Не копируйте чужие признания.</p>
       <label for="gift-input">Текст кассеты</label>
       <textarea id="gift-input" rows="5" maxlength="333" placeholder="Мне хочется, чтобы ты знал…" aria-describedby="gift-count gift-privacy"></textarea>
       <p id="gift-count" class="muted">0 / 333 · минимум 13 символов</p>
-      <div id="gift-privacy" class="privacy"><strong>Любой обладатель ссылки сможет прочитать текст.</strong> Текст закодирован в самой ссылке, не зашифрован. Ссылку можно переслать; отозвать её или ограничить число открытий нельзя. Не пишите секреты, контакты или данные других людей. Сообщение не отправляется в ленту и не хранится в нашей базе.</div>
+      <div id="gift-privacy" class="privacy"><strong>Любой обладатель ссылки сможет прочитать текст.</strong> Текст находится в ссылке и не зашифрован. Её можно переслать, но нельзя отозвать или ограничить открытия. Без секретов, контактов и чужих данных. В ленту и базу не попадает.</div>
       <label class="consent"><input id="gift-consent" type="checkbox"><span>Это мой текст, и я согласен передать его ссылкой.</span></label>
       <button id="gift-create" type="button">◉ ЗАПИСАТЬ КАССЕТУ</button>
       <div id="gift-output" hidden>
-        <p>Кассета готова. Теперь передайте ссылку человеку сами.</p>
+        <p>Готово. Передайте ссылку своему человеку.</p>
         <label for="gift-url">Ссылка на кассету</label>
         <input id="gift-url" type="text" readonly spellcheck="false">
         <div class="actions"><button id="gift-share" type="button">ПЕРЕДАТЬ</button><button id="gift-copy" type="button" class="secondary">КОПИРОВАТЬ ССЫЛКУ</button></div>
-        <p class="muted">Отправка — через выбранный вами мессенджер. Автоматического ответа или уведомления о прочтении нет.</p>
+        <p class="muted">Передайте через мессенджер. Ответ — новой ссылкой. Уведомлений о прочтении нет.</p>
       </div>
     </section>
     <footer>Без обязательств отвечать. Без наград за приглашения.<br><a href="index.html">Вернуться на станцию</a></footer>

@@ -736,7 +736,7 @@ test('v8: body-portal FLIP fullscreen + 180 flip + rotated pointer mapping, Dawn
     assert.ok(indexHtml.includes('soma-post-cta') && indexHtml.includes('soma-post-beacon') && indexHtml.includes('soma-post-arrow'));
     assert.ok(
         indexHtml.includes('id="station-fs-flip"')
-        && indexHtml.includes('room.js?v=16')
+        && indexHtml.includes('room.js?v=17')
         && indexHtml.includes('cosmetics.css?v=15')
         && indexHtml.includes('receiver.js?v=15')
         && indexHtml.includes('vhs.js?v=15')
@@ -1974,21 +1974,24 @@ test('v15: 4th pot (pot_amethyst) + per-flower Greenhouse picker, sheer FS capti
 });
 
 
-test('live Whisper validates 13..333 characters and anonymity, with a 13-lesson gate', () => {
+test('live Whisper validates 13..333 characters without a warmth or lesson gate', () => {
     const r = loadRoom();
-    assert.equal(r.PROGRESSION_RULES.WHISPER_TRAINER_GATE, 13);
+    assert.equal('WHISPER_TRAINER_GATE' in r.PROGRESSION_RULES, false);
+    assert.equal('WHISPER_WARMTH_GATE' in r.PROGRESSION_RULES, false);
     for (const n of [0, 12, 334]) assert.equal(r.validateWhisperText('я'.repeat(n)).ok, false);
     for (const n of [13, 333]) assert.equal(r.validateWhisperText('я'.repeat(n)).ok, true);
     for (const text of ['напишите мне @someone', 'ссылка https://example.com', 'телефон +12345678901']) {
         assert.equal(r.validateWhisperText(text).ok, false);
     }
     assert.equal(r.whisperAdmission(100, { trainedTotal: 12 }).admitted, false);
-    assert.equal(r.whisperAdmission(100, { trainedTotal: 13 }).admitted, true);
+    assert.equal(r.whisperAdmission(100, { trainedTotal: 13 }).admitted, false, 'rules apply even to experienced players');
+    r.acceptFirstSignalRules();
+    assert.equal(r.whisperAdmission(0, { trainedTotal: 0 }).admitted, true);
 });
 
 test('Whisper sends once per post, caps at three per day, and grants only send XP', async () => {
     const player = { uid: 'u_0123456789abcdef', warmth: 100, xp: 0 };
-    const localStorage = makeStorage({ soma_warmth_ledger: JSON.stringify({ day: '2026-11-18', trainedTotal: 13 }) });
+    const localStorage = makeStorage({ soma_signal_rules_v1: 'accepted', soma_warmth_ledger: JSON.stringify({ day: '2026-11-18', trainedTotal: 0 }) });
     const r = loadRoom({ player, localStorage });
     const opts = { today: '2026-11-18', skipCloud: true };
     const text = 'Пусть сегодня станет немного легче.';
@@ -2048,21 +2051,20 @@ test('Whisper schema restricts participants and sender identity, with a serializ
     assert.ok(sql.trim().endsWith('commit;'));
 });
 
-test('temporary live test opens admission only with explicit flag and preserves send caps', async () => {
-    const window = { SOMA_CONFIG: { WHISPER_LIVE: true, WHISPER_TEST_OPEN: true } };
-    const r = loadRoom({ window });
+test('zero-warmth players can send three daily after rules, while channel-off still prevents real sends', async () => {
+    const window = { SOMA_CONFIG: { WHISPER_LIVE: true } };
+    const player = { uid: 'u_0123456789abcdef', warmth: 0, xp: 0 };
+    const r = loadRoom({ window, player });
+    assert.equal(r.whisperAdmission(0).admitted, false);
+    r.acceptFirstSignalRules();
     assert.equal(r.whisperAdmission(0).admitted, true);
-    assert.equal(r.whisperAdmission(0).testOpen, true);
     const opts = { today: '2026-11-18', skipCloud: true };
     for (const id of ['test_a', 'test_b', 'test_c']) {
         assert.equal((await r.sendWhisperToPost({ id }, 'Пусть сегодня станет немного легче.', opts)).ok, true);
     }
     assert.equal((await r.sendWhisperToPost({ id: 'test_d' }, 'Пусть сегодня станет немного легче.', opts)).code, 'daily_cap');
-    window.SOMA_CONFIG.WHISPER_TEST_OPEN = false;
-    assert.equal(r.whisperAdmission(0).admitted, false);
-    window.SOMA_CONFIG.WHISPER_TEST_OPEN = true;
     window.SOMA_CONFIG.WHISPER_LIVE = false;
-    assert.equal(r.whisperAdmission(0).admitted, false);
+    assert.equal((await r.sendWhisperToPost({ id: 'test_e' }, 'Пусть сегодня станет немного легче.')).code, 'channel_disabled');
 });
 
 test('leaderboards cap both modes at 13: three podium places and ten rows, without an extra self row', async () => {
@@ -2115,7 +2117,7 @@ test('rare dog is White Yuna throughout user-facing copy without changing its ra
     assert.ok(!/Лунная Юна/i.test(roomCode + cosmetics));
 });
 
-test('first live Whisper requires rules, grants one early send, and restores normal admission after reload', async () => {
+test('rules are remembered after reload and subsequent sends stay open at zero warmth', async () => {
     const localStorage = makeStorage();
     const window = { SOMA_CONFIG: { WHISPER_LIVE: true } };
     let r = loadRoom({ window, localStorage });
@@ -2129,7 +2131,7 @@ test('first live Whisper requires rules, grants one early send, and restores nor
     assert.equal((await r.sendWhisperToPost({ id: 'post_first' }, text, opts)).ok, true);
     r = loadRoom({ window, localStorage });
     assert.equal(r.whisperAdmission(0).firstAvailable, false);
-    assert.equal((await r.sendWhisperToPost({ id: 'post_next' }, text, opts)).code, 'locked');
+    assert.equal((await r.sendWhisperToPost({ id: 'post_next' }, text, opts)).ok, true);
     assert.equal(r.whisperAdmission(100, { ...r.loadWarmthLedger(), trainedTotal: 13 }).admitted, true);
 });
 
@@ -2172,7 +2174,7 @@ test('funnel metrics accept only fixed event names and never save supplied messa
     assert.ok(!raw.includes('secret') && !raw.includes('uid') && !raw.includes('text'));
 });
 
-test('concurrent first sends cannot both consume the early opportunity', async () => {
+test('concurrent sends are serialized without locking subsequent zero-warmth sends', async () => {
     let finish;
     const insert = new Promise(resolve => { finish = resolve; });
     const r = loadRoom({
@@ -2185,7 +2187,7 @@ test('concurrent first sends cannot both consume the early opportunity', async (
     assert.equal((await r.sendWhisperToPost({ id: 'post_b' }, text)).code, 'busy');
     finish({ error: null });
     assert.equal((await pending).ok, true);
-    assert.equal((await r.sendWhisperToPost({ id: 'post_b' }, text)).code, 'locked');
+    assert.equal((await r.sendWhisperToPost({ id: 'post_b' }, text)).ok, true);
 });
 
 test('new names stay consistent without changing the top-13 or progression bindings', () => {

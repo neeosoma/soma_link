@@ -123,7 +123,7 @@
             if (!root.navigator.share) return copy();
             try {
                 await root.navigator.share({ title: 'Кассета для тебя · SOMA~LINK', text: 'Есть кое-что, что я редко говорю вслух. Открой кассету — регистрация не нужна.', url });
-                status('Ссылка передана в выбранное приложение. Это не подтверждение доставки или прочтения.');
+                status('Передано в приложение. Доставка и прочтение не подтверждены.');
             } catch (error) { status(error.name === 'AbortError' ? 'Передача отменена. Кассета осталась у вас.' : 'Не удалось передать ссылку. Можно скопировать её вручную.'); }
         };
         el('gift-play').onclick = () => {
@@ -137,7 +137,7 @@
             if (!incoming) return;
             try {
                 const result = saveGift(root.localStorage, incoming);
-                status(result.duplicate ? 'Эта кассета уже есть на вашей полке.' : 'Сохранено в этом браузере. Откройте комнату здесь же, чтобы найти кассету в VTR-90.');
+                status(result.duplicate ? 'Эта кассета уже есть на вашей полке.' : 'Кассета сохранена здесь. Найдёте её в комнате, в VTR-90.');
             } catch (error) { status('Не удалось сохранить: ' + error.message); }
         };
         el('gift-reply').onclick = () => {
@@ -145,7 +145,7 @@
             el('gift-input').value = '';
             el('gift-consent').checked = false;
             invalidate();
-            status('Напишите свой ответ и сами передайте новую ссылку отправителю. Его адрес нам неизвестен.');
+            status('Напишите ответ и передайте новую ссылку сами. Адрес отправителя нам неизвестен.');
             el('gift-input').focus();
         };
         root.addEventListener('hashchange', load);

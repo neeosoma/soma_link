@@ -9,7 +9,7 @@ measured. Existing local event counters are QA instrumentation, not analytics.
 
 ## Shipped in earlier PRs
 
-- First real signal, short rules, one early Whisper without warmth/13 lessons.
+- First real signal, short rules, Whispers without warmth/lesson gates (up to three daily).
 - Read/skip/answer; no fabricated strangers or acknowledgements.
 - Friend cassette link, registration-free reader, manual reply link.
 - Explicit link privacy limits and local-only archive storage.
@@ -23,7 +23,7 @@ measured. Existing local event counters are QA instrumentation, not analytics.
 - Intent-specific reply guidance in feed and pager; old posts explicitly have no
   declared intent. No algorithm diagnoses feelings or infers consent from text.
 - Feed reply opens the corresponding post in the pager, respecting first-send
-  rules, ordinary admission, daily caps and author privacy. The misleading blocked
+  rules, daily caps and author privacy. The misleading blocked
   Help CTA and generic 'everything will be fine' canned reply were removed.
 - Reader can select author-labelled lighter posts, filter by intent/theme, hide a
   story locally and restore all hidden stories. The pager respects light/hidden

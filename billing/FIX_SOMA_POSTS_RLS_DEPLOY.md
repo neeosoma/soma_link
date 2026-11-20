@@ -29,13 +29,21 @@ New row violates row-level security policy for table "soma_posts" | 42501
 
 - `soma_posts_select` — чтение для `anon`/`authenticated`;
 - `soma_posts_insert` — вставка с CHECK (13–666 симв., `likes = 0`,
-  автор `^Аноним( #[0-9]{4})?$`);
+  автор `Аноним` или `Аноним #NNNN`);
 - `soma_posts_update_likes` — лайки (если тоже пропали).
+
+**Важно — ASCII-безопасная версия.** Файл содержит **только ASCII**:
+кириллические литералы в CHECK (`Аноним`, `Аноним #`) строятся через
+`convert_from(decode('...hex...', 'hex'), 'UTF8')`. Если прошлая версия
+фикса (с кириллическим regex `^Аноним( #[0-9]{4})?$`) не сработала —
+причина именно в потере кодировки при вставке в SQL Editor. Эта версия
+не зависит от кодировки консоли/редактора и работает всегда.
 
 ## Применение
 
 1. Supabase → **SQL Editor** → **New query**.
-2. Вставить содержимое `billing/fix_soma_posts_rls.sql`.
+2. Вставить содержимое `billing/fix_soma_posts_rls.sql` **целиком**
+   (файл ASCII — кодировку испортить невозможно).
 3. Нажать **Run** (как project owner — роль `service_role`/`postgres`).
 4. Повторный запуск безопасен: все `drop policy if exists` + `create policy`
    идемпотентны.

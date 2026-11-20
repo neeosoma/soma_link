@@ -3,7 +3,6 @@
    Рендерит живые художественные карточки 1200×675 прямо на <canvas> вместо
    сухого текста:
      1. shareWitness()       — Личная станция (реальная комната, кот, пёс, цветок, небо, отчёт)
-     2. shareRank(place, xp) — Трибунал Паноптикума (место в Топе, рамка, печать, титул, эпитафия)
      3. shareEgg()           — Нарушитель Протокола (секрет 10 попыток помочь)
      4. shareSignal()        — Перехваченный сигнал (скрытая частота 7 касаний)
      5. shareVhs(tape)       — Кадр VHS-кассеты с тёплым анонимным посланием и датой ДД.ММ.ГГГГ
@@ -467,7 +466,7 @@
         // Бейдж ранга и авторского титула
         let curY = 184;
         const badgeText = snap.title
-            ? `${snap.titleGlyph} ${snap.title}  ·  ${snap.rank}`
+            ? `${snap.titleGlyph} ${snap.title}  ·  ${snap.warmth} ТЕПЛО`
             : `ХРАНИТЕЛЬ СТАНЦИИ  ·  ${snap.warmth} ТЕПЛО`;
         g.font = `700 13px ${MONO}`;
         const bw = Math.min(440, g.measureText(badgeText).width + 24);
@@ -552,239 +551,6 @@
 
         drawSubtleScanlinesAndGrain(g, CARD_W, CARD_H, 0.65);
         drawFooterBar(g, 'NEEOSOMA // SOMA~LINK · NEEO~CITY', dateStr, fp.edge);
-    }
-
-    // =========================================================================
-    // 2. ТРИУМФ В ТОПЕ ЦИНИКОВ / ПАНОПТИКУМЕ (shareTopFlex)
-    // =========================================================================
-    async function paintRankCard(cv, place, warmthVal) {
-        const g = cv.getContext('2d');
-        const snap = getPlayerSnapshot();
-        const rk = Math.max(1, Number(place) || 1);
-        const totalWarmth = Math.max(0, Number(warmthVal) || snap.warmth);
-        const rankName = 'ХРАНИТЕЛЬ СТАНЦИИ';
-        const dateStr = todayStamp();
-
-        // Палитра пьедестала (#1 Золото Трона, #2 Лунное Серебро, #3 Тёплая Бронза, #4+ Багровый Рубин)
-        const tier = rk === 1
-            ? { main: '#ffd978', mid: '#c98a24', deep: '#3b1c08', glow: 'rgba(255, 206, 98, 0.36)', crown: 'ВЛАДЫКА ТРОНА ПАНОПТИКУМА' }
-            : rk === 2
-                ? { main: '#e6e8f6', mid: '#8e96b8', deep: '#1c1d2e', glow: 'rgba(218, 224, 255, 0.3)', crown: 'СЕРЕБРЯНАЯ ЛОЖА ПАНОПТИКУМА' }
-                : rk === 3
-                    ? { main: '#f2ad78', mid: '#a85828', deep: '#2e120a', glow: 'rgba(246, 162, 102, 0.3)', crown: 'БРОНЗОВАЯ ЛОЖА ПАНОПТИКУМА' }
-                    : { main: '#ff6e88', mid: '#a81c3a', deep: '#2b0812', glow: 'rgba(255, 88, 118, 0.32)', crown: 'ТРИБУНАЛ ПАНОПТИКУМА' };
-
-        const fp = FRAME_PALETTES[snap.frame] || { edge: tier.main, edge2: tier.mid, glow: tier.glow, tag: '' };
-
-        // Глубокий ночной фон с мягким просветом живой станции и золотым/рубиновым Оком Паноптикума
-        const bgGrad = g.createRadialGradient(CARD_W * 0.72, CARD_H * 0.46, 24, CARD_W * 0.5, CARD_H * 0.5, CARD_W * 0.78);
-        bgGrad.addColorStop(0, tier.deep);
-        bgGrad.addColorStop(0.52, '#14050a');
-        bgGrad.addColorStop(1, '#060204');
-        g.fillStyle = bgGrad;
-        g.fillRect(0, 0, CARD_W, CARD_H);
-
-        // Полупрозрачный отблеск комнаты на фоне для глубины
-        const bg = await loadAsset('assets/quiet-station.jpg');
-        if (bg) {
-            g.save();
-            g.globalAlpha = 0.16;
-            g.drawImage(bg, 0, 0, CARD_W, CARD_H);
-            g.restore();
-        }
-
-        // ИЛЛЮСТРАЦИЯ СПРАВА: Монументальная астролябия и Око Паноптикума с пьедесталом #N
-        const ox = 865, oy = 332;
-        g.save();
-        const aura = g.createRadialGradient(ox, oy, 18, ox, oy, 265);
-        aura.addColorStop(0, tier.glow);
-        aura.addColorStop(0.55, 'rgba(180, 28, 52, 0.12)');
-        aura.addColorStop(1, 'rgba(0, 0, 0, 0)');
-        g.fillStyle = aura;
-        g.beginPath();
-        g.arc(ox, oy, 265, 0, Math.PI * 2);
-        g.fill();
-
-        // Концентрические орбиты Паноптикума + 36 делений шкалы
-        [218, 178, 136].forEach((rad, idx) => {
-            g.strokeStyle = idx === 1 ? fp.edge : tier.main;
-            g.globalAlpha = idx === 0 ? 0.22 : (idx === 1 ? 0.45 : 0.65);
-            g.lineWidth = idx === 1 ? 1.8 : 1.1;
-            if (idx === 0) g.setLineDash([5, 7]); else g.setLineDash([]);
-            g.beginPath();
-            g.arc(ox, oy, rad, 0, Math.PI * 2);
-            g.stroke();
-        });
-        g.setLineDash([]);
-        for (let i = 0; i < 36; i++) {
-            const a = (i / 36) * Math.PI * 2;
-            const r1 = 182, r2 = (i % 3 === 0) ? 198 : 190;
-            g.strokeStyle = tier.main;
-            g.globalAlpha = (i % 3 === 0) ? 0.55 : 0.22;
-            g.lineWidth = 1.2;
-            g.beginPath();
-            g.moveTo(ox + Math.cos(a) * r1, oy + Math.sin(a) * r1);
-            g.lineTo(ox + Math.cos(a) * r2, oy + Math.sin(a) * r2);
-            g.stroke();
-        }
-        g.globalAlpha = 1;
-
-        // Внутренний обсидиановый медальон
-        const medG = g.createRadialGradient(ox, oy - 30, 12, ox, oy, 134);
-        medG.addColorStop(0, 'rgba(42, 14, 22, 0.95)');
-        medG.addColorStop(1, 'rgba(9, 3, 6, 0.98)');
-        g.fillStyle = medG;
-        g.beginPath();
-        g.arc(ox, oy, 134, 0, Math.PI * 2);
-        g.fill();
-
-        // Ювелирная корона над #1–#3
-        if (rk <= 3) {
-            g.save();
-            g.translate(ox, oy - 78);
-            g.fillStyle = tier.main;
-            g.strokeStyle = tier.main;
-            g.lineWidth = 2;
-            g.beginPath();
-            g.moveTo(-30, 14);
-            g.lineTo(-36, -14);
-            g.lineTo(-12, 2);
-            g.lineTo(0, -24);
-            g.lineTo(12, 2);
-            g.lineTo(36, -14);
-            g.lineTo(30, 14);
-            g.closePath();
-            g.globalAlpha = 0.24;
-            g.fill();
-            g.globalAlpha = 0.95;
-            g.stroke();
-            [-36, 0, 36].forEach((kx, ki) => {
-                g.beginPath();
-                g.arc(kx, ki === 1 ? -28 : -18, 3.2, 0, Math.PI * 2);
-                g.fill();
-            });
-            g.restore();
-        }
-
-        // Монументальный номер места #N
-        const placeStr = `#${rk}`;
-        const fontSz = placeStr.length <= 2 ? 96 : (placeStr.length === 3 ? 76 : 60);
-        g.font = `700 ${fontSz}px ${MONO}`;
-        g.textAlign = 'center';
-        g.textBaseline = 'middle';
-        const numGrad = g.createLinearGradient(ox, oy - 48, ox, oy + 52);
-        numGrad.addColorStop(0, '#fffaf0');
-        numGrad.addColorStop(0.48, tier.main);
-        numGrad.addColorStop(1, tier.mid);
-        g.fillStyle = numGrad;
-        g.fillText(placeStr, ox, oy + (rk <= 3 ? 10 : 0));
-
-        g.font = `700 13px ${MONO}`;
-        g.fillStyle = 'rgba(255, 224, 202, 0.78)';
-        g.fillText(`${totalWarmth} ТЕПЛО`, ox, oy + 78);
-        g.textAlign = 'left';
-        g.textBaseline = 'alphabetic';
-        g.restore();
-
-        // Двойная коллекционная рамка открытки
-        g.strokeStyle = fp.edge;
-        g.globalAlpha = 0.45;
-        g.lineWidth = 2;
-        rr(g, 20, 20, CARD_W - 40, CARD_H - 40, 18);
-        g.stroke();
-        g.globalAlpha = 0.18;
-        g.lineWidth = 1;
-        rr(g, 28, 28, CARD_W - 56, CARD_H - 56, 14);
-        g.stroke();
-        g.globalAlpha = 1;
-        drawCornerBrackets(g, 34, 34, CARD_W - 68, CARD_H - 68, 22, fp.edge, 0.85);
-
-        // Левая колонка досье триумфатора
-        drawSealEmblem(g, 80, 92, 26, snap.seal || (rk === 1 ? 'seal_crown' : 'seal_eye'), tier.main);
-
-        g.font = `700 13px ${MONO}`;
-        g.fillStyle = tier.main;
-        g.fillText('// ЗВЁЗДЫ СТАНЦИИ · ДОСЬЕ', 122, 86);
-        g.font = `400 12px ${MONO}`;
-        g.fillStyle = 'rgba(255, 214, 206, 0.68)';
-        g.fillText(tier.crown, 122, 106);
-
-        // Позывной
-        g.font = `700 46px ${SANS}`;
-        g.fillStyle = '#fff8f4';
-        g.fillText(wrapLines(g, snap.callsign, 540, 1)[0] || 'Свидетель', 54, 196);
-
-        // Авторский титул (если надет) + ранг
-        let y = 222;
-        if (snap.title) {
-            const tStr = `${snap.titleGlyph}  ${snap.title}`;
-            g.font = `700 15px ${MONO}`;
-            const tw = Math.min(540, g.measureText(tStr).width + 28);
-            rr(g, 54, y, tw, 34, 9);
-            g.fillStyle = 'rgba(58, 22, 18, 0.78)';
-            g.fill();
-            g.strokeStyle = fp.edge;
-            g.globalAlpha = 0.6;
-            g.stroke();
-            g.globalAlpha = 1;
-            g.fillStyle = tier.main;
-            g.fillText(tStr, 68, y + 22);
-            y += 52;
-        }
-
-        // Эпитафия в благородной цитатной плашке
-        const epText = snap.epitaph
-            ? `«${snap.epitaph}»`
-            : `«Место #${rk} в зале, где каждый взгляд тяжелее слов.»`;
-        rr(g, 54, y, 520, 92, 12);
-        g.fillStyle = 'rgba(18, 6, 10, 0.82)';
-        g.fill();
-        g.strokeStyle = 'rgba(255, 186, 146, 0.24)';
-        g.lineWidth = 1;
-        g.stroke();
-        g.fillStyle = tier.main;
-        g.fillRect(54, y + 14, 3, 64);
-
-        g.font = `400 ${epText.length > 54 ? 16 : 18}px ${SANS}`;
-        g.fillStyle = '#fff0ea';
-        const epLines = wrapLines(g, epText, 480, 3);
-        const epLh = epLines.length > 2 ? 22 : 26;
-        const epStartY = epLines.length > 2 ? (y + 30) : (y + 40);
-        epLines.forEach((ln, idx) => {
-            g.fillText(ln, 74, epStartY + idx * epLh);
-        });
-        y += 116;
-
-        // Полоса показателей трибунала
-        const pills = [
-            { k: 'МЕСТО В ТОПЕ', v: `#${rk}`, c: tier.main },
-            { k: 'ТЕПЛО ЭФИРА', v: `${totalWarmth} ТЕПЛО`, c: '#fff2ea' },
-            { k: 'СТАТУС', v: rankName, c: '#ff9eaa' }
-        ];
-        pills.forEach((pl, idx) => {
-            const pw = idx === 2 ? 196 : 152;
-            const px = 54 + (idx === 0 ? 0 : idx === 1 ? 162 : 324);
-            rr(g, px, y, pw, 72, 11);
-            g.fillStyle = 'rgba(16, 5, 9, 0.86)';
-            g.fill();
-            g.strokeStyle = 'rgba(255, 174, 146, 0.22)';
-            g.stroke();
-            g.font = `700 10px ${MONO}`;
-            g.fillStyle = 'rgba(232, 192, 198, 0.62)';
-            g.fillText(pl.k, px + 13, y + 23);
-            g.font = `700 ${idx === 2 ? 15 : 24}px ${MONO}`;
-            g.fillStyle = pl.c;
-            g.fillText(wrapLines(g, pl.v, pw - 24, 1)[0] || pl.v, px + 13, y + 53);
-        });
-
-        if (fp.tag && y + 106 < CARD_H - 58) {
-            g.font = `700 11.5px ${MONO}`;
-            g.fillStyle = 'rgba(255, 214, 176, 0.72)';
-            g.fillText(`◈ КОЛЛЕКЦИОННАЯ РАМКА: ${fp.tag}`, 54, y + 102);
-        }
-
-        drawSubtleScanlinesAndGrain(g, CARD_W, CARD_H, 0.8);
-        drawFooterBar(g, 'ПОПРОБУЙ СДВИНУТЬ МЕНЯ С МЕСТА', dateStr, tier.main);
     }
 
     // =========================================================================
@@ -1664,17 +1430,6 @@
         }, paintWitnessCard);
     }
 
-    function shareRank(place, warmthVal) {
-        const rk = Math.max(1, Number(place) || 1);
-        const snap = getPlayerSnapshot();
-        const warmth = Math.max(0, Number(warmthVal) || snap.warmth);
-        return openWithPainter({
-            heading: `ДОСЬЕ ТРИБУНАЛА · #${rk}`,
-            title: `SOMA~LINK // Топ #${rk}`,
-            filename: `soma-top-${rk}.png`,
-            caption: `Место #${rk} в Пантеоне SOMA~LINK (${warmth} ТЕПЛО). Попробуй сдвинуть меня:`
-        }, cv => paintRankCard(cv, rk, warmth));
-    }
 
     function shareEggCard() {
         return openWithPainter({
@@ -1730,7 +1485,6 @@
 
     const api = {
         shareWitness,
-        shareRank,
         shareEgg: shareEggCard,
         shareSignal,
         shareVhs,
@@ -1743,7 +1497,6 @@
         renderCard: async (kind, payload) => {
             const cv = makeCanvas(CARD_W, CARD_H);
             if (kind === 'witness') await paintWitnessCard(cv);
-            else if (kind === 'rank') await paintRankCard(cv, payload && payload.place, payload && payload.warmth);
             else if (kind === 'egg') await paintEggCard(cv);
             else if (kind === 'signal') await paintSignalCard(cv);
             else if (kind === 'vhs') await paintVhsCard(cv, payload);

@@ -1121,7 +1121,6 @@ test('v11: enlarged sleeping dogs with tucked front paws, clean RX-88 header, fu
     assert.ok(/function copyShareText\(\)[\s\S]{0,140}SOMA_SHARE\.shareWitness\(\)/.test(indexHtml), 'Witness report shares illustrated live room card');
     assert.ok(/function shareEgg\(\)[\s\S]{0,140}SOMA_SHARE\.shareEgg\(\)/.test(indexHtml), 'Protocol Breaker egg shares illustrated card');
     assert.ok(/function shareMusic\(\)[\s\S]{0,140}SOMA_SHARE\.shareSignal\(\)/.test(indexHtml), 'Secret frequency egg shares illustrated card');
-    assert.ok(/function shareTopFlex\(place, warmthVal\)[\s\S]{0,160}SOMA_SHARE\.shareRank\(place, warmthVal\)/.test(cosmCode), 'Top Cynics dossier shares illustrated rank card');
     assert.ok(vhsCode.includes('SOMA_SHARE.shareVhs(cur)'), 'VTR-90 deck shares illustrated VHS CRT card');
 
     const makeMockCanvas = (w, h) => {
@@ -1174,8 +1173,6 @@ test('v11: enlarged sleeping dogs with tucked front paws, clean RX-88 header, fu
 
     for (const [kind, payload] of [
         ['witness', null],
-        ['rank', { place: 1, xp: 3200 }],
-        ['rank', { place: 7, xp: 850 }],
         ['egg', null],
         ['signal', null],
         ['vhs', { num: 12, date: '18.11.2026', text: 'Тихое тепло сквозь ночной эфир.' }],
@@ -1235,7 +1232,7 @@ test('v12: top-left fullscreen vinyl bar, unified NEEOSOMA/NEEO~CITY/SOMA~LINK b
     assert.equal(wRoom.getWhisperBreachCount(), 0, 'visit & react warmth never increment protocol breaches');
     wRoom.claimDailyWarmth('whisper');
     assert.equal(wRoom.getWhisperBreachCount(), 1, 'sending 1st Whisper increments protocol breaches to 1');
-    assert.equal(wPlayer.helpAttempts, 1, 'player.helpAttempts mirrors exact Whisper breach count for cloud/leaderboard');
+    assert.equal(wPlayer.helpAttempts, 1, 'player.helpAttempts mirrors exact Whisper breach count');
     wRoom.recordWhisperSent();
     assert.equal(wRoom.getWhisperBreachCount(), 2, 'sending a 2nd Whisper on the same day increments protocol breaches to 2');
     assert.ok(cloudSyncs >= 2, 'each Whisper triggers cloud profile sync');
@@ -1465,8 +1462,8 @@ test('v13: scroll freedom, 66-char epitaph, 13..666 Call, 8 Earth + hidden 9th a
         window: {},
         document: { getElementById: id => (id === 'shop-epitaph-input' ? fakeInput : null) },
         localStorage: makeStorage(),
-        player: { uid: 'ep_66', warmth: 50, xp: 900 },
-        esc: s => String(s), notify() {}, SFX: { tap(){} }, renderLeaderboard() {}
+        player: { uid: 'ep_66', warmth: 50 },
+        esc: s => String(s), notify() {}, SFX: { tap(){} }
     };
     vm.runInNewContext(cosmCode + ';globalThis.C = { EPITAPH_MAX_LEN, sanitizeEpitaph, grantOwnedItem, saveMyEpitaph, getActiveCosmetics, SOMA_ITEM_MAP };', cEnv);
     assert.equal(cEnv.C.EPITAPH_MAX_LEN, 66, 'epitaph limit is exactly 66 chars');
@@ -1901,11 +1898,6 @@ test('v15: 4th pot (pot_amethyst) + per-flower Greenhouse picker, sheer FS capti
     env.renderShop();
     assert.ok(!regEl('shop-preview').innerHTML.includes('Нокс') && !regEl('shop-preview').innerHTML.includes('Юки'), 'pet names never appear in Boutique preview banner');
     assert.ok(!regEl('shop-body').innerHTML.includes('Нокс') && !regEl('shop-body').innerHTML.includes('Юки'), 'pet names never appear on Boutique cards when editor closed');
-    env.shopState.lastBoard = [{ username: 'u_v15_check', place: 1, xp: 1200, help_attempts: 0 }];
-    env.openDossierByIndex(0);
-    assert.ok(!regEl('dossier-body').innerHTML.includes('Нокс') && !regEl('dossier-body').innerHTML.includes('Юки'), 'pet names never leak into public Top dossier');
-    assert.ok(regEl('dossier-body').innerHTML.includes('Полуночная Луна') && regEl('dossier-body').innerHTML.includes('Белая Юна'), 'own dossier shows active Moon Cat & White Yuna');
-
     // Room interaction journal DOES warmly feature both custom names!
     const catJournalLines = [];
     const dogJournalLines = [];
@@ -2068,44 +2060,7 @@ test('zero-warmth players can send three daily after rules, while channel-off st
     assert.equal((await r.sendWhisperToPost({ id: 'test_e' }, 'Пусть сегодня станет немного легче.')).code, 'channel_disabled');
 });
 
-test('leaderboards cap both modes at 13: three podium places and ten rows, without an extra self row', async () => {
-    const code = readFileSync(require.resolve('../cosmetics.js'), 'utf8');
-    for (const mode of ['all', 'week']) {
-        for (const myScore of [1, 995]) {
-            const elements = new Map(['top-subnote', 'top-chase', 'top-podium', 'leaderboard-list']
-                .map(id => [id, { innerHTML: '', textContent: '' }]));
-            const rows = Array.from({ length: 50 }, (_, i) => ({ username: `u_${i}`, xp: 1000 - i * 10, weekly_xp: 1000 - i * 10 }));
-            const limits = [];
-            const supabaseClient = { from() {
-                const query = {
-                    select() { return this; }, eq() { return this; },
-                    gt() { return this; }, order() { return this; },
-                    limit(n) { limits.push(n); return Promise.resolve({ data: rows }); },
-                    then(resolve, reject) { return Promise.resolve({ count: 50 }).then(resolve, reject); }
-                };
-                return query;
-            } };
-            const r = runInNewContext(code + `;
-                shopState.topMode = '${mode}';
-                getMyWeeklyXp = () => ${myScore};
-                ({ renderLeaderboard, shopState });`, {
-                localStorage: makeStorage(), supabaseClient,
-                player: { uid: 'u_me', xp: myScore },
-                document: { querySelectorAll: () => [], getElementById: id => elements.get(id) },
-                esc: s => String(s), anonLabel: s => s
-            });
-            await r.renderLeaderboard();
-            assert.equal(r.shopState.lastBoard.length, 13);
-            assert.ok(limits.length > 0 && limits.every(n => n === 13));
-            assert.equal((elements.get('top-podium').innerHTML.match(/onclick="openDossierByIndex/g) || []).length, 3);
-            const list = elements.get('leaderboard-list').innerHTML;
-            assert.equal((list.match(/class="top-row /g) || []).length, 10);
-            assert.ok(list.includes('#13'));
-            assert.ok(!list.includes('openDossierByUid'));
-            assert.ok(elements.get('top-chase').innerHTML.includes('ВАШЕ МЕСТО:'));
-        }
-    }
-});
+
 
 test('rare dog is White Yuna throughout user-facing copy without changing its rarity or appearance', () => {
     const r = loadRoom();
@@ -2294,14 +2249,12 @@ test('concurrent sends are serialized without locking subsequent zero-warmth sen
     assert.equal((await r.sendWhisperToPost({ id: 'post_b' }, text)).ok, true);
 });
 
-test('new names stay consistent without changing the top-13 or progression bindings', () => {
+test('new names stay consistent without changing progression bindings', () => {
     const cosmetics = readFileSync(require.resolve('../cosmetics.js'), 'utf8');
     const share = readFileSync(require.resolve('../share.js'), 'utf8');
     assert.ok(indexHtml.includes('Отправить сигнал'));
     assert.ok(indexHtml.includes('ЖИВАЯ ЧАСТОТА'));
     assert.ok(!indexHtml.includes('ИНДЕКС РАВНОДУШИЯ'));
-    assert.ok(indexHtml.includes('class="top-heading">ХРАНИТЕЛИ СТАНЦИИ'));
-    assert.ok(cosmetics.includes('ЗВЁЗДЫ СТАНЦИИ') && share.includes('ЗВЁЗДЫ СТАНЦИИ'));
     assert.ok(!/Лента контакта|ЛЕНТА КОНТАКТА|СОЗВЕЗДИЕ СТАНЦИИ/.test(indexHtml + cosmetics + share + roomCode));
 });
 

@@ -548,9 +548,9 @@
 }
 
 .soma-title--ghost {
-    color: #ffb8c2;
+    color: #e9d5ff;
     background-image: linear-gradient(90deg, #c4b5fd 0%, #f5f3ff 36%, #a5f3fc 56%, #f0abfc 78%, #c4b5fd 100%);
-    filter: drop-shadow(0 0 7px rgba(255, 120, 140, 0.4));
+    filter: drop-shadow(0 0 7px rgba(196, 181, 253, 0.4));
     animation: soma-title-shimmer 4.8s linear infinite;
 }
 
@@ -885,7 +885,7 @@
 .soma-frame--phantom {
     border: 1px solid rgba(224, 208, 255, 0.56) !important;
     background:
-        radial-gradient(ellipse 85% 75% at 18% 0%, rgba(255, 120, 140, 0.22), transparent 64%),
+        radial-gradient(ellipse 85% 75% at 18% 0%, rgba(196, 181, 253, 0.22), transparent 64%),
         radial-gradient(ellipse 75% 70% at 86% 100%, rgba(165, 243, 252, 0.14), transparent 64%),
         linear-gradient(140deg, #170c1e 0%, #0d0712 52%, #130b19 100%) !important;
     animation: soma-phantom-aura 5.2s ease-in-out infinite;
@@ -900,14 +900,14 @@
     z-index: 2;
     background: conic-gradient(
         from var(--soma-orbit),
-        rgba(255, 120, 140, 0.38) 0deg,
+        rgba(196, 181, 253, 0.38) 0deg,
         #f5f3ff 65deg,
         #a5f3fc 115deg,
         rgba(244, 114, 182, 0.72) 165deg,
-        rgba(255, 120, 140, 0.38) 220deg,
-        #ffb8c2 285deg,
+        rgba(196, 181, 253, 0.38) 220deg,
+        #e9d5ff 285deg,
         #bae6fd 325deg,
-        rgba(255, 120, 140, 0.38) 360deg
+        rgba(196, 181, 253, 0.38) 360deg
     );
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
     -webkit-mask-composite: xor;
@@ -929,7 +929,7 @@
 @keyframes soma-phantom-aura {
     0%, 100% {
         box-shadow:
-            0 4px 20px rgba(255, 120, 140, 0.22),
+            0 4px 20px rgba(196, 181, 253, 0.22),
             inset 0 1px 0 rgba(245, 243, 255, 0.32);
     }
     50% {
@@ -947,7 +947,7 @@
 .soma-frame--phantom .top-throne-xp,
 .soma-frame--phantom .top-runner-xp {
     color: #ede4ff !important;
-    text-shadow: 0 0 10px rgba(255, 120, 140, 0.55);
+    text-shadow: 0 0 10px rgba(196, 181, 253, 0.55);
 }
 
 /* 6) ПУЛЬС СТАНЦИИ — живой осциллограф SOMA_LINK: двойное сердцебиение и бегущий луч кардиограммы */
@@ -1166,15 +1166,15 @@
     border-color: rgba(214, 204, 244, 0.62);
     border-top-color: rgba(245, 243, 255, 0.85);
     background:
-        radial-gradient(ellipse 85% 60% at 50% 0%, rgba(255, 120, 140, 0.18), transparent 68%),
+        radial-gradient(ellipse 85% 60% at 50% 0%, rgba(196, 181, 253, 0.18), transparent 68%),
         linear-gradient(180deg, #1f1928 0%, #110d17 55%, #08060c 100%);
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.65), 0 0 20px rgba(255, 120, 140, 0.18), inset 0 1px 0 rgba(245, 243, 255, 0.34);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.65), 0 0 20px rgba(196, 181, 253, 0.18), inset 0 1px 0 rgba(245, 243, 255, 0.34);
 }
 .soma-pager[data-skin="pager_ghost"] .pager-brand { color: #f3eeff; }
 .soma-pager[data-skin="pager_ghost"] .pager-top { color: #b4a8cc; }
 .soma-pager[data-skin="pager_ghost"] .pager-led {
     background: #c4b5fd;
-    box-shadow: 0 0 9px rgba(255, 120, 140, 0.95);
+    box-shadow: 0 0 9px rgba(196, 181, 253, 0.95);
     animation: soma-pager-amber-led 2.8s ease-in-out infinite;
 }
 .soma-pager[data-skin="pager_ghost"] .pager-lcd {
@@ -1193,7 +1193,7 @@
         radial-gradient(ellipse 50% 70% at 75% 50%, rgba(165, 243, 252, 0.1), transparent 70%);
     animation: soma-phantom-mist 4.2s ease-in-out infinite alternate;
 }
-.soma-pager[data-skin="pager_ghost"] .pager-lcd-meta { color: #ada0cc; border-bottom-color: rgba(255, 120, 140, 0.25); }
+.soma-pager[data-skin="pager_ghost"] .pager-lcd-meta { color: #ada0cc; border-bottom-color: rgba(196, 181, 253, 0.25); }
 .soma-pager[data-skin="pager_ghost"] .pager-carrier { color: #ddd6fe; }
 .soma-pager[data-skin="pager_ghost"] .pager-lcd-main { color: #f8f5ff; text-shadow: 0 0 11px rgba(206, 192, 255, 0.55); }
 .soma-pager[data-skin="pager_ghost"] .pager-lcd-sub { color: #c4b8de; }

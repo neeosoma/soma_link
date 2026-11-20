@@ -820,7 +820,7 @@
 .station-gh-slots button.is-alien-slot {
     background: linear-gradient(135deg, rgba(46, 16, 78, 0.9), rgba(22, 10, 42, 0.95));
     border-color: rgba(192, 132, 252, 0.62);
-    color: #ffb8c2;
+    color: #f3e8ff;
     box-shadow: 0 0 12px rgba(168, 85, 247, 0.22);
 }
 .station-gh-slots button.is-seed-action {
@@ -2173,7 +2173,7 @@ html.is-soma-fs-closing .app-h {
     padding: 6px 4px;
     border: 1px solid transparent;
     border-radius: 8px;
-    color: #9b606a;
+    color: #9d9095;
     font: 10px 'Share Tech Mono', monospace;
     letter-spacing: 0.025em;
     transition: color 0.16s ease, background 0.16s ease, border-color 0.16s ease;
@@ -2301,7 +2301,7 @@ html.is-soma-fs-closing .app-h {
 
 .first-session-card {
     padding: 10px 11px;
-    border: 1px solid rgba(255, 120, 140, 0.3);
+    border: 1px solid rgba(201, 154, 130, 0.3);
     border-radius: 11px;
     background: #151114;
     color: #eee1da;
@@ -2309,12 +2309,12 @@ html.is-soma-fs-closing .app-h {
 
 .first-session-kicker,
 .night-ritual-kicker { color: #bd9a84; font: 8px 'Share Tech Mono', monospace; letter-spacing: 0.09em; }
-.first-session-card p { margin: 3px 0 0; color: #d6a4ad; font: 10.5px/1.4 'Inter', sans-serif; }
+.first-session-card p { margin: 3px 0 0; color: #d2c0bc; font: 10.5px/1.4 'Inter', sans-serif; }
 .first-session-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .first-session-actions button {
     min-height: 34px;
     padding: 6px 9px;
-    border: 1px solid rgba(255, 120, 140, 0.42);
+    border: 1px solid rgba(201, 154, 130, 0.42);
     border-radius: 8px;
     background: #26191d;
     color: #f0dcd1;
@@ -2336,7 +2336,7 @@ html.is-soma-fs-closing .app-h {
     border-bottom: 1px solid rgba(202, 173, 152, 0.12);
 }
 .night-ritual-kicker { padding-top: 1px; white-space: nowrap; }
-.night-ritual-strip p { margin: 0; color: #9b606a; font: 9px/1.4 'Inter', sans-serif; text-align: right; }
+.night-ritual-strip p { margin: 0; color: #a99a9d; font: 9px/1.4 'Inter', sans-serif; text-align: right; }
 
 .feed-filters { border: 1px solid rgba(195, 169, 157, 0.16); border-radius: 10px; background: #130f12; }
 .feed-filters summary {
@@ -2351,7 +2351,7 @@ html.is-soma-fs-closing .app-h {
     list-style: none;
 }
 .feed-filters summary::-webkit-details-marker { display: none; }
-.feed-filters summary > span:first-child { color: #d6a4ad; font: 9px 'Share Tech Mono', monospace; letter-spacing: 0.04em; }
+.feed-filters summary > span:first-child { color: #d0ad93; font: 9px 'Share Tech Mono', monospace; letter-spacing: 0.04em; }
 #feed-filter-status { overflow: hidden; color: #95878c; font: 9px 'Inter', sans-serif; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
 .feed-filter-chevron { color: #8f7e84; transition: transform 0.16s ease; }
 .feed-filters[open] .feed-filter-chevron { transform: rotate(180deg); }
@@ -2363,13 +2363,13 @@ html.is-soma-fs-closing .app-h {
 .contact-boundaries input,.signal-intents input { accent-color: #cba888; min-width: 18px; min-height: 18px; }
 .signal-caption { margin: 3px 0 8px; color: #9e9093; font: 9.5px/1.45 'Inter', sans-serif; }
 .contact-filter-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-.contact-filter { min-height: 34px; padding: 6px 9px; border: 1px solid rgba(138, 38, 54, 0.22); border-radius: 8px; background: #171216; color: #c6b3b4; font: 9px 'Share Tech Mono', monospace; cursor: pointer; }
+.contact-filter { min-height: 34px; padding: 6px 9px; border: 1px solid rgba(172, 132, 138, 0.22); border-radius: 8px; background: #171216; color: #c6b3b4; font: 9px 'Share Tech Mono', monospace; cursor: pointer; }
 .contact-filter[aria-pressed="true"] { border-color: rgba(210, 171, 137, 0.68); background: #292023; color: #f1dfd2; }
 .contact-quiet { display: inline-block; min-height: 34px; padding: 7px 0 0; color: #bba2a5; font: 9px 'Share Tech Mono', monospace; text-align: left; text-decoration: underline; text-underline-offset: 3px; }
 .contact-quiet[hidden] { display: none !important; }
 .feed-theme-filter > span { display: block; margin: 2px 0 6px; color: #9f8f93; font: 8px 'Share Tech Mono', monospace; letter-spacing: 0.08em; }
 #feed-filter-bar { display: flex; flex-wrap: wrap; gap: 6px; }
-.feed-topic-btn { min-height: 32px; padding: 6px 9px; border: 1px solid rgba(138, 38, 54, 0.2); border-radius: 8px; background: #171216; color: #b4818a; font: 9px 'Share Tech Mono', monospace; }
+.feed-topic-btn { min-height: 32px; padding: 6px 9px; border: 1px solid rgba(172, 132, 138, 0.2); border-radius: 8px; background: #171216; color: #b9a9ab; font: 9px 'Share Tech Mono', monospace; }
 .feed-topic-btn.is-active { border-color: rgba(210, 171, 137, 0.68); background: #292023; color: #f1dfd2; }
 .feed-filters button:focus-visible { outline: 2px solid #e2c4a2; outline-offset: 2px; }
 
@@ -2448,7 +2448,7 @@ html.is-soma-fs-closing .app-h {
     color: #d27f7c; font: 8px 'Share Tech Mono', monospace; letter-spacing: 0.1em;
 }
 .visit-entry .visit-start, .visit-entry button.visit-start {
-    border: 1px solid rgba(255, 120, 140, 0.4); background: #1a1013; color: #ffe1e6;
+    border: 1px solid rgba(201, 154, 130, 0.4); background: #1a1013; color: #efdbd0;
     border-radius: 8px; padding: 5px 9px; font: 9px 'Share Tech Mono', monospace;
     white-space: nowrap; cursor: pointer;
 }
@@ -2456,9 +2456,9 @@ html.is-soma-fs-closing .app-h {
 .visit-head {
     display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px;
 }
-.visit-kicker { color: #c95869; font: 8px 'Share Tech Mono', monospace; letter-spacing: 0.1em; }
+.visit-kicker { color: #b79382; font: 8px 'Share Tech Mono', monospace; letter-spacing: 0.1em; }
 .visit-next, .visit-enter {
-    border: 1px solid rgba(255, 120, 140, 0.4); background: #1a1013; color: #ffe1e6;
+    border: 1px solid rgba(201, 154, 130, 0.4); background: #1a1013; color: #efdbd0;
     border-radius: 8px; padding: 5px 9px; font: 9px 'Share Tech Mono', monospace; cursor: pointer; white-space: nowrap;
 }
 .visit-scene {
@@ -2466,15 +2466,15 @@ html.is-soma-fs-closing .app-h {
 }
 .visit-canvas { display: block; width: 100%; height: auto; }
 .visit-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
-.visit-note { color: #9b606a; font: 9px 'Share Tech Mono', monospace; }
+.visit-note { color: #8a7a7d; font: 9px 'Share Tech Mono', monospace; }
 
 /* ===== Вкладка Оранжерея ===== */
 .gh-tab-head { margin-bottom: 10px; }
-.gh-tab-kicker { color: #c95869; font: 8px 'Share Tech Mono', monospace; letter-spacing: 0.1em; }
-.gh-tab-title { margin: 2px 0 0; color: #ffb8c2; font: 600 21px/1.15 'Inter', sans-serif; }
+.gh-tab-kicker { color: #b79382; font: 8px 'Share Tech Mono', monospace; letter-spacing: 0.1em; }
+.gh-tab-title { margin: 2px 0 0; color: #f3e8ff; font: 600 21px/1.15 'Inter', sans-serif; }
 .gh-tab-scene-wrap {
     border-radius: 14px; overflow: hidden; background: #0b0410;
-    border: 1px solid rgba(255, 120, 140, 0.25);
+    border: 1px solid rgba(196, 181, 253, 0.25);
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
 .gh-tab-canvas { display: block; width: 100%; height: auto; }
@@ -2483,10 +2483,10 @@ html.is-soma-fs-closing .app-h {
     margin-top: 10px; flex-wrap: wrap;
 }
 .gh-tab-bar button {
-    border: 1px solid rgba(255, 120, 140, 0.35); background: #1a070c; color: #ffb8c2;
+    border: 1px solid rgba(196, 181, 253, 0.35); background: #1a0f24; color: #e9d5ff;
     border-radius: 9px; padding: 7px 11px; font: 9px 'Share Tech Mono', monospace; cursor: pointer;
 }
-.gh-tab-status { color: #9b606a; font: 8px 'Share Tech Mono', monospace; }
+.gh-tab-status { color: #9d9095; font: 8px 'Share Tech Mono', monospace; }
 
 /* ===== Консоль под пейджером: единая красно-чёрная панель ===== */
 .feed-console {

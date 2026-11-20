@@ -10334,6 +10334,7 @@ function renderPagerModal() {
                                         <div class="pager-compose-bar">
                                             <span id="pager-compose-count" class="pager-compose-count">${draft.length} / ${PROGRESSION_RULES.WHISPER_MAX_LEN} (мин. ${PROGRESSION_RULES.WHISPER_MIN_LEN})</span>
                                             <div class="pager-compose-btns">
+                                                <button type="button" class="pager-act-btn pager-act-btn--dismiss" onclick="if (typeof hideKeyboard === 'function') hideKeyboard();" aria-label="Спрятать клавиатуру">⌨ СКРЫТЬ КЛ</button>
                                                 <button type="button" class="pager-act-btn pager-act-btn--dismiss" id="pager-compose-cancel">ОТМЕНА</button>
                                                 <button type="button" class="pager-act-btn pager-act-btn--save" id="pager-compose-send" ${adm.whisperLeftToday <= 0 ? 'disabled' : ''}>◈ ПЕРЕДАТЬ СВОИ СЛОВА</button>
                                             </div>

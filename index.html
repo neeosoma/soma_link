@@ -1133,7 +1133,7 @@
         renderRoom();
 
         try {
-            let { data } = await supabaseClient.from('soma_users').select('username,warmth,help_attempts,whispers_sent,weekly_warmth,weekly_key,cosmetics,owned_cosmetics').eq('username', player.uid).single();
+            let { data } = await supabaseClient.from('soma_users').select('username,warmth,help_attempts,whispers_sent,cosmetics,owned_cosmetics').eq('username', player.uid).single();
             if (data) {
                 const whispers = typeof getWhisperBreachCount === 'function' ? getWhisperBreachCount() : 0;
                 const cloudWhispers = Number.isFinite(Number(data.whispers_sent)) ? Math.max(0, Number(data.whispers_sent)) : 0;

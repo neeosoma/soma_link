@@ -306,55 +306,6 @@ function titleSpanOf(cosmOrId, withGlyph) {
     return cls ? `<span class="${cls}">${safe}</span>` : safe;
 }
 
-// Текущий ключ недели (понедельник UTC) и таймер до сброса недельной охоты
-function currentWeekKey(dObj) {
-    const d = dObj ? new Date(dObj) : new Date();
-    const day = (d.getUTCDay() + 6) % 7;
-    const mon = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - day));
-    return mon.toISOString().slice(0, 10);
-}
-
-function weekResetCountdown() {
-    const now = new Date();
-    const day = (now.getUTCDay() + 6) % 7;
-    const nextMon = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - day + 7);
-    const diffH = Math.max(1, Math.floor((nextMon - now.getTime()) / 3600000));
-    const days = Math.floor(diffH / 24), hrs = diffH % 24;
-    return days > 0 ? `${days}д ${hrs}ч` : `${hrs}ч`;
-}
-
-function addWeeklyWarmth(delta) {
-    const n = Math.max(0, Math.trunc(Number(delta) || 0));
-    if (!n) return 0;
-    const wk = currentWeekKey();
-    let cur = 0;
-    try {
-        const raw = JSON.parse(localStorage.getItem('soma_week') || '{}') || {};
-        cur = raw.key === wk ? (Math.trunc(raw.warmth) || 0) : 0;
-        cur += n;
-        localStorage.setItem('soma_week', JSON.stringify({ key: wk, warmth: cur }));
-    } catch (_) { cur = n; }
-    if (typeof player !== 'undefined' && player) {
-        player.weeklyWarmth = cur;
-        player.weeklyKey = wk;
-    }
-    try {
-        if (typeof supabaseClient !== 'undefined' && supabaseClient && player && player.uid) {
-            supabaseClient.from('soma_users').update({ weekly_warmth: cur, weekly_key: wk }).eq('username', player.uid).then(() => {}, () => {});
-        }
-    } catch (_) {}
-    return cur;
-}
-
-function getMyWeeklyWarmth() {
-    const wk = currentWeekKey();
-    try {
-        const raw = JSON.parse(localStorage.getItem('soma_week') || '{}') || {};
-        if (raw.key === wk) return Math.max(0, Math.trunc(raw.warmth) || 0);
-    } catch (_) {}
-    return 0;
-}
-
 function hydrateCosmeticsFromCloud(row) {
     if (!row || typeof row !== 'object') return;
     if (Array.isArray(row.owned_cosmetics)) {
@@ -364,10 +315,6 @@ function hydrateCosmeticsFromCloud(row) {
     if (row.cosmetics && typeof row.cosmetics === 'object') {
         const hasLocal = Object.values(shopState.equipped).some(Boolean);
         if (!hasLocal) shopState.equipped = normalizeEquipped(row.cosmetics, shopState.owned);
-    }
-    if (row.weekly_key === currentWeekKey() && typeof row.weekly_warmth === 'number') {
-        const best = Math.max(getMyWeeklyWarmth(), row.weekly_warmth);
-        try { localStorage.setItem('soma_week', JSON.stringify({ key: row.weekly_key, warmth: best })); } catch (_) {}
     }
     saveCosmeticsLocal();
     applyCosmeticsToUI();

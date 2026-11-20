@@ -2114,3 +2114,76 @@ test('rare dog is White Yuna throughout user-facing copy without changing its ra
     assert.ok(cosmetics.includes('Белая Юна'));
     assert.ok(!/Лунная Юна/i.test(roomCode + cosmetics));
 });
+
+test('first live Whisper requires rules, grants one early send, and restores normal admission after reload', async () => {
+    const localStorage = makeStorage();
+    const window = { SOMA_CONFIG: { WHISPER_LIVE: true } };
+    let r = loadRoom({ window, localStorage });
+    const opts = { today: '2026-11-18', skipCloud: true };
+    const text = 'Пусть сегодня станет немного легче.';
+    assert.equal(r.whisperAdmission(0).firstAvailable, true);
+    assert.equal(r.whisperAdmission(0).admitted, false);
+    assert.equal((await r.sendWhisperToPost({ id: 'post_first' }, text, opts)).code, 'locked');
+    assert.equal(r.acceptFirstSignalRules(), true);
+    assert.equal(r.whisperAdmission(0).admitted, true);
+    assert.equal((await r.sendWhisperToPost({ id: 'post_first' }, text, opts)).ok, true);
+    r = loadRoom({ window, localStorage });
+    assert.equal(r.whisperAdmission(0).firstAvailable, false);
+    assert.equal((await r.sendWhisperToPost({ id: 'post_next' }, text, opts)).code, 'locked');
+    assert.equal(r.whisperAdmission(100, { ...r.loadWarmthLedger(), trainedTotal: 13 }).admitted, true);
+});
+
+test('first send failure does not consume the opportunity, award XP, or fake delivery', async () => {
+    const localStorage = makeStorage();
+    const player = { uid: 'u_0123456789abcdef', warmth: 0, xp: 0 };
+    const window = { SOMA_CONFIG: { WHISPER_LIVE: true } };
+    const supabaseClient = { from: () => ({ insert: async () => ({ error: { message: 'offline' } }) }) };
+    const r = loadRoom({ localStorage, player, window, supabaseClient });
+    r.acceptFirstSignalRules();
+    const res = await r.sendWhisperToPost({ id: 'post_retry' }, 'Пусть сегодня станет немного легче.', { allowOfflineFallback: true });
+    assert.equal(res.code, 'network_error');
+    assert.equal(r.whisperAdmission(0).firstAvailable, true);
+    assert.equal(r.loadWarmthLedger().whispersSent, 0);
+    assert.equal(r.hasWhisperedToPost('post_retry'), false);
+    assert.equal(player.xp, 0);
+    assert.equal(JSON.parse(localStorage.getItem('soma_signal_metrics_v1')).send_success, 0);
+    const noClient = loadRoom({ localStorage, window });
+    assert.equal((await noClient.sendWhisperToPost({ id: 'post_retry' }, 'Пусть сегодня станет немного легче.')).code, 'network_error');
+});
+
+test('first signal filters demos and own posts and does not create fabricated messages', async () => {
+    const localStorage = makeStorage({ soma_my_posts: '["post_mine"]' });
+    const r = loadRoom({ localStorage, window: { SOMA_CONFIG: { WHISPER_LIVE: true } } });
+    const posts = [{ id: 'demo_1' }, { id: 'post_demo', isDemo: true }, { id: 'post_mine' }, null, { id: 'post_live' }];
+    assert.equal(JSON.stringify(r.getFirstSignalCandidates(posts)), '[{"id":"post_live"}]');
+    assert.equal(r.getFirstSignalCandidates([]).length, 0);
+    assert.equal((await r.sendWhisperToPost(posts[0], 'Пусть сегодня станет немного легче.')).code, 'demo_post');
+    assert.ok(!indexHtml.includes("id: 'demo_1'"));
+});
+
+test('funnel metrics accept only fixed event names and never save supplied message payloads', () => {
+    const localStorage = makeStorage({ soma_signal_metrics_v1: '{"secret":"private message","entry_view":2}' });
+    const r = loadRoom({ localStorage });
+    assert.equal(r.trackFirstSignalEvent('entry_view', { text: 'secret message', uid: 'u_private' }), true);
+    assert.equal(r.trackFirstSignalEvent('secret message'), false);
+    const raw = localStorage.getItem('soma_signal_metrics_v1');
+    const counts = JSON.parse(raw);
+    assert.equal(counts.entry_view, 3);
+    assert.ok(!raw.includes('secret') && !raw.includes('uid') && !raw.includes('text'));
+});
+
+test('concurrent first sends cannot both consume the early opportunity', async () => {
+    let finish;
+    const insert = new Promise(resolve => { finish = resolve; });
+    const r = loadRoom({
+        window: { SOMA_CONFIG: { WHISPER_LIVE: true } },
+        supabaseClient: { from: () => ({ insert: () => insert }) }
+    });
+    r.acceptFirstSignalRules();
+    const text = 'Пусть сегодня станет немного легче.';
+    const pending = r.sendWhisperToPost({ id: 'post_a' }, text);
+    assert.equal((await r.sendWhisperToPost({ id: 'post_b' }, text)).code, 'busy');
+    finish({ error: null });
+    assert.equal((await pending).ok, true);
+    assert.equal((await r.sendWhisperToPost({ id: 'post_b' }, text)).code, 'locked');
+});

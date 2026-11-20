@@ -360,6 +360,11 @@
                 <span id="feed-warmth-status">✦ Зажмите «Удержать взгляд», чтобы зажечь Светлячков в комнате</span>
                 <span id="feed-warmth-quota" class="text-amber-300 font-bold shrink-0">0/2</span>
             </div>
+            <section id="first-signal-entry" class="pager-card" hidden aria-label="Первый сигнал">
+                <div class="pager-empty-title">НОЧНАЯ СТАНЦИЯ · СИГНАЛЫ НЕЗНАКОМЦЕВ</div>
+                <p class="pager-card-text">Заглянете в эфир? Можно ответить, просто прочитать или пропустить. Один первый шёпот — без тепла и 13 уроков.</p>
+                <button type="button" class="pager-act-btn" onclick="openPagerModal('feed')">ОТКРЫТЬ ПЕЙДЖЕР</button>
+            </section>
             <div id="feed-filter-bar" class="flex gap-1.5 overflow-x-auto pb-0.5 text-[10px] font-mono-tech" role="tablist" aria-label="Фильтр историй по теме"></div>
             <div id="posts-container" class="space-y-3">
                 <div class="text-center text-xs text-gray-500 py-10 font-mono-tech">Загрузка данных NEEO~CITY...</div>
@@ -1041,24 +1046,24 @@
         try {
             if (typeof syncPagerWhispers === 'function') syncPagerWhispers();
             const { data, error } = await supabaseClient.from('soma_posts').select('*').order('created_at', { ascending: false }).limit(50);
-            if (error || !data || !data.length) return;
+            if (error || !Array.isArray(data)) return;
+            const wasFailed = feedLoadFailed;
+            feedLoadFailed = false;
             const sig = d => d.map(p => p.id + ':' + p.likes).join('|');
-            if (sig(data) !== sig(feedPosts)) { feedPosts = data; renderFeed(); }
+            if (wasFailed || sig(data) !== sig(feedPosts)) { feedPosts = data; renderFeed(); }
         } catch (e) {}
     }
 
+    let feedLoadFailed = false;
     async function fetchPosts() {
         try {
-            let { data } = await supabaseClient.from('soma_posts').select('*').order('created_at', { ascending: false }).limit(50);
-            if (data && data.length > 0) {
-                feedPosts = data;
-            } else {
-                throw new Error('Empty');
-            }
-        } catch(e) {
-            if (feedPosts.length === 0) {
-                feedPosts = [{ id: 'demo_1', author: 'Аноним #4092', tag: 'ДОЛГИ', text: 'Сегодня закрыли доступ к рабочей учетке. На карте 400 рублей, завтра платить за аренду. Впервые не знаю, что делать.', likes: 42, created_at: new Date() }];
-            }
+            if (!supabaseClient) throw new Error('Network unavailable');
+            const { data, error } = await supabaseClient.from('soma_posts').select('*').order('created_at', { ascending: false }).limit(50);
+            if (error || !Array.isArray(data)) throw error || new Error('Invalid response');
+            feedPosts = data;
+            feedLoadFailed = false;
+        } catch (_) {
+            feedLoadFailed = true;
         }
         renderFeed();
     }
@@ -1276,6 +1281,8 @@
     }
 
     function renderFeed() {
+        if (typeof renderFirstSignalEntry === 'function') renderFirstSignalEntry();
+        if (typeof roomAnim !== 'undefined' && roomAnim.pagerModalOpen) renderPagerModal();
         const container = document.getElementById('posts-container');
         container.innerHTML = '';
         feedShownAt = performance.now();
@@ -1292,7 +1299,7 @@
             : feedPosts.filter(p => String(p.tag || 'ЛИЧНАЯ БОЛЬ').trim().toUpperCase() === activeFeedTag);
 
         if (!visible.length) {
-            container.innerHTML = `<div class="text-center text-xs text-gray-500 py-10 font-mono-tech">На этой частоте пока тихо.</div>`;
+            container.innerHTML = `<div class="text-center text-xs text-gray-500 py-10 font-mono-tech">${feedLoadFailed ? 'Не удалось загрузить сигналы. Попробуйте позже.' : 'На этой частоте пока тихо. Здесь появятся настоящие истории — можно вернуться позже.'}</div>`;
             return;
         }
 

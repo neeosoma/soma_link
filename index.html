@@ -185,37 +185,45 @@
             <!-- ШАПКА: статус передатчика -->
             <div class="flex justify-between items-center mb-3">
                 <div class="flex items-center gap-2">
-                    <span class="ts-indicator" aria-hidden="true"></span>
-                    <span class="text-xs font-mono-tech text-red-400 uppercase tracking-widest">// ПЕРЕДАТЧИК · РЕЖИМ «ЗОВ»</span>
+                    <span class="ts-pilot" aria-hidden="true"></span>
+                    <span class="ts-brand">NEEOSOMA // ПЕРЕДАТЧИК</span>
                 </div>
                 <button onclick="closePostModal()" class="ts-close" aria-label="Закрыть">✕</button>
             </div>
-            <!-- Индикатор сигнала -->
-            <div class="ts-meter" aria-hidden="true">
-                <div class="ts-meter-bar" id="ts-meter-fill"></div>
+            <!-- Многосегментный измеритель сигнала -->
+            <div class="ts-vmeter" aria-hidden="true">
+                <div class="ts-vmeter-seg ts-vmeter-seg--g" id="ts-vm-g"></div>
+                <div class="ts-vmeter-seg ts-vmeter-seg--y" id="ts-vm-y"></div>
+                <div class="ts-vmeter-seg ts-vmeter-seg--r" id="ts-vm-r"></div>
+                <div class="ts-vmeter-label" id="ts-vm-label">●●●●●●●●●○</div>
             </div>
             <!-- Подсказка -->
             <div class="ts-brief">
                 <b>Одна история в день.</b> Делитесь любым. Черновик сохранится; ответ не гарантирован.
             </div>
-            <!-- Намерение: выбор отклика -->
-            <fieldset class="signal-intents">
-                <legend>Какой отклик вам сейчас нужен?</legend>
-                <label><input type="radio" name="signal-intent" value="N"> Побудь рядом</label>
-                <label><input type="radio" name="signal-intent" value="V"> Хочу взгляд со стороны</label>
-                <label><input type="radio" name="signal-intent" value="W"> Маленькая победа</label>
-                <label><input type="radio" name="signal-intent" value="S" checked> Просто делюсь</label>
-                <p id="signal-intent-hint" class="signal-caption" aria-live="polite"></p>
-            </fieldset>
+            <!-- Частотный диапазон: выбор отклика -->
+            <div class="ts-freq">
+                <div class="ts-freq-label">ВЫБРАТЬ ЧАСТОТУ ОТКЛИКА</div>
+                <div class="ts-freq-band">
+                    <label class="ts-freq-ch"><input type="radio" name="signal-intent" value="N"><span class="ts-freq-num">CH·01</span><span class="ts-freq-name">Побудь рядом</span></label>
+                    <label class="ts-freq-ch"><input type="radio" name="signal-intent" value="V"><span class="ts-freq-num">CH·02</span><span class="ts-freq-name">Взгляд со стороны</span></label>
+                    <label class="ts-freq-ch"><input type="radio" name="signal-intent" value="W"><span class="ts-freq-num">CH·03</span><span class="ts-freq-name">Маленькая победа</span></label>
+                    <label class="ts-freq-ch"><input type="radio" name="signal-intent" value="S" checked><span class="ts-freq-num">CH·04</span><span class="ts-freq-name">Просто делюсь</span></label>
+                </div>
+                <p id="signal-intent-hint" class="ts-freq-hint" aria-live="polite"></p>
+            </div>
             <!-- Тема + чипсы -->
-            <div class="space-y-1.5">
-                <input id="new-pain-tag" maxlength="24" placeholder="Тема, если хочется (необязательно)" class="ts-input" />
-                <div id="tag-chips" class="flex flex-wrap gap-1.5"></div>
+            <div class="ts-tag-row">
+                <label class="ts-tag-label" for="new-pain-tag">ТЕМА</label>
+                <input id="new-pain-tag" maxlength="24" placeholder="необязательно · до 24 символов" class="ts-tag-input" />
+                <div id="tag-chips" class="ts-tag-chips"></div>
             </div>
             <!-- Текст сигнала -->
             <div class="ts-field-wrap">
+                <div class="ts-field-corners" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
                 <textarea id="new-pain-text" rows="5" minlength="13" maxlength="666" oninput="updateCharCount()" placeholder="Что произошло? Что хочется разделить с другим человеком? (13–666 символов)" class="ts-textarea"></textarea>
                 <div class="ts-field-glow" aria-hidden="true"></div>
+                <div class="ts-field-scan" aria-hidden="true"></div>
             </div>
             <!-- Ошибка -->
             <div id="post-error" class="ts-error hidden"></div>
@@ -226,13 +234,15 @@
             </div>
             <!-- Кнопка отправки -->
             <button id="send-btn" onclick="submitPainPost()" class="ts-send-btn">
-                <span class="ts-send-glow" aria-hidden="true"></span>
+                <span class="ts-send-aura" aria-hidden="true"></span>
+                <span class="ts-send-ripple" aria-hidden="true"></span>
+                <span class="ts-send-shimmer" aria-hidden="true"></span>
                 <span class="ts-send-glyph" aria-hidden="true">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M12 2 L12 8 M12 16 L12 22 M4.5 6.5 L10 11 M14 13 L19.5 17.5 M3.5 17.5 L9 13 M14 11 L19.5 6.5"/>
                     </svg>
                 </span>
-                <span class="ts-send-label">ПОДЧИНИТЬ СИГНАЛ</span>
+                <span class="ts-send-label">ОТПРАВИТЬ В ЭФИР</span>
             </button>
             <!-- Поддержка -->
             <button onclick="openSafety()" class="ts-support">🛟 мне тяжело — что делать?</button>
@@ -521,22 +531,6 @@
                             <button type="button" data-win-phase="2" onclick="equipStationPhase(2, true)">Очаг</button>
                             <button type="button" data-win-phase="3" onclick="equipStationPhase(3, true)">Рассвет</button>
                         </div>
-                    </div>
-
-                    <!-- Диегетический VHS-видеоархив входящих анонимных «Шёпотов» (номер + ДД.ММ.ГГГГ) -->
-                    <div id="station-deck-bar" class="station-ctx hidden" aria-label="Видеоархив VHS">
-                        <div class="station-ctx-head station-ctx-head--deck">
-                            <div class="station-deck-col">
-                                <span class="station-deck-brand">NEEOSOMA // VTR-90</span>
-                                <span class="station-deck-sub">АРХИВ VHS-КАССЕТ</span>
-                            </div>
-                            <div class="station-deck-col station-deck-col--right">
-                                <span id="station-deck-active" class="station-deck-active">ЛОТОК ПУСТ</span>
-                                <span id="station-deck-count" class="station-deck-total">ВСЕГО 0</span>
-                            </div>
-                        </div>
-                        <p id="station-deck-empty" class="station-ctx-empty">Плёнка чиста. Каждое анонимное тёплое послание для вас запишется на номерную VHS-кассету с полной датой ДД.ММ.ГГГГ.</p>
-                        <div id="station-deck-list" class="station-ctx-row"></div>
                     </div>
 
                     <!-- Чистая релизная карточка горшка, сезонного роста и Оранжереи -->
@@ -1774,12 +1768,7 @@
         SFX.tap();
         showPostError('');
         // Сброс измерителя сигнала
-        const meterOpen = document.getElementById('ts-meter-fill');
-        if (meterOpen) {
-            meterOpen.style.transition = 'width 0.3s ease';
-            meterOpen.style.width = '0%';
-            meterOpen.style.background = 'linear-gradient(90deg, #4a1a24, #6a2838)';
-        }
+        updateTsVmeter(0);
         const ta = document.getElementById('new-pain-text');
         if (ta && !ta.value) {
             try { ta.value = localStorage.getItem(POST_DRAFT_KEY) || ''; } catch (e) {}
@@ -1797,6 +1786,28 @@
         restoreSomaScroll();
     }
 
+    // V-метр: 10 сегментов (4绿 / 3黄 / 3红), заполнение по длине текста
+    function updateTsVmeter(trimLen) {
+        const total = 10;
+        const ready = trimLen >= POST_MIN_LEN;
+        const pct = Math.min(total, Math.max(0, Math.round((trimLen / POST_MIN_LEN) * total)));
+        const gEl = document.getElementById('ts-vm-g');
+        const yEl = document.getElementById('ts-vm-y');
+        const rEl = document.getElementById('ts-vm-r');
+        const lbl = document.getElementById('ts-vm-label');
+        const green = Math.min(4, pct);
+        const yellow = Math.min(3, Math.max(0, pct - 4));
+        const red = Math.min(3, Math.max(0, pct - 7));
+        const gDots = '●'.repeat(green) + '○'.repeat(4 - green);
+        const yDots = '●'.repeat(yellow) + '○'.repeat(3 - yellow);
+        const rDots = '●'.repeat(red) + '○'.repeat(3 - red);
+        const allDots = gDots + yDots + rDots;
+        if (gEl) gEl.classList.toggle('is-active', green > 0);
+        if (yEl) yEl.classList.toggle('is-active', yellow > 0);
+        if (rEl) rEl.classList.toggle('is-active', red > 0);
+        if (lbl) lbl.textContent = allDots;
+    }
+
     function updateCharCount(silent) {
         const ta = document.getElementById('new-pain-text');
         if (!ta) return;
@@ -1810,16 +1821,8 @@
                 ? `${len} / 666 (мин. ${POST_MIN_LEN})`
                 : `${len} / 666`;
         }
-        // Сигнальный измеритель: заполнение пропорционально разметке текста
-        const meter = document.getElementById('ts-meter-fill');
-        if (meter) {
-            const pct = Math.min(100, Math.round((trimLen / POST_MIN_LEN) * 100));
-            meter.style.width = pct + '%';
-            const ready = trimLen >= POST_MIN_LEN;
-            meter.style.background = ready
-                ? 'linear-gradient(90deg, #e11d48, #fbbf24)'
-                : 'linear-gradient(90deg, #4a1a24, #6a2838)';
-        }
+        // V-метр сигнала: segmented indicator proportional to text length
+        updateTsVmeter(trimLen);
         showPostError('');
         try {
             if (val.trim()) localStorage.setItem(POST_DRAFT_KEY, val.slice(0, 666));
@@ -1859,13 +1862,8 @@
         const label = btn.innerText;
         btn.disabled = true;
         btn.innerText = 'ОТПРАВКА В ЭФИР...';
-        // Анимация передачи: meter ведёт к 100%
-        const meter = document.getElementById('ts-meter-fill');
-        if (meter) {
-            meter.style.transition = 'width 0.9s cubic-bezier(0.4, 0, 0.2, 1)';
-            meter.style.width = '100%';
-            meter.style.background = 'linear-gradient(90deg, #e11d48, #fbbf24)';
-        }
+        // Анимация передачи: V-метр ведёт к максимуму
+        updateTsVmeter(POST_MIN_LEN * 2); // заполняем полностью
         let failed = false, reason = '';
         try {
             if (!supabaseClient) throw new Error('Supabase не подключён');
@@ -1881,11 +1879,7 @@
 
         if (failed) {
             // При ошибке сети дневной сигнал НЕ сгорает, а черновик бережно сохраняется!
-            const meterFail = document.getElementById('ts-meter-fill');
-            if (meterFail) {
-                meterFail.style.transition = 'width 0.4s ease';
-                meterFail.style.width = '0%';
-            }
+            updateTsVmeter(0);
             showPostError('Сигнал не дошёл до сети (лимит дня сохранён): ' + reason);
             return;
         }

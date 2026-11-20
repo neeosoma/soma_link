@@ -257,13 +257,13 @@ test('empty pot (-1) and all 8 species (including Orchid) across all 6 stages gr
     }
 });
 
-test('release UI hides spoilers, pager replaces NEEO_PHONE, window picks unlocked phases, and PTS inspects stages 0..6 & 7 species', () => {
+test('release UI hides spoilers, pager replaces NEEO_PHONE, window picks unlocked phases, PTS inspects stages 0..6 & 7 species, VHS deck bar removed', () => {
     assert.ok(!roomCss.includes('station-hit-pulse'), 'harsh radial tap flash must be removed');
     assert.ok(!roomCss.includes('station-plant-touch'), 'rigid whole-plant wobble animation must be removed');
     assert.ok(!indexHtml.includes('NEEO_PHONE'), 'duplicate NEEO_PHONE panel must be removed');
     assert.ok(indexHtml.includes('id="soma-pager"') && indexHtml.includes('NEEOSOMA // NMAV-04'), 'retro Whisper pager NEEOSOMA // NMAV-04 must replace phone');
     assert.ok(indexHtml.includes('id="station-window-bar"'), 'diegetic window atmosphere bar must exist');
-    assert.ok(indexHtml.includes('id="station-deck-bar"'), 'diegetic cassette deck archive bar must exist');
+    assert.ok(!indexHtml.includes('id="station-deck-bar"'), 'diegetic cassette deck archive bar must be removed entirely');
     assert.ok(indexHtml.includes('id="station-greenhouse"'), 'greenhouse herbarium section must exist');
 
     const sceneMatch = indexHtml.match(/<div id="station-scene" class="station-scene">([\s\S]*?)<\/div>\s*<div class="station-log">/);
@@ -1438,7 +1438,7 @@ test('v12: top-left fullscreen vinyl bar, unified NEEOSOMA/NEEO~CITY/SOMA~LINK b
     assert.ok(ghCss.includes('z-index: 68') && blimpCss.includes('z-index: 70'), 'fullscreen z-index hierarchy stays clean and conflict-free');
 });
 
-test('v13: scroll freedom, 66-char epitaph, 13..666 Call, 8 Earth + hidden 9th alien, 0.1% Moon Cat, Hearth lanterns & cosmic violet Dawn, FS Greenhouse pill, enlarged blimp, and clean 2x2 VHS bar', () => {
+test('v13: scroll freedom, 66-char epitaph, 13..666 Call, 8 Earth + hidden 9th alien, 0.1% Moon Cat, Hearth lanterns & cosmic violet Dawn, FS Greenhouse pill, enlarged blimp, and no VHS deck bar', () => {
     const vm = require('node:vm');
     const fs = require('node:fs');
     const path = require('path');
@@ -1517,11 +1517,11 @@ test('v13: scroll freedom, 66-char epitaph, 13..666 Call, 8 Earth + hidden 9th a
     assert.ok(r.stationPhases[2].entry.includes('серпом луны') && r.stationPhases[2].entry.includes('фонарики'), 'Phase 2 describes crescent moon and sky lanterns');
     assert.ok(r.stationPhases[3].entry.includes('фиалково-космический'), 'Phase 3 describes warm-violet cosmic Dawn');
 
-    // 5. Diegetic Greenhouse vines portal (zero button over Fullscreen window), zero pre-8/8 spoiler of 9th Easter egg, clean 2x2 VHS bar, and enlarged Blimp
+    // 5. Diegetic Greenhouse vines portal (zero button over Fullscreen window), zero pre-8/8 spoiler of 9th Easter egg, VHS deck bar removed, and enlarged Blimp
     assert.ok(!indexHtml.includes('id="station-fs-gh"') && indexHtml.includes('id="station-hit-vines"'),
         'Fullscreen Greenhouse button replaced by living hanging vines portal above the bed');
-    assert.ok(indexHtml.includes('station-ctx-head--deck') && indexHtml.includes('id="station-deck-active"') && indexHtml.includes('id="station-deck-count"'),
-        'VHS deck bar uses structured 2x2 non-overlapping header');
+    assert.ok(!indexHtml.includes('station-ctx-head--deck') && !indexHtml.includes('id="station-deck-active"') && !indexHtml.includes('id="station-deck-count"'),
+        'VHS deck bar removed entirely — no cassette plaque in the room');
     assert.ok(!roomCode.includes('▣ NEEOSOMA // VTR-90'), 'redundant extra VTR-90 button removed from VHS tape list');
     assert.ok(ghCode.includes('const EARTH_COUNT = 8') && !ghCode.includes('✦ Тайна (') && ghCss.includes('grid-template-columns: repeat(4, minmax(0, 1fr))'),
         'Conservatory shows 4x2 symmetric 8 Earth slots with ZERO pre-8/8 spoiler of the 9th secret alien');

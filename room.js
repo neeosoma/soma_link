@@ -3121,7 +3121,7 @@ const roomAnim = {
     isSeedPot: false,
     radioLit: false,
     previewPhase: 3,
-    contextPanel: '', // '' | 'window' | 'deck'
+    contextPanel: '', // '' | 'window'
     activeCassetteId: '',
     firstSessionCompleted: false,
     firstSessionAction: '',
@@ -4015,7 +4015,6 @@ function playCassette(id, opts) {
     if (!found) return null;
     const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
     roomAnim.activeCassetteId = found.id;
-    roomAnim.contextPanel = 'deck';
     if (!(opts && opts.silent)) {
         if ((now - roomAnim.deckStart) > 2850) {
             roomAnim.deckStart = now;
@@ -4101,7 +4100,6 @@ function togglePtsDemoCassette() {
         const next = [...demoPack, ...list].slice(0, 120);
         lsSet('soma_cassettes', JSON.stringify(next));
         roomAnim.activeCassetteId = 'cas_pts_demo';
-        roomAnim.contextPanel = 'deck';
         const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
         roomAnim.deckStart = now;
         playObjectTone('shelf');
@@ -9331,7 +9329,6 @@ function touchRoomObject(obj, event) {
         line = nextRoomLine('lamp', ROOM_LINES.lamp);
         playObjectTone('lamp');
     } else if (obj === 'shelf') {
-        roomAnim.contextPanel = 'deck';
         if ((now - roomAnim.deckStart) > 2850) {
             roomAnim.deckStart = now;
             playObjectTone('shelf');
@@ -9543,43 +9540,6 @@ function syncContextPanels() {
         }
     }
 
-    const deckBar = document.getElementById('station-deck-bar');
-    if (deckBar && deckBar.classList) {
-        const tapes = loadCassettes();
-        const showDeck = roomAnim.contextPanel === 'deck';
-        deckBar.classList.toggle('hidden', !showDeck);
-        const listEl = document.getElementById('station-deck-list');
-        const emptyEl = document.getElementById('station-deck-empty');
-        const activeEl = document.getElementById('station-deck-active');
-        const countEl = document.getElementById('station-deck-count');
-        const activeTape = tapes.find(c => c.id === roomAnim.activeCassetteId);
-        if (activeEl) {
-            activeEl.textContent = tapes.length
-                ? (activeTape ? `В ДЕКЕ #${formatCassetteNum(activeTape.num)}` : 'ГОТОВ К ПУСКУ')
-                : 'ЛОТОК ПУСТ';
-        }
-        if (countEl) {
-            countEl.textContent = `ВСЕГО ${tapes.length}`;
-        }
-        if (emptyEl && emptyEl.classList) emptyEl.classList.toggle('hidden', tapes.length > 0);
-        if (listEl) {
-            listEl.textContent = '';
-            // Никакой дублирующей кнопки деки: каждое нажатие на кассету сразу открывает её в NEEOSOMA // VTR-90!
-            if (document.createElement && tapes.length) {
-                tapes.forEach(tape => {
-                    const b = document.createElement('button');
-                    b.type = 'button';
-                    b.className = 'station-vhs-chip' + (tape.fav ? ' is-fav' : '');
-                    const star = tape.fav ? '★ ' : '';
-                    b.textContent = `${star}VHS #${formatCassetteNum(tape.num)} · ${tape.date}`;
-                    b.title = tape.text;
-                    b.setAttribute('aria-pressed', String(tape.id === roomAnim.activeCassetteId));
-                    b.onclick = () => playCassette(tape.id, { openDeck: true });
-                    listEl.appendChild(b);
-                });
-            }
-        }
-    }
 }
 
 // ===== ТАКТИЛЬНЫЙ РЕТРО-ПЕЙДЖЕР «ШЁПОТА» NEEOSOMA // NMAV-04 (ЖИВОЙ ЭФИР ЭМПАТИИ + ПРИЁМ ВХОДЯЩИХ НА КАССЕТЫ VTR-90) =====

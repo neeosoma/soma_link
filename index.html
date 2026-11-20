@@ -1831,8 +1831,15 @@
         let failed = false, reason = '';
         try {
             if (!supabaseClient) throw new Error('Supabase не подключён');
-            const { error } = await supabaseClient.from('soma_posts').insert([insertRow]);
+            // Все write-операции через server-side RPC (security definer) — обходит RLS напрямую.
+            const { data, error } = await supabaseClient.rpc('submit_soma_post', {
+                p_id: insertRow.id,
+                p_author: insertRow.author,
+                p_tag: insertRow.tag,
+                p_text: insertRow.text,
+            });
             if (error) throw error;
+            if (!data || data.length === 0) throw new Error('RPC вернул пустой ответ');
         } catch (e) {
             console.error('Ошибка отправки:', e);
             failed = true;
@@ -1844,11 +1851,7 @@
         if (failed) {
             // При ошибке сети дневной сигнал НЕ сгорает, а черновик бережно сохраняется!
             updateTsVmeter(0);
-            if (/42501|row-level security|row_level_security/i.test(reason)) {
-                showPostError('Сервер拒绝信号: нарушена политика безопасности базы (RLS). Нужно применить фикс-миграцию для soma_posts — см. billing/FIX_SOMA_POSTS_RLS_DEPLOY.md.');
-            } else {
-                showPostError('Сигнал не дошёл до сети (лимит дня сохранён): ' + reason);
-            }
+            showPostError('Сигнал не дошёл до сети (лимит дня сохранён): ' + reason);
             return;
         }
         try { localStorage.setItem(POST_DAY_KEY, currentPostDayKey()); } catch (e) {}

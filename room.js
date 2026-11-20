@@ -9604,8 +9604,11 @@ function receiveIncomingWhisperLocal(whisperObj) {
 async function persistWhisperStatus(id, status) {
     if (typeof supabaseClient === 'undefined' || !supabaseClient) return { ok: true };
     try {
-        const { data, error } = await supabaseClient.from('soma_whispers')
-            .update({ status }).eq('id', id).select('id');
+        // Все write-операции через server-side RPC (security definer) — обходит RLS напрямую.
+        const { data, error } = await supabaseClient.rpc('set_soma_whisper_status', {
+            p_id: id,
+            p_status: status,
+        });
         if (error || !data || data.length !== 1) throw new Error('Status not saved');
         return { ok: true };
     } catch (_) {
@@ -9796,13 +9799,28 @@ async function sendWhisperToPostOnce(postObj, rawText, opts) {
 
     try {
         if (typeof supabaseClient !== 'undefined' && supabaseClient && !o.skipCloud) {
-            const { error } = await supabaseClient.from('soma_whispers').insert([wRow]);
+            // Все write-операции через server-side RPC (security definer) — обходит RLS напрямую.
+            const { data, error } = await supabaseClient.rpc('send_soma_whisper', {
+                p_id: wRow.id,
+                p_post_id: wRow.post_id,
+                p_post_tag: wRow.post_tag,
+                p_post_preview: wRow.post_preview,
+                p_sender_uid: wRow.sender_uid,
+                p_text: wRow.text,
+            });
             if (error) {
-                if (String(error.code) === '23505') {
+                const ecode = String(error.code || '');
+                const emsg = String(error.message || 'ошибка сети');
+                if (ecode === '23505' || /duplicate key/i.test(emsg)) {
                     rememberWhisperedPost(postId);
                     return { ok: false, code: 'already_whispered', error: 'Вы уже поддержали этого человека (1 шёпот на 1 сигнал).' };
                 }
-                return { ok: false, code: 'network_error', error: 'Эфир временно недоступен: ' + (error.message || 'ошибка сети') };
+                return { ok: false, code: 'network_error', error: 'Эфир временно недоступен: ' + emsg };
+            }
+            if (data && data.length > 0) {
+                // RPC вернул созданный шёпот — обновляем локальный объект
+                wRow.id = data[0].o_id || wRow.id;
+                wRow.status = data[0].o_status || wRow.status;
             }
         }
     } catch (e) {
@@ -9949,30 +9967,28 @@ function cyclePagerMemorial() {
 async function syncPagerWhispers() {
     if (typeof supabaseClient === 'undefined' || !supabaseClient) return;
     try {
-        // 1) Проверяем входящие «Шёпоты» на наши посты из soma_my_posts (работает даже при 0 тепла!)
+        // 1) Проверяем входящие «Шёпоты» на наши посты через RPC (security definer — обходит RLS)
         const myPosts = getLocalMyPostIdsSafe();
         if (myPosts.length) {
-            const { data: inRows } = await supabaseClient
-                .from('soma_whispers')
-                .select('id,post_id,post_tag,post_preview,text,created_at,status')
-                .in('post_id', myPosts.slice(0, 30))
-                .eq('status', 'pending')
-                .order('created_at', { ascending: false })
-                .limit(20);
+            const { data: inRows } = await supabaseClient.rpc('get_my_pending_whispers', {
+                p_post_ids: myPosts.slice(0, 30),
+            });
             if (Array.isArray(inRows) && inRows.length) {
                 const handled = getHandledWhispers();
                 const current = loadRawInboxWhispers();
                 const map = new Map(current.map(x => [x.id, x]));
                 let added = false;
                 inRows.forEach(r => {
-                    if (!r || !r.id || handled[r.id] || map.has(r.id)) return;
-                    map.set(r.id, {
-                        id: String(r.id),
-                        post_id: String(r.post_id || ''),
-                        post_tag: String(r.post_tag || 'ЛИЧНАЯ БОЛЬ'),
-                        post_preview: String(r.post_preview || ''),
-                        text: String(r.text || '').slice(0, PROGRESSION_RULES.WHISPER_MAX_LEN),
-                        created_at: r.created_at || new Date().toISOString(),
+                    // RPC-функция возвращает поля с префиксом o_ (о_id, о_post_id и т.д.)
+                    const rId = r.o_id || r.id;
+                    if (!rId || handled[rId] || map.has(rId)) return;
+                    map.set(rId, {
+                        id: String(rId),
+                        post_id: String(r.o_post_id || r.post_id || ''),
+                        post_tag: String(r.o_post_tag || r.post_tag || 'ЛИЧНАЯ БОЛЬ'),
+                        post_preview: String(r.o_post_preview || r.post_preview || ''),
+                        text: String(r.o_text || r.text || '').slice(0, PROGRESSION_RULES.WHISPER_MAX_LEN),
+                        created_at: r.o_created || r.created_at || new Date().toISOString(),
                         status: 'pending'
                     });
                     added = true;

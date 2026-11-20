@@ -97,3 +97,12 @@ NODE_PATH=/tmp/soma-sql-check/node_modules node tests/whisper-safety.integration
 PGlite uses PostgreSQL but the test stubs auth.uid from a session setting. It does
 not test actual Supabase JWT verification, PostgREST, multi-session races or mobile
 layout. Those are manual integration/release gates, not silently assumed passed.
+
+## Owner-confirmed early production rollout
+
+The owner reports that `setup_whisper_safety.sql` completed without errors.
+`WHISPER_SAFETY_LIVE` is now enabled for live verification, before the manual
+cross-account/third-party checks above have completed. The earlier FALSE-in-PR
+note describes the initial preparation state, not the final rollout config.
+Local PostgreSQL role/RLS tests passed; production access and mobile behavior
+still need confirmation. SQL execution success alone does not prove those gates.

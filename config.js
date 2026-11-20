@@ -1,8 +1,8 @@
 window.SOMA_CONFIG = {
   ENV: 'prod',
   WHISPER_LIVE: true,
-  // Enable only after applying billing/setup_whisper_safety.sql and access tests.
-  WHISPER_SAFETY_LIVE: false,
+  // Owner confirmed safety SQL applied; live cross-account verification is next.
+  WHISPER_SAFETY_LIVE: true,
   // Normal admission: warmth threshold and 13 lessons are required to send.
   WHISPER_TEST_OPEN: false,
   SUPABASE_URL: 'https://acwekuahvcfubzxcxwcb.supabase.co',

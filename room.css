@@ -2115,3 +2115,17 @@ html.is-soma-fs-closing .app-h {
         transition: none !important;
     }
 }
+
+/* The native hidden attribute must win over .pager-card's flex layout. */
+#first-signal-entry[hidden] {
+    display: none !important;
+}
+
+#first-signal-entry {
+    border-color: rgba(251, 191, 36, 0.4);
+    background: linear-gradient(135deg, #1c0b12, #100709);
+}
+
+#first-signal-entry .pager-card-text {
+    font: 12px/1.5 'Share Tech Mono', monospace;
+}

@@ -3311,6 +3311,52 @@ function daysSinceLastWarmth(ledger, todayOverride) {
     return Math.floor((b - a) / 86400000);
 }
 
+// Local-only, fixed-schema funnel counters. No IDs, text, names or network requests.
+const FIRST_SIGNAL_EVENTS = ['entry_view', 'pager_open', 'rules_accept', 'signal_read',
+    'signal_skip', 'compose_open', 'send_success', 'cassette_saved', 'echo_received',
+    'session_start', 'return_visit'];
+function trackFirstSignalEvent(name) {
+    if (!FIRST_SIGNAL_EVENTS.includes(name)) return false;
+    let counts = {};
+    try { counts = JSON.parse(lsGet('soma_signal_metrics_v1') || '{}') || {}; } catch (_) {}
+    const clean = {};
+    FIRST_SIGNAL_EVENTS.forEach(key => { clean[key] = Math.max(0, Math.min(1000000, Number(counts[key]) || 0)); });
+    clean[name] = Math.min(1000000, clean[name] + 1);
+    return lsSet('soma_signal_metrics_v1', JSON.stringify(clean));
+}
+
+function acceptFirstSignalRules() {
+    const saved = lsSet('soma_signal_rules_v1', 'accepted');
+    if (saved) trackFirstSignalEvent('rules_accept');
+    return saved;
+}
+
+function renderFirstSignalEntry() {
+    if (typeof document === 'undefined') return;
+    if (!roomAnim.signalSessionTracked) {
+        roomAnim.signalSessionTracked = true;
+        trackFirstSignalEvent('session_start');
+        const today = localDayKey();
+        const previousDay = lsGet('soma_signal_last_visit');
+        if (previousDay && previousDay !== today) trackFirstSignalEvent('return_visit');
+        lsSet('soma_signal_last_visit', today);
+    }
+    const entry = document.getElementById('first-signal-entry');
+    if (!entry) return;
+    const show = isWhisperLive() && loadWarmthLedger().whispersSent === 0;
+    entry.hidden = !show;
+    if (show && !roomAnim.firstSignalEntrySeen) {
+        roomAnim.firstSignalEntrySeen = true;
+        trackFirstSignalEvent('entry_view');
+    }
+}
+
+function getFirstSignalCandidates(posts) {
+    const mine = new Set(getLocalMyPostIdsSafe());
+    return (Array.isArray(posts) ? posts : []).filter(p => p && p.id
+        && !String(p.id).startsWith('demo_') && !p.isDemo && !mine.has(String(p.id)));
+}
+
 function whisperAdmission(warmth, ledger) {
     const w = Math.max(0, Number(warmth) || 0);
     const l = ledger || loadWarmthLedger();
@@ -3320,9 +3366,11 @@ function whisperAdmission(warmth, ledger) {
     const sendCap = PROGRESSION_RULES.DAILY_WHISPER_SEND_CAP;
     const testOpen = isWhisperLive() && typeof window !== 'undefined'
         && window.SOMA_CONFIG.WHISPER_TEST_OPEN === true;
+    const firstAvailable = isWhisperLive() && (Number(l.whispersSent) || 0) === 0;
+    const rulesAccepted = lsGet('soma_signal_rules_v1') === 'accepted';
     return {
-        testOpen,
-        admitted: testOpen || (warmthMet && trainerMet),
+        testOpen, firstAvailable, rulesAccepted,
+        admitted: testOpen || (warmthMet && trainerMet) || (firstAvailable && rulesAccepted),
         warmth: Math.min(w, PROGRESSION_RULES.WHISPER_WARMTH_GATE),
         warmthNeed: PROGRESSION_RULES.WHISPER_WARMTH_GATE,
         trained: Math.min(l.trainedTotal, PROGRESSION_RULES.WHISPER_TRAINER_GATE),
@@ -3471,6 +3519,7 @@ function claimWhisperCassetteAck(whisperId, todayOverride) {
         roomAnim.customMode = 'ПЕЙДЖЕР // ОТКЛИК С КАССЕТЫ';
         roomAnim.customEntry = roomAnim.pagerNotice;
     }
+    trackFirstSignalEvent('echo_received');
     pulsePagerScreen();
     renderRoom();
     return { duplicate: false, grantedWarmth, grantedXp, ledger };
@@ -9536,6 +9585,7 @@ async function acceptIncomingWhisper(whisperId) {
     if (!cloud.ok) return cloud;
     const cas = saveWhisperCassette(w.text, undefined, { id: 'cas_' + w.id });
     markWhisperHandled(w.id, 'saved');
+    trackFirstSignalEvent('cassette_saved');
     roomAnim.activeCassetteId = cas ? cas.id : roomAnim.activeCassetteId;
     roomAnim.cassettePlaying = true;
     roomAnim.cassetteStartedAt = typeof performance !== 'undefined' ? performance.now() : Date.now();
@@ -9572,7 +9622,17 @@ async function dismissIncomingWhisper(whisperId) {
 
 // Отправка анонимного «Шёпота» (13..333 симв.) автору чужого поста через пейджер
 async function sendWhisperToPost(postObj, rawText, opts) {
+    if (roomAnim.whisperSending) return { ok: false, code: 'busy', error: 'Предыдущий шёпот ещё отправляется.' };
+    roomAnim.whisperSending = true;
+    try { return await sendWhisperToPostOnce(postObj, rawText, opts); }
+    finally { roomAnim.whisperSending = false; }
+}
+
+async function sendWhisperToPostOnce(postObj, rawText, opts) {
     const o = (opts && typeof opts === 'object') ? opts : {};
+    if (postObj && (postObj.isDemo || String(postObj.id || '').startsWith('demo_'))) {
+        return { ok: false, code: 'demo_post', error: 'Демонстрационному сигналу нельзя отправить шёпот.' };
+    }
     const warmthNow = typeof player !== 'undefined' && player && Number.isFinite(Number(player.warmth))
         ? Number(player.warmth)
         : (Number(roomAnim.warmth) || 0);
@@ -9610,6 +9670,10 @@ async function sendWhisperToPost(postObj, rawText, opts) {
         return { ok: false, code: 'invalid_text', error: check.error };
     }
 
+    if (!o.skipCloud && (typeof supabaseClient === 'undefined' || !supabaseClient)) {
+        return { ok: false, code: 'network_error', error: 'Нет соединения с каналом. Шёпот не отправлен — попробуйте позже.' };
+    }
+
     const senderUid = String((typeof player !== 'undefined' && player && player.uid) || 'u_local0000');
     const wRow = {
         id: 'w_' + Date.now() + '_' + Math.floor(Math.random() * 9000 + 1000),
@@ -9630,13 +9694,11 @@ async function sendWhisperToPost(postObj, rawText, opts) {
                     rememberWhisperedPost(postId);
                     return { ok: false, code: 'already_whispered', error: 'Вы уже поддержали этого человека (1 шёпот на 1 сигнал).' };
                 }
-                if (!o.allowOfflineFallback) {
-                    return { ok: false, code: 'network_error', error: 'Эфир временно недоступен: ' + (error.message || 'ошибка сети') };
-                }
+                return { ok: false, code: 'network_error', error: 'Эфир временно недоступен: ' + (error.message || 'ошибка сети') };
             }
         }
     } catch (e) {
-        if (!o.allowOfflineFallback && typeof supabaseClient !== 'undefined' && supabaseClient) {
+        if (!o.skipCloud) {
             return { ok: false, code: 'network_error', error: 'Эфир временно недоступен.' };
         }
     }
@@ -9644,6 +9706,8 @@ async function sendWhisperToPost(postObj, rawText, opts) {
     rememberWhisperedPost(postId);
     const sentRes = recordWhisperSent(o.today);
     const firstSprout = sentRes.ledger.whispersSent === 1;
+    trackFirstSignalEvent('send_success');
+    renderFirstSignalEntry();
 
     if (typeof player !== 'undefined' && player) {
         player.xp = (Number(player.xp) || 0) + PROGRESSION_RULES.WHISPER_SEND_XP;
@@ -9799,7 +9863,9 @@ function renderPager(warmthArg, ledgerArg, isWatchmanArg) {
     if (gateEl) {
         gateEl.textContent = watchman
             ? 'ДОПУСК: СМОТРИТЕЛЬ'
-            : adm.admitted
+            : adm.firstAvailable
+                ? 'ПЕРВЫЙ ШЁПОТ · БЕЗ ПОРОГА'
+                : adm.admitted
                 ? 'ДОПУСК: ОТКРЫТ'
                 : `ДОПУСК ${adm.warmth}/${adm.warmthNeed} · УРОКИ ${adm.trained}/${adm.trainedNeed}`;
     }
@@ -9808,7 +9874,9 @@ function renderPager(warmthArg, ledgerArg, isWatchmanArg) {
             ? '◈ ПРОВЕРИТЬ ЧАСТОТУ'
             : inbox.length > 0
                 ? `📥 ПРОЧЕСТЬ ШЁПОТ (${inbox.length})`
-                : adm.admitted
+                : adm.firstAvailable
+                    ? '◈ ПЕРВЫЙ СИГНАЛ'
+                    : adm.admitted
                     ? '◈ ОТКРЫТЬ ЭФИР ШЁПОТА'
                     : `◈ ОТКРЫТЬ ПЕЙДЖЕР (${adm.trained}/${adm.trainedNeed})`;
     }
@@ -9825,6 +9893,9 @@ function renderPager(warmthArg, ledgerArg, isWatchmanArg) {
         } else if (roomAnim.pagerNotice) {
             mainLine = 'ОТКЛИК КАССЕТЫ // ТЕПЛО ВЕРНУЛОСЬ';
             subLine = roomAnim.pagerNotice;
+        } else if (adm.firstAvailable) {
+            mainLine = 'ПЕРВЫЙ СИГНАЛ // МОЖНО ПРОСТО ПРОЧИТАТЬ';
+            subLine = 'один первый шёпот без тепла и уроков · откройте пейджер, когда будете готовы';
         } else if (adm.admitted) {
             mainLine = `КАНАЛ «ШЁПОТ» ОТКРЫТ // ${adm.whisperLeftToday} ИЗ ${adm.whisperSendCap} НА СЕГОДНЯ`;
             subLine = adm.sprouted
@@ -9960,6 +10031,7 @@ function openPagerModal(preferredTab) {
     const ov = mountPagerModalForCurrentMode();
     if (!ov) return;
     const inbox = getPendingInboxWhispers();
+    trackFirstSignalEvent('pager_open');
     roomAnim.pagerModalOpen = true;
     roomAnim.pagerTab = preferredTab || (inbox.length > 0 ? 'inbox' : (roomAnim.pagerTab || 'feed'));
     roomAnim.pagerModalError = '';
@@ -10066,8 +10138,25 @@ function renderPagerModal() {
             });
         }
     } else {
-        // Вкладка 📡 ПОДДЕРЖАТЬ В ЭФИРЕ
-        if (!canSend) {
+        // A single early response, after explicit rules; no simulated strangers.
+        if (adm.firstAvailable && !adm.rulesAccepted) {
+            bodyEl.innerHTML = `
+                <div class="pager-gate-box">
+                    <div class="pager-empty-title">НОЧНАЯ СТАНЦИЯ · ПЕРВЫЙ СИГНАЛ</div>
+                    <p class="pager-empty-sub">Можно прочитать, ответить или пройти мимо. Вы не обязаны решать чужую проблему.</p>
+                    <p class="pager-empty-sub">Перед ответом: без оценок и непрошеных советов. Не передавайте контакты и не просите их у другого человека. Пишите от себя — достаточно нескольких искренних слов.</p>
+                    <p class="pager-empty-sub">Один первый шёпот доступен без тепла и 13 уроков. Для следующих действует обычный допуск. Ответ и сохранение на кассету не гарантированы.</p>
+                    <button type="button" class="pager-act-btn" id="signal-rules-accept">ПОНЯТНО · ПОСМОТРЕТЬ СИГНАЛ</button>
+                    <button type="button" class="pager-act-btn pager-act-btn--dismiss" id="signal-rules-later">НЕ СЕЙЧАС</button>
+                </div>`;
+            const accept = bodyEl.querySelector('#signal-rules-accept');
+            if (accept) accept.onclick = () => {
+                if (!acceptFirstSignalRules()) roomAnim.pagerModalError = 'Не удалось сохранить правила. Проверьте доступ к хранилищу браузера.';
+                renderPagerModal();
+            };
+            const later = bodyEl.querySelector('#signal-rules-later');
+            if (later) later.onclick = closePagerModal;
+        } else if (!canSend) {
             const wPct = Math.min(100, Math.round((adm.warmth / adm.warmthNeed) * 100));
             const tPct = Math.min(100, Math.round((adm.trained / adm.trainedNeed) * 100));
             bodyEl.innerHTML = `
@@ -10095,17 +10184,19 @@ function renderPagerModal() {
             }
         } else {
             const allPosts = (typeof feedPosts !== 'undefined' && Array.isArray(feedPosts)) ? feedPosts : [];
-            const myIds = new Set(getLocalMyPostIdsSafe());
             const whisperedSet = new Set(getWhisperedPosts());
-            const candidates = allPosts
-                .filter(p => p && p.id && !myIds.has(String(p.id)))
+            let candidates = getFirstSignalCandidates(allPosts)
                 .sort((a, b) => Number(whisperedSet.has(String(a.id))) - Number(whisperedSet.has(String(b.id))));
+            if (adm.firstAvailable) {
+                const skipped = new Set(roomAnim.firstSignalSkipped || []);
+                candidates = candidates.filter(p => !skipped.has(String(p.id)) && !whisperedSet.has(String(p.id))).slice(0, 1);
+            }
 
             if (!candidates.length) {
                 bodyEl.innerHTML = `
                     <div class="pager-empty-box">
                         <div class="pager-empty-title">В ЭФИРЕ ПОКА ТИХО</div>
-                        <p class="pager-empty-sub">Новые чужие сигналы из «Ленты боли» появятся здесь автоматически.</p>
+                        <p class="pager-empty-sub">Сейчас новых сигналов для вас нет. Можно вернуться позже — ничего не потеряете. Мы не подменяем людей вымышленными сообщениями.</p>
                     </div>
                 `;
             } else {
@@ -10122,6 +10213,10 @@ function renderPagerModal() {
                                 <span class="pager-card-meta">${done ? '✓ ПОДДЕРЖАН (1/1)' : 'ЖДЁТ ТЕПЛА'}</span>
                             </div>
                             <p class="pager-card-text">${escFn(post.text || '')}</p>
+                            ${adm.firstAvailable && !isComposing ? `<div class="pager-card-actions">
+                                <button type="button" class="pager-act-btn pager-act-btn--dismiss" data-act="read" data-post-id="${escFn(pid)}">ПРОСТО ПРОЧИТАТЬ</button>
+                                <button type="button" class="pager-act-btn pager-act-btn--dismiss" data-act="skip" data-post-id="${escFn(pid)}">ПРОПУСТИТЬ</button>
+                            </div>` : ''}
                             ${done
                                 ? `<div class="pager-card-done">✓ Вы уже отправили «Шёпот» этому человеку (1 сигнал = 1 шёпот).</div>`
                                 : isComposing
@@ -10138,7 +10233,7 @@ function renderPagerModal() {
                                     </div>`
                                     : `<div class="pager-card-actions">
                                         <button type="button" class="pager-act-btn pager-act-btn--save" data-act="compose" data-post-id="${escFn(pid)}" ${adm.whisperLeftToday <= 0 ? 'disabled' : ''}>
-                                            ${adm.whisperLeftToday > 0 ? '✦ ПРОЯВИТЬ ЭМПАТИЮ // ШЕПНУТЬ' : 'ЛИМИТ ДНЯ ИСЧЕРПАН (3/3)'}
+                                            ${adm.whisperLeftToday > 0 ? '✦ ОТВЕТИТЬ ШЁПОТОМ' : 'ЛИМИТ ДНЯ ИСЧЕРПАН (3/3)'}
                                         </button>
                                     </div>`
                             }
@@ -10146,8 +10241,18 @@ function renderPagerModal() {
                     `;
                 }).join('');
 
+                bodyEl.querySelectorAll('[data-act="read"], [data-act="skip"]').forEach(btn => {
+                    btn.onclick = () => {
+                        trackFirstSignalEvent(btn.dataset.act === 'read' ? 'signal_read' : 'signal_skip');
+                        roomAnim.firstSignalSkipped = [...(roomAnim.firstSignalSkipped || []), btn.dataset.postId];
+                        roomAnim.pagerModalNotice = btn.dataset.act === 'read'
+                            ? 'Можно просто прочитать. Отвечать не обязательно.' : 'Сигнал пропущен. Это нормально.';
+                        renderPagerModal();
+                    };
+                });
                 bodyEl.querySelectorAll('[data-act="compose"]').forEach(btn => {
                     btn.onclick = () => {
+                        trackFirstSignalEvent('compose_open');
                         roomAnim.pagerComposingPostId = btn.dataset.postId;
                         roomAnim.pagerDraftText = '';
                         roomAnim.pagerModalError = '';
@@ -10186,7 +10291,7 @@ function renderPagerModal() {
                     sendBtn.onclick = async () => {
                         const targetPost = candidates.find(p => String(p.id) === String(roomAnim.pagerComposingPostId));
                         sendBtn.disabled = true;
-                        const res = await sendWhisperToPost(targetPost, inp.value, { allowOfflineFallback: true });
+                        const res = await sendWhisperToPost(targetPost, inp.value);
                         if (!res.ok) {
                             roomAnim.pagerModalError = '⛔ ' + res.error;
                             if (typeof SFX !== 'undefined' && SFX.block) SFX.block();
@@ -10202,6 +10307,7 @@ function renderPagerModal() {
         footEl.innerHTML = `
             <span class="pager-foot-rule">⚖ 13–333 симв. · 1 шёпот на человека · кассета даёт +2 Тепла (1/день)</span>
             <button type="button" class="pager-foot-vhs" id="pager-open-vhs-btn">📼 КАССЕТЫ VTR-90 (${tapes.length})</button>
+            <a class="pager-foot-vhs" href="gift.html">ЗАПИСАТЬ СВОИ СЛОВА ДРУГУ →</a>
         `;
         const vhsBtn = footEl.querySelector('#pager-open-vhs-btn');
         if (vhsBtn) {
@@ -11035,6 +11141,7 @@ if (typeof document !== 'undefined' && document.addEventListener) {
 
 // Public pager API for integrations and headless regression tests.
 const pagerApi = {
+    acceptFirstSignalRules, trackFirstSignalEvent, renderFirstSignalEntry, getFirstSignalCandidates,
     validateWhisperText, hasWhisperedToPost, rememberWhisperedPost,
     claimWhisperCassetteAck, getPendingInboxWhispers, receiveIncomingWhisperLocal,
     acceptIncomingWhisper, dismissIncomingWhisper, sendWhisperToPost,

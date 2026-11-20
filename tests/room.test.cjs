@@ -736,7 +736,7 @@ test('v8: body-portal FLIP fullscreen + 180 flip + rotated pointer mapping, Dawn
     assert.ok(indexHtml.includes('soma-post-cta') && indexHtml.includes('soma-post-beacon') && indexHtml.includes('soma-post-arrow'));
     assert.ok(
         indexHtml.includes('id="station-fs-flip"')
-        && indexHtml.includes('room.js?v=17')
+        && indexHtml.includes('room.js?v=18')
         && indexHtml.includes('cosmetics.css?v=15')
         && indexHtml.includes('receiver.js?v=15')
         && indexHtml.includes('vhs.js?v=15')
@@ -2163,6 +2163,110 @@ test('first signal filters demos and own posts and does not create fabricated me
     assert.ok(!indexHtml.includes("id: 'demo_1'"));
 });
 
+test('first-session pager opens a preview, while feed reply still opens the composer', () => {
+    const r = loadRoom();
+    r.openFirstSignalSession('post_real_1');
+    assert.equal(r.roomAnim.pagerRequestedPostId, 'post_real_1');
+    assert.equal(r.roomAnim.pagerComposingPostId, '', 'first-session CTA does not jump straight into a reply');
+    r.openWhisperForPost('post_real_2');
+    assert.equal(r.roomAnim.pagerComposingPostId, 'post_real_2', 'reply button keeps direct composition behavior');
+});
+
+test('reading and skipping are available before rules; rules appear only for a chosen reply', () => {
+    const feedBranch = roomCode.slice(
+        roomCode.indexOf('Reading/skipping stay open; the short rules are required only after choosing to compose.'),
+        roomCode.indexOf('if (footEl)', roomCode.indexOf('Reading/skipping stay open;'))
+    );
+    assert.ok(feedBranch.includes('isComposing && !adm.rulesAccepted'));
+    assert.ok(feedBranch.includes('data-act="read"') && feedBranch.includes('data-act="skip"'));
+    assert.ok(!/if\s*\(!adm\.rulesAccepted\)\s*\{\s*bodyEl\.innerHTML/.test(feedBranch));
+});
+
+test('first-session and pager candidates preserve reader hide and topic-intent filters', () => {
+    const candidates = [
+        { id: 'post_visible' },
+        { id: 'post_hidden' },
+        { id: 'demo_test', isDemo: true }
+    ];
+    const r = loadRoom({
+        feedPosts: candidates,
+        contactPosts: () => [candidates[0]],
+        localStorage: makeStorage()
+    });
+    assert.deepEqual(r.getVisibleFirstSignalCandidates().map(post => post.id), ['post_visible']);
+});
+
+test('first session is dismissible, offers only a real visible post, and leaves a private room glow after reading', () => {
+    const posts = [{ id: 'demo_1' }, { id: 'post_mine' }, { id: 'post_live', text: 'Тихий настоящий сигнал.' }];
+    const localStorage = makeStorage({ soma_my_posts: '["post_mine"]' });
+    const elements = new Map([
+        ['first-signal-entry', { hidden: true, dataset: {} }],
+        ['first-session-copy', { textContent: '' }],
+        ['first-session-open', { hidden: false, disabled: false }],
+        ['first-session-look', { hidden: false }],
+        ['station', { dataset: {} }],
+        ['station-first-signal-note', { hidden: true }]
+    ]);
+    const document = { getElementById: id => elements.get(id) || null };
+    const player = { uid: 'u_0123456789abcdef', name: 'AGENT_1001', warmth: 0, xp: 71 };
+    const window = {
+        SOMA_CONFIG: { WHISPER_LIVE: true },
+        SOMA_SIGNALS: { visiblePosts: rows => rows }
+    };
+    const r = loadRoom({ localStorage, document, window, player, feedPosts: posts, contactPosts: () => posts });
+    r.renderFirstSignalEntry();
+    assert.equal(elements.get('first-signal-entry').hidden, false);
+    assert.equal(elements.get('first-session-open').hidden, false);
+    assert.match(elements.get('first-session-copy').textContent, /настоящая история/);
+    assert.equal(r.completeFirstSession('read'), true);
+    assert.equal(elements.get('first-signal-entry').hidden, true);
+    assert.equal(elements.get('station').dataset.firstSignal, 'seen');
+    assert.equal(elements.get('station-first-signal-note').hidden, false);
+    assert.equal(localStorage.getItem('soma_first_session_v1'), 'read');
+    assert.equal(player.xp, 71, 'the private room mark gives no XP');
+
+    const skipStorage = makeStorage();
+    const skipElements = new Map([
+        ['first-signal-entry', { hidden: true, dataset: {} }],
+        ['station', { dataset: {} }],
+        ['station-first-signal-note', { hidden: true }]
+    ]);
+    const skipPlayer = { uid: 'u_0123456789abcdef', name: 'AGENT_1001', warmth: 0, xp: 71 };
+    const skipRoom = loadRoom({
+        localStorage: skipStorage,
+        document: { getElementById: id => skipElements.get(id) || null },
+        window,
+        player: skipPlayer
+    });
+    assert.equal(skipRoom.completeFirstSession('skip'), true);
+    assert.equal(skipElements.get('station').dataset.firstSignal, undefined, 'skipping does not produce the private read glow');
+    assert.equal(skipElements.get('station-first-signal-note').hidden, true);
+    assert.equal(skipPlayer.xp, 71, 'skipping has no reward or penalty');
+
+    const emptyStorage = makeStorage();
+    const emptyElements = new Map([
+        ['first-signal-entry', { hidden: true, dataset: {} }],
+        ['first-session-copy', { textContent: '' }],
+        ['first-session-open', { hidden: false, disabled: false }],
+        ['first-session-look', { hidden: false }]
+    ]);
+    const emptyRoom = loadRoom({
+        localStorage: emptyStorage,
+        document: { getElementById: id => emptyElements.get(id) || null },
+        window,
+        feedPosts: [],
+        contactPosts: () => []
+    });
+    emptyRoom.renderFirstSignalEntry();
+    assert.equal(emptyElements.get('first-signal-entry').hidden, false);
+    assert.equal(emptyElements.get('first-session-open').hidden, true);
+    assert.match(emptyElements.get('first-session-copy').textContent, /нет подходящей истории/);
+    assert.equal(emptyRoom.completeFirstSession('invalid'), false);
+    assert.ok(indexHtml.includes('Одна настоящая история'));
+    assert.ok(indexHtml.includes('Читать, отвечать или пройти мимо'));
+    assert.ok(!/незнакомец оставил вам сигнал/i.test(indexHtml));
+});
+
 test('funnel metrics accept only fixed event names and never save supplied message payloads', () => {
     const localStorage = makeStorage({ soma_signal_metrics_v1: '{"secret":"private message","entry_view":2}' });
     const r = loadRoom({ localStorage });
@@ -2193,7 +2297,9 @@ test('concurrent sends are serialized without locking subsequent zero-warmth sen
 test('new names stay consistent without changing the top-13 or progression bindings', () => {
     const cosmetics = readFileSync(require.resolve('../cosmetics.js'), 'utf8');
     const share = readFileSync(require.resolve('../share.js'), 'utf8');
-    assert.ok(indexHtml.includes('<h1>Живая частота</h1>'));
+    assert.ok(indexHtml.includes('<h1>Истории</h1>'));
+    assert.ok(indexHtml.includes('ЖИВАЯ ЧАСТОТА'));
+    assert.ok(!indexHtml.includes('ИНДЕКС РАВНОДУШИЯ'));
     assert.ok(indexHtml.includes('class="top-heading">ЗВЁЗДЫ СТАНЦИИ'));
     assert.ok(cosmetics.includes('ЗВЁЗДЫ СТАНЦИИ') && share.includes('ЗВЁЗДЫ СТАНЦИИ'));
     assert.ok(!/Лента контакта|ЛЕНТА КОНТАКТА|СОЗВЕЗДИЕ СТАНЦИИ/.test(indexHtml + cosmetics + share + roomCode));

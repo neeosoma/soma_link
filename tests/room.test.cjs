@@ -1254,7 +1254,7 @@ test('v12: top-left fullscreen vinyl bar, unified NEEOSOMA/NEEO~CITY/SOMA~LINK b
             assert.equal(ds.rarity, '0.1%');
             assert.equal(ds.breed.ears, 'maltese');
             assert.equal(ds.breed.tail, 'maltese_plume');
-            assert.equal(ds.breed.name, 'Лунная Юна');
+            assert.equal(ds.breed.name, 'Белая Юна');
         } else {
             stdHits[ds.breedIdx]++;
         }
@@ -1863,17 +1863,17 @@ test('v15: 4th pot (pot_amethyst) + per-flower Greenhouse picker, sheer FS capti
     assert.ok(roomShopHtml.includes('// ХРАНИТЕЛИ ТЕПЛА'), 'Boutique Room shows ХРАНИТЕЛИ ТЕПЛА');
     assert.ok(!/спутники|можно обоих|можно двоих|по id/i.test(roomShopHtml), 'zero mentions of ID or dual-equip hint in Boutique Room');
 
-    // 7. IMG_2254.png FIX: Selecting 0.1% Moon Cat + 0.1% Lunar Yuna (even after closing PTS drawer!) displays exact names in Boutique preview!
+    // 7. IMG_2254.png FIX: Selecting 0.1% Moon Cat + 0.1% White Yuna (even after closing PTS drawer!) displays exact names in Boutique preview!
     env.grantOwnedItem('room_cat');
     env.grantOwnedItem('room_dog');
     env.roomAnim.inspectCatCoat = env.RARE_MOON_CAT_INDEX;   // 7 -> Полуночная Луна
-    env.roomAnim.inspectDogBreed = env.RARE_MALTESE_INDEX;   // 7 -> Лунная Юна
+    env.roomAnim.inspectDogBreed = env.RARE_MALTESE_INDEX;   // 7 -> Белая Юна
     env.roomAnim.ptsOpen = true;
     env.togglePtsDrawer(); // collapse PTS drawer — must NOT wipe chosen cat/dog!
     env.renderShop();
     const prevHtml = regEl('shop-preview').innerHTML;
     assert.ok(prevHtml.includes('🐈 Полуночная Луна'), 'Boutique preview shows selected 0.1% Black Moon Cat');
-    assert.ok(prevHtml.includes('🐕 Лунная Юна'), 'Boutique preview shows selected 0.1% Lunar Yuna');
+    assert.ok(prevHtml.includes('🐕 Белая Юна'), 'Boutique preview shows selected 0.1% White Yuna');
     assert.ok(!prevHtml.includes('Рыжий огонёк') && !prevHtml.includes('Рыжий сиба-ину'), 'never falls back to wrong index-0 names');
 
     // 8. Custom Cat & Dog naming: prompted on purchase, validated, displayed STRICTLY in room interaction journal and NOWHERE else!
@@ -1904,7 +1904,7 @@ test('v15: 4th pot (pot_amethyst) + per-flower Greenhouse picker, sheer FS capti
     env.shopState.lastBoard = [{ username: 'u_v15_check', place: 1, xp: 1200, help_attempts: 0 }];
     env.openDossierByIndex(0);
     assert.ok(!regEl('dossier-body').innerHTML.includes('Нокс') && !regEl('dossier-body').innerHTML.includes('Юки'), 'pet names never leak into public Top dossier');
-    assert.ok(regEl('dossier-body').innerHTML.includes('Полуночная Луна') && regEl('dossier-body').innerHTML.includes('Лунная Юна'), 'own dossier shows active Moon Cat & Lunar Yuna');
+    assert.ok(regEl('dossier-body').innerHTML.includes('Полуночная Луна') && regEl('dossier-body').innerHTML.includes('Белая Юна'), 'own dossier shows active Moon Cat & White Yuna');
 
     // Room interaction journal DOES warmly feature both custom names!
     const catJournalLines = [];
@@ -2063,4 +2063,54 @@ test('temporary live test opens admission only with explicit flag and preserves 
     window.SOMA_CONFIG.WHISPER_TEST_OPEN = true;
     window.SOMA_CONFIG.WHISPER_LIVE = false;
     assert.equal(r.whisperAdmission(0).admitted, false);
+});
+
+test('leaderboards cap both modes at 13: three podium places and ten rows, without an extra self row', async () => {
+    const code = readFileSync(require.resolve('../cosmetics.js'), 'utf8');
+    for (const mode of ['all', 'week']) {
+        for (const myScore of [1, 995]) {
+            const elements = new Map(['top-subnote', 'top-chase', 'top-podium', 'leaderboard-list']
+                .map(id => [id, { innerHTML: '', textContent: '' }]));
+            const rows = Array.from({ length: 50 }, (_, i) => ({ username: `u_${i}`, xp: 1000 - i * 10, weekly_xp: 1000 - i * 10 }));
+            const limits = [];
+            const supabaseClient = { from() {
+                const query = {
+                    select() { return this; }, eq() { return this; },
+                    gt() { return this; }, order() { return this; },
+                    limit(n) { limits.push(n); return Promise.resolve({ data: rows }); },
+                    then(resolve, reject) { return Promise.resolve({ count: 50 }).then(resolve, reject); }
+                };
+                return query;
+            } };
+            const r = runInNewContext(code + `;
+                shopState.topMode = '${mode}';
+                getMyWeeklyXp = () => ${myScore};
+                ({ renderLeaderboard, shopState });`, {
+                localStorage: makeStorage(), supabaseClient,
+                player: { uid: 'u_me', xp: myScore },
+                document: { querySelectorAll: () => [], getElementById: id => elements.get(id) },
+                esc: s => String(s), anonLabel: s => s
+            });
+            await r.renderLeaderboard();
+            assert.equal(r.shopState.lastBoard.length, 13);
+            assert.ok(limits.length > 0 && limits.every(n => n === 13));
+            assert.equal((elements.get('top-podium').innerHTML.match(/onclick="openDossierByIndex/g) || []).length, 3);
+            const list = elements.get('leaderboard-list').innerHTML;
+            assert.equal((list.match(/class="top-row /g) || []).length, 10);
+            assert.ok(list.includes('#13'));
+            assert.ok(!list.includes('openDossierByUid'));
+            assert.ok(elements.get('top-chase').innerHTML.includes('ВАШЕ МЕСТО:'));
+        }
+    }
+});
+
+test('rare dog is White Yuna throughout user-facing copy without changing its rarity or appearance', () => {
+    const r = loadRoom();
+    const dog = r.RARE_MALTESE_BREED;
+    assert.equal(dog.name, 'Белая Юна');
+    assert.equal(dog.pattern, 'maltese');
+    assert.equal(r.RARE_MALTESE_INDEX, 7);
+    const cosmetics = readFileSync(require.resolve('../cosmetics.js'), 'utf8');
+    assert.ok(cosmetics.includes('Белая Юна'));
+    assert.ok(!/Лунная Юна/i.test(roomCode + cosmetics));
 });

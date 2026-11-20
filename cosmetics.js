@@ -59,7 +59,7 @@ const SOMA_CATALOG = [
     { id: 'room_garland', tab: 'room', group: 'ambience', slot: 'garland', stars: 140, name: 'Гирлянда Эдисона у окна',  desc: '13 винтажных лампочек с тёплыми вольфрамовыми нитями и золотым светом по каменной арке окна.' },
     { id: 'room_candles', tab: 'room', group: 'ambience',  slot: 'candles', stars: 140, name: 'Живые свечи станции',      desc: 'Шесть восковых свечей с трепещущим живым пламенем и тёплыми бликами у ковра и на полке радио.' },
     { id: 'room_cat',     tab: 'room', group: 'companion', slot: 'cat',     stars: 220, name: 'Живой кот-хранитель',      desc: 'Крупный тёплый кот одной из 7 мастей на кушетке: глубоко дышит, мурчит, откликается на данное вами имя и дружит с псом (шанс 0.1% — уникальный чёрный кот с полумесяцем во лбу!).' },
-    { id: 'room_dog',     tab: 'room', group: 'companion', slot: 'dog',     stars: 220, name: 'Живой пёс-хранитель',      desc: 'Крупный пёс одной из 7 пород спит на персидском коврике рядом с котом, виляет хвостом и помнит данное вами имя (шанс 0.1% — уникальная Лунная Юна с фиолетовыми ушами и хвостом!).' }
+    { id: 'room_dog',     tab: 'room', group: 'companion', slot: 'dog',     stars: 220, name: 'Живой пёс-хранитель',      desc: 'Крупный пёс одной из 7 пород спит на персидском коврике рядом с котом, виляет хвостом и помнит данное вами имя (шанс 0.1% — уникальная Белая Юна с фиолетовыми ушами и хвостом!).' }
 ];
 
 const SOMA_ITEM_MAP = Object.fromEntries(SOMA_CATALOG.map(it => [it.id, it]));
@@ -974,6 +974,8 @@ function entryCosmetics(row) {
     return normalizeEquipped(row.cosmetics, null);
 }
 
+const LEADERBOARD_LIMIT = 13;
+
 async function renderLeaderboard() {
     const isWeek = shopState.topMode === 'week';
     const wk = currentWeekKey();
@@ -998,7 +1000,7 @@ async function renderLeaderboard() {
                     .eq('weekly_key', wk)
                     .gt('weekly_xp', 0)
                     .order('weekly_xp', { ascending: false })
-                    .limit(50);
+                    .limit(LEADERBOARD_LIMIT);
                 if (!wRes.error && Array.isArray(wRes.data)) {
                     data = wRes.data.map(r => ({ ...r, score: r.weekly_xp || 0 }));
                 } else {
@@ -1011,13 +1013,13 @@ async function renderLeaderboard() {
                     .from('soma_users')
                     .select('username,xp,help_attempts,reacts,seen,cosmetics')
                     .order('xp', { ascending: false })
-                    .limit(50);
+                    .limit(LEADERBOARD_LIMIT);
                 if (res.error) {
                     res = await supabaseClient
                         .from('soma_users')
                         .select('username,xp,help_attempts')
                         .order('xp', { ascending: false })
-                        .limit(50);
+                        .limit(LEADERBOARD_LIMIT);
                 }
                 if (Array.isArray(res.data)) {
                     data = res.data.map(r => ({ ...r, score: r.xp || 0 }));
@@ -1049,7 +1051,7 @@ async function renderLeaderboard() {
             data.push(meEntry);
         }
         data.sort((a, b) => (b.score || 0) - (a.score || 0));
-        data = data.slice(0, 50);
+        data = data.slice(0, LEADERBOARD_LIMIT);
     }
 
     const myIdx = data.findIndex(x => x.username === player.uid);
@@ -1135,7 +1137,7 @@ async function renderLeaderboard() {
         podiumEl.innerHTML = pHtml;
     }
 
-    // 3) Высшая ложа (#4–#10) и Партер (#11–#50)
+    // 3) Ещё 10 мест под пьедесталом: #4–#13.
     const list = document.getElementById('leaderboard-list');
     if (!list) return;
     const rest = shopState.lastBoard.slice(3);
@@ -1174,13 +1176,10 @@ async function renderLeaderboard() {
         lHtml += lodgeRows.map(b => renderRow(b, `openDossierByIndex(${b.place - 1})`)).join('');
     }
     if (parterreRows.length) {
-        lHtml += `<div class="top-section-label">// ПАРТЕР НАБЛЮДАТЕЛЕЙ</div>`;
+        lHtml += `<div class="top-section-label">// ПАРТЕР НАБЛЮДАТЕЛЕЙ (#11–#13)</div>`;
         lHtml += parterreRows.map(b => renderRow(b, `openDossierByIndex(${b.place - 1})`)).join('');
     }
-    if (myIdx < 0) {
-        lHtml += `<div class="text-center text-[10px] text-gray-600 font-mono-tech py-1">· · ·</div>`;
-        lHtml += renderRow({ ...meEntry, place: resolvedRank }, `openDossierByUid('${safeId(meEntry.username)}', ${resolvedRank})`);
-    }
+    // Своя позиция вне топа доступна в плашке погони, без лишней 14-й строки.
     list.innerHTML = lHtml;
 }
 

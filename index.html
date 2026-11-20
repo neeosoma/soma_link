@@ -391,35 +391,42 @@
                 <span id="open-post-sub" class="feed-send-note">Один сигнал в день. Читать и откликаться можно всегда.</span>
             </div>
 
-            <!-- ПЕЙДЖЕР NEEOSOMA // NMAV-04 — КАК БЫЛО -->
+            <!-- ПЕЙДЖЕР NEEOSOMA // NMAV-04 — ПЕРЕРАДОЧКА В МИРОВОМ УРОВНЕ -->
             <div class="soma-pager" id="feed-pager" data-state="locked" data-admitted="0">
-                <!-- ШАПКА: бренд + LED + частота + полоски сигнала -->
+                <!-- ШАПКА УСТРОЙСТВА: бренд + LED + частота + полоски силы связи -->
                 <div class="pager-top">
                     <span class="pager-brand"><i class="pager-led" aria-hidden="true"></i>NEEOSOMA // NMAV-04</span>
                     <span class="pager-freq">CH·04 «ШЁПОТ»</span>
                     <span class="pager-sig-bar" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
                 </div>
-                <!-- LCD-ЭКРАН С CRT-ЭФФЕКТОМ -->
+                <!-- LCD-ЭКРАН: CRT-люминофорная матрица -->
                 <div class="pager-bezel">
                     <div class="pager-lcd">
-                        <!-- Метатирки: статус несущей + лимит -->
+                        <!-- Метатирки: несущая + лимит -->
                         <div class="pager-lcd-meta">
                             <span id="feed-pager-carrier">ПРИЁМ ВХОДЯЩИХ АКТИВЕН</span>
                             <span id="feed-pager-gate">ДО 3 ШЁПОТОВ В СУТКИ</span>
                         </div>
                         <p id="feed-pager-msg" class="pager-lcd-main">ЖИВАЯ ЧАСТОТА · ВЫ НА СВЯЗИ</p>
                         <p id="feed-pager-sub" class="pager-lcd-sub">Читайте. Отвечайте, если хочется.</p>
+                        <!-- Подсказки ПАМЯТКИ (скрыты до нажатия) -->
+                        <div id="feed-pager-hints" class="pager-lcd-hints hidden"></div>
                         <!-- Фильтры: намерение отклика -->
                         <div id="contact-intent-filters" class="feed-filter-row"></div>
                         <div id="feed-filter-status" class="pager-lcd-filter-status"></div>
                         <div class="pager-lcd-scan" aria-hidden="true"></div>
+                        <div class="pager-lcd-glow" aria-hidden="true"></div>
                     </div>
                 </div>
-                <!-- ПОДНОЖКА: старые памятки + памятка вместо кнопки "ВХОДЯЩИЕ" -->
-                <div class="pager-foot" id="feed-pager-foot">
-                    <span class="pager-foot-rule">⚖ 13–333 симв. · 1 шёпот на человека · кассета даёт +4 Тепла растению (1/день)</span>
-                    <button type="button" class="pager-foot-vhs" id="feed-pager-scan-btn" onclick="openPagerModal()">◈ ОТКРЫТЬ ПЕЙДЖЕР</button>
-                    <span class="pager-memorial">📥 ПАМЯТКА: входящие шёпоты появятся здесь, когда кто-то откликнётся на ваши истории</span>
+                <!-- АППАРАТНЫЕ КНОПКИ -->
+                <div class="pager-keys">
+                    <div class="pager-foot">
+                        <span class="pager-foot-rule">⚖ 13–333 симв. · 1 шёпот на человека · кассета +4 Тепла (1/день)</span>
+                    </div>
+                    <div class="pager-key-row">
+                        <button type="button" class="pager-key" id="feed-pager-scan-btn" onclick="openPagerModal()">◈ ОТКРЫТЬ ПЕЙДЖЕР</button>
+                        <button type="button" class="pager-key pager-key--memorial" id="feed-pager-memorial-btn" onclick="togglePagerMemorial()">ПАМЯТКА</button>
+                    </div>
                 </div>
             </div>
 

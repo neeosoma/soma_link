@@ -9818,9 +9818,9 @@ async function sendWhisperToPostOnce(postObj, rawText, opts) {
                 return { ok: false, code: 'network_error', error: 'Эфир временно недоступен: ' + emsg };
             }
             if (data && data.length > 0) {
-                // RPC вернул созданный шёпот — обновляем локальный объект
-                wRow.id = data[0].o_id || wRow.id;
-                wRow.status = data[0].o_status || wRow.status;
+                // RPC вернул созданный шёпот (SETOF soma_whispers — колонки как в таблице)
+                wRow.id = data[0].id || wRow.id;
+                wRow.status = data[0].status || wRow.status;
             }
         }
     } catch (e) {
@@ -9979,16 +9979,16 @@ async function syncPagerWhispers() {
                 const map = new Map(current.map(x => [x.id, x]));
                 let added = false;
                 inRows.forEach(r => {
-                    // RPC-функция возвращает поля с префиксом o_ (о_id, о_post_id и т.д.)
-                    const rId = r.o_id || r.id;
+                    // RPC SETOF soma_whispers — колонки как в таблице (id, post_id, ...)
+                    const rId = r.id;
                     if (!rId || handled[rId] || map.has(rId)) return;
                     map.set(rId, {
                         id: String(rId),
-                        post_id: String(r.o_post_id || r.post_id || ''),
-                        post_tag: String(r.o_post_tag || r.post_tag || 'ЛИЧНАЯ БОЛЬ'),
-                        post_preview: String(r.o_post_preview || r.post_preview || ''),
-                        text: String(r.o_text || r.text || '').slice(0, PROGRESSION_RULES.WHISPER_MAX_LEN),
-                        created_at: r.o_created || r.created_at || new Date().toISOString(),
+                        post_id: String(r.post_id || ''),
+                        post_tag: String(r.post_tag || 'ЛИЧНАЯ БОЛЬ'),
+                        post_preview: String(r.post_preview || ''),
+                        text: String(r.text || '').slice(0, PROGRESSION_RULES.WHISPER_MAX_LEN),
+                        created_at: r.created_at || new Date().toISOString(),
                         status: 'pending'
                     });
                     added = true;

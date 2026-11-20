@@ -2129,3 +2129,23 @@ html.is-soma-fs-closing .app-h {
 #first-signal-entry .pager-card-text {
     font: 12px/1.5 'Share Tech Mono', monospace;
 }
+
+/* Contact, not emotional homework: reader boundaries and author intent. */
+.contact-welcome,.contact-boundaries{padding:13px;border:1px solid #72503966;background:#171017;border-radius:12px;color:#eedce4}
+.contact-welcome h1{font-size:17px;margin:0 0 7px;color:#f5d6b1}
+.contact-welcome p{font-size:12px;line-height:1.6;margin:5px 0}
+.contact-boundaries label{display:flex;align-items:center;gap:9px;font-size:12px;cursor:pointer}
+.contact-boundaries input,.signal-intents input{accent-color:#dfb97d;min-width:18px;min-height:18px}
+.signal-caption{font-size:10.5px!important;line-height:1.55!important;color:#c7afb9;margin:7px 0}
+.contact-filter-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.contact-filter{padding:7px 9px;min-height:34px;border:1px solid #80506b80;border-radius:8px;background:#180b13;color:#d5b9c6;font:10px ui-monospace,monospace;cursor:pointer}
+.contact-filter[aria-pressed="true"]{border-color:#e5bc82;color:#ffe7c6;background:#422636}
+.contact-quiet{display:inline-block;padding:8px 0;min-height:36px;color:#bfa7b4;font:10.5px ui-monospace,monospace;text-decoration:underline;text-underline-offset:3px;text-align:left}
+.contact-quiet[hidden]{display:none!important}
+.signal-response-hint{font-size:11px;line-height:1.55;padding:8px 10px;border-left:2px solid #c99e68;color:#d6bac6;background:#08050866}
+.signal-intents{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:10px;border:1px solid #80506b80;border-radius:10px}
+.signal-intents legend{padding:0 4px;color:#e5bc82;font-size:11px}
+.signal-intents label{display:flex;align-items:center;gap:7px;font-size:11px;line-height:1.4;cursor:pointer}
+.signal-intents p{grid-column:1/-1;margin:0}
+.contact-filter:focus-visible,.contact-quiet:focus-visible{outline:2px solid #ffe7c6;outline-offset:3px}
+@media(max-width:360px){.signal-intents{grid-template-columns:1fr}}

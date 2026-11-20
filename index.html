@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta id="soma-theme-color" name="theme-color" content="#0b0708">
     <title>NEEOSOMA // SOMA~LINK · NEEO~CITY</title>
+    <meta name="description" content="Ночная станция живого контакта. Разделите историю, маленькую победу или несколько слов с другим человеком. Отвечать не обязательно.">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="room.css?v=15">
+    <link rel="stylesheet" href="room.css?v=16">
     <link rel="stylesheet" href="cosmetics.css?v=15">
     <link rel="stylesheet" href="receiver.css?v=15">
     <link rel="stylesheet" href="vhs.css?v=15">
@@ -68,7 +69,7 @@
         .spin { animation: spin 2s linear infinite; transform-box: fill-box; transform-origin: center; }
         @keyframes mote { 0%, 100% { transform: translate(0, 0); opacity: .15; } 50% { transform: translate(6px, -10px); opacity: .6; } }
         .mote { animation: mote 6s ease-in-out infinite; }
-        /* Кнопка публикации в Ленте боли — заметный тёпло-алый акцент без крикливости */
+        /* Кнопка публикации в Ленте контакта — заметный тёпло-алый акцент без крикливости */
         .soma-post-cta {
             position: relative;
             overflow: hidden;
@@ -167,39 +168,47 @@
             <div class="text-red-500 font-mono-tech text-xs tracking-widest uppercase">// ПРОТОКОЛ БЕЗОПАСНОСТИ SOMA~LINK</div>
             <h3 class="text-base font-bold text-white">Прямой контакт заблокирован</h3>
             <p class="text-xs text-gray-300 leading-relaxed">
-                Система запрещает перевод средств, передачу контактов и спасательство. Ваша единственная задача в NEEO~CITY — наблюдать.
+                Личные контакты и переводы средств в анонимном канале недоступны. Можно передать свои слова через пейджер, не раскрывая личность.
             </p>
             <div class="bg-black/50 p-3 rounded-xl text-[11px] font-mono-tech text-red-400 border border-red-500/20">
-                Доступны только реакции для прокачки ранга.
+                Вы не обязаны решать чужую проблему. Можно откликнуться, прочитать или пройти мимо.
             </div>
             <button onclick="closeBlockModal()" class="w-full py-2.5 bg-red-950/60 hover:bg-red-900/80 border border-red-500/50 text-red-200 text-xs font-mono-tech rounded-xl transition">
-                ПРИНЯТЬ БЕССИЛИЕ И ПРОДОЛЖИТЬ
+                ПОНЯТНО · ВЕРНУТЬСЯ НА СТАНЦИЮ
             </button>
         </div>
     </div>
 
     <!-- МОДАЛЬНОЕ ОКНО ПУБЛИКАЦИИ (1 СИГНАЛ В СУТКИ · ДО 666 СИМВОЛОВ) -->
     <div id="post-modal" class="hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="w-full max-w-md bg-[#12080a] border border-red-500/50 p-5 rounded-2xl space-y-3.5 shadow-2xl">
+        <div class="w-full max-w-md max-h-[90vh] overflow-y-auto bg-[#12080a] border border-red-500/50 p-5 rounded-2xl space-y-3.5 shadow-2xl">
             <div class="flex justify-between items-center">
                 <span class="text-xs font-mono-tech text-red-400 uppercase">// РЕЖИМ «ЗОВ» · 1 РАЗ В СУТКИ</span>
                 <button onclick="closePostModal()" class="text-gray-500 hover:text-white text-sm">✕</button>
             </div>
             <div class="bg-black/45 border border-amber-400/25 rounded-xl px-3 py-2 text-[11px] text-gray-300 leading-relaxed">
-                Частота «Зов» принимает <b class="text-amber-300 font-mono-tech">только 1 историю в день</b>. Не спешите — напишите о том, о чём правда молчите. Черновик сохранится сам.
+                Частота «Зов» принимает <b class="text-amber-300 font-mono-tech">только 1 историю в день</b>. Здесь можно поделиться трудным, хорошим или обычным днём. Черновик сохранится сам. Ответ не гарантирован.
             </div>
+            <fieldset class="signal-intents">
+                <legend>Какой отклик вам сейчас нужен?</legend>
+                <label><input type="radio" name="signal-intent" value="N"> Побудь рядом</label>
+                <label><input type="radio" name="signal-intent" value="V"> Хочу взгляд со стороны</label>
+                <label><input type="radio" name="signal-intent" value="W"> Маленькая победа</label>
+                <label><input type="radio" name="signal-intent" value="S" checked> Просто делюсь</label>
+                <p id="signal-intent-hint" class="signal-caption" aria-live="polite"></p>
+            </fieldset>
             <div class="space-y-1.5">
-                <input id="new-pain-tag" maxlength="24" placeholder="Свой тег (необязательно)" class="w-full bg-[#080405] border border-red-500/30 focus:border-red-500 rounded-xl px-3 py-2 text-xs text-white outline-none font-mono-tech uppercase">
+                <input id="new-pain-tag" maxlength="24" placeholder="Тема, если хочется (необязательно)" class="w-full bg-[#080405] border border-red-500/30 focus:border-red-500 rounded-xl px-3 py-2 text-xs text-white outline-none font-mono-tech uppercase">
                 <div id="tag-chips" class="flex flex-wrap gap-1.5"></div>
             </div>
-            <textarea id="new-pain-text" rows="5" minlength="13" maxlength="666" oninput="updateCharCount()" placeholder="Выплесните то, о чём молчите... (от 13 до 666 символов)" class="w-full bg-[#080405] border border-red-500/30 focus:border-red-500 rounded-xl p-3 text-sm text-white outline-none resize-none font-mono-tech"></textarea>
+            <textarea id="new-pain-text" rows="5" minlength="13" maxlength="666" oninput="updateCharCount()" placeholder="Что произошло? Что хочется разделить с другим человеком? (13–666 символов)" class="w-full bg-[#080405] border border-red-500/30 focus:border-red-500 rounded-xl p-3 text-sm text-white outline-none resize-none font-mono-tech"></textarea>
             <div id="post-error" class="hidden px-3 py-2 rounded-xl bg-red-950/50 border border-red-500/45 text-[11px] font-mono-tech text-red-200 leading-snug"></div>
             <div class="flex justify-between items-center text-[11px] text-gray-500 font-mono-tech">
                 <span id="post-quota-hint" class="text-amber-300/85">Доступно сегодня: 1 / 1</span>
                 <span id="char-count" class="text-red-400 font-bold">0 / 666 (мин. 13)</span>
             </div>
             <button id="send-btn" onclick="submitPainPost()" class="w-full py-3 bg-red-950 hover:bg-red-900 border border-red-500/60 text-red-200 font-bold text-xs font-mono-tech uppercase tracking-wider rounded-xl transition">
-                ОТПРАВИТЬ ЕДИНСТВЕННЫЙ СИГНАЛ ДНЯ
+                ПОДЕЛИТЬСЯ НА СТАНЦИИ
             </button>
             <button onclick="openSafety()" class="w-full text-[10px] text-gray-500 hover:text-red-300 font-mono-tech">🛟 мне тяжело — что делать?</button>
         </div>
@@ -210,7 +219,7 @@
         <div class="w-full max-w-sm bg-[#0b0708] border border-amber-400/70 p-6 rounded-2xl space-y-4 shadow-2xl text-center">
             <div class="text-amber-400 font-mono-tech text-xs tracking-widest">// СБОЙ ПРОТОКОЛА</div>
             <h3 class="text-base font-bold text-white">Вы нарушитель</h3>
-            <p class="text-xs text-gray-300 leading-relaxed">Десять попыток помочь. Система не рассчитана на тех, кто не готов просто смотреть. Настоящая помощь существует только за пределами SOMA~LINK: напишите живому человеку, который молчит.</p>
+            <p class="text-xs text-gray-300 leading-relaxed">Вы искали возможность откликнуться. На станции есть пейджер для бережных слов. Игра не заменяет помощь близких или специалиста — и не требует от вас кого-то спасать.</p>
             <div class="bg-black/50 p-3 rounded-xl text-[11px] font-mono-tech text-amber-300 border border-amber-400/30">Статус: НАРУШИТЕЛЬ ПРОТОКОЛА // +100 XP</div>
             <button onclick="shareEgg()" class="w-full py-2.5 bg-amber-950/50 hover:bg-amber-900/60 border border-amber-400/50 text-amber-200 text-xs font-mono-tech rounded-xl transition">ПОДЕЛИТЬСЯ ОТКРЫТКОЙ</button>
             <button onclick="closeEgg()" class="w-full py-2 text-gray-500 text-xs font-mono-tech">ЗАКРЫТЬ</button>
@@ -240,8 +249,8 @@
             <p class="text-xs text-gray-300 leading-relaxed">Это срочно. Не оставайтесь одни: попросите кого-нибудь быть рядом и позвоните.</p>
             <div class="text-xs font-mono-tech text-gray-200 space-y-1 bg-black/50 border border-red-500/20 rounded-xl p-3">
                 <div>112 — экстренная помощь (Россия)</div>
-                <div>8-800-2000-122 — бесплатно, анонимно (для детей и подростков)</div>
-                <div>8-800-333-44-34 — кризисная линия по России</div>
+                <div>В другой стране — местный номер экстренной помощи.</div>
+                <div>Станция не является кризисной службой и не гарантирует срочный ответ.</div>
             </div>
             <button onclick="openExt('https://findahelpline.com')" class="w-full py-2.5 bg-red-950/60 border border-red-500/50 text-red-200 text-xs font-mono-tech rounded-xl">НАЙТИ ЛИНИЮ ПОМОЩИ В ВАШЕЙ СТРАНЕ</button>
             <button onclick="closeSafety()" class="w-full py-2 text-gray-500 text-xs font-mono-tech">ЗАКРЫТЬ</button>
@@ -284,7 +293,7 @@
             <div class="flex justify-between items-center px-4 pt-3.5 pb-2 border-b border-red-500/15">
                 <div>
                     <div class="text-[11px] font-mono-tech text-amber-200/90 uppercase tracking-wider">✦ АТРИБУТЫ // БУТИК СТАНЦИИ</div>
-                    <div class="text-[9.5px] font-mono-tech text-gray-500">Топ циников · Моя комната · Живая примерка</div>
+                    <div class="text-[9.5px] font-mono-tech text-gray-500">Созвездие станции · Моя комната · Живая примерка</div>
                 </div>
                 <button type="button" onclick="closeShop()" class="text-gray-500 hover:text-white text-sm px-1.5 py-0.5" aria-label="Закрыть">✕</button>
             </div>
@@ -323,7 +332,7 @@
                     <span id="user-badge">@GUEST</span>
                     <button id="snd-btn" onclick="toggleSound()" class="text-xs opacity-80 pl-1">🔊</button>
                 </div>
-                <div class="text-red-400 font-bold" id="rank-title">УР. 1 // СЛУЧАЙНЫЙ ПРОХОЖИЙ</div>
+                <div class="text-red-400 font-bold" id="rank-title">УР. 1 // ГОСТЬ СТАНЦИИ</div>
             </div>
             <div class="w-full bg-[#080405] h-1.5 rounded-full overflow-hidden border border-red-950">
                 <div id="xp-bar" class="bg-gradient-to-r from-red-900 to-red-500 h-full transition-all duration-500" style="width: 10%;"></div>
@@ -336,14 +345,14 @@
 
         <!-- ВКЛАДКИ -->
         <div class="bg-[#100709] px-2 py-2 border-b border-red-500/20 grid grid-cols-3 gap-1 text-center text-[11px] font-mono-tech">
-            <button id="tab-feed" onclick="switchTab('feed')" class="py-1.5 rounded-lg bg-red-950/60 text-red-400 font-bold border border-red-500/40 transition">ЛЕНТА БОЛИ</button>
-            <button id="tab-top" onclick="switchTab('top')" class="py-1.5 rounded-lg text-gray-400 hover:text-white transition">ТОП ЦИНИКОВ</button>
+            <button id="tab-feed" onclick="switchTab('feed')" class="py-1.5 rounded-lg bg-red-950/60 text-red-400 font-bold border border-red-500/40 transition">ЛЕНТА КОНТАКТА</button>
+            <button id="tab-top" onclick="switchTab('top')" class="py-1.5 rounded-lg text-gray-400 hover:text-white transition">СОЗВЕЗДИЕ</button>
             <button id="tab-profile" onclick="switchTab('profile')" class="py-1.5 rounded-lg text-gray-400 hover:text-white transition">МОЯ КОМНАТА</button>
         </div>
 
         <button onclick="openSafety()" class="w-full py-1.5 bg-[#0e0608] border-b border-red-500/10 text-[10px] font-mono-tech text-gray-500 hover:text-red-300 transition">🛟 ЕСЛИ ВАМ ТЯЖЕЛО — ПОМОЩЬ РЯДОМ</button>
 
-        <!-- ЭКРАН 1: ЛЕНТА БОЛИ (1 СИГНАЛ В ДЕНЬ + ФИЛЬТР ЧАСТОТ) -->
+        <!-- ЭКРАН 1: ЛЕНТА КОНТАКТА (1 СИГНАЛ В ДЕНЬ + ФИЛЬТР ЧАСТОТ) -->
         <div id="view-feed" class="flex-1 overflow-y-auto p-3 space-y-2.5 pb-20">
             <button id="open-post-btn" onclick="openPostModal()" class="soma-post-cta w-full py-3 px-4 rounded-xl text-left flex justify-between items-center gap-3 group">
                 <div class="min-w-0">
@@ -352,10 +361,22 @@
                         <span id="open-post-title" class="text-[12.5px] font-bold text-red-100 group-hover:text-white tracking-tight">+ Рассказать свою историю</span>
                         <span id="open-post-badge" class="px-1.5 py-0.5 rounded text-[9px] font-mono-tech bg-amber-950/60 text-amber-200 border border-amber-400/45 shrink-0">1 / ДЕНЬ</span>
                     </div>
-                    <div id="open-post-sub" class="text-[10.5px] text-rose-200/65 mt-0.5 leading-snug">Один анонимный сигнал в сутки — напишите то, о чём молчите.</div>
+                    <div id="open-post-sub" class="text-[10.5px] text-rose-200/65 mt-0.5 leading-snug">Трудное, хорошее или обычный день — здесь есть место вашему голосу.</div>
                 </div>
                 <span id="open-post-arrow" class="soma-post-arrow font-mono-tech text-base shrink-0">→</span>
             </button>
+            <section class="contact-welcome">
+                <h1>Лента контакта</h1>
+                <p>Здесь можно разделить радость, выговориться или просто побыть услышанным. Вы не обязаны никого спасать.</p>
+                <p class="signal-caption">Ритуал вечера: один голос, несколько минут внимания. Можно пропустить или уйти отдыхать — без потери прогресса.</p>
+            </section>
+            <section class="contact-boundaries" aria-label="Границы чтения">
+                <label><input id="contact-light" type="checkbox"> Сегодня без тяжёлого</label>
+                <p class="signal-caption">Показываем «Маленькие победы» и «Просто делюсь» по выбору авторов. Это не проверка содержания: тяжёлая тема всё равно может встретиться.</p>
+                <div id="contact-intent-filters" class="contact-filter-row" aria-label="Какой контакт ищете?"></div>
+                <button id="contact-restore" type="button" class="contact-quiet">Вернуть скрытые истории</button>
+                <span id="contact-status" class="signal-caption" role="status"></span>
+            </section>
             <div id="feed-ritual-hint" class="px-3 py-1.5 rounded-lg bg-[#100709] border border-amber-400/15 flex items-center justify-between gap-2 text-[9.5px] font-mono-tech text-amber-200/75">
                 <span id="feed-warmth-status">✦ Зажмите «Удержать взгляд», чтобы зажечь Светлячков в комнате</span>
                 <span id="feed-warmth-quota" class="text-amber-300 font-bold shrink-0">0/2</span>
@@ -375,20 +396,20 @@
             </div>
         </div>
 
-        <!-- ЭКРАН 2: ТОП ЦИНИКОВ (ПАНОПТИКУМ) -->
+        <!-- ЭКРАН 2: СОЗВЕЗДИЕ (ПАНОПТИКУМ) -->
         <div id="view-top" class="hidden flex-1 overflow-y-auto p-3.5 sm:p-4 pb-24 space-y-3">
             <div class="top-head">
                 <div class="top-title-wrap">
                     <span class="top-kicker">NEEO~CITY // ПАНОПТИКУМ</span>
-                    <h2 class="top-heading">ТОП ЦИНИКОВ</h2>
+                    <h2 class="top-heading">СОЗВЕЗДИЕ</h2>
                 </div>
                 <button type="button" onclick="openShop('frames')" class="top-shop-btn">✦ АТРИБУТЫ</button>
             </div>
             <div class="top-modes" role="tablist" aria-label="Режим рейтинга">
-                <button type="button" class="top-mode-btn" data-top-mode="all" aria-pressed="true" onclick="switchTopMode('all')">♛ ПАНТЕОН ВСЕХ ВРЕМЁН</button>
-                <button type="button" class="top-mode-btn" data-top-mode="week" aria-pressed="false" onclick="switchTopMode('week')">🔥 ОХОТА НЕДЕЛИ</button>
+                <button type="button" class="top-mode-btn" data-top-mode="all" aria-pressed="true" onclick="switchTopMode('all')">♛ ОПЫТ ЗА ВСЁ ВРЕМЯ</button>
+                <button type="button" class="top-mode-btn" data-top-mode="week" aria-pressed="false" onclick="switchTopMode('week')">✦ ОПЫТ НЕДЕЛИ</button>
             </div>
-            <div id="top-subnote" class="top-subnote">Главный зал наблюдателей NEEO~CITY · нажмите на любого для досье</div>
+            <div id="top-subnote" class="top-subnote">Игровой опыт, не рейтинг доброты · нажмите на игрока для досье</div>
             <div id="top-chase" class="top-chase"></div>
             <div id="top-podium" class="top-podium"></div>
             <div id="leaderboard-list" class="space-y-2"></div>
@@ -604,25 +625,25 @@
                         <span id="card-name" class="text-xl font-bold text-white tracking-wide">@USER</span>
                     </div>
                     <div id="card-custom-title" class="hidden top-custom-title mt-0.5"></div>
-                    <div id="card-rank" class="text-xs font-mono-tech text-red-400 mt-0.5">УР. 1 // СЛУЧАЙНЫЙ ПРОХОЖИЙ</div>
+                    <div id="card-rank" class="text-xs font-mono-tech text-red-400 mt-0.5">УР. 1 // ГОСТЬ СТАНЦИИ</div>
                     <p id="card-epitaph" class="hidden top-epitaph mt-1"></p>
                 </div>
                 <div class="grid grid-cols-2 gap-2 pt-2 border-t border-red-500/20 font-mono-tech">
                     <div class="bg-[#080405] p-2.5 rounded-xl border border-red-950">
-                        <div class="text-[10px] text-gray-500">ПРОСМОТРЕНО ДРАМ</div>
+                        <div class="text-[10px] text-gray-500">ВСТРЕЧ С ИСТОРИЯМИ</div>
                         <div id="stat-seen" class="text-lg font-bold text-white">0</div>
                     </div>
                     <div class="bg-[#080405] p-2.5 rounded-xl border border-red-950">
-                        <div class="text-[10px] text-gray-500">ПУСТЫХ РЕАКЦИЙ</div>
+                        <div class="text-[10px] text-gray-500">ОТКЛИКОВ</div>
                         <div id="stat-reacts" class="text-lg font-bold text-red-400">0</div>
                     </div>
                     <div class="bg-[#080405] p-2.5 rounded-xl border border-red-950">
-                        <div class="text-[10px] text-gray-500">СРЫВОВ ПРОТОКОЛА</div>
+                        <div class="text-[10px] text-gray-500">ШЁПОТОВ ОТПРАВЛЕНО</div>
                         <div id="stat-attempts" class="text-lg font-bold text-red-600">0</div>
                     </div>
                     <div class="bg-[#080405] p-2.5 rounded-xl border border-red-950">
-                        <div class="text-[10px] text-gray-500">РЕАЛЬНАЯ ПОМОЩЬ</div>
-                        <div class="text-lg font-bold text-gray-600">0</div>
+                        <div class="text-[10px] text-gray-500">СВОЕМУ ЧЕЛОВЕКУ</div>
+                        <a href="gift.html" class="text-sm font-bold text-amber-200 underline">ЗАПИСАТЬ КАССЕТУ →</a>
                     </div>
                 </div>
             </div>
@@ -635,13 +656,14 @@
 <script src="config.js"></script>
 <script src="scenarios.js?v=15"></script>
 <script src="music.js?v=15"></script>
-<script src="room.js?v=15"></script>
-<script src="cosmetics.js?v=15"></script>
+<script src="signals.js?v=1"></script>
+<script src="room.js?v=16"></script>
+<script src="cosmetics.js?v=16"></script>
 <script src="receiver.js?v=15"></script>
 <script src="vhs.js?v=15"></script>
 <script src="greenhouse.js?v=15"></script>
 <script src="blimp.js?v=15"></script>
-<script src="share.js?v=15"></script>
+<script src="share.js?v=16"></script>
 <script>
     const cfg = window.SOMA_CONFIG || {};
     const SUPABASE_URL = cfg.SUPABASE_URL;
@@ -874,11 +896,72 @@
     }
 
     // ===== ТЕГИ =====
-    const TAGS = ['ДОЛГИ', 'ОДИНОЧЕСТВО', 'СЕМЬЯ', 'РАБОТА', 'ЗДОРОВЬЕ', 'СТРАХ', 'ПОТЕРЯ', 'ЛЮБОВЬ'];
+    const TAGS = ['МОЙ ДЕНЬ', 'РАБОТА', 'БЛИЗКИЕ', 'РАДОСТЬ', 'ПЕРЕМЕНЫ', 'ОДИНОЧЕСТВО', 'ЗДОРОВЬЕ', 'МАЛЕНЬКИЙ ШАГ'];
     function renderTagChips() {
         document.getElementById('tag-chips').innerHTML = TAGS.map(t => `<button type="button" onclick="pickTag('${t}')" class="px-2 py-0.5 bg-red-950/40 hover:bg-red-900/50 border border-red-500/30 rounded text-[10px] font-mono-tech text-red-300">${t}</button>`).join('');
     }
-    function pickTag(t) { document.getElementById('new-pain-tag').value = t; SFX.tap(); }
+    function pickTag(t) { const input = document.getElementById('new-pain-tag'); input.value = t; input.oninput(); SFX.tap(); }
+
+    let contactIntent = 'all';
+    function initContactUI() {
+        const api = window.SOMA_SIGNALS;
+        const prefs = api.readPrefs(localStorage);
+        const light = document.getElementById('contact-light');
+        light.checked = prefs.light;
+        light.onchange = () => {
+            const next = api.readPrefs(localStorage);
+            next.light = light.checked;
+            try { api.writePrefs(localStorage, next); }
+            catch (_) { light.checked = !light.checked; notify('Не удалось сохранить настройку чтения.'); }
+            renderFeed();
+        };
+        document.getElementById('contact-restore').onclick = () => {
+            const next = api.readPrefs(localStorage);
+            next.hidden = [];
+            try { api.writePrefs(localStorage, next); }
+            catch (_) { notify('Не удалось вернуть скрытые истории.'); return; }
+            renderFeed();
+        };
+        let saved = 'S';
+        try { saved = localStorage.getItem('soma_signal_draft_intent') || 'S'; } catch (_) {}
+        const topic = document.getElementById('new-pain-tag');
+        try { topic.value = localStorage.getItem('soma_signal_draft_topic') || ''; } catch (_) {}
+        topic.oninput = () => { try { localStorage.setItem('soma_signal_draft_topic', topic.value.slice(0, 24)); } catch (_) {} };
+        const selected = api.INTENTS.some(x => x.id === saved) ? saved : 'S';
+        document.querySelectorAll('[name="signal-intent"]').forEach(radio => {
+            radio.checked = radio.value === selected;
+            radio.onchange = () => {
+                document.getElementById('signal-intent-hint').textContent = api.INTENTS.find(x => x.id === radio.value).hint;
+                try { localStorage.setItem('soma_signal_draft_intent', radio.value); } catch (_) {}
+            };
+        });
+        document.getElementById('signal-intent-hint').textContent = api.INTENTS.find(x => x.id === selected).hint;
+    }
+    function renderContactFilters() {
+        const api = window.SOMA_SIGNALS;
+        const prefs = api.readPrefs(localStorage);
+        const bar = document.getElementById('contact-intent-filters');
+        const choices = [{ id: 'all', title: 'Все голоса' }, ...api.INTENTS];
+        bar.innerHTML = choices.map(x => `<button type="button" data-contact-intent="${x.id}" aria-pressed="${contactIntent === x.id}" class="contact-filter">${esc(x.title)}</button>`).join('');
+        bar.querySelectorAll('[data-contact-intent]').forEach(button => {
+            button.onclick = () => { contactIntent = button.dataset.contactIntent; activeFeedTag = 'ВСЕ'; renderFeed(); };
+        });
+        document.getElementById('contact-status').textContent = prefs.hidden.length
+            ? `Скрыто в этом браузере: ${prefs.hidden.length}. Это не жалоба и не блокировка автора.` : '';
+        document.getElementById('contact-restore').hidden = prefs.hidden.length === 0;
+    }
+    function hideContactPost(id) {
+        const api = window.SOMA_SIGNALS;
+        const prefs = api.readPrefs(localStorage);
+        prefs.hidden.push(String(id));
+        try { api.writePrefs(localStorage, prefs); }
+        catch (_) { notify('Не удалось скрыть историю.'); return; }
+        renderFeed();
+    }
+    function contactPosts() {
+        const api = window.SOMA_SIGNALS;
+        return api.filterPosts(feedPosts, api.readPrefs(localStorage), contactIntent);
+    }
 
     // ===== ПОМОЩЬ РЯДОМ =====
     const CRISIS = /(суицид|самоубийств|покончить с собой|убить себя|не хочу жить|хочу умереть|свести счёты|свести счеты|вскрыть вены)/i;
@@ -956,18 +1039,18 @@
     let feedPosts = [];
 
     const ranks = [
-        { minXp: 0, title: "УР. 1 // СЛУЧАЙНЫЙ ПРОХОЖИЙ" },
-        { minXp: 500, title: "УР. 2 // ЛЮБОПЫТНЫЙ ЗРИТЕЛЬ" },
-        { minXp: 1500, title: "УР. 3 // ПОТРЕБИТЕЛЬ ДРАМ" },
-        { minXp: 3000, title: "УР. 4 // ЦИНИЧНЫЙ ОБЫВАТЕЛЬ" },
-        { minXp: 5000, title: "УР. 5 // МОЛЧАЛИВЫЙ АНГЕЛ" },
-        { minXp: 10000, title: "УР. 10 // АБСОЛЮТНЫЙ НАБЛЮДАТЕЛЬ" }
+        { minXp: 0, title: "УР. 1 // ГОСТЬ СТАНЦИИ" },
+        { minXp: 500, title: "УР. 2 // ЗНАКОМЫЙ ГОЛОС" },
+        { minXp: 1500, title: "УР. 3 // НОЧНОЙ СЛУШАТЕЛЬ" },
+        { minXp: 3000, title: "УР. 4 // ХРАНИТЕЛЬ ЧАСТОТЫ" },
+        { minXp: 5000, title: "УР. 5 // ОГОНЁК СТАНЦИИ" },
+        { minXp: 10000, title: "УР. 10 // СОЗВЕЗДИЕ СТАНЦИИ" }
     ];
 
     async function initApp() {
         try { Telegram.WebApp.ready(); Telegram.WebApp.expand(); } catch (e) {}
         try { Telegram.WebApp.disableVerticalSwipes(); } catch (e) {}
-        renderTagChips(); initSoundUI();
+        renderTagChips(); initContactUI(); initSoundUI();
         if (cfg.ENV === 'pts') showPts();
         const wantsRoom = () => new URLSearchParams(location.search).has('room') || /^#room\b/i.test(location.hash);
         if (wantsRoom()) switchTab('profile', true);
@@ -1120,7 +1203,7 @@
         renderRoom();
     }
 
-    // ===== ЛЕНТА БОЛИ v7: РИТУАЛ 1 СИГНАЛ В СУТКИ, ФИЛЬТР ТЕМ И ЖИВОЕ ВРЕМЯ =====
+    // ===== ЛЕНТА КОНТАКТА v7: РИТУАЛ 1 СИГНАЛ В СУТКИ, ФИЛЬТР ТЕМ И ЖИВОЕ ВРЕМЯ =====
     let activeFeedTag = 'ВСЕ';
     const POST_DAY_KEY = 'soma_post_day';
     const POST_DRAFT_KEY = 'soma_pain_draft';
@@ -1186,7 +1269,7 @@
         }
         // Защита от случайного деанона и спама (ссылки, @ники, телефоны и номера карт)
         if (/(https?:\/\/|www\.|t\.me\/|telegram\.me|\b[a-z0-9-]+\.(ru|com|net|org|io|me|gg)\b|@[a-z0-9_]{3,})/i.test(text)) {
-            return { ok: false, error: 'Ради вашей анонимности ссылки и @контакты запрещены в Ленте боли.' };
+            return { ok: false, error: 'Ради вашей анонимности ссылки и @контакты запрещены в Ленте контакта.' };
         }
         if (/(?:\+?\d[\s\-().]*){9,}/.test(text)) {
             return { ok: false, error: 'Протокол скрыл отправку: не публикуйте номера телефонов и карт.' };
@@ -1217,7 +1300,7 @@
                 badge.textContent = `ЧЕРЕЗ ${left.toUpperCase()}`;
                 badge.className = 'px-1.5 py-0.5 rounded text-[9px] font-mono-tech bg-black/60 text-gray-400 border border-red-500/25 shrink-0';
                 sub.className = 'text-[10px] text-gray-400 mt-0.5 leading-snug';
-                sub.textContent = 'Лимит: 1 история в сутки. Побудьте в тишине рядом с чужими голосами.';
+                sub.textContent = 'Новый пост будет доступен завтра. Можно читать, отвечать или просто отдохнуть.';
                 arrow.textContent = '⏳';
             } else {
                 let hasDraft = false;
@@ -1227,14 +1310,14 @@
                 badge.textContent = hasDraft ? 'ЧЕРНОВИК · 1/Д' : '1 / ДЕНЬ';
                 badge.className = 'px-1.5 py-0.5 rounded text-[9px] font-mono-tech bg-amber-950/60 text-amber-200 border border-amber-400/45 shrink-0';
                 sub.className = 'text-[10.5px] text-rose-200/65 mt-0.5 leading-snug';
-                sub.textContent = 'Один анонимный сигнал в сутки — напишите то, о чём молчите.';
+                sub.textContent = 'Трудное, хорошее или обычный день — здесь есть место вашему голосу.';
                 arrow.textContent = '→';
             }
         }
         const qHint = document.getElementById('post-quota-hint');
         if (qHint) qHint.textContent = sent ? `Лимит исчерпан · новый через ${left}` : 'Доступно сегодня: 1 / 1';
 
-        // Синхронизируем подсказку тёплого чтения (связь Ленты боли со Светлячками в комнате!)
+        // Синхронизируем подсказку тёплого чтения (связь Ленты контакта со Светлячками в комнате!)
         const wStatus = document.getElementById('feed-warmth-status');
         const wQuota = document.getElementById('feed-warmth-quota');
         if (wStatus && wQuota && typeof loadWarmthLedger === 'function' && typeof PROGRESSION_RULES !== 'undefined') {
@@ -1263,8 +1346,8 @@
         const bar = document.getElementById('feed-filter-bar');
         if (!bar) return;
         const counts = new Map();
-        feedPosts.forEach(p => {
-            const tg = String(p.tag || 'ЛИЧНАЯ БОЛЬ').trim().toUpperCase();
+        contactPosts().forEach(p => {
+            const tg = (window.SOMA_SIGNALS.unpackTag(p.tag).topic || 'БЕЗ ТЕМЫ').toUpperCase();
             counts.set(tg, (counts.get(tg) || 0) + 1);
         });
         const topTags = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8).map(x => x[0]);
@@ -1276,7 +1359,7 @@
             const cls = on
                 ? 'px-2.5 py-1 rounded-lg bg-red-950/80 text-red-200 border border-red-500/50 font-bold shrink-0 transition'
                 : 'px-2.5 py-1 rounded-lg bg-[#12080a] text-gray-500 hover:text-gray-300 border border-red-500/15 shrink-0 transition';
-            const cnt = tg === 'ВСЕ' ? feedPosts.length : counts.get(tg);
+            const cnt = tg === 'ВСЕ' ? contactPosts().length : counts.get(tg);
             return `<button type="button" role="tab" aria-selected="${on}" class="${cls}" data-feed-tag="${esc(tg)}">${esc(tg)} <span class="opacity-60">${cnt}</span></button>`;
         }).join('');
         bar.querySelectorAll('[data-feed-tag]').forEach(b => {
@@ -1291,6 +1374,7 @@
         container.innerHTML = '';
         feedShownAt = performance.now();
         updatePostQuotaUI();
+        renderContactFilters();
         renderFeedFilters();
         const myIds = new Set(getMyPostIds());
         const todayLedger = typeof loadWarmthLedger === 'function' ? loadWarmthLedger() : { hold: 0, total: 0 };
@@ -1298,12 +1382,12 @@
             ? (todayLedger.hold < PROGRESSION_RULES.DAILY_HOLD_CAP && todayLedger.total < PROGRESSION_RULES.DAILY_WARMTH_CAP)
             : true;
 
-        const visible = activeFeedTag === 'ВСЕ'
-            ? feedPosts
-            : feedPosts.filter(p => String(p.tag || 'ЛИЧНАЯ БОЛЬ').trim().toUpperCase() === activeFeedTag);
+        const available = contactPosts();
+        const visible = activeFeedTag === 'ВСЕ' ? available
+            : available.filter(p => (window.SOMA_SIGNALS.unpackTag(p.tag).topic || 'БЕЗ ТЕМЫ').toUpperCase() === activeFeedTag);
 
         if (!visible.length) {
-            container.innerHTML = `<div class="text-center text-xs text-gray-500 py-10 font-mono-tech">${feedLoadFailed ? 'Не удалось загрузить сигналы. Попробуйте позже.' : 'На этой частоте пока тихо. Здесь появятся настоящие истории — можно вернуться позже.'}</div>`;
+            container.innerHTML = `<div class="text-center text-xs text-gray-500 py-10 font-mono-tech">${feedLoadFailed ? 'Не удалось загрузить сигналы. Попробуйте позже.' : 'Под эти настройки пока нет историй. Можно выбрать другую частоту или вернуться позже.'}</div>`;
             return;
         }
 
@@ -1312,9 +1396,11 @@
             const heldState = held[post.id];
             const isMine = myIds.has(post.id);
             const age = formatPostAge(post.created_at);
+            const intentInfo = window.SOMA_SIGNALS.unpackTag(post.tag);
+            const responseHint = intentInfo.intent ? intentInfo.intent.hint : 'Автор не указал, какой отклик ему нужен. Не предполагайте согласие на советы.';
             const heldLabel = heldState === 2
-                ? '👁 Дочитано в тишине // +15 XP · +1 ТЕПЛО'
-                : '👁 Вы побыли рядом // +15 XP';
+                ? '👁 Вы прочитали эту историю'
+                : '👁 Вы побыли рядом';
             const holdBtnLabel = holdHasWarmth
                 ? '👁 УДЕРЖАТЬ ВЗГЛЯД (3 с)'
                 : '👁 ПОБЫТЬ РЯДОМ В ТИШИНЕ (3 с)';
@@ -1329,22 +1415,23 @@
                         ${isMine ? '<span class="px-1.5 py-0.5 rounded bg-amber-950/60 text-amber-300 border border-amber-400/35 text-[8.5px] shrink-0">ВАШ СИГНАЛ</span>' : ''}
                         ${age ? `<span class="text-gray-600 shrink-0">· ${esc(age)}</span>` : ''}
                     </div>
-                    <span class="px-2 py-0.5 bg-red-950/60 text-red-300 rounded border border-red-500/20 shrink-0">${esc(post.tag || 'ЛИЧНАЯ БОЛЬ')}</span>
+                    <span class="px-2 py-0.5 bg-red-950/60 text-red-300 rounded border border-red-500/20 shrink-0">${esc(window.SOMA_SIGNALS.tagLabel(post.tag))}</span>
                 </div>
                 <p class="text-xs sm:text-sm text-gray-200 leading-relaxed font-mono-tech whitespace-pre-line break-words">${esc(post.text)}</p>
+                <p class="signal-response-hint">${esc(responseHint)}</p>
                 ${isMine
                     ? `<div class="py-1.5 px-3 rounded-xl bg-black/40 border border-amber-400/20 text-[10.5px] font-mono-tech text-amber-200/80 flex justify-between items-center">
                         <span>◌ Ваш голос звучит в сети SOMA~LINK · NEEO~CITY</span>
                         <span class="text-amber-300">Откликов: ${post.likes || 0}</span>
                        </div>`
-                    : `<button onclick="triggerHelpBlock()" class="w-full py-2 bg-red-950/40 hover:bg-red-900/50 border border-red-500/40 rounded-xl text-[11px] font-mono-tech text-red-400 flex items-center justify-center space-x-2 transition">
-                        <span>⛔ ПОМОЧЬ РЕАЛЬНО / НАПИСАТЬ В ЛС</span>
+                    : `<button onclick="openWhisperForPost('${safeId(post.id)}')" class="w-full py-2 bg-red-950/40 hover:bg-red-900/50 border border-red-500/40 rounded-xl text-[11px] font-mono-tech text-red-400 flex items-center justify-center space-x-2 transition">
+                        <span>✦ ОТВЕТИТЬ ЛИЧНЫМ ШЁПОТОМ</span>
                     </button>
                     ${heldState ? `<div class="text-center text-[11px] font-mono-tech text-amber-300/80">${heldLabel}</div>` : `<button onpointerdown="holdStart('${safeId(post.id)}', this, event)" onpointermove="holdMove(event)" onpointerup="holdCancel()" onpointerleave="holdCancel()" onpointercancel="holdCancel()" oncontextmenu="return false" class="soma-hold-btn relative overflow-hidden w-full py-2 bg-amber-950/20 border border-amber-400/30 rounded-xl text-[11px] font-mono-tech text-amber-300 select-none"><span class="hold-fill absolute inset-0 bg-amber-500/25 pointer-events-none" style="transform:scaleX(0);transform-origin:left"></span><span class="relative pointer-events-none">${holdBtnLabel}</span></button>`}
                     <div class="pt-2 border-t border-red-500/10 space-y-2">
                         ${isReacted ? `
                             <div class="text-[11px] font-mono-tech text-red-400 flex justify-between items-center">
-                                <span>✓ Суррогат отправлен: «${esc(isReacted)}»</span>
+                                <span>✓ Ваш отклик: «${esc(isReacted)}»</span>
                                 <span class="text-amber-400">Реакций: ${post.likes || 0}</span>
                             </div>
                         ` : `
@@ -1356,16 +1443,17 @@
                                 </div>
                                 <span class="text-[10px] font-mono-tech text-gray-500">Реакций: ${post.likes || 0}</span>
                             </div>
-                            <div class="grid grid-cols-1 gap-1.5">
-                                <button onclick="reactToPost('${safeId(post.id)}', 'Держись, всё наладится!', 25)" class="w-full text-left px-3 py-1.5 bg-[#180a0d] hover:bg-red-950/40 text-[11px] text-gray-300 rounded-lg border border-red-500/20 flex justify-between items-center">
-                                    <span>💬 «Держись, всё наладится!»</span>
-                                    <span class="text-[10px] font-mono-tech text-red-400">+25 XP</span>
-                                </button>
-                            </div>
                         `}
                     </div>`
                 }
             `;
+            if (!isMine) {
+                const hide = document.createElement('button');
+                hide.type = 'button'; hide.className = 'contact-quiet';
+                hide.textContent = 'Не хочу сейчас это читать · скрыть';
+                hide.onclick = () => hideContactPost(post.id);
+                card.appendChild(hide);
+            }
             container.appendChild(card);
         });
     }
@@ -1394,7 +1482,7 @@
         renderFeed();
     }
 
-    // Кнопка «Помочь» в ленте боли НЕ считает срывы протокола (их считает только реальный «Шёпот»!) —
+    // Кнопка «Помочь» в ленте контакта НЕ считает срывы протокола (их считает только реальный «Шёпот»!) —
     // она лишь подтверждает блокировку прямого контакта системой и открывает пасхалку на 10-е нажатие.
     function triggerHelpBlock() {
         let helpClicks = 0;
@@ -1502,7 +1590,9 @@
         }
         const text = check.value;
 
-        const tag = (document.getElementById('new-pain-tag').value || '').replace(/[^\p{L}\p{N} _#-]/gu, '').trim().toUpperCase().slice(0, 24) || 'ЛИЧНАЯ БОЛЬ';
+        const intent = document.querySelector('[name="signal-intent"]:checked');
+        if (!intent) { showPostError('Выберите, какой отклик вам нужен.'); return; }
+        const tag = window.SOMA_SIGNALS.packTag(intent.value, document.getElementById('new-pain-tag').value);
         const insertRow = { id: 'p_' + Date.now(), author: randAnon(), tag: tag, text: text, likes: 0 };
 
         const label = btn.innerText;
@@ -1530,10 +1620,14 @@
         try { localStorage.removeItem(POST_DRAFT_KEY); } catch (e) {}
         rememberMyPostId(insertRow.id);
         activeFeedTag = 'ВСЕ';
+        contactIntent = 'all';
         feedPosts.unshift({ ...insertRow, created_at: new Date().toISOString() });
         closePostModal();
         textareaEl.value = '';
         document.getElementById('new-pain-tag').value = '';
+        try { localStorage.removeItem('soma_signal_draft_topic'); } catch (_) {}
+        const defaultIntent = document.querySelector('[name="signal-intent"][value="S"]');
+        if (defaultIntent) { defaultIntent.checked = true; defaultIntent.onchange(); }
         updateCharCount(true);
         updatePostQuotaUI();
         SFX.send();
@@ -1652,7 +1746,7 @@
             return;
         }
         const rank = document.getElementById('rank-title').innerText;
-        const text = `SOMA~LINK // NEEO~CITY\nСвидетель: @${player.name}\nРанг: ${rank}\nПросмотрено драм: ${player.seen} | Пустых реакций: ${player.reacts} | Срывов протокола: ${player.whispersSent || 0}.\n\nПопробуй не вмешаться:`;
+        const text = `SOMA~LINK // NEEO~CITY\nСвидетель: @${player.name}\nРанг: ${rank}\nВстреч с историями: ${player.seen} | Откликов: ${player.reacts} | Шёпотов: ${player.whispersSent || 0}.\n\nЗагляни на ночную станцию:`;
         if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) {
             Telegram.WebApp.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(BOT_LINK) + '&text=' + encodeURIComponent(text));
             return;

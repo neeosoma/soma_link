@@ -732,17 +732,17 @@ test('v8: body-portal FLIP fullscreen + 180 flip + rotated pointer mapping, Dawn
         assert.doesNotThrow(() => r.drawPlantSprite(g, r.plantSpec('u_pot'), 5, { phase: 3, now: 2500, potSkin, fireflies: 5 }));
     }
 
-    // 3. Pain Feed CTA visibility hooks present and cache-busted to v15
+    // 3. Feed CTA visibility hooks and cache-busted assets remain present
     assert.ok(indexHtml.includes('soma-post-cta') && indexHtml.includes('soma-post-beacon') && indexHtml.includes('soma-post-arrow'));
     assert.ok(
         indexHtml.includes('id="station-fs-flip"')
-        && indexHtml.includes('room.js?v=15')
+        && indexHtml.includes('room.js?v=16')
         && indexHtml.includes('cosmetics.css?v=15')
         && indexHtml.includes('receiver.js?v=15')
         && indexHtml.includes('vhs.js?v=15')
         && indexHtml.includes('greenhouse.js?v=15')
         && indexHtml.includes('blimp.js?v=15')
-        && indexHtml.includes('share.js?v=15')
+        && indexHtml.includes('share.js?v=16')
     );
 
     // 4. Flagship cosmetics + collectible 7" vinyl pressings: equalized peer pricing + 1:1 Edge Function parity
@@ -1220,7 +1220,7 @@ test('v12: top-left fullscreen vinyl bar, unified NEEOSOMA/NEEO~CITY/SOMA~LINK b
         'zero legacy SOMA //, RX-88, PGR-04, NEEO_CITY, SOMA LINK, or SOMA_LINK in any user-facing code');
 
     // 3. PROTOCOL BREACH COUNTER STRICTLY BOUND TO WHISPER USAGE (NOT PAIN-FEED HELP CLICKS)
-    assert.ok(indexHtml.includes('СРЫВОВ ПРОТОКОЛА') && !indexHtml.includes('>ПОПЫТОК ПОМОЧЬ<') && !cosmCode.includes('ПОПЫТОК ПОМОЧЬ'), 'stat renamed to СРЫВОВ ПРОТОКОЛА everywhere');
+    assert.ok(indexHtml.includes('ШЁПОТОВ ОТПРАВЛЕНО') && !indexHtml.includes('>ПОПЫТОК ПОМОЧЬ<') && !cosmCode.includes('ПОПЫТОК ПОМОЧЬ'), 'Whisper counter keeps its data binding with a contact-first label');
     assert.ok(/function triggerHelpBlock\(\)[\s\S]{0,650}soma_help_clicks/.test(indexHtml), 'Pain-Feed help clicks isolated to local easter-egg counter soma_help_clicks');
     const helpFn = indexHtml.match(/function triggerHelpBlock\(\)\s*\{[\s\S]*?\n        \}/)[0];
     assert.ok(!/helpAttempts|recordWhisperSent|whispersSent/.test(helpFn), 'triggerHelpBlock NEVER increments protocol breach counter');

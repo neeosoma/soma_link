@@ -3351,10 +3351,32 @@ function renderFirstSignalEntry() {
     }
 }
 
+function signalTagLabel(tag) {
+    if (typeof window !== 'undefined' && window.SOMA_SIGNALS) return window.SOMA_SIGNALS.tagLabel(tag);
+    return String(tag || 'Без темы');
+}
+function signalResponseHint(tag) {
+    if (typeof window !== 'undefined' && window.SOMA_SIGNALS) {
+        const { intent } = window.SOMA_SIGNALS.unpackTag(tag);
+        if (intent) return intent.hint;
+    }
+    return 'Автор не указал, какой отклик ему нужен. Не предполагайте согласие на советы.';
+}
 function getFirstSignalCandidates(posts) {
     const mine = new Set(getLocalMyPostIdsSafe());
-    return (Array.isArray(posts) ? posts : []).filter(p => p && p.id
+    const visible = typeof window !== 'undefined' && window.SOMA_SIGNALS
+        ? window.SOMA_SIGNALS.visiblePosts(posts) : posts;
+    return (Array.isArray(visible) ? visible : []).filter(p => p && p.id
         && !String(p.id).startsWith('demo_') && !p.isDemo && !mine.has(String(p.id)));
+}
+
+function openWhisperForPost(postId) {
+    const id = String(postId || '');
+    roomAnim.pagerRequestedPostId = id;
+    roomAnim.pagerComposingPostId = id;
+    roomAnim.pagerDraftText = '';
+    roomAnim.firstSignalSkipped = (roomAnim.firstSignalSkipped || []).filter(x => x !== id);
+    openPagerModal('feed');
 }
 
 function whisperAdmission(warmth, ledger) {
@@ -9723,15 +9745,16 @@ async function sendWhisperToPostOnce(postObj, rawText, opts) {
     }
 
     roomAnim.pagerComposingPostId = '';
+    roomAnim.pagerRequestedPostId = '';
     roomAnim.pagerDraftText = '';
     roomAnim.pagerModalError = '';
     roomAnim.pagerModalNotice = firstSprout
-        ? `✦ Ваш первый «Шёпот» ушёл в эфир (+${PROGRESSION_RULES.WHISPER_SEND_XP} XP · Срыв протокола)! В горшке вашей комнаты проснулся живой росток!`
-        : `✦ «Шёпот» доставлен на пейджер автора (+${PROGRESSION_RULES.WHISPER_SEND_XP} XP · Срыв протокола). Когда он сохранит его на кассету, вам вернётся +${PROGRESSION_RULES.WHISPER_ACK_WARMTH} Тепла!`;
+        ? `✦ Ваш первый «Шёпот» отправлен живому человеку! В горшке вашей комнаты проснулся живой росток!`
+        : `✦ Ваши слова отправлены на пейджер автора. Когда он сохранит его на кассету, вам вернётся +${PROGRESSION_RULES.WHISPER_ACK_WARMTH} Тепла!`;
 
     if (firstSprout) {
         roomAnim.customMode = 'ШЁПОТ // ПРОБУЖДЕНИЕ РОСТКА';
-        roomAnim.customEntry = 'Вы впервые нарушили протокол равнодушия и согрели живого человека — в тёмной земле вашего сосуда проснулся первый росток!';
+        roomAnim.customEntry = 'Вы передали свои слова другому человеку — в сосуде вашей комнаты проснулся первый росток. Ответ может прийти позже, а может и не прийти.';
         animatePlantShift();
     }
     playObjectTone('pager');
@@ -10045,6 +10068,7 @@ function closePagerModal() {
     const ov = typeof document !== 'undefined' && document.getElementById('pager-overlay');
     if (ov && ov.classList) ov.classList.add('hidden');
     roomAnim.pagerModalOpen = false;
+    roomAnim.pagerRequestedPostId = '';
     roomAnim.pagerComposingPostId = '';
     roomAnim.pagerModalError = '';
     if (typeof restoreSomaScroll === 'function') {
@@ -10111,7 +10135,7 @@ function renderPagerModal() {
             bodyEl.innerHTML = `
                 <div class="pager-empty-box">
                     <div class="pager-empty-title">ВХОДЯЩИХ ШЁПОТОВ ПОКА НЕТ</div>
-                    <p class="pager-empty-sub">Когда кто-то из Слушателей станции прочитает ваш анонимный сигнал в «Ленте боли» и поддержит вас через пейджер, его тёплый отклик появится здесь.</p>
+                    <p class="pager-empty-sub">Когда кто-то из Слушателей станции прочитает ваш анонимный сигнал в «Ленте контакта» и поддержит вас через пейджер, его тёплый отклик появится здесь.</p>
                     <p class="pager-empty-sub">Вы сможете прочесть его и выбрать: <b>📼 Записать на кассету</b> в магнитофон VTR-90 (отправителю вернётся +2 Тепла) или <b>◌ Отпустить в эфир</b>.</p>
                 </div>
             `;
@@ -10119,7 +10143,7 @@ function renderPagerModal() {
             bodyEl.innerHTML = inbox.map(w => `
                 <div class="pager-card pager-card--inbox" data-whisper-id="${escFn(w.id)}">
                     <div class="pager-card-head">
-                        <span class="pager-card-tag">✦ ВХОДЯЩИЙ ШЁПОТ · #${escFn(w.post_tag || 'ЛИЧНАЯ БОЛЬ')}</span>
+                        <span class="pager-card-tag">✦ ВХОДЯЩИЙ ШЁПОТ · #${escFn(signalTagLabel(w.post_tag))}</span>
                         <span class="pager-card-meta">CH·04 // АНОНИМНЫЙ СЛУШАТЕЛЬ</span>
                     </div>
                     ${w.post_preview ? `<div class="pager-card-quote">На ваш сигнал: «${escFn(w.post_preview)}»</div>` : ''}
@@ -10186,7 +10210,8 @@ function renderPagerModal() {
             const allPosts = (typeof feedPosts !== 'undefined' && Array.isArray(feedPosts)) ? feedPosts : [];
             const whisperedSet = new Set(getWhisperedPosts());
             let candidates = getFirstSignalCandidates(allPosts)
-                .sort((a, b) => Number(whisperedSet.has(String(a.id))) - Number(whisperedSet.has(String(b.id))));
+                .sort((a, b) => Number(String(b.id) === roomAnim.pagerRequestedPostId) - Number(String(a.id) === roomAnim.pagerRequestedPostId)
+                    || Number(whisperedSet.has(String(a.id))) - Number(whisperedSet.has(String(b.id))));
             if (adm.firstAvailable) {
                 const skipped = new Set(roomAnim.firstSignalSkipped || []);
                 candidates = candidates.filter(p => !skipped.has(String(p.id)) && !whisperedSet.has(String(p.id))).slice(0, 1);
@@ -10209,10 +10234,11 @@ function renderPagerModal() {
                     return `
                         <div class="pager-card ${done ? 'is-whispered' : ''}" data-post-id="${escFn(pid)}">
                             <div class="pager-card-head">
-                                <span class="pager-card-tag">${escFn(post.author || 'Аноним')} · #${escFn(post.tag || 'ЛИЧНАЯ БОЛЬ')}</span>
-                                <span class="pager-card-meta">${done ? '✓ ПОДДЕРЖАН (1/1)' : 'ЖДЁТ ТЕПЛА'}</span>
+                                <span class="pager-card-tag">${escFn(post.author || 'Аноним')} · #${escFn(signalTagLabel(post.tag))}</span>
+                                <span class="pager-card-meta">${done ? '✓ ОТКЛИК ОТПРАВЛЕН' : 'ГОЛОС СО СТАНЦИИ'}</span>
                             </div>
                             <p class="pager-card-text">${escFn(post.text || '')}</p>
+                            <p class="pager-compose-hint">${escFn(signalResponseHint(post.tag))}</p>
                             ${adm.firstAvailable && !isComposing ? `<div class="pager-card-actions">
                                 <button type="button" class="pager-act-btn pager-act-btn--dismiss" data-act="read" data-post-id="${escFn(pid)}">ПРОСТО ПРОЧИТАТЬ</button>
                                 <button type="button" class="pager-act-btn pager-act-btn--dismiss" data-act="skip" data-post-id="${escFn(pid)}">ПРОПУСТИТЬ</button>
@@ -10221,13 +10247,13 @@ function renderPagerModal() {
                                 ? `<div class="pager-card-done">✓ Вы уже отправили «Шёпот» этому человеку (1 сигнал = 1 шёпот).</div>`
                                 : isComposing
                                     ? `<div class="pager-compose">
-                                        <div class="pager-compose-hint">Памятка Слушателя: без непрошеных советов и оценок — скажите человеку то, от чего ему станет не так одиноко (${PROGRESSION_RULES.WHISPER_MIN_LEN}–${PROGRESSION_RULES.WHISPER_MAX_LEN} симв.).</div>
+                                        <div class="pager-compose-hint">Пишите от себя, учитывая пожелание автора. Без оценок, диагнозов и обещаний, которые не можете выполнить (${PROGRESSION_RULES.WHISPER_MIN_LEN}–${PROGRESSION_RULES.WHISPER_MAX_LEN} симв.).</div>
                                         <textarea id="pager-compose-input" class="pager-compose-input" rows="3" maxlength="${PROGRESSION_RULES.WHISPER_MAX_LEN}" placeholder="Напишите тёплый анонимный отклик (${PROGRESSION_RULES.WHISPER_MIN_LEN}–${PROGRESSION_RULES.WHISPER_MAX_LEN} симв.)...">${escFn(draft)}</textarea>
                                         <div class="pager-compose-bar">
                                             <span id="pager-compose-count" class="pager-compose-count">${draft.length} / ${PROGRESSION_RULES.WHISPER_MAX_LEN} (мин. ${PROGRESSION_RULES.WHISPER_MIN_LEN})</span>
                                             <div class="pager-compose-btns">
                                                 <button type="button" class="pager-act-btn pager-act-btn--dismiss" id="pager-compose-cancel">ОТМЕНА</button>
-                                                <button type="button" class="pager-act-btn pager-act-btn--save" id="pager-compose-send" ${adm.whisperLeftToday <= 0 ? 'disabled' : ''}>◈ ШЕПНУТЬ (+${PROGRESSION_RULES.WHISPER_SEND_XP} XP)</button>
+                                                <button type="button" class="pager-act-btn pager-act-btn--save" id="pager-compose-send" ${adm.whisperLeftToday <= 0 ? 'disabled' : ''}>◈ ПЕРЕДАТЬ СВОИ СЛОВА</button>
                                             </div>
                                         </div>
                                     </div>`
@@ -11141,6 +11167,7 @@ if (typeof document !== 'undefined' && document.addEventListener) {
 
 // Public pager API for integrations and headless regression tests.
 const pagerApi = {
+    openWhisperForPost, signalTagLabel, signalResponseHint,
     acceptFirstSignalRules, trackFirstSignalEvent, renderFirstSignalEntry, getFirstSignalCandidates,
     validateWhisperText, hasWhisperedToPost, rememberWhisperedPost,
     claimWhisperCassetteAck, getPendingInboxWhispers, receiveIncomingWhisperLocal,

@@ -327,6 +327,9 @@ create table if not exists soma_private.post_owners (
     post_id text primary key references public.soma_posts(id) on delete cascade,
     owner_id uuid not null
 );
+-- Defense in depth: no client policies; only owner-executed helper functions access it.
+alter table soma_private.post_owners enable row level security;
+revoke all on soma_private.post_owners from public, anon, authenticated;
 create or replace function public.capture_soma_post_owner()
 returns trigger language plpgsql security definer set search_path = '' as $$
 begin

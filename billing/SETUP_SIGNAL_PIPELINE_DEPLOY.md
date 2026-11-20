@@ -17,6 +17,11 @@
 которая возникала при `RETURNS TABLE(...)` из-за расхождения типов колонок
 (например, `created_at`) между локальной схемой и реальной в Supabase.
 
+**v3 (owner capture):** `submit_soma_post` записывает владельца поста в
+`soma_private.post_owners`. Без этого `next_soma_pager_story()` не находит
+пост для пейджера других игроков — он читает посты через join с
+`post_owners` и фильтр `owner_id <> auth.uid()`.
+
 ## SQL-миграция
 
 Файл: `billing/setup_signal_pipeline.sql`

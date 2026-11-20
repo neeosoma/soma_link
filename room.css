@@ -1110,123 +1110,193 @@
     display: inline-flex;
     align-items: flex-end;
     gap: 2px;
-    height: 10px;
+    height: 11px;
 }
 
 .pager-bars i {
     display: block;
     width: 2.5px;
     border-radius: 1px;
-    background: #2f0e15;
-    opacity: 0.35;
+    background: #c9384c;
+    opacity: 0.6;
     transition: background-color 0.3s ease, opacity 0.3s ease;
     transform-origin: bottom center;
+    box-shadow: 0 0 3px rgba(201, 56, 76, 0.4);
 }
 
 .pager-bars i:nth-child(1) { height: 3px; }
 .pager-bars i:nth-child(2) { height: 5px; }
 .pager-bars i:nth-child(3) { height: 7.5px; }
-.pager-bars i:nth-child(4) { height: 10px; }
+.pager-bars i:nth-child(4) { height: 11px; }
 
-/* ЖИВАЯ АНИМАЦИЯ СИЛЫ СВЯЗИ — баров, дышащих со сдвигом (wave cascade) */
+/* ===== ЖИВАЯ АНИМАЦИЯ СИЛЫ СВЯЗИ — полоски живут в EVERY state ===== */
+
+/* Base: всегда дышим, даже до принятия правил */
 @keyframes pager-bar-breathe {
     0%, 100% {
-        opacity: 0.35;
-        transform: scaleY(0.82);
-    }
-    50% {
-        opacity: 0.85;
-        transform: scaleY(1.1);
-    }
-}
-
-/* Когда пейджер включён и активен — полоски постоянно живут */
-.soma-pager[data-admitted="1"] .pager-bars i {
-    animation: pager-bar-breathe 2.4s ease-in-out infinite;
-}
-
-.soma-pager[data-admitted="1"] .pager-bars i:nth-child(1) { animation-delay: 0s; }
-.soma-pager[data-admitted="1"] .pager-bars i:nth-child(2) { animation-delay: 0.18s; }
-.soma-pager[data-admitted="1"] .pager-bars i:nth-child(3) { animation-delay: 0.36s; }
-.soma-pager[data-admitted="1"] .pager-bars i:nth-child(4) { animation-delay: 0.54s; }
-
-/* Готовность: полоски зелёно-красным светом с усиленным дыханием */
-@keyframes pager-bar-ready {
-    0%, 100% {
-        opacity: 0.55;
-        transform: scaleY(0.85);
-        box-shadow: 0 0 2px rgba(217, 70, 95, 0.4);
+        opacity: 0.45;
+        transform: scaleY(0.8);
+        box-shadow: 0 0 2px rgba(201, 56, 76, 0.3);
     }
     50% {
         opacity: 1;
-        transform: scaleY(1.12);
-        box-shadow: 0 0 5px rgba(217, 70, 95, 0.8);
+        transform: scaleY(1.15);
+        box-shadow: 0 0 6px rgba(201, 56, 76, 0.7);
+    }
+}
+
+.soma-pager .pager-bars i {
+    animation: pager-bar-breathe 2.2s ease-in-out infinite;
+}
+
+.soma-pager .pager-bars i:nth-child(1) { animation-delay: 0s; }
+.soma-pager .pager-bars i:nth-child(2) { animation-delay: 0.18s; }
+.soma-pager .pager-bars i:nth-child(3) { animation-delay: 0.36s; }
+.soma-pager .pager-bars i:nth-child(4) { animation-delay: 0.54s; }
+
+/* Admitted: усиленное дыхание с более быстрым ритмом */
+@keyframes pager-bar-admitted {
+    0%, 100% {
+        opacity: 0.6;
+        transform: scaleY(0.85);
+        box-shadow: 0 0 3px rgba(217, 70, 95, 0.5);
+    }
+    50% {
+        opacity: 1;
+        transform: scaleY(1.2);
+        box-shadow: 0 0 8px rgba(217, 70, 95, 0.9);
+    }
+}
+
+.soma-pager[data-admitted="1"] .pager-bars i {
+    background: #d9465f;
+    animation: pager-bar-admitted 1.8s ease-in-out infinite;
+}
+
+.soma-pager[data-admitted="1"] .pager-bars i:nth-child(1) { animation-delay: 0s; }
+.soma-pager[data-admitted="1"] .pager-bars i:nth-child(2) { animation-delay: 0.15s; }
+.soma-pager[data-admitted="1"] .pager-bars i:nth-child(3) { animation-delay: 0.3s; }
+.soma-pager[data-admitted="1"] .pager-bars i:nth-child(4) { animation-delay: 0.45s; }
+
+/* Ready: самая живая анимация — быстрая волна с ярким свечением */
+@keyframes pager-bar-ready {
+    0%, 100% {
+        opacity: 0.7;
+        transform: scaleY(0.88);
+        box-shadow: 0 0 4px rgba(217, 70, 95, 0.6);
+    }
+    50% {
+        opacity: 1;
+        transform: scaleY(1.25);
+        box-shadow: 0 0 10px rgba(217, 70, 95, 1);
     }
 }
 
 .soma-pager[data-state="ready"] .pager-bars i {
-    background: #d9465f;
-    animation: pager-bar-ready 1.6s ease-in-out infinite;
+    background: #e85570;
+    animation: pager-bar-ready 1.3s ease-in-out infinite;
 }
 
 .soma-pager[data-state="ready"] .pager-bars i:nth-child(1) { animation-delay: 0s; }
-.soma-pager[data-state="ready"] .pager-bars i:nth-child(2) { animation-delay: 0.15s; }
-.soma-pager[data-state="ready"] .pager-bars i:nth-child(3) { animation-delay: 0.3s; }
-.soma-pager[data-state="ready"] .pager-bars i:nth-child(4) { animation-delay: 0.45s; }
+.soma-pager[data-state="ready"] .pager-bars i:nth-child(2) { animation-delay: 0.12s; }
+.soma-pager[data-state="ready"] .pager-bars i:nth-child(3) { animation-delay: 0.24s; }
+.soma-pager[data-state="ready"] .pager-bars i:nth-child(4) { animation-delay: 0.36s; }
 
-/* Ping: кратковременный всплеск — волна от первой полоски к последней */
+/* Ping: всплеск — волна-импульс от первой к последней полоске */
 @keyframes pager-bar-ping {
     0% {
         opacity: 1;
-        transform: scaleY(1.2);
-        box-shadow: 0 0 6px rgba(255, 88, 108, 0.95);
+        transform: scaleY(1.3);
+        box-shadow: 0 0 8px rgba(255, 88, 108, 1);
     }
     100% {
-        opacity: 0.4;
-        transform: scaleY(0.8);
+        opacity: 0.5;
+        transform: scaleY(0.75);
         box-shadow: 0 0 0 rgba(255, 88, 108, 0);
     }
 }
 
 .soma-pager.is-ping .pager-bars i {
     background: #ff586c;
-    animation: pager-bar-ping 0.7s ease-out infinite;
+    animation: pager-bar-ping 0.6s ease-out infinite;
 }
 
 .soma-pager.is-ping .pager-bars i:nth-child(1) { animation-delay: 0s; }
-.soma-pager.is-ping .pager-bars i:nth-child(2) { animation-delay: 0.1s; }
-.soma-pager.is-ping .pager-bars i:nth-child(3) { animation-delay: 0.2s; }
-.soma-pager.is-ping .pager-bars i:nth-child(4) { animation-delay: 0.3s; }
+.soma-pager.is-ping .pager-bars i:nth-child(2) { animation-delay: 0.08s; }
+.soma-pager.is-ping .pager-bars i:nth-child(3) { animation-delay: 0.16s; }
+.soma-pager.is-ping .pager-bars i:nth-child(4) { animation-delay: 0.24s; }
 
-/* Inbox: янтарное мерцание с более медленным, глубоким ритмом */
+/* Inbox: янтарное мерцание с глубоким ритмом */
 @keyframes pager-bar-inbox {
     0%, 100% {
-        opacity: 0.5;
-        transform: scaleY(0.85);
-        box-shadow: 0 0 2px rgba(251, 191, 36, 0.3);
+        opacity: 0.55;
+        transform: scaleY(0.82);
+        box-shadow: 0 0 3px rgba(251, 191, 36, 0.5);
     }
     50% {
         opacity: 1;
-        transform: scaleY(1.15);
-        box-shadow: 0 0 5px rgba(251, 191, 36, 0.7);
+        transform: scaleY(1.2);
+        box-shadow: 0 0 7px rgba(251, 191, 36, 0.9);
     }
 }
 
 .soma-pager[data-state="inbox"] .pager-bars i {
     background: #fbbf24;
-    animation: pager-bar-inbox 2s ease-in-out infinite;
+    animation: pager-bar-inbox 1.7s ease-in-out infinite;
 }
 
 .soma-pager[data-state="inbox"] .pager-bars i:nth-child(1) { animation-delay: 0s; }
-.soma-pager[data-state="inbox"] .pager-bars i:nth-child(2) { animation-delay: 0.2s; }
-.soma-pager[data-state="inbox"] .pager-bars i:nth-child(3) { animation-delay: 0.4s; }
-.soma-pager[data-state="inbox"] .pager-bars i:nth-child(4) { animation-delay: 0.6s; }
+.soma-pager[data-state="inbox"] .pager-bars i:nth-child(2) { animation-delay: 0.17s; }
+.soma-pager[data-state="inbox"] .pager-bars i:nth-child(3) { animation-delay: 0.34s; }
+.soma-pager[data-state="inbox"] .pager-bars i:nth-child(4) { animation-delay: 0.51s; }
 
-/* Locked: приглушённое, почти неживое состояние */
-.soma-pager[data-state="locked"] .pager-bars i {
-    opacity: 0.2;
-    animation: none;
+/* Locked: приглушенное дыхание — всё ещё живо, но тише */
+@keyframes pager-bar-locked {
+    0%, 100% {
+        opacity: 0.3;
+        transform: scaleY(0.75);
+        box-shadow: 0 0 1px rgba(201, 56, 76, 0.2);
+    }
+    50% {
+        opacity: 0.65;
+        transform: scaleY(0.95);
+        box-shadow: 0 0 3px rgba(201, 56, 76, 0.4);
+    }
 }
+
+.soma-pager[data-state="locked"] .pager-bars i {
+    background: #8f2c3f;
+    animation: pager-bar-locked 3s ease-in-out infinite;
+}
+
+.soma-pager[data-state="locked"] .pager-bars i:nth-child(1) { animation-delay: 0s; }
+.soma-pager[data-state="locked"] .pager-bars i:nth-child(2) { animation-delay: 0.25s; }
+.soma-pager[data-state="locked"] .pager-bars i:nth-child(3) { animation-delay: 0.5s; }
+.soma-pager[data-state="locked"] .pager-bars i:nth-child(4) { animation-delay: 0.75s; }
+
+/* Offline: медленное, слабое мерцание */
+@keyframes pager-bar-offline {
+    0%, 100% {
+        opacity: 0.2;
+        transform: scaleY(0.7);
+        box-shadow: 0 0 0 rgba(201, 56, 76, 0);
+    }
+    50% {
+        opacity: 0.4;
+        transform: scaleY(0.85);
+        box-shadow: 0 0 2px rgba(201, 56, 76, 0.2);
+    }
+}
+
+.soma-pager[data-state="offline"] .pager-bars i {
+    background: #6a2838;
+    animation: pager-bar-offline 4s ease-in-out infinite;
+}
+
+.soma-pager[data-state="offline"] .pager-bars i:nth-child(1) { animation-delay: 0s; }
+.soma-pager[data-state="offline"] .pager-bars i:nth-child(2) { animation-delay: 0.35s; }
+.soma-pager[data-state="offline"] .pager-bars i:nth-child(3) { animation-delay: 0.7s; }
+.soma-pager[data-state="offline"] .pager-bars i:nth-child(4) { animation-delay: 1.05s; }
 
 /* Утопленный матричный багровый ЖК-дисплей пейджера */
 .pager-bezel {

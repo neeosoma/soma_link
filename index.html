@@ -391,6 +391,44 @@
                 <span id="open-post-sub" class="feed-send-note">Один сигнал в день. Читать и откликаться можно всегда.</span>
             </div>
 
+            <!-- КОМПАКТНЫЙ INTERFACE ПЕЙДЖЕРА NEEOSOMA // NMAV-04 -->
+            <div class="feed-pager" id="feed-pager" data-state="locked" data-admitted="0">
+                <!-- ШАПКА: бренд + LED + частота + полоски сигнала -->
+                <div class="feed-pager-top">
+                    <span class="pager-brand"><i class="pager-led" aria-hidden="true"></i>NEEOSOMA // NMAV-04</span>
+                    <span class="feed-pager-freq">CH·04 «ШЁПОТ»</span>
+                    <span class="pager-sig-bar" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+                </div>
+                <!-- Метатирки: статус несущей + лимит -->
+                <div class="feed-pager-meta">
+                    <span id="feed-pager-carrier" class="pager-carrier">ПРИЁМ ВХОДЯЩИХ АКТИВЕН</span>
+                    <span id="feed-pager-gate">ДО 3 ШЁПОТОВ В СУТКИ</span>
+                </div>
+                <!-- LCD-ЭКРАН С CRT-ЭФФЕКТОМ -->
+                <div class="feed-pager-bezel">
+                    <div class="feed-pager-lcd">
+                        <p id="feed-pager-msg" class="feed-pager-main">ЖИВАЯ ЧАСТОТА · ВЫ НА СВЯЗИ</p>
+                        <p id="feed-pager-sub" class="feed-pager-sub">Читайте. Отвечайте, если хочется.</p>
+                        <!-- Фильтры: намерение отклика -->
+                        <div class="feed-pager-filters">
+                            <div id="contact-intent-filters" class="feed-filter-row"></div>
+                            <div class="feed-pager-filter-summary">
+                                <span id="feed-filter-status"></span>
+                            </div>
+                        </div>
+                        <!-- Полезный контент -->
+                        <div id="pager-own-posts" class="feed-pager-own"></div>
+                        <div id="posts-container" class="feed-pager-posts"></div>
+                    </div>
+                    <div class="feed-pager-scan" aria-hidden="true"></div>
+                </div>
+                <!-- Кнопки пейджера -->
+                <div class="feed-pager-keys">
+                    <button type="button" id="feed-pager-scan-btn" class="feed-pager-key" onclick="openPagerModal()">◈ ОТКРЫТЬ ПЕЙДЖЕР</button>
+                    <button type="button" class="feed-pager-key feed-pager-key--alt" onclick="openPagerModal('inbox')">📥 ВХОДЯЩИЕ</button>
+                </div>
+            </div>
+
             <!-- Карточка профиля: свидетель станции, эстетичная карточка внизу пейджера -->
             <section id="witness-card" class="witness-card">
                 <div class="witness-card-glow"></div>
@@ -1613,6 +1651,7 @@
     function renderFeed() {
         if (typeof renderFirstSignalEntry === 'function') renderFirstSignalEntry();
         if (typeof roomAnim !== 'undefined' && roomAnim.pagerModalOpen) renderPagerModal();
+        if (typeof renderFeedPager === 'function') renderFeedPager();
         const container = document.getElementById('posts-container');
         if (!container) {
             updatePostQuotaUI();

@@ -1118,7 +1118,9 @@
     width: 2.5px;
     border-radius: 1px;
     background: #2f0e15;
-    transition: background-color 0.3s ease;
+    opacity: 0.35;
+    transition: background-color 0.3s ease, opacity 0.3s ease;
+    transform-origin: bottom center;
 }
 
 .pager-bars i:nth-child(1) { height: 3px; }
@@ -1126,8 +1128,104 @@
 .pager-bars i:nth-child(3) { height: 7.5px; }
 .pager-bars i:nth-child(4) { height: 10px; }
 
-.soma-pager.is-ping .pager-bars i:nth-child(1) {
-    background: #c9384c;
+/* ЖИВАЯ АНИМАЦИЯ СИЛЫ СВЯЗИ — баров, дышащих со сдвигом (wave cascade) */
+@keyframes pager-bar-breathe {
+    0%, 100% {
+        opacity: 0.35;
+        transform: scaleY(0.82);
+    }
+    50% {
+        opacity: 0.85;
+        transform: scaleY(1.1);
+    }
+}
+
+/* Когда пейджер включён и активен — полоски постоянно живут */
+.soma-pager[data-admitted="1"] .pager-bars i {
+    animation: pager-bar-breathe 2.4s ease-in-out infinite;
+}
+
+.soma-pager[data-admitted="1"] .pager-bars i:nth-child(1) { animation-delay: 0s; }
+.soma-pager[data-admitted="1"] .pager-bars i:nth-child(2) { animation-delay: 0.18s; }
+.soma-pager[data-admitted="1"] .pager-bars i:nth-child(3) { animation-delay: 0.36s; }
+.soma-pager[data-admitted="1"] .pager-bars i:nth-child(4) { animation-delay: 0.54s; }
+
+/* Готовность: полоски зелёно-красным светом с усиленным дыханием */
+@keyframes pager-bar-ready {
+    0%, 100% {
+        opacity: 0.55;
+        transform: scaleY(0.85);
+        box-shadow: 0 0 2px rgba(217, 70, 95, 0.4);
+    }
+    50% {
+        opacity: 1;
+        transform: scaleY(1.12);
+        box-shadow: 0 0 5px rgba(217, 70, 95, 0.8);
+    }
+}
+
+.soma-pager[data-state="ready"] .pager-bars i {
+    background: #d9465f;
+    animation: pager-bar-ready 1.6s ease-in-out infinite;
+}
+
+.soma-pager[data-state="ready"] .pager-bars i:nth-child(1) { animation-delay: 0s; }
+.soma-pager[data-state="ready"] .pager-bars i:nth-child(2) { animation-delay: 0.15s; }
+.soma-pager[data-state="ready"] .pager-bars i:nth-child(3) { animation-delay: 0.3s; }
+.soma-pager[data-state="ready"] .pager-bars i:nth-child(4) { animation-delay: 0.45s; }
+
+/* Ping: кратковременный всплеск — волна от первой полоски к последней */
+@keyframes pager-bar-ping {
+    0% {
+        opacity: 1;
+        transform: scaleY(1.2);
+        box-shadow: 0 0 6px rgba(255, 88, 108, 0.95);
+    }
+    100% {
+        opacity: 0.4;
+        transform: scaleY(0.8);
+        box-shadow: 0 0 0 rgba(255, 88, 108, 0);
+    }
+}
+
+.soma-pager.is-ping .pager-bars i {
+    background: #ff586c;
+    animation: pager-bar-ping 0.7s ease-out infinite;
+}
+
+.soma-pager.is-ping .pager-bars i:nth-child(1) { animation-delay: 0s; }
+.soma-pager.is-ping .pager-bars i:nth-child(2) { animation-delay: 0.1s; }
+.soma-pager.is-ping .pager-bars i:nth-child(3) { animation-delay: 0.2s; }
+.soma-pager.is-ping .pager-bars i:nth-child(4) { animation-delay: 0.3s; }
+
+/* Inbox: янтарное мерцание с более медленным, глубоким ритмом */
+@keyframes pager-bar-inbox {
+    0%, 100% {
+        opacity: 0.5;
+        transform: scaleY(0.85);
+        box-shadow: 0 0 2px rgba(251, 191, 36, 0.3);
+    }
+    50% {
+        opacity: 1;
+        transform: scaleY(1.15);
+        box-shadow: 0 0 5px rgba(251, 191, 36, 0.7);
+    }
+}
+
+.soma-pager[data-state="inbox"] .pager-bars i {
+    background: #fbbf24;
+    animation: pager-bar-inbox 2s ease-in-out infinite;
+}
+
+.soma-pager[data-state="inbox"] .pager-bars i:nth-child(1) { animation-delay: 0s; }
+.soma-pager[data-state="inbox"] .pager-bars i:nth-child(2) { animation-delay: 0.2s; }
+.soma-pager[data-state="inbox"] .pager-bars i:nth-child(3) { animation-delay: 0.4s; }
+.soma-pager[data-state="inbox"] .pager-bars i:nth-child(4) { animation-delay: 0.6s; }
+
+/* Locked: приглушённое, почти неживое состояние */
+.soma-pager[data-state="locked"] .pager-bars i {
+    opacity: 0.2;
+    animation: none;
 }
 
 /* Утопленный матричный багровый ЖК-дисплей пейджера */
@@ -1256,19 +1354,9 @@
     cursor: pointer;
 }
 
-.soma-pager[data-state="ready"] .pager-bars i:nth-child(1),
-.soma-pager[data-state="ready"] .pager-bars i:nth-child(2),
-.soma-pager[data-state="ready"] .pager-bars i:nth-child(3) {
-    background: #d9465f;
-}
-
 .soma-pager[data-state="inbox"] .pager-led {
     background: #fbbf24;
     box-shadow: 0 0 10px rgba(251, 191, 36, 0.95);
-}
-
-.soma-pager[data-state="inbox"] .pager-bars i {
-    background: #fbbf24;
 }
 
 /* ===== ИНТЕРАКТИВНЫЙ МАТРИЧНЫЙ ЭКРАН ПЕЙДЖЕРА NEEOSOMA // NMAV-04 ===== */

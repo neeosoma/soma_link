@@ -14,7 +14,7 @@ test('station atmosphere client accepts only a boolean; no goals, counts, or sto
 });
 
 test('ritual UI is an atmospheric note, not a score, goal, progress bar, or target story', () => {
-    assert.match(indexHtml, /id="night-ritual-card" class="night-ritual-strip"/);
+    assert.match(indexHtml, /id="station-night-ritual-note"/);
     assert.match(indexHtml, /station_presence_atmosphere_status/);
     assert.doesNotMatch(indexHtml, /night-ritual-meter|night-ritual-count|role="progressbar"|night-ritual-fill|night-ritual-track/);
     assert.doesNotMatch(indexHtml, /stationRitualState\.candidatePostId|progressBucket|12\+ ИСТОРИЙ ПОЛУЧИЛИ ОТКЛИК/);

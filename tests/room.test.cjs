@@ -2263,8 +2263,7 @@ test('first session is dismissible, offers only a real visible post, and leaves 
     assert.equal(emptyElements.get('first-session-open').hidden, true);
     assert.match(emptyElements.get('first-session-copy').textContent, /нет подходящей истории/);
     assert.equal(emptyRoom.completeFirstSession('invalid'), false);
-    assert.ok(indexHtml.includes('Одна настоящая история'));
-    assert.ok(indexHtml.includes('Читать, отвечать или пройти мимо'));
+    assert.ok(indexHtml.includes('Отправить сигнал'));
     assert.ok(!/незнакомец оставил вам сигнал/i.test(indexHtml));
 });
 
@@ -2298,7 +2297,7 @@ test('concurrent sends are serialized without locking subsequent zero-warmth sen
 test('new names stay consistent without changing the top-13 or progression bindings', () => {
     const cosmetics = readFileSync(require.resolve('../cosmetics.js'), 'utf8');
     const share = readFileSync(require.resolve('../share.js'), 'utf8');
-    assert.ok(indexHtml.includes('<h1>Пейджер</h1>'));
+    assert.ok(indexHtml.includes('Отправить сигнал'));
     assert.ok(indexHtml.includes('ЖИВАЯ ЧАСТОТА'));
     assert.ok(!indexHtml.includes('ИНДЕКС РАВНОДУШИЯ'));
     assert.ok(indexHtml.includes('class="top-heading">ЗВЁЗДЫ СТАНЦИИ'));

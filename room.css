@@ -2311,8 +2311,8 @@ html.is-soma-fs-closing .app-h {
 .feed-topic-btn.is-active { border-color: rgba(210, 171, 137, 0.68); background: #292023; color: #f1dfd2; }
 .feed-filters button:focus-visible { outline: 2px solid #e2c4a2; outline-offset: 2px; }
 
-.feed-personal-note { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 9px; border: 1px solid rgba(195, 169, 157, 0.11); border-radius: 8px; color: #a99b93; font: 9px 'Share Tech Mono', monospace; }
-.feed-personal-note span:last-child { flex: 0 0 auto; color: #c6ab8e; }
+.feed-personal-note { display: flex; align-items: center; justify-content: flex-start; gap: 8px; padding: 7px 9px; border: 1px solid rgba(195, 169, 157, 0.11); border-radius: 8px; color: #a99b93; font: 9px 'Share Tech Mono', monospace; }
+#feed-warmth-status { color: #b9aeb0; }
 
 .station-night-ritual-note,
 .station-first-signal-note {
@@ -2345,6 +2345,16 @@ html.is-soma-fs-closing .app-h {
 }
 
 .signal-response-hint { font-size: 11px; line-height: 1.55; padding: 8px 10px; border-left: 2px solid #c99e68; color: #d6bac6; background: #08050866; }
+.witness-action-wrap { display: grid; gap: 6px; padding: 9px; border: 1px solid rgba(230, 98, 119, 0.28); border-radius: 11px; background: linear-gradient(115deg, rgba(43, 10, 19, 0.72), rgba(18, 8, 12, 0.82)); }
+.witness-mark-btn { width: 100%; min-height: 44px; padding: 9px 10px; border: 1px solid rgba(246, 119, 137, 0.58); border-radius: 9px; background: #3a101b; color: #ffe3e7; font: 700 10px 'Share Tech Mono', monospace; letter-spacing: 0.025em; cursor: pointer; transition: background-color .16s ease, border-color .16s ease, transform .16s ease; }
+.witness-mark-btn:hover:not(:disabled) { background: #541522; border-color: #ff9cab; transform: translateY(-1px); }
+.witness-mark-btn:focus-visible { outline: 2px solid #ffd1a1; outline-offset: 3px; }
+.witness-mark-btn:disabled { cursor: wait; opacity: .72; }
+.witness-caption,.witness-unavailable,.witness-feedback { margin: 0; color: #ab989d; font: 9px/1.5 'Inter', sans-serif; }
+.witness-feedback:not(:empty) { color: #f2b0b8; }
+.witness-unavailable { padding: 7px 9px; border-left: 2px solid rgba(190, 116, 132, .5); background: rgba(9, 5, 7, .5); }
+.witness-reader-note,.witness-author-note { padding: 8px 10px; border: 1px solid rgba(234, 182, 127, .28); border-radius: 9px; background: rgba(30, 20, 16, .65); color: #e7cba9; font: 9.5px/1.5 'Share Tech Mono', monospace; }
+.witness-author-note { color: #eecda2; }
 .signal-intents { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; padding: 10px; border: 1px solid #80506b80; border-radius: 10px; }
 .signal-intents legend { padding: 0 4px; color: #e5bc82; font-size: 11px; }
 .signal-intents label { display: flex; align-items: center; gap: 7px; font-size: 11px; line-height: 1.4; cursor: pointer; }

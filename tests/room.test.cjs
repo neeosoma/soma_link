@@ -2017,17 +2017,18 @@ test('incoming Whispers can be recorded or dismissed even without sender admissi
     assert.equal(r.receiveIncomingWhisperLocal({ id: 'incoming_2', text: 'Пусть сегодня станет немного легче.' }), null);
 });
 
-test('cassette echoes grant +2 warmth and +50 XP at most once daily and never twice per ID', () => {
+test('cassette echoes grant +4 plant warmth and no XP at most once daily and never twice per ID', () => {
     const player = { uid: 'u_0123456789abcdef', warmth: 0, xp: 0 };
     const r = loadRoom({ player });
     const a = r.claimWhisperCassetteAck('echo_1', '2026-11-18');
-    assert.equal(a.grantedWarmth, 2);
-    assert.equal(a.grantedXp, 50);
+    assert.equal(a.grantedWarmth, 4);
+    assert.equal(a.grantedXp, 0);
     assert.equal(r.claimWhisperCassetteAck('echo_2', '2026-11-18').grantedWarmth, 0);
+    assert.equal(r.claimWhisperCassetteAck('echo_2', '2026-11-18').duplicate, true, 'the same saved Whisper ID cannot be claimed twice');
     assert.equal(r.claimWhisperCassetteAck('echo_1', '2026-11-19').duplicate, true);
-    assert.equal(r.claimWhisperCassetteAck('echo_3', '2026-11-19').grantedWarmth, 2);
-    assert.equal(player.warmth, 4);
-    assert.equal(player.xp, 100);
+    assert.equal(r.claimWhisperCassetteAck('echo_3', '2026-11-19').grantedWarmth, 4);
+    assert.equal(player.warmth, 8);
+    assert.equal(player.xp, 0);
 });
 
 test('failed cloud cassette acknowledgement leaves the inbox retryable', async () => {
@@ -2297,7 +2298,7 @@ test('concurrent sends are serialized without locking subsequent zero-warmth sen
 test('new names stay consistent without changing the top-13 or progression bindings', () => {
     const cosmetics = readFileSync(require.resolve('../cosmetics.js'), 'utf8');
     const share = readFileSync(require.resolve('../share.js'), 'utf8');
-    assert.ok(indexHtml.includes('<h1>Истории</h1>'));
+    assert.ok(indexHtml.includes('<h1>Пейджер</h1>'));
     assert.ok(indexHtml.includes('ЖИВАЯ ЧАСТОТА'));
     assert.ok(!indexHtml.includes('ИНДЕКС РАВНОДУШИЯ'));
     assert.ok(indexHtml.includes('class="top-heading">ЗВЁЗДЫ СТАНЦИИ'));

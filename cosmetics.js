@@ -806,7 +806,7 @@ function renderShop() {
                 <span class="top-row-name">${sealHtmlOf(c)}<span>${esc(myAnon)}</span>${shopState.preview ? '<span class="top-you-tag">ПРИМЕРКА</span>' : ''}</span>
                 <span class="top-row-xp">${(typeof player !== 'undefined' && player.xp) || 0} XP</span>
             </div>
-            ${tl ? `<div class="top-custom-title">${titleSpanOf(c, true)}</div>` : '<div class="text-[9.5px] text-gray-500">ОБЛИК В ТОПЕ ЦИНИКОВ И КОМНАТЕ</div>'}
+            ${tl ? `<div class="top-custom-title">${titleSpanOf(c, true)}</div>` : '<div class="text-[9.5px] text-gray-500">ОБЛИК В СОЗВЕЗДИИ СТАНЦИИ И КОМНАТЕ</div>'}
             ${c.epitaph ? `<p class="top-epitaph">«${esc(c.epitaph)}»</p>` : ''}
             ${gearBits.length ? `<div class="text-[9px] text-gray-400 pt-0.5">${gearBits.map(esc).join(' · ')}</div>` : ''}
         `;
@@ -945,7 +945,7 @@ function renderShop() {
     body.innerHTML = html;
 }
 
-// ===== ПАФОСНЫЙ ТРИБУНАЛ «ТОП ЦИНИКОВ» + ДОСЬЕ СВИДЕТЕЛЯ =====
+// ===== ПАФОСНЫЙ ТРИБУНАЛ «ЗВЁЗДЫ СТАНЦИИ» + ДОСЬЕ СВИДЕТЕЛЯ =====
 function switchTopMode(mode) {
     shopState.topMode = mode === 'week' ? 'week' : 'all';
     if (typeof SFX !== 'undefined' && SFX.tap) SFX.tap();
@@ -986,8 +986,8 @@ async function renderLeaderboard() {
     const subnote = document.getElementById('top-subnote');
     if (subnote) {
         subnote.textContent = isWeek
-            ? `ОХОТА НЕДЕЛИ · СБРОС ТРОНА ЧЕРЕЗ ${weekResetCountdown()} · НАЖМИТЕ НА ИГРОКА ДЛЯ ДОСЬЕ`
-            : 'ВЕЧНЫЙ ПАНТЕОН NEEO~CITY · НАЖМИТЕ НА ЛЮБОГО СВИДЕТЕЛЯ ДЛЯ ДОСЬЕ';
+            ? `ОПЫТ НЕДЕЛИ · ОБНОВЛЕНИЕ ЧЕРЕЗ ${weekResetCountdown()} · ЭТО ИГРОВОЙ ОПЫТ, НЕ ОЦЕНКА ЭМПАТИИ`
+            : 'ЗВЁЗДЫ СТАНЦИИ · ИГРОВОЙ ОПЫТ, НЕ РЕЙТИНГ ДОБРОТЫ';
     }
 
     let data = null, myRank = null, weekSupported = isWeek;
@@ -1115,7 +1115,7 @@ async function renderLeaderboard() {
                 <div class="top-throne-stats">
                     <span class="top-throne-xp">${first.score || 0} XP</span>
                     <span>·</span>
-                    <span>СРЫВОВ ПРОТОКОЛА: ${first.help_attempts || 0}</span>
+                    <span>ШЁПОТОВ: ${first.help_attempts || 0}</span>
                 </div>
             </div>`;
         }
@@ -1150,7 +1150,7 @@ async function renderLeaderboard() {
             ? `«${esc(cb.epitaph)}»`
             : tb
                 ? tb
-                : `Срывов протокола: ${b.help_attempts || 0}`;
+                : `Шёпотов: ${b.help_attempts || 0}`;
         return `
         <div class="top-row ${lodge ? 'top-row--lodge' : ''} ${me ? 'top-row--me' : ''} ${frameClassOf(cb)}" onclick="${clickExpr}">
             <div class="top-row-left">
@@ -1265,7 +1265,7 @@ function openDossier(entry) {
                 <div class="text-xs font-bold text-white">${totalXp} XP</div>
             </div>
             <div class="bg-black/50 border border-red-950 rounded-xl p-2">
-                <div class="text-[8.5px] text-gray-500">СОЗВЕЗДИЕ</div>
+                <div class="text-[8.5px] text-gray-500">ЗВЁЗДЫ СТАНЦИИ</div>
                 <div class="text-[10px] font-bold text-red-300 tracking-tighter">${starRow}</div>
             </div>
             <div class="bg-black/50 border border-red-950 rounded-xl p-2">

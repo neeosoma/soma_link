@@ -504,10 +504,10 @@
 
         // Сетка 2×2 живых метрик Свидетеля
         const stats = [
-            { k: 'УСЛЫШАНО СУДЕБ', v: String(snap.seen), col: '#fff2f4' },
+            { k: 'ВСТРЕЧ С ИСТОРИЯМИ', v: String(snap.seen), col: '#fff2f4' },
             { k: 'ТЕПЛО СТАНЦИИ',  v: String(snap.warmth), col: '#ffd58e' },
-            { k: 'ПУСТЫХ РЕАКЦИЙ', v: String(snap.reacts), col: '#ff8597' },
-            { k: 'СРЫВОВ ПРОТОКОЛА', v: String(snap.attempts), col: '#ff5c74' }
+            { k: 'ОТКЛИКОВ', v: String(snap.reacts), col: '#ff8597' },
+            { k: 'ШЁПОТОВ', v: String(snap.attempts), col: '#ff5c74' }
         ];
         const boxW = 196, boxH = 74, gap = 12;
         stats.forEach((st, i) => {
@@ -712,7 +712,7 @@
 
         g.font = `700 13px ${MONO}`;
         g.fillStyle = tier.main;
-        g.fillText('// ПАНТЕОН ЦИНИКОВ · ДОСЬЕ', 122, 86);
+        g.fillText('// ЗВЁЗДЫ СТАНЦИИ · ДОСЬЕ', 122, 86);
         g.font = `400 12px ${MONO}`;
         g.fillStyle = 'rgba(255, 214, 206, 0.68)';
         g.fillText(tier.crown, 122, 106);
@@ -1062,7 +1062,7 @@
 
         g.font = `400 18px ${SANS}`;
         g.fillStyle = 'rgba(246, 218, 224, 0.86)';
-        const desc = wrapLines(g, 'Сквозь ночной шум NEEO~CITY поймана тайная волна — там, где нет ленты, масок и пустых реакций.', 520, 3);
+        const desc = wrapLines(g, 'Сквозь ночной шум NEEO~CITY поймана тайная волна — там, где нет ленты, масок и обязательств.', 520, 3);
         desc.forEach((ln, idx) => g.fillText(ln, 54, 286 + idx * 27));
 
         rr(g, 54, 404, 500, 82, 13);

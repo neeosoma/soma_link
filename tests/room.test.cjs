@@ -732,17 +732,17 @@ test('v8: body-portal FLIP fullscreen + 180 flip + rotated pointer mapping, Dawn
         assert.doesNotThrow(() => r.drawPlantSprite(g, r.plantSpec('u_pot'), 5, { phase: 3, now: 2500, potSkin, fireflies: 5 }));
     }
 
-    // 3. Pain Feed CTA visibility hooks present and cache-busted to v15
+    // 3. Feed CTA visibility hooks and cache-busted assets remain present
     assert.ok(indexHtml.includes('soma-post-cta') && indexHtml.includes('soma-post-beacon') && indexHtml.includes('soma-post-arrow'));
     assert.ok(
         indexHtml.includes('id="station-fs-flip"')
-        && indexHtml.includes('room.js?v=15')
+        && indexHtml.includes('room.js?v=16')
         && indexHtml.includes('cosmetics.css?v=15')
         && indexHtml.includes('receiver.js?v=15')
         && indexHtml.includes('vhs.js?v=15')
         && indexHtml.includes('greenhouse.js?v=15')
         && indexHtml.includes('blimp.js?v=15')
-        && indexHtml.includes('share.js?v=15')
+        && indexHtml.includes('share.js?v=16')
     );
 
     // 4. Flagship cosmetics + collectible 7" vinyl pressings: equalized peer pricing + 1:1 Edge Function parity
@@ -1220,7 +1220,7 @@ test('v12: top-left fullscreen vinyl bar, unified NEEOSOMA/NEEO~CITY/SOMA~LINK b
         'zero legacy SOMA //, RX-88, PGR-04, NEEO_CITY, SOMA LINK, or SOMA_LINK in any user-facing code');
 
     // 3. PROTOCOL BREACH COUNTER STRICTLY BOUND TO WHISPER USAGE (NOT PAIN-FEED HELP CLICKS)
-    assert.ok(indexHtml.includes('СРЫВОВ ПРОТОКОЛА') && !indexHtml.includes('>ПОПЫТОК ПОМОЧЬ<') && !cosmCode.includes('ПОПЫТОК ПОМОЧЬ'), 'stat renamed to СРЫВОВ ПРОТОКОЛА everywhere');
+    assert.ok(indexHtml.includes('ШЁПОТОВ ОТПРАВЛЕНО') && !indexHtml.includes('>ПОПЫТОК ПОМОЧЬ<') && !cosmCode.includes('ПОПЫТОК ПОМОЧЬ'), 'Whisper counter keeps its data binding with a contact-first label');
     assert.ok(/function triggerHelpBlock\(\)[\s\S]{0,650}soma_help_clicks/.test(indexHtml), 'Pain-Feed help clicks isolated to local easter-egg counter soma_help_clicks');
     const helpFn = indexHtml.match(/function triggerHelpBlock\(\)\s*\{[\s\S]*?\n        \}/)[0];
     assert.ok(!/helpAttempts|recordWhisperSent|whispersSent/.test(helpFn), 'triggerHelpBlock NEVER increments protocol breach counter');
@@ -2186,4 +2186,68 @@ test('concurrent first sends cannot both consume the early opportunity', async (
     finish({ error: null });
     assert.equal((await pending).ok, true);
     assert.equal((await r.sendWhisperToPost({ id: 'post_b' }, text)).code, 'locked');
+});
+
+test('new names stay consistent without changing the top-13 or progression bindings', () => {
+    const cosmetics = readFileSync(require.resolve('../cosmetics.js'), 'utf8');
+    const share = readFileSync(require.resolve('../share.js'), 'utf8');
+    assert.ok(indexHtml.includes('<h1>Живая частота</h1>'));
+    assert.ok(indexHtml.includes('class="top-heading">ЗВЁЗДЫ СТАНЦИИ'));
+    assert.ok(cosmetics.includes('ЗВЁЗДЫ СТАНЦИИ') && share.includes('ЗВЁЗДЫ СТАНЦИИ'));
+    assert.ok(!/Лента контакта|ЛЕНТА КОНТАКТА|СОЗВЕЗДИЕ СТАНЦИИ/.test(indexHtml + cosmetics + share + roomCode));
+});
+
+test('safety RPCs stay disabled until the SQL migration is explicitly enabled', async () => {
+    let calls = 0;
+    const r = loadRoom({ window: { SOMA_CONFIG: {} }, supabaseClient: { rpc: async () => { calls++; return { data: true }; } } });
+    assert.equal((await r.reportIncomingWhisper('in_1', 'spam')).ok, false);
+    assert.equal((await r.blockIncomingWhisper('in_1')).ok, false);
+    assert.equal(calls, 0);
+});
+
+test('reporting confirms only a valid server response and never rewards the player', async () => {
+    const calls = [];
+    const player = { uid: 'u_0123456789abcdef', warmth: 0, xp: 0 };
+    const r = loadRoom({ player, window: { SOMA_CONFIG: { WHISPER_SAFETY_LIVE: true } }, supabaseClient: { rpc: async (name, args) => { calls.push({ name, args }); return { data: true, error: null }; } } });
+    assert.equal((await r.reportIncomingWhisper('in_1', 'invalid')).ok, false);
+    assert.equal(calls.length, 0);
+    assert.equal((await r.reportIncomingWhisper('in_1', 'harassment')).ok, true);
+    assert.equal(calls[0].name, 'report_soma_whisper');
+    assert.equal(JSON.stringify(calls[0].args), '{"p_whisper_id":"in_1","p_reason":"harassment"}');
+    assert.equal(player.xp, 0);
+    assert.equal(player.warmth, 0);
+});
+
+test('server-confirmed block removes only returned incoming IDs and leaves cassettes intact', async () => {
+    const localStorage = makeStorage();
+    const r = loadRoom({ localStorage, window: { SOMA_CONFIG: { WHISPER_SAFETY_LIVE: true } }, supabaseClient: { rpc: async () => ({ data: ['in_1'], error: null }) } });
+    for (const id of ['in_1', 'in_2']) r.receiveIncomingWhisperLocal({ id, text: 'Пусть сегодня станет немного легче.' });
+    r.saveWhisperCassette('Сохранённая кассета не должна пропасть.');
+    const archive = localStorage.getItem('soma_cassettes');
+    assert.equal((await r.blockIncomingWhisper('in_1')).ok, true);
+    assert.equal(r.getPendingInboxWhispers().length, 1);
+    assert.equal(r.getPendingInboxWhispers()[0].id, 'in_2');
+    assert.equal(localStorage.getItem('soma_cassettes'), archive);
+});
+
+test('failed safety actions never pretend to report, hide an inbox item or unblock', async () => {
+    const r = loadRoom({ window: { SOMA_CONFIG: { WHISPER_SAFETY_LIVE: true } }, supabaseClient: { rpc: async () => ({ data: null, error: { message: 'missing migration' } }) } });
+    r.receiveIncomingWhisperLocal({ id: 'in_retry', text: 'Пусть сегодня станет немного легче.' });
+    assert.equal((await r.blockIncomingWhisper('in_retry')).ok, false);
+    assert.equal((await r.reportIncomingWhisper('in_retry', 'spam')).ok, false);
+    assert.equal((await r.unblockWhisperSender('in_retry')).ok, false);
+    assert.equal(r.getPendingInboxWhispers().length, 1);
+});
+
+test('block management keeps only safe anchor/date fields, and validates RPC payloads', async () => {
+    let payload = [{ anchor_id: 'in_anchor', created_at: '2026-11-18', sender_id: 'not-for-client' }];
+    const r = loadRoom({ window: { SOMA_CONFIG: { WHISPER_SAFETY_LIVE: true } }, supabaseClient: { rpc: async () => ({ data: payload }) } });
+    assert.equal((await r.loadWhisperBlocks()).ok, true);
+    assert.equal(JSON.stringify(r.roomAnim.pagerBlockList), '[{"anchor_id":"in_anchor","created_at":"2026-11-18"}]');
+    payload = true;
+    assert.equal((await r.unblockWhisperSender('in_anchor')).ok, true);
+    assert.equal(r.roomAnim.pagerBlockList.length, 0);
+    payload = { unexpected: true };
+    assert.equal((await r.blockIncomingWhisper('in_anchor')).ok, false);
+    assert.equal((await r.reportIncomingWhisper('in_anchor', 'other')).ok, false);
 });

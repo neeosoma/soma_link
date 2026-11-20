@@ -2901,28 +2901,6 @@ html.is-soma-fs-closing .app-h {
     text-shadow: 0 0 10px rgba(255, 90, 110, 0.35);
 }
 
-.ts-kb {
-    color: #9e727a;
-    font: 700 9px/1 'Share Tech Mono', monospace;
-    letter-spacing: 0.08em;
-    background: none;
-    border: 1px solid rgba(255, 110, 128, 0.25);
-    cursor: pointer;
-    padding: 5px 8px;
-    border-radius: 8px;
-    transition: all 0.2s ease;
-}
-
-.ts-kb:hover {
-    color: #fda4af;
-    border-color: rgba(255, 110, 128, 0.5);
-    background: rgba(255, 90, 110, 0.06);
-}
-
-.ts-kb:active {
-    transform: translateY(1px);
-}
-
 .ts-close {
     color: #6a4850;
     font-size: 14px;

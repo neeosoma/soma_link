@@ -201,17 +201,6 @@
             <div class="ts-brief">
                 <b>Одна история в день.</b> Делитесь любым. Черновик сохранится; ответ не гарантирован.
             </div>
-            <!-- Частотный диапазон: выбор отклика -->
-            <div class="ts-freq">
-                <div class="ts-freq-label">ВЫБРАТЬ ЧАСТОТУ ОТКЛИКА</div>
-                <div class="ts-freq-band">
-                    <label class="ts-freq-ch"><input type="radio" name="signal-intent" value="N"><span class="ts-freq-num">CH·01</span><span class="ts-freq-name">Побудь рядом</span></label>
-                    <label class="ts-freq-ch"><input type="radio" name="signal-intent" value="V"><span class="ts-freq-num">CH·02</span><span class="ts-freq-name">Взгляд со стороны</span></label>
-                    <label class="ts-freq-ch"><input type="radio" name="signal-intent" value="W"><span class="ts-freq-num">CH·03</span><span class="ts-freq-name">Маленькая победа</span></label>
-                    <label class="ts-freq-ch"><input type="radio" name="signal-intent" value="S" checked><span class="ts-freq-num">CH·04</span><span class="ts-freq-name">Просто делюсь</span></label>
-                </div>
-                <p id="signal-intent-hint" class="ts-freq-hint" aria-live="polite"></p>
-            </div>
             <!-- Тема + чипсы -->
             <div class="ts-tag-row">
                 <label class="ts-tag-label" for="new-pain-tag">ТЕМА</label>
@@ -447,7 +436,7 @@
                         </div>
                         <div class="witness-stat">
                             <div class="witness-stat-label">СВОЕМУ ЧЕЛОВЕКУ</div>
-                            <a href="gift.html" class="witness-stat-value witness-stat-amber witness-stat-link">ЗАПИСАТЬ КАССЕТУ →</a>
+                            <div class="witness-stat-value witness-stat-amber">—</div>
                         </div>
                     </div>
                 </div>
@@ -920,27 +909,10 @@
                 }, 500);
             } catch (_) {}
         };
-        const selected = api.INTENTS.some(x => x.id === saved) ? saved : 'S';
-        document.querySelectorAll('[name="signal-intent"]').forEach(radio => {
-            radio.checked = radio.value === selected;
-            radio.onchange = () => {
-                document.getElementById('signal-intent-hint').textContent = api.INTENTS.find(x => x.id === radio.value).hint;
-                try { localStorage.setItem('soma_signal_draft_intent', radio.value); } catch (_) {}
-            };
-        });
-        document.getElementById('signal-intent-hint').textContent = api.INTENTS.find(x => x.id === selected).hint;
     }
     function renderContactFilters() {
         const api = window.SOMA_SIGNALS;
         const prefs = api.readPrefs(localStorage);
-        const bar = document.getElementById('contact-intent-filters');
-        if (bar) {
-            const choices = [{ id: 'all', title: 'Все голоса' }, ...api.INTENTS];
-            bar.innerHTML = choices.map(x => `<button type="button" data-contact-intent="${x.id}" aria-pressed="${contactIntent === x.id}" class="contact-filter">${esc(x.title)}</button>`).join('');
-            bar.querySelectorAll('[data-contact-intent]').forEach(button => {
-                button.onclick = () => { contactIntent = button.dataset.contactIntent; activeFeedTag = 'ВСЕ'; renderFeed(); };
-            });
-        }
         const contactStatus = document.getElementById('contact-status');
         if (contactStatus) contactStatus.textContent = prefs.hidden.length
             ? `Скрыто здесь: ${prefs.hidden.length}. Не жалоба и не блокировка.` : '';
@@ -1569,10 +1541,8 @@
         if (!summary) return;
         const api = window.SOMA_SIGNALS;
         const prefs = api.readPrefs(localStorage);
-        const intent = api.INTENTS.find(item => item.id === contactIntent);
         const labels = [];
         if (prefs.light) labels.push('Полегче*');
-        if (intent) labels.push(intent.title);
         if (activeFeedTag !== 'ВСЕ') labels.push(activeFeedTag);
         summary.textContent = labels.length ? labels.join(' · ') : 'Все истории';
     }
@@ -1818,9 +1788,7 @@
         }
         const text = check.value;
 
-        const intent = document.querySelector('[name="signal-intent"]:checked');
-        if (!intent) { showPostError('Выберите, какой отклик вам нужен.'); return; }
-        const tag = window.SOMA_SIGNALS.packTag(intent.value, document.getElementById('new-pain-tag').value);
+        const tag = window.SOMA_SIGNALS.packTag('S', document.getElementById('new-pain-tag').value);
         const insertRow = { id: 'p_' + Date.now(), author: randAnon(), tag: tag, text: text };
 
         const label = btn.innerText;
@@ -1863,8 +1831,6 @@
         textareaEl.value = '';
         document.getElementById('new-pain-tag').value = '';
         try { localStorage.removeItem('soma_signal_draft_topic'); } catch (_) {}
-        const defaultIntent = document.querySelector('[name="signal-intent"][value="S"]');
-        if (defaultIntent) { defaultIntent.checked = true; defaultIntent.onchange(); }
         updateCharCount(true);
         updatePostQuotaUI();
         SFX.send();

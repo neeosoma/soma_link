@@ -3441,13 +3441,6 @@ function signalTagLabel(tag) {
     if (typeof window !== 'undefined' && window.SOMA_SIGNALS) return window.SOMA_SIGNALS.tagLabel(tag);
     return String(tag || 'Без темы');
 }
-function signalResponseHint(tag) {
-    if (typeof window !== 'undefined' && window.SOMA_SIGNALS) {
-        const { intent } = window.SOMA_SIGNALS.unpackTag(tag);
-        if (intent) return intent.hint;
-    }
-    return 'Советы не запрошены. Просто откликнитесь.';
-}
 function getFirstSignalCandidates(posts) {
     const mine = new Set(getLocalMyPostIdsSafe());
     const visible = typeof window !== 'undefined' && window.SOMA_SIGNALS
@@ -10327,7 +10320,6 @@ function renderPagerModal() {
                                 <span class="pager-card-meta">${done ? '✓ ОТКЛИК ОТПРАВЛЕН' : 'ГОЛОС СО СТАНЦИИ'}</span>
                             </div>
                             <p class="pager-card-text">${escFn(post.text || '')}</p>
-                            <p class="pager-compose-hint">${escFn(signalResponseHint(post.tag))}</p>
                             ${adm.firstAvailable && !isComposing ? `<div class="pager-card-actions">
                                 <button type="button" class="pager-act-btn pager-act-btn--dismiss" data-act="read" data-post-id="${escFn(pid)}">ПРОСТО ПРОЧИТАТЬ</button>
                                 <button type="button" class="pager-act-btn pager-act-btn--dismiss" data-act="skip" data-post-id="${escFn(pid)}">ПРОПУСТИТЬ</button>
@@ -10336,21 +10328,21 @@ function renderPagerModal() {
                                 ? `<div class="pager-card-done">✓ Ваш шёпот уже отправлен.</div>`
                                 : isComposing && !adm.rulesAccepted
                                     ? `<div class="pager-gate-box">
-                                        <div class="pager-empty-title">ПЕРЕД ОТВЕТОМ · КОРОТКИЕ ПРАВИЛА</div>
-                                        <p class="pager-empty-sub">Читать и пропустить можно без подтверждения. Чтобы ответить, сначала примите правила.</p>
-                                        <p class="pager-empty-sub">Пишите от себя. Без оценок, непрошеных советов, ссылок и контактов.</p>
-                                        <p class="pager-empty-sub">До 3 шёпотов в сутки, один на пост. Ответ может не прийти.</p>
-                                        <button type="button" class="pager-act-btn" id="signal-rules-accept">ПОНЯТНО · ПРОДОЛЖИТЬ К ОТВЕТУ</button>
-                                        <button type="button" class="pager-act-btn pager-act-btn--dismiss" id="signal-rules-later">НЕ СЕЙЧАС</button>
+                                        <div class="pager-gate-title">ПЕРЕД ОТВЕТОМ</div>
+                                        <div class="pager-gate-rule">Пишите от себя — без оценок и непрошеных советов.</div>
+                                        <div class="pager-gate-rule">Без ссылок и контактов.</div>
+                                        <div class="pager-gate-rule">До 3 шёпотов в сутки, один на пост. Ответ может не прийти.</div>
+                                        <div class="pager-gate-actions">
+                                            <button type="button" class="pager-act-btn" id="signal-rules-accept">ПОНЯТНО · ПРОДОЛЖИТЬ</button>
+                                            <button type="button" class="pager-act-btn pager-act-btn--dismiss" id="signal-rules-later">НЕ СЕЙЧАС</button>
+                                        </div>
                                     </div>`
                                     : isComposing
                                         ? `<div class="pager-compose">
-                                        <div class="pager-compose-hint">Своими словами. Без оценок и непрошеных советов (${PROGRESSION_RULES.WHISPER_MIN_LEN}–${PROGRESSION_RULES.WHISPER_MAX_LEN} симв.).</div>
-                                        <textarea id="pager-compose-input" class="pager-compose-input" rows="3" maxlength="${PROGRESSION_RULES.WHISPER_MAX_LEN}" placeholder="Напишите тёплый анонимный отклик (${PROGRESSION_RULES.WHISPER_MIN_LEN}–${PROGRESSION_RULES.WHISPER_MAX_LEN} симв.)...">${escFn(draft)}</textarea>
+                                        <textarea id="pager-compose-input" class="pager-compose-input" rows="3" maxlength="${PROGRESSION_RULES.WHISPER_MAX_LEN}" placeholder="Напишите тёплый анонимный отклик...">${escFn(draft)}</textarea>
                                         <div class="pager-compose-bar">
-                                            <span id="pager-compose-count" class="pager-compose-count">${draft.length} / ${PROGRESSION_RULES.WHISPER_MAX_LEN} (мин. ${PROGRESSION_RULES.WHISPER_MIN_LEN})</span>
+                                            <span id="pager-compose-count" class="pager-compose-count">${draft.length} / ${PROGRESSION_RULES.WHISPER_MAX_LEN}</span>
                                             <div class="pager-compose-btns">
-                                                <button type="button" class="pager-act-btn pager-act-btn--dismiss" onclick="if (typeof hideKeyboard === 'function') hideKeyboard();" aria-label="Спрятать клавиатуру">⌨ СКРЫТЬ КЛ</button>
                                                 <button type="button" class="pager-act-btn pager-act-btn--dismiss" id="pager-compose-cancel">ОТМЕНА</button>
                                                 <button type="button" class="pager-act-btn pager-act-btn--save" id="pager-compose-send" ${adm.whisperLeftToday <= 0 ? 'disabled' : ''}>◈ ПЕРЕДАТЬ СВОИ СЛОВА</button>
                                             </div>
@@ -10453,8 +10445,7 @@ function renderPagerModal() {
 
     if (footEl) {
         footEl.innerHTML = `
-            <a class="pager-foot-vhs" href="gift.html">ЗАПИСАТЬ СВОИ СЛОВА ДРУГУ →</a>
-            ${isWhisperSafetyLive() ? '<button type="button" class="pager-foot-vhs" id="pager-manage-blocks">БЛОКИРОВКИ</button>' : ''}
+            ${isWhisperSafetyLive() ? '<button type="button" class="pager-foot-vhs pager-foot-right" id="pager-manage-blocks">БЛОКИРОВКИ</button>' : ''}
         `;
         const manage = footEl.querySelector('#pager-manage-blocks');
         if (manage) manage.onclick = () => safetyAction(async () => {
@@ -11280,7 +11271,7 @@ if (typeof document !== 'undefined' && document.addEventListener) {
 // Public pager API for integrations and headless regression tests.
 const pagerApi = {
     isWhisperSafetyLive, reportIncomingWhisper, blockIncomingWhisper, loadWhisperBlocks, unblockWhisperSender,
-    openFirstSignalSession, openWhisperForPost, signalTagLabel, signalResponseHint,
+    openFirstSignalSession, openWhisperForPost, signalTagLabel,
     acceptFirstSignalRules, completeFirstSession, updateFirstSignalRoom, trackFirstSignalEvent,
     renderFirstSignalEntry, getFirstSignalCandidates, getVisibleFirstSignalCandidates,
     validateWhisperText, hasWhisperedToPost, rememberWhisperedPost,

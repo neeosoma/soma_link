@@ -16,7 +16,7 @@ measured. Existing local event counters are QA instrumentation, not analytics.
 
 ## This increment
 
-- Main feed is **Лента контакта**. It invites ordinary experiences and joy as well
+- Main feed is **Живая частота**. It invites ordinary experiences and joy as well
   as difficult stories. Publishing stays one story per day; no new grind loops.
 - Author chooses one of four intents: presence, perspective, small victory, just
   sharing. Default is sharing, not presumed consent to advice.
@@ -32,7 +32,7 @@ measured. Existing local event counters are QA instrumentation, not analytics.
   only. Hiding is NOT reporting, account blocking, deletion or a moderation action.
 - A quiet nightly invitation ('one voice, a few minutes') replaces pressure; no
   invented number of online players, unanswered signals or people helped.
-- Top-13 is presented as **Созвездие станции**, a ranking of game XP, not moral
+- Top-13 is presented as **Звёзды станции**, a ranking of game XP, not moral
   worth. Automatic rank names become station-themed with identical XP thresholds.
 - Profile/share copy no longer labels responses empty or people drama. Removed
   the hardcoded misleading 'real help: 0' panel; replaced by friend-cassette entry.
@@ -63,8 +63,11 @@ Reader boundaries are never silently turned off after publishing.
 
 ## Still required — do not call the whole concept complete
 
-1. **Trust and safety:** server-backed reports, moderator handling, recipient-side
-   abuse controls and rate limits. Current Whisper read privileges deliberately
+1. **Trust and safety:** recipient report/block RPCs and a private manual-review
+   queue are now prepared behind a disabled rollout flag (see
+   `billing/WHISPER_SAFETY_DEPLOY.md`). Production migration/access testing,
+   operational moderator handling, public-post reports and broader abuse controls
+   remain required. Current Whisper read privileges deliberately
    hide sender identity; real sender blocking must be implemented server-side,
    not by exposing sender IDs to the recipient. CAPTCHA needs client + Auth setup.
 2. **Real collective ritual:** authenticated aggregate of eligible unanswered
@@ -81,7 +84,7 @@ Reader boundaries are never silently turned off after publishing.
 
 ## Validation for this increment
 
-- `node --test tests/*.test.cjs`: 40 tests, including intent compatibility,
+- `node --test tests/*.test.cjs`: 46 tests, including intent compatibility,
   legacy tags, light/intent combinations, local hidden preferences and pager use.
 - jsdom (outside repository): feed/pager guidance, light/intent filters,
   hide/restore, direct reply to the correct selected post after first-send rules,

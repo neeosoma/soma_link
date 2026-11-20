@@ -9597,6 +9597,74 @@ async function persistWhisperStatus(id, status) {
     }
 }
 
+function isWhisperSafetyLive() {
+    return typeof window !== 'undefined' && !!window.SOMA_CONFIG
+        && window.SOMA_CONFIG.WHISPER_SAFETY_LIVE === true;
+}
+
+async function whisperSafetyRpc(name, args) {
+    if (!isWhisperSafetyLive()) return { ok: false, error: 'Защита канала ещё не подключена.' };
+    if (roomAnim.pagerSafetyBusy) return { ok: false, error: 'Предыдущее действие ещё выполняется.' };
+    roomAnim.pagerSafetyBusy = true;
+    try {
+        if (typeof supabaseClient === 'undefined' || !supabaseClient) throw new Error();
+        const { data, error } = await supabaseClient.rpc(name, args);
+        if (error) throw new Error();
+        return { ok: true, data };
+    } catch (_) {
+        return { ok: false, error: 'Сервер не подтвердил действие. Проверьте соединение и попробуйте позже.'
+            + (name === 'report_soma_whisper' ? ' Лимит: пять новых жалоб в сутки.' : '') };
+    } finally { roomAnim.pagerSafetyBusy = false; }
+}
+
+async function reportIncomingWhisper(id, reason) {
+    if (!['spam', 'harassment', 'unsafe', 'other'].includes(reason)) return { ok: false, error: 'Выберите причину жалобы.' };
+    const result = await whisperSafetyRpc('report_soma_whisper', { p_whisper_id: String(id), p_reason: reason });
+    if (result.ok && typeof result.data !== 'boolean') return { ok: false, error: 'Не удалось подтвердить запись жалобы.' };
+    if (result.ok) {
+        roomAnim.pagerSafetyTarget = null;
+        roomAnim.pagerModalNotice = result.data
+            ? 'Жалоба записана для ручного разбора владельцем станции. Это не экстренная служба; срок ответа не гарантирован. Заблокировать отправителя можно отдельно.'
+            : 'Жалоба на это сообщение уже записана.';
+    }
+    return result;
+}
+
+async function blockIncomingWhisper(id) {
+    const result = await whisperSafetyRpc('block_soma_whisper_sender', { p_whisper_id: String(id) });
+    if (result.ok && (!Array.isArray(result.data) || !result.data.every(x => typeof x === 'string'))) {
+        return { ok: false, error: 'Сервер вернул неподдерживаемый ответ. Обновите входящие.' };
+    }
+    if (result.ok) {
+        const removed = new Set(result.data);
+        result.data.forEach(wid => markWhisperHandled(wid, 'dismissed'));
+        saveRawInboxWhispers(loadRawInboxWhispers().filter(w => !removed.has(w.id)));
+        roomAnim.pagerSafetyTarget = null;
+        roomAnim.pagerModalNotice = 'Новые шёпоты от этой Auth-учётной записи заблокированы. Её ожидающие сообщения убраны, сохранённые кассеты не изменены. Другой аккаунт эта блокировка не охватывает.';
+        renderPager();
+    }
+    return result;
+}
+
+async function loadWhisperBlocks() {
+    const result = await whisperSafetyRpc('my_soma_whisper_blocks');
+    if (result.ok && Array.isArray(result.data)) {
+        roomAnim.pagerBlockList = result.data.filter(x => x && typeof x.anchor_id === 'string')
+            .map(x => ({ anchor_id: x.anchor_id, created_at: x.created_at }));
+    } else if (result.ok) return { ok: false, error: 'Не удалось прочитать список блокировок.' };
+    return result;
+}
+
+async function unblockWhisperSender(anchorId) {
+    const result = await whisperSafetyRpc('unblock_soma_whisper_sender', { p_anchor_id: String(anchorId) });
+    if (result.ok && typeof result.data !== 'boolean') return { ok: false, error: 'Не удалось подтвердить снятие блокировки.' };
+    if (result.ok) {
+        roomAnim.pagerBlockList = (roomAnim.pagerBlockList || []).filter(x => x.anchor_id !== anchorId);
+        roomAnim.pagerModalNotice = 'Блокировка снята. Это разрешает будущие сообщения; старые отклонённые сообщения не возвращаются.';
+    }
+    return result;
+}
+
 async function acceptIncomingWhisper(whisperId) {
     const id = String(whisperId || '').trim();
     const pending = getPendingInboxWhispers();
@@ -9671,7 +9739,7 @@ async function sendWhisperToPostOnce(postObj, rawText, opts) {
 
     const postId = String((postObj && postObj.id) || '').trim();
     if (!postId) {
-        return { ok: false, code: 'invalid_post', error: 'Выберите сигнал боли из эфира.' };
+        return { ok: false, code: 'invalid_post', error: 'Выберите историю из эфира.' };
     }
     if (isOwnPostId(postId)) {
         return { ok: false, code: 'own_post', error: 'Нельзя отправить «Шёпот» на собственный сигнал.' };
@@ -10002,6 +10070,7 @@ function ensurePagerModal() {
     const tabFeed = ov.querySelector('#pager-tab-feed');
     if (tabFeed) {
         tabFeed.onclick = () => {
+            roomAnim.pagerShowBlocks = false;
             roomAnim.pagerTab = 'feed';
             roomAnim.pagerModalError = '';
             if (typeof SFX !== 'undefined' && SFX.tap) SFX.tap();
@@ -10011,6 +10080,7 @@ function ensurePagerModal() {
     const tabInbox = ov.querySelector('#pager-tab-inbox');
     if (tabInbox) {
         tabInbox.onclick = () => {
+            roomAnim.pagerShowBlocks = false;
             roomAnim.pagerTab = 'inbox';
             roomAnim.pagerModalError = '';
             if (typeof SFX !== 'undefined' && SFX.tap) SFX.tap();
@@ -10068,6 +10138,8 @@ function closePagerModal() {
     const ov = typeof document !== 'undefined' && document.getElementById('pager-overlay');
     if (ov && ov.classList) ov.classList.add('hidden');
     roomAnim.pagerModalOpen = false;
+    roomAnim.pagerShowBlocks = false;
+    roomAnim.pagerSafetyTarget = null;
     roomAnim.pagerRequestedPostId = '';
     roomAnim.pagerComposingPostId = '';
     roomAnim.pagerModalError = '';
@@ -10130,12 +10202,29 @@ function renderPagerModal() {
 
     if (!bodyEl) return;
 
+    async function safetyAction(action) {
+        if (roomAnim.pagerSafetyBusy) return;
+        roomAnim.pagerModalError = '';
+        const result = await action();
+        if (!result.ok) roomAnim.pagerModalError = result.error;
+        if (roomAnim.pagerModalOpen) renderPagerModal();
+    }
     if (activeTab === 'inbox') {
-        if (!inbox.length) {
+        if (roomAnim.pagerShowBlocks && isWhisperSafetyLive()) {
+            const blocks = roomAnim.pagerBlockList || [];
+            bodyEl.innerHTML = `<div class="pager-empty-title">БЛОКИРОВКИ ВХОДЯЩИХ</div>
+                <p class="pager-empty-sub">Личность отправителя скрыта. Блокируется его Auth-учётная запись, не человек на всех устройствах. Снятие не возвращает старые сообщения.</p>
+                ${blocks.length ? blocks.map((x, i) => `<div class="pager-card"><span>Отправитель ${i + 1} · ${escFn(formatCassetteDate(x.created_at))}</span><button type="button" class="pager-act-btn" data-act="unblock" data-id="${escFn(x.anchor_id)}">СНЯТЬ БЛОКИРОВКУ</button></div>`).join('') : '<p class="pager-empty-sub">Здесь пока нет загруженных блокировок.</p>'}
+                <button type="button" class="pager-act-btn" id="pager-blocks-back">НАЗАД К ВХОДЯЩИМ</button>`;
+            bodyEl.querySelectorAll('[data-act="unblock"]').forEach(btn => {
+                btn.onclick = () => safetyAction(() => unblockWhisperSender(btn.dataset.id));
+            });
+            bodyEl.querySelector('#pager-blocks-back').onclick = () => { roomAnim.pagerShowBlocks = false; renderPagerModal(); };
+        } else if (!inbox.length) {
             bodyEl.innerHTML = `
                 <div class="pager-empty-box">
                     <div class="pager-empty-title">ВХОДЯЩИХ ШЁПОТОВ ПОКА НЕТ</div>
-                    <p class="pager-empty-sub">Когда кто-то из Слушателей станции прочитает ваш анонимный сигнал в «Ленте контакта» и поддержит вас через пейджер, его тёплый отклик появится здесь.</p>
+                    <p class="pager-empty-sub">Когда кто-то из Слушателей станции прочитает ваш анонимный сигнал на «Живой частоте» и поддержит вас через пейджер, его тёплый отклик появится здесь.</p>
                     <p class="pager-empty-sub">Вы сможете прочесть его и выбрать: <b>📼 Записать на кассету</b> в магнитофон VTR-90 (отправителю вернётся +2 Тепла) или <b>◌ Отпустить в эфир</b>.</p>
                 </div>
             `;
@@ -10152,8 +10241,35 @@ function renderPagerModal() {
                         <button type="button" class="pager-act-btn pager-act-btn--save" data-act="save" data-id="${escFn(w.id)}">📼 ЗАПИСАТЬ НА КАССЕТУ VTR-90</button>
                         <button type="button" class="pager-act-btn pager-act-btn--dismiss" data-act="dismiss" data-id="${escFn(w.id)}">◌ ОТПУСТИТЬ</button>
                     </div>
+                    ${isWhisperSafetyLive() ? `<div class="pager-card-actions">
+                        <button type="button" class="pager-act-btn pager-act-btn--dismiss" data-act="report" data-id="${escFn(w.id)}">ПОЖАЛОВАТЬСЯ</button>
+                        <button type="button" class="pager-act-btn pager-act-btn--dismiss" data-act="block" data-id="${escFn(w.id)}">БЛОКИРОВАТЬ ОТПРАВИТЕЛЯ</button>
+                    </div>` : ''}
+                    ${isWhisperSafetyLive() && roomAnim.pagerSafetyTarget && roomAnim.pagerSafetyTarget.id === w.id ? `<div class="pager-compose">
+                        ${roomAnim.pagerSafetyTarget.mode === 'report' ? `<label class="pager-empty-sub" for="pager-report-reason">Причина жалобы</label><select id="pager-report-reason" class="pager-compose-input"><option value="spam">Спам</option><option value="harassment">Оскорбления или преследование</option><option value="unsafe">Опасное содержание</option><option value="other">Другое</option></select>
+                        <p class="pager-empty-sub">Текст будет доступен владельцу станции для ручного разбора. Не экстренная помощь; срок ответа не гарантирован.</p>` : '<p class="pager-empty-sub">Сервер запретит новые шёпоты от этой учётной записи и уберёт её ожидающие сообщения. Кассеты останутся. Можно отменить блокировку в списке блокировок.</p>'}
+                        <button type="button" class="pager-act-btn" data-act="safety-confirm" data-id="${escFn(w.id)}">${roomAnim.pagerSafetyTarget.mode === 'report' ? 'ОТПРАВИТЬ ЖАЛОБУ' : 'ПОДТВЕРДИТЬ БЛОКИРОВКУ'}</button>
+                        <button type="button" class="pager-act-btn pager-act-btn--dismiss" data-act="safety-cancel">ОТМЕНА</button>
+                    </div>` : ''}
                 </div>
             `).join('');
+            bodyEl.querySelectorAll('[data-act="report"], [data-act="block"]').forEach(btn => {
+                btn.onclick = () => { roomAnim.pagerSafetyTarget = { id: btn.dataset.id, mode: btn.dataset.act }; roomAnim.pagerReportReason = 'spam'; renderPagerModal(); };
+            });
+            bodyEl.querySelectorAll('[data-act="safety-cancel"]').forEach(btn => { btn.onclick = () => { roomAnim.pagerSafetyTarget = null; renderPagerModal(); }; });
+            const reportReason = bodyEl.querySelector('#pager-report-reason');
+            if (reportReason) {
+                reportReason.value = roomAnim.pagerReportReason || 'spam';
+                reportReason.onchange = () => { roomAnim.pagerReportReason = reportReason.value; };
+            }
+            bodyEl.querySelectorAll('[data-act="safety-confirm"]').forEach(btn => {
+                btn.onclick = () => {
+                    const report = roomAnim.pagerSafetyTarget && roomAnim.pagerSafetyTarget.mode === 'report';
+                    const reason = bodyEl.querySelector('#pager-report-reason');
+                    btn.disabled = true;
+                    safetyAction(() => report ? reportIncomingWhisper(btn.dataset.id, reason && reason.value) : blockIncomingWhisper(btn.dataset.id));
+                };
+            });
             bodyEl.querySelectorAll('[data-act="save"]').forEach(btn => {
                 btn.onclick = () => acceptIncomingWhisper(btn.dataset.id);
             });
@@ -10334,7 +10450,14 @@ function renderPagerModal() {
             <span class="pager-foot-rule">⚖ 13–333 симв. · 1 шёпот на человека · кассета даёт +2 Тепла (1/день)</span>
             <button type="button" class="pager-foot-vhs" id="pager-open-vhs-btn">📼 КАССЕТЫ VTR-90 (${tapes.length})</button>
             <a class="pager-foot-vhs" href="gift.html">ЗАПИСАТЬ СВОИ СЛОВА ДРУГУ →</a>
+            ${isWhisperSafetyLive() ? '<button type="button" class="pager-foot-vhs" id="pager-manage-blocks">БЛОКИРОВКИ</button>' : ''}
         `;
+        const manage = footEl.querySelector('#pager-manage-blocks');
+        if (manage) manage.onclick = () => safetyAction(async () => {
+            const result = await loadWhisperBlocks();
+            if (result.ok) { roomAnim.pagerTab = 'inbox'; roomAnim.pagerShowBlocks = true; }
+            return result;
+        });
         const vhsBtn = footEl.querySelector('#pager-open-vhs-btn');
         if (vhsBtn) {
             vhsBtn.onclick = () => {
@@ -11167,6 +11290,7 @@ if (typeof document !== 'undefined' && document.addEventListener) {
 
 // Public pager API for integrations and headless regression tests.
 const pagerApi = {
+    isWhisperSafetyLive, reportIncomingWhisper, blockIncomingWhisper, loadWhisperBlocks, unblockWhisperSender,
     openWhisperForPost, signalTagLabel, signalResponseHint,
     acceptFirstSignalRules, trackFirstSignalEvent, renderFirstSignalEntry, getFirstSignalCandidates,
     validateWhisperText, hasWhisperedToPost, rememberWhisperedPost,

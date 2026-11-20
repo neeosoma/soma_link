@@ -712,7 +712,7 @@
 
         g.font = `700 13px ${MONO}`;
         g.fillStyle = tier.main;
-        g.fillText('// СОЗВЕЗДИЕ СТАНЦИИ · ДОСЬЕ', 122, 86);
+        g.fillText('// ЗВЁЗДЫ СТАНЦИИ · ДОСЬЕ', 122, 86);
         g.font = `400 12px ${MONO}`;
         g.fillStyle = 'rgba(255, 214, 206, 0.68)';
         g.fillText(tier.crown, 122, 106);

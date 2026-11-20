@@ -69,7 +69,7 @@
         .spin { animation: spin 2s linear infinite; transform-box: fill-box; transform-origin: center; }
         @keyframes mote { 0%, 100% { transform: translate(0, 0); opacity: .15; } 50% { transform: translate(6px, -10px); opacity: .6; } }
         .mote { animation: mote 6s ease-in-out infinite; }
-        /* Кнопка публикации в Ленте контакта — заметный тёпло-алый акцент без крикливости */
+        /* Кнопка публикации на «Живой частоте» — заметный тёпло-алый акцент без крикливости */
         .soma-post-cta {
             position: relative;
             overflow: hidden;
@@ -293,7 +293,7 @@
             <div class="flex justify-between items-center px-4 pt-3.5 pb-2 border-b border-red-500/15">
                 <div>
                     <div class="text-[11px] font-mono-tech text-amber-200/90 uppercase tracking-wider">✦ АТРИБУТЫ // БУТИК СТАНЦИИ</div>
-                    <div class="text-[9.5px] font-mono-tech text-gray-500">Созвездие станции · Моя комната · Живая примерка</div>
+                    <div class="text-[9.5px] font-mono-tech text-gray-500">Звёзды станции · Моя комната · Живая примерка</div>
                 </div>
                 <button type="button" onclick="closeShop()" class="text-gray-500 hover:text-white text-sm px-1.5 py-0.5" aria-label="Закрыть">✕</button>
             </div>
@@ -345,14 +345,14 @@
 
         <!-- ВКЛАДКИ -->
         <div class="bg-[#100709] px-2 py-2 border-b border-red-500/20 grid grid-cols-3 gap-1 text-center text-[11px] font-mono-tech">
-            <button id="tab-feed" onclick="switchTab('feed')" class="py-1.5 rounded-lg bg-red-950/60 text-red-400 font-bold border border-red-500/40 transition">ЛЕНТА КОНТАКТА</button>
-            <button id="tab-top" onclick="switchTab('top')" class="py-1.5 rounded-lg text-gray-400 hover:text-white transition">СОЗВЕЗДИЕ</button>
+            <button id="tab-feed" onclick="switchTab('feed')" class="py-1.5 rounded-lg bg-red-950/60 text-red-400 font-bold border border-red-500/40 transition">ЖИВАЯ ЧАСТОТА</button>
+            <button id="tab-top" onclick="switchTab('top')" class="py-1.5 rounded-lg text-gray-400 hover:text-white transition">ЗВЁЗДЫ СТАНЦИИ</button>
             <button id="tab-profile" onclick="switchTab('profile')" class="py-1.5 rounded-lg text-gray-400 hover:text-white transition">МОЯ КОМНАТА</button>
         </div>
 
         <button onclick="openSafety()" class="w-full py-1.5 bg-[#0e0608] border-b border-red-500/10 text-[10px] font-mono-tech text-gray-500 hover:text-red-300 transition">🛟 ЕСЛИ ВАМ ТЯЖЕЛО — ПОМОЩЬ РЯДОМ</button>
 
-        <!-- ЭКРАН 1: ЛЕНТА КОНТАКТА (1 СИГНАЛ В ДЕНЬ + ФИЛЬТР ЧАСТОТ) -->
+        <!-- ЭКРАН 1: ЖИВАЯ ЧАСТОТА (1 СИГНАЛ В ДЕНЬ + ФИЛЬТР ЧАСТОТ) -->
         <div id="view-feed" class="flex-1 overflow-y-auto p-3 space-y-2.5 pb-20">
             <button id="open-post-btn" onclick="openPostModal()" class="soma-post-cta w-full py-3 px-4 rounded-xl text-left flex justify-between items-center gap-3 group">
                 <div class="min-w-0">
@@ -366,7 +366,7 @@
                 <span id="open-post-arrow" class="soma-post-arrow font-mono-tech text-base shrink-0">→</span>
             </button>
             <section class="contact-welcome">
-                <h1>Лента контакта</h1>
+                <h1>Живая частота</h1>
                 <p>Здесь можно разделить радость, выговориться или просто побыть услышанным. Вы не обязаны никого спасать.</p>
                 <p class="signal-caption">Ритуал вечера: один голос, несколько минут внимания. Можно пропустить или уйти отдыхать — без потери прогресса.</p>
             </section>
@@ -401,7 +401,7 @@
             <div class="top-head">
                 <div class="top-title-wrap">
                     <span class="top-kicker">NEEO~CITY // ПАНОПТИКУМ</span>
-                    <h2 class="top-heading">СОЗВЕЗДИЕ</h2>
+                    <h2 class="top-heading">ЗВЁЗДЫ СТАНЦИИ</h2>
                 </div>
                 <button type="button" onclick="openShop('frames')" class="top-shop-btn">✦ АТРИБУТЫ</button>
             </div>
@@ -1044,7 +1044,7 @@
         { minXp: 1500, title: "УР. 3 // НОЧНОЙ СЛУШАТЕЛЬ" },
         { minXp: 3000, title: "УР. 4 // ХРАНИТЕЛЬ ЧАСТОТЫ" },
         { minXp: 5000, title: "УР. 5 // ОГОНЁК СТАНЦИИ" },
-        { minXp: 10000, title: "УР. 10 // СОЗВЕЗДИЕ СТАНЦИИ" }
+        { minXp: 10000, title: "УР. 10 // ЗВЕЗДА СТАНЦИИ" }
     ];
 
     async function initApp() {
@@ -1203,7 +1203,7 @@
         renderRoom();
     }
 
-    // ===== ЛЕНТА КОНТАКТА v7: РИТУАЛ 1 СИГНАЛ В СУТКИ, ФИЛЬТР ТЕМ И ЖИВОЕ ВРЕМЯ =====
+    // ===== ЖИВАЯ ЧАСТОТА v7: РИТУАЛ 1 СИГНАЛ В СУТКИ, ФИЛЬТР ТЕМ И ЖИВОЕ ВРЕМЯ =====
     let activeFeedTag = 'ВСЕ';
     const POST_DAY_KEY = 'soma_post_day';
     const POST_DRAFT_KEY = 'soma_pain_draft';
@@ -1269,7 +1269,7 @@
         }
         // Защита от случайного деанона и спама (ссылки, @ники, телефоны и номера карт)
         if (/(https?:\/\/|www\.|t\.me\/|telegram\.me|\b[a-z0-9-]+\.(ru|com|net|org|io|me|gg)\b|@[a-z0-9_]{3,})/i.test(text)) {
-            return { ok: false, error: 'Ради вашей анонимности ссылки и @контакты запрещены в Ленте контакта.' };
+            return { ok: false, error: 'Ради вашей анонимности ссылки и @контакты запрещены на «Живой частоте».' };
         }
         if (/(?:\+?\d[\s\-().]*){9,}/.test(text)) {
             return { ok: false, error: 'Протокол скрыл отправку: не публикуйте номера телефонов и карт.' };
@@ -1317,7 +1317,7 @@
         const qHint = document.getElementById('post-quota-hint');
         if (qHint) qHint.textContent = sent ? `Лимит исчерпан · новый через ${left}` : 'Доступно сегодня: 1 / 1';
 
-        // Синхронизируем подсказку тёплого чтения (связь Ленты контакта со Светлячками в комнате!)
+        // Синхронизируем подсказку тёплого чтения (связь «Живой частоты» со Светлячками в комнате!)
         const wStatus = document.getElementById('feed-warmth-status');
         const wQuota = document.getElementById('feed-warmth-quota');
         if (wStatus && wQuota && typeof loadWarmthLedger === 'function' && typeof PROGRESSION_RULES !== 'undefined') {

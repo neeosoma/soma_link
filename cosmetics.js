@@ -945,7 +945,7 @@ function renderShop() {
     body.innerHTML = html;
 }
 
-// ===== ПАФОСНЫЙ ТРИБУНАЛ «СОЗВЕЗДИЕ СТАНЦИИ» + ДОСЬЕ СВИДЕТЕЛЯ =====
+// ===== ПАФОСНЫЙ ТРИБУНАЛ «ЗВЁЗДЫ СТАНЦИИ» + ДОСЬЕ СВИДЕТЕЛЯ =====
 function switchTopMode(mode) {
     shopState.topMode = mode === 'week' ? 'week' : 'all';
     if (typeof SFX !== 'undefined' && SFX.tap) SFX.tap();
@@ -987,7 +987,7 @@ async function renderLeaderboard() {
     if (subnote) {
         subnote.textContent = isWeek
             ? `ОПЫТ НЕДЕЛИ · ОБНОВЛЕНИЕ ЧЕРЕЗ ${weekResetCountdown()} · ЭТО ИГРОВОЙ ОПЫТ, НЕ ОЦЕНКА ЭМПАТИИ`
-            : 'СОЗВЕЗДИЕ СТАНЦИИ · ИГРОВОЙ ОПЫТ, НЕ РЕЙТИНГ ДОБРОТЫ';
+            : 'ЗВЁЗДЫ СТАНЦИИ · ИГРОВОЙ ОПЫТ, НЕ РЕЙТИНГ ДОБРОТЫ';
     }
 
     let data = null, myRank = null, weekSupported = isWeek;
@@ -1265,7 +1265,7 @@ function openDossier(entry) {
                 <div class="text-xs font-bold text-white">${totalXp} XP</div>
             </div>
             <div class="bg-black/50 border border-red-950 rounded-xl p-2">
-                <div class="text-[8.5px] text-gray-500">СОЗВЕЗДИЕ</div>
+                <div class="text-[8.5px] text-gray-500">ЗВЁЗДЫ СТАНЦИИ</div>
                 <div class="text-[10px] font-bold text-red-300 tracking-tighter">${starRow}</div>
             </div>
             <div class="bg-black/50 border border-red-950 rounded-xl p-2">

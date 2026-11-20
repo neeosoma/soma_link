@@ -7,15 +7,22 @@ const stationPhases = [
 
 // Сезонный ритм (~90 тёплых дней до цветения, без гринда и без наказаний за паузы)
 const PROGRESSION_RULES = {
-    DAILY_HOLD_CAP: 2,        // до +2 тепла/день за тихое дочитывание постов
-    DAILY_TRAINER_CAP: 2,     // до +2 тепла/день за точное слушание в терминале
-    DAILY_WARMTH_CAP: 4,      // потолок +4 тепла/день (нельзя зафармить комнату за 3 дня)
-    WHISPER_WARMTH_GATE: 20,  // допуск к пейджеру «Шёпот»: ~1-я неделя
-    WHISPER_TRAINER_GATE: 5,  // допуск к пейджеру «Шёпот»: 5 услышанных историй
-    WHISPER_BLOOM_ACKS: 5,    // для финального цветения 6/6 (после запуска «Шёпота»)
-    SPECIES_REVEAL_STAGE: 2,  // вид раскрывается на 3/6 (~1 месяц)
-    DRY_SOIL_DAYS: 5,         // мягкая заметка о подсохшей земле без потери прогресса
-    SEASON_WARMTH: 360        // полный сезон тепла (90 тёплых дней × 4)
+    DAILY_HOLD_CAP: 2,         // до +2 тепла/день за тихое дочитывание постов
+    DAILY_TRAINER_CAP: 2,      // до +2 тепла/день за точное слушание в терминале
+    DAILY_WARMTH_CAP: 4,       // потолок +4 тепла/день за базовые ритуалы
+    WHISPER_WARMTH_GATE: 20,   // допуск к отправке «Шёпота»: 20 тепла
+    WHISPER_TRAINER_GATE: 13,  // допуск к отправке «Шёпота»: 13 пройденных уроков в терминале «Слушатель»
+    WHISPER_BLOOM_ACKS: 5,     // обратная совместимость для опционального фильтра requireAcks
+    WHISPER_MIN_LEN: 13,       // минимальная длина «Шёпота» (13 символов)
+    WHISPER_MAX_LEN: 333,      // максимальная длина «Шёпота» (333 символа)
+    DAILY_WHISPER_SEND_CAP: 3, // не более 3 отправленных «Шёпотов» в сутки
+    DAILY_WHISPER_ACK_CAP: 1,  // бонус за сохранение твоего «Шёпота» на кассету — строго не более 1 раза в сутки!
+    WHISPER_SEND_XP: 30,       // +30 XP за отправленный «Шёпот» (+1 Срыв протокола)
+    WHISPER_ACK_WARMTH: 2,     // +2 бонусного Тепла (1 раз в сутки), когда твой «Шёпот» сохранили на кассету
+    WHISPER_ACK_XP: 50,        // +50 XP (1 раз в сутки), когда твой «Шёпот» сохранили на кассету
+    SPECIES_REVEAL_STAGE: 2,   // вид раскрывается на 3/6 (~1 месяц)
+    DRY_SOIL_DAYS: 5,          // мягкая заметка о подсохшей земле без потери прогресса
+    SEASON_WARMTH: 360         // полный сезон тепла (90 тёплых дней × 4)
 };
 
 // ===== УНИКАЛЬНОЕ РАСТЕНИЕ ИГРОКА (8 земных видов + 9-е тайное внеземное растение-пасхалка!) =====
@@ -337,8 +344,12 @@ function plantStage(warmth, opts) {
 }
 
 function isWhisperLive() {
-    try { return !!(typeof window !== 'undefined' && window.SOMA_CONFIG && window.SOMA_CONFIG.WHISPER_LIVE); }
-    catch (_) { return false; }
+    try {
+        if (typeof window !== 'undefined' && window.SOMA_CONFIG) {
+            return window.SOMA_CONFIG.WHISPER_LIVE !== false;
+        }
+        return false;
+    } catch (_) { return false; }
 }
 
 function isPtsMode() {
@@ -3182,6 +3193,8 @@ function loadWarmthLedger(todayOverride) {
         trainer: sameDay ? Math.max(0, Math.trunc(raw.trainer || 0)) : 0,
         total: sameDay ? Math.max(0, Math.trunc(raw.total || 0)) : 0,
         trainedSessions: sameDay ? Math.max(0, Math.trunc(raw.trainedSessions || 0)) : 0,
+        whisperSentToday: sameDay ? Math.max(0, Math.trunc(raw.whisperSentToday || 0)) : 0,
+        whisperAckDay: typeof raw.whisperAckDay === 'string' ? raw.whisperAckDay : '',
         warmDays: Math.max(0, Math.trunc(raw.warmDays || 0)),
         lastWarmDay: typeof raw.lastWarmDay === 'string' ? raw.lastWarmDay : '',
         trainedTotal: Math.max(0, Math.trunc(raw.trainedTotal || 0)),
@@ -3244,6 +3257,7 @@ function claimDailyWarmth(source, todayOverride) {
     }
     if (source === 'whisper') {
         ledger.whispersSent += 1;
+        ledger.whisperSentToday = (ledger.whisperSentToday || 0) + 1;
     }
     const srcCap = source === 'hold'
         ? PROGRESSION_RULES.DAILY_HOLD_CAP
@@ -3302,17 +3316,164 @@ function whisperAdmission(warmth, ledger) {
     const l = ledger || loadWarmthLedger();
     const warmthMet = w >= PROGRESSION_RULES.WHISPER_WARMTH_GATE;
     const trainerMet = l.trainedTotal >= PROGRESSION_RULES.WHISPER_TRAINER_GATE;
+    const sentToday = Math.max(0, Number(l.whisperSentToday) || 0);
+    const sendCap = PROGRESSION_RULES.DAILY_WHISPER_SEND_CAP;
+    const testOpen = isWhisperLive() && typeof window !== 'undefined'
+        && window.SOMA_CONFIG.WHISPER_TEST_OPEN === true;
     return {
-        admitted: warmthMet && trainerMet,
+        testOpen,
+        admitted: testOpen || (warmthMet && trainerMet),
         warmth: Math.min(w, PROGRESSION_RULES.WHISPER_WARMTH_GATE),
         warmthNeed: PROGRESSION_RULES.WHISPER_WARMTH_GATE,
         trained: Math.min(l.trainedTotal, PROGRESSION_RULES.WHISPER_TRAINER_GATE),
         trainedNeed: PROGRESSION_RULES.WHISPER_TRAINER_GATE,
         sprouted: l.whispersSent > 0,
         whispersSent: l.whispersSent,
+        whisperSentToday: sentToday,
+        whisperLeftToday: Math.max(0, sendCap - sentToday),
+        whisperSendCap: sendCap,
         whisperAcks: l.whisperAcks,
+        ackBonusClaimedToday: l.whisperAckDay === l.day,
         live: isWhisperLive()
     };
+}
+
+// ===== ЖИВОЙ КАНАЛ «ШЁПОТ» (13..333 СИМВ., 1 ШЁПОТ НА ПОСТ, БОНУС КАССЕТЫ +2 ТЕПЛА / +50 XP МАКС. 1 РАЗ В СУТКИ) =====
+function validateWhisperText(rawText) {
+    const text = String(rawText || '').replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+    if (!text) {
+        return { ok: false, error: 'Напишите тёплый отклик — пустой шёпот не уйдёт в эфир.' };
+    }
+    if (text.length < PROGRESSION_RULES.WHISPER_MIN_LEN) {
+        return {
+            ok: false,
+            error: `Слишком коротко (${text.length}/${PROGRESSION_RULES.WHISPER_MIN_LEN}). Скажите человеку то, от чего ему станет не так одиноко.`
+        };
+    }
+    if (text.length > PROGRESSION_RULES.WHISPER_MAX_LEN) {
+        return {
+            ok: false,
+            error: `Превышен предел «Шёпота» (${text.length}/${PROGRESSION_RULES.WHISPER_MAX_LEN} симв.).`
+        };
+    }
+    if (/(https?:\/\/|www\.|t\.me\/|telegram\.me|\b[a-z0-9-]+\.(ru|com|net|org|io|me|gg)\b|@[a-z0-9_]{3,})/i.test(text)) {
+        return { ok: false, error: 'Ради анонимности ссылки и @контакты запрещены в канале «Шёпот».' };
+    }
+    if (/(?:\+?\d[\s\-().]*){9,}/.test(text)) {
+        return { ok: false, error: 'Протокол скрыл отправку: не передавайте номера телефонов и карт.' };
+    }
+    return { ok: true, value: text };
+}
+
+function getWhisperedPosts() {
+    try {
+        const arr = JSON.parse(lsGet('soma_whispered_posts') || '[]');
+        return Array.isArray(arr) ? arr.map(String) : [];
+    } catch (_) { return []; }
+}
+
+function hasWhisperedToPost(postId) {
+    const id = String(postId || '').trim();
+    if (!id) return false;
+    return getWhisperedPosts().includes(id);
+}
+
+function rememberWhisperedPost(postId) {
+    const id = String(postId || '').trim();
+    if (!id) return;
+    const list = [id, ...getWhisperedPosts().filter(x => x !== id)].slice(0, 300);
+    lsSet('soma_whispered_posts', JSON.stringify(list));
+}
+
+function getHandledWhispers() {
+    try {
+        const obj = JSON.parse(lsGet('soma_handled_whispers') || '{}');
+        return (obj && typeof obj === 'object') ? obj : {};
+    } catch (_) { return {}; }
+}
+
+function markWhisperHandled(whisperId, status) {
+    const id = String(whisperId || '').trim();
+    if (!id) return;
+    const map = getHandledWhispers();
+    map[id] = status || 'saved';
+    lsSet('soma_handled_whispers', JSON.stringify(map));
+}
+
+function getAckedWhispers() {
+    try {
+        const arr = JSON.parse(lsGet('soma_acked_whispers') || '[]');
+        return Array.isArray(arr) ? arr.map(String) : [];
+    } catch (_) { return []; }
+}
+
+function rememberAckedWhisper(whisperId) {
+    const id = String(whisperId || '').trim();
+    if (!id) return;
+    const list = [id, ...getAckedWhispers().filter(x => x !== id)].slice(0, 300);
+    lsSet('soma_acked_whispers', JSON.stringify(list));
+}
+
+// Когда ваш «Шёпот» другой человек сохранил себе на кассету VTR-90:
+// даёт +2 Тепла (в комнату и активное растение) и +50 XP, но СТРОГО НЕ БОЛЕЕ 1 РАЗА В СУТКИ!
+function claimWhisperCassetteAck(whisperId, todayOverride) {
+    const wid = String(whisperId || '').trim();
+    if (wid) {
+        if (getAckedWhispers().includes(wid)) {
+            return { duplicate: true, grantedWarmth: 0, grantedXp: 0, ledger: loadWarmthLedger(todayOverride) };
+        }
+        rememberAckedWhisper(wid);
+    }
+    const ledger = loadWarmthLedger(todayOverride);
+    ledger.whisperAcks = (ledger.whisperAcks || 0) + 1;
+
+    const alreadyClaimedToday = ledger.whisperAckDay === ledger.day;
+    let grantedWarmth = 0;
+    let grantedXp = 0;
+
+    if (!alreadyClaimedToday) {
+        ledger.whisperAckDay = ledger.day;
+        grantedWarmth = PROGRESSION_RULES.WHISPER_ACK_WARMTH; // +2 тепла
+        grantedXp = PROGRESSION_RULES.WHISPER_ACK_XP;         // +50 XP
+    }
+    saveWarmthLedger(ledger);
+
+    if (grantedWarmth > 0) {
+        if (typeof addWarmth === 'function') {
+            try { addWarmth(grantedWarmth); } catch (_) {}
+        } else {
+            if (typeof player !== 'undefined' && player) {
+                player.warmth = (Number(player.warmth) || 0) + grantedWarmth;
+                lsSet('soma_warmth', String(player.warmth));
+                if (typeof feedActiveRoomPlant === 'function') {
+                    feedActiveRoomPlant(grantedWarmth, player.warmth);
+                }
+            }
+        }
+    }
+    if (grantedXp > 0 && typeof player !== 'undefined' && player) {
+        player.xp = (Number(player.xp) || 0) + grantedXp;
+        if (typeof addWeeklyXp === 'function') {
+            try { addWeeklyXp(grantedXp); } catch (_) {}
+        }
+        if (typeof updateCloudProfile === 'function') {
+            try { updateCloudProfile(); } catch (_) {}
+        }
+        if (typeof updateHeader === 'function') {
+            try { updateHeader(); } catch (_) {}
+        }
+    }
+
+    if (typeof roomAnim !== 'undefined' && roomAnim) {
+        roomAnim.pagerNotice = grantedWarmth > 0
+            ? `✦ Человек сохранил ваш «Шёпот» на кассету! Вам вернулось +${grantedWarmth} Тепла и +${grantedXp} XP.`
+            : '✦ Ещё один ваш «Шёпот» бережно сохранён на кассету (бонус тепла 1/1 за сегодня уже впитался).';
+        roomAnim.customMode = 'ПЕЙДЖЕР // ОТКЛИК С КАССЕТЫ';
+        roomAnim.customEntry = roomAnim.pagerNotice;
+    }
+    pulsePagerScreen();
+    renderRoom();
+    return { duplicate: false, grantedWarmth, grantedXp, ledger };
 }
 
 // ===== ОРАНЖЕРЕЯ + СЕКРЕТНОЕ ВНЕЗЕМНОЕ СЕМЯ (1 ИЗ 7 ПОСЛЕ 7/7) =====
@@ -8693,6 +8854,9 @@ function syncAllRoomOverlays() {
     if (window.SOMA_SHARE && typeof window.SOMA_SHARE.syncMount === 'function') window.SOMA_SHARE.syncMount();
     if (window.SOMA_GREENHOUSE && typeof window.SOMA_GREENHOUSE.remount === 'function') window.SOMA_GREENHOUSE.remount();
     if (window.SOMA_BLIMP && typeof window.SOMA_BLIMP.remount === 'function') window.SOMA_BLIMP.remount();
+    if (typeof mountPagerModalForCurrentMode === 'function' && typeof document !== 'undefined' && document.getElementById('pager-overlay')) {
+        mountPagerModalForCurrentMode();
+    }
 }
 
 function exitRoomFullscreen(silent) {
@@ -9271,7 +9435,7 @@ function syncContextPanels() {
     }
 }
 
-// Тактильный чёрно-красный ретро-пейджер «Шёпота» (временно вне эфира, без дубля телефона)
+// ===== ТАКТИЛЬНЫЙ РЕТРО-ПЕЙДЖЕР «ШЁПОТА» NEEOSOMA // NMAV-04 (ЖИВОЙ ЭФИР ЭМПАТИИ + ПРИЁМ ВХОДЯЩИХ НА КАССЕТЫ VTR-90) =====
 function pulsePagerScreen() {
     const p = typeof document !== 'undefined' && document.getElementById('soma-pager');
     if (!p || !p.classList) return;
@@ -9286,7 +9450,299 @@ function pulsePagerScreen() {
     }
 }
 
+function getLocalMyPostIdsSafe() {
+    if (typeof getMyPostIds === 'function') {
+        try { return getMyPostIds().map(String); } catch (_) {}
+    }
+    try {
+        const arr = JSON.parse(lsGet('soma_my_posts') || '[]');
+        return Array.isArray(arr) ? arr.map(String) : [];
+    } catch (_) { return []; }
+}
+
+function isOwnPostId(postId) {
+    const id = String(postId || '').trim();
+    if (!id) return false;
+    return getLocalMyPostIdsSafe().includes(id);
+}
+
+function loadRawInboxWhispers() {
+    try {
+        const arr = JSON.parse(lsGet('soma_inbox_whispers') || '[]');
+        return Array.isArray(arr) ? arr.filter(x => x && typeof x === 'object' && x.id && x.text) : [];
+    } catch (_) { return []; }
+}
+
+function saveRawInboxWhispers(list) {
+    lsSet('soma_inbox_whispers', JSON.stringify((Array.isArray(list) ? list : []).slice(0, 60)));
+}
+
+// Возвращает все непрочитанные входящие «Шёпоты», пришедшие на посты игрока (доступно с 1-го дня даже при 0 тепла!)
+function getPendingInboxWhispers() {
+    const handled = getHandledWhispers();
+    return loadRawInboxWhispers().filter(w => !handled[w.id] && (!w.status || w.status === 'pending'));
+}
+
+// Добавляет входящий «Шёпот» в очередь пейджера (при синхронизации из облака или локально)
+function receiveIncomingWhisperLocal(whisperObj) {
+    if (!whisperObj || typeof whisperObj !== 'object') return null;
+    const check = validateWhisperText(whisperObj.text);
+    if (!check.ok) return null;
+    const id = String(whisperObj.id || ('w_in_' + Date.now() + '_' + Math.floor(Math.random() * 900 + 100)));
+    const handled = getHandledWhispers();
+    if (handled[id]) return null;
+    const item = {
+        id,
+        post_id: String(whisperObj.post_id || 'p_local'),
+        post_tag: String(whisperObj.post_tag || 'ЛИЧНАЯ БОЛЬ').slice(0, 32),
+        post_preview: String(whisperObj.post_preview || '').replace(/\s+/g, ' ').trim().slice(0, 140),
+        text: check.value,
+        created_at: whisperObj.created_at || new Date().toISOString(),
+        status: 'pending'
+    };
+    const existing = loadRawInboxWhispers();
+    if (!existing.some(x => x.id === id)) {
+        saveRawInboxWhispers([item, ...existing]);
+        playObjectTone('pager');
+        pulsePagerScreen();
+    }
+    renderPager();
+    if (roomAnim.pagerModalOpen) renderPagerModal();
+    return item;
+}
+
+// Игрок выбирает «📼 ЗАПИСАТЬ НА КАССЕТУ» для пришедшего ему «Шёпота»
+async function persistWhisperStatus(id, status) {
+    if (typeof supabaseClient === 'undefined' || !supabaseClient) return { ok: true };
+    try {
+        const { data, error } = await supabaseClient.from('soma_whispers')
+            .update({ status }).eq('id', id).select('id');
+        if (error || !data || data.length !== 1) throw new Error('Status not saved');
+        return { ok: true };
+    } catch (_) {
+        roomAnim.pagerModalError = 'Не удалось подтвердить действие. Попробуйте ещё раз.';
+        if (roomAnim.pagerModalOpen) renderPagerModal();
+        return { ok: false, error: roomAnim.pagerModalError };
+    }
+}
+
+async function acceptIncomingWhisper(whisperId) {
+    const id = String(whisperId || '').trim();
+    const pending = getPendingInboxWhispers();
+    const w = pending.find(x => x.id === id);
+    if (!w) return { ok: false, error: 'Шёпот уже обработан.' };
+
+    const cloud = await persistWhisperStatus(w.id, 'saved');
+    if (!cloud.ok) return cloud;
+    const cas = saveWhisperCassette(w.text, undefined, { id: 'cas_' + w.id });
+    markWhisperHandled(w.id, 'saved');
+    roomAnim.activeCassetteId = cas ? cas.id : roomAnim.activeCassetteId;
+    roomAnim.cassettePlaying = true;
+    roomAnim.cassetteStartedAt = typeof performance !== 'undefined' ? performance.now() : Date.now();
+
+    const numStr = cas ? formatCassetteNum(cas.num) : '001';
+    roomAnim.pagerModalNotice = `✓ Тёплый «Шёпот» записан на кассету #${numStr} в ваш магнитофон VTR-90! Отправителю ушёл благодарный импульс.`;
+    roomAnim.customMode = `МАГНИТОФОН // ЗАПИСАНА КАССЕТА #${numStr}`;
+    roomAnim.customEntry = `«${w.text}»`;
+    playObjectTone('deck');
+    try { Telegram.WebApp.HapticFeedback.notificationOccurred('success'); } catch (_) {}
+    renderRoom();
+    renderPager();
+    if (roomAnim.pagerModalOpen) renderPagerModal();
+    return { ok: true, cassette: cas, whisper: w };
+}
+
+// Игрок выбирает «◌ ОТПУСТИТЬ В ЭФИР» (не сохранять входящий «Шёпот» на кассету)
+async function dismissIncomingWhisper(whisperId) {
+    const id = String(whisperId || '').trim();
+    const pending = getPendingInboxWhispers();
+    const w = pending.find(x => x.id === id);
+    if (!w) return { ok: false, error: 'Шёпот уже обработан.' };
+
+    const cloud = await persistWhisperStatus(w.id, 'dismissed');
+    if (!cloud.ok) return cloud;
+    markWhisperHandled(w.id, 'dismissed');
+
+    roomAnim.pagerModalNotice = '◌ Сигнал прочитан и бережно отпущен в ночной эфир без записи на кассету.';
+    if (typeof SFX !== 'undefined' && SFX.tap) SFX.tap();
+    renderPager();
+    if (roomAnim.pagerModalOpen) renderPagerModal();
+    return { ok: true, whisper: w };
+}
+
+// Отправка анонимного «Шёпота» (13..333 симв.) автору чужого поста через пейджер
+async function sendWhisperToPost(postObj, rawText, opts) {
+    const o = (opts && typeof opts === 'object') ? opts : {};
+    const warmthNow = typeof player !== 'undefined' && player && Number.isFinite(Number(player.warmth))
+        ? Number(player.warmth)
+        : (Number(roomAnim.warmth) || 0);
+    const ledger = loadWarmthLedger(o.today);
+    const adm = whisperAdmission(warmthNow, ledger);
+
+    if (!adm.admitted && !isPtsMode() && !o.bypassGate) {
+        return {
+            ok: false,
+            code: 'locked',
+            error: `Допуск к отправке «Шёпота» открывается на ${adm.warmthNeed} тепла (сейчас ${adm.warmth}) и ${adm.trainedNeed} уроках в терминале «Слушатель» (сейчас ${adm.trained}).`
+        };
+    }
+
+    const postId = String((postObj && postObj.id) || '').trim();
+    if (!postId) {
+        return { ok: false, code: 'invalid_post', error: 'Выберите сигнал боли из эфира.' };
+    }
+    if (isOwnPostId(postId)) {
+        return { ok: false, code: 'own_post', error: 'Нельзя отправить «Шёпот» на собственный сигнал.' };
+    }
+    if (hasWhisperedToPost(postId)) {
+        return { ok: false, code: 'already_whispered', error: 'Вы уже поддержали этого человека. Одному сигналу можно шепнуть только 1 раз.' };
+    }
+    if (ledger.whisperSentToday >= PROGRESSION_RULES.DAILY_WHISPER_SEND_CAP) {
+        return {
+            ok: false,
+            code: 'daily_cap',
+            error: `Лимит эфира: не более ${PROGRESSION_RULES.DAILY_WHISPER_SEND_CAP} «Шёпотов» в сутки, чтобы каждое слово хранило настоящий вес.`
+        };
+    }
+
+    const check = validateWhisperText(rawText);
+    if (!check.ok) {
+        return { ok: false, code: 'invalid_text', error: check.error };
+    }
+
+    const senderUid = String((typeof player !== 'undefined' && player && player.uid) || 'u_local0000');
+    const wRow = {
+        id: 'w_' + Date.now() + '_' + Math.floor(Math.random() * 9000 + 1000),
+        post_id: postId,
+        post_tag: String((postObj && postObj.tag) || 'ЛИЧНАЯ БОЛЬ').slice(0, 32),
+        post_preview: String((postObj && postObj.text) || '').replace(/\s+/g, ' ').trim().slice(0, 140),
+        sender_uid: senderUid,
+        text: check.value,
+        status: 'pending',
+        created_at: new Date().toISOString()
+    };
+
+    try {
+        if (typeof supabaseClient !== 'undefined' && supabaseClient && !o.skipCloud) {
+            const { error } = await supabaseClient.from('soma_whispers').insert([wRow]);
+            if (error) {
+                if (String(error.code) === '23505') {
+                    rememberWhisperedPost(postId);
+                    return { ok: false, code: 'already_whispered', error: 'Вы уже поддержали этого человека (1 шёпот на 1 сигнал).' };
+                }
+                if (!o.allowOfflineFallback) {
+                    return { ok: false, code: 'network_error', error: 'Эфир временно недоступен: ' + (error.message || 'ошибка сети') };
+                }
+            }
+        }
+    } catch (e) {
+        if (!o.allowOfflineFallback && typeof supabaseClient !== 'undefined' && supabaseClient) {
+            return { ok: false, code: 'network_error', error: 'Эфир временно недоступен.' };
+        }
+    }
+
+    rememberWhisperedPost(postId);
+    const sentRes = recordWhisperSent(o.today);
+    const firstSprout = sentRes.ledger.whispersSent === 1;
+
+    if (typeof player !== 'undefined' && player) {
+        player.xp = (Number(player.xp) || 0) + PROGRESSION_RULES.WHISPER_SEND_XP;
+        if (typeof addWeeklyXp === 'function') {
+            try { addWeeklyXp(PROGRESSION_RULES.WHISPER_SEND_XP); } catch (_) {}
+        }
+        if (typeof updateCloudProfile === 'function') {
+            try { updateCloudProfile(); } catch (_) {}
+        }
+        if (typeof updateHeader === 'function') {
+            try { updateHeader(); } catch (_) {}
+        }
+    }
+
+    roomAnim.pagerComposingPostId = '';
+    roomAnim.pagerDraftText = '';
+    roomAnim.pagerModalError = '';
+    roomAnim.pagerModalNotice = firstSprout
+        ? `✦ Ваш первый «Шёпот» ушёл в эфир (+${PROGRESSION_RULES.WHISPER_SEND_XP} XP · Срыв протокола)! В горшке вашей комнаты проснулся живой росток!`
+        : `✦ «Шёпот» доставлен на пейджер автора (+${PROGRESSION_RULES.WHISPER_SEND_XP} XP · Срыв протокола). Когда он сохранит его на кассету, вам вернётся +${PROGRESSION_RULES.WHISPER_ACK_WARMTH} Тепла!`;
+
+    if (firstSprout) {
+        roomAnim.customMode = 'ШЁПОТ // ПРОБУЖДЕНИЕ РОСТКА';
+        roomAnim.customEntry = 'Вы впервые нарушили протокол равнодушия и согрели живого человека — в тёмной земле вашего сосуда проснулся первый росток!';
+        animatePlantShift();
+    }
+    playObjectTone('pager');
+    try { Telegram.WebApp.HapticFeedback.notificationOccurred('success'); } catch (_) {}
+    renderRoom();
+    renderPager();
+    if (roomAnim.pagerModalOpen) renderPagerModal();
+    return { ok: true, whisper: wRow, firstSprout, ledger: sentRes.ledger };
+}
+
+// Синхронизирует входящие «Шёпоты» на посты игрока и проверяет, сохранили ли получатели отправленные им «Шёпоты» на кассету
+async function syncPagerWhispers() {
+    if (typeof supabaseClient === 'undefined' || !supabaseClient) return;
+    try {
+        // 1) Проверяем входящие «Шёпоты» на наши посты из soma_my_posts (работает даже при 0 тепла!)
+        const myPosts = getLocalMyPostIdsSafe();
+        if (myPosts.length) {
+            const { data: inRows } = await supabaseClient
+                .from('soma_whispers')
+                .select('id,post_id,post_tag,post_preview,text,created_at,status')
+                .in('post_id', myPosts.slice(0, 30))
+                .eq('status', 'pending')
+                .order('created_at', { ascending: false })
+                .limit(20);
+            if (Array.isArray(inRows) && inRows.length) {
+                const handled = getHandledWhispers();
+                const current = loadRawInboxWhispers();
+                const map = new Map(current.map(x => [x.id, x]));
+                let added = false;
+                inRows.forEach(r => {
+                    if (!r || !r.id || handled[r.id] || map.has(r.id)) return;
+                    map.set(r.id, {
+                        id: String(r.id),
+                        post_id: String(r.post_id || ''),
+                        post_tag: String(r.post_tag || 'ЛИЧНАЯ БОЛЬ'),
+                        post_preview: String(r.post_preview || ''),
+                        text: String(r.text || '').slice(0, PROGRESSION_RULES.WHISPER_MAX_LEN),
+                        created_at: r.created_at || new Date().toISOString(),
+                        status: 'pending'
+                    });
+                    added = true;
+                });
+                if (added) {
+                    saveRawInboxWhispers([...map.values()]);
+                    playObjectTone('pager');
+                    pulsePagerScreen();
+                }
+            }
+        }
+
+        // 2) Проверяем, сохранил ли кто-то из поддержанных нами людей наш «Шёпот» себе на кассету VTR-90
+        const myUid = typeof player !== 'undefined' && player && player.uid;
+        if (myUid) {
+            const { data: savedRows } = await supabaseClient
+                .rpc('my_saved_soma_whispers');
+            if (Array.isArray(savedRows) && savedRows.length) {
+                const acked = new Set(getAckedWhispers());
+                savedRows.forEach(r => {
+                    if (r && r.id && !acked.has(String(r.id))) {
+                        claimWhisperCassetteAck(String(r.id));
+                    }
+                });
+            }
+        }
+    } catch (_) {}
+    renderPager();
+    if (roomAnim.pagerModalOpen) renderPagerModal();
+}
+
 function pressPagerScan() {
+    if (isWhisperLive()) {
+        const inbox = getPendingInboxWhispers();
+        openPagerModal(inbox.length > 0 ? 'inbox' : 'feed');
+        return;
+    }
     roomAnim.pagerStep = roomAnim.pagerMode === 'scan' ? (roomAnim.pagerStep + 1) % 3 : 0;
     roomAnim.pagerMode = 'scan';
     try { Telegram.WebApp.HapticFeedback.impactOccurred('light'); } catch (_) {}
@@ -9317,22 +9773,44 @@ function renderPager(warmthArg, ledgerArg, isWatchmanArg) {
     const gh = loadGreenhouse();
     const own = roomAnim.ownSpec || plantSpec();
     const watchman = isWatchmanArg !== undefined ? isWatchmanArg : gh.bloomed.includes(own.kind);
+    const inbox = getPendingInboxWhispers();
 
-    pager.dataset.state = adm.live ? (adm.admitted ? 'ready' : 'locked') : 'offline';
+    pager.dataset.state = adm.live
+        ? (inbox.length > 0 ? 'inbox' : (adm.admitted ? 'ready' : 'locked'))
+        : 'offline';
     pager.dataset.admitted = adm.admitted ? '1' : '0';
+    if (pager.classList) pager.classList.toggle('has-inbox', inbox.length > 0);
 
     const carrierEl = document.getElementById('pager-carrier');
     const gateEl = document.getElementById('pager-gate');
     const msgEl = document.getElementById('pager-msg');
     const subEl = document.getElementById('pager-sub');
+    const scanBtn = document.getElementById('pager-scan-btn');
 
-    if (carrierEl) carrierEl.textContent = adm.live ? 'ЭФИР АКТИВЕН' : 'НЕТ НЕСУЩЕЙ';
+    if (carrierEl) {
+        carrierEl.textContent = !adm.live
+            ? 'НЕТ НЕСУЩЕЙ'
+            : inbox.length > 0
+                ? `ВХОДЯЩИЙ ШЁПОТ (${inbox.length})`
+                : adm.admitted
+                    ? `ЭФИР АКТИВЕН · ${adm.whisperLeftToday}/${adm.whisperSendCap} ДН`
+                    : 'ПРИЁМ ВХОДЯЩИХ АКТИВЕН';
+    }
     if (gateEl) {
         gateEl.textContent = watchman
             ? 'ДОПУСК: СМОТРИТЕЛЬ'
             : adm.admitted
-                ? 'ДОПУСК: ГОТОВ'
-                : `ДОПУСК ${adm.warmth}/${adm.warmthNeed} · ТРН ${adm.trained}/${adm.trainedNeed}`;
+                ? 'ДОПУСК: ОТКРЫТ'
+                : `ДОПУСК ${adm.warmth}/${adm.warmthNeed} · УРОКИ ${adm.trained}/${adm.trainedNeed}`;
+    }
+    if (scanBtn) {
+        scanBtn.textContent = !adm.live
+            ? '◈ ПРОВЕРИТЬ ЧАСТОТУ'
+            : inbox.length > 0
+                ? `📥 ПРОЧЕСТЬ ШЁПОТ (${inbox.length})`
+                : adm.admitted
+                    ? '◈ ОТКРЫТЬ ЭФИР ШЁПОТА'
+                    : `◈ ОТКРЫТЬ ПЕЙДЖЕР (${adm.trained}/${adm.trainedNeed})`;
     }
 
     let mainLine = 'ЧАСТОТА «ШЁПОТ» ОТКЛЮЧЕНА';
@@ -9340,13 +9818,29 @@ function renderPager(warmthArg, ledgerArg, isWatchmanArg) {
         ? 'допуск получен · приёмник ждёт запуска тёплой линии'
         : 'линия временно молчит · готовьте допуск в тишине и терминале';
 
-    if (roomAnim.pagerMode === 'info') {
+    if (adm.live && roomAnim.pagerMode !== 'info') {
+        if (inbox.length > 0) {
+            mainLine = `ВХОДЯЩИЙ ШЁПОТ (${inbox.length}) // КТО-ТО ПОБЫЛ РЯДОМ`;
+            subLine = 'нажмите на пейджер, чтобы прочесть отклик и записать его на кассету VTR-90';
+        } else if (roomAnim.pagerNotice) {
+            mainLine = 'ОТКЛИК КАССЕТЫ // ТЕПЛО ВЕРНУЛОСЬ';
+            subLine = roomAnim.pagerNotice;
+        } else if (adm.admitted) {
+            mainLine = `КАНАЛ «ШЁПОТ» ОТКРЫТ // ${adm.whisperLeftToday} ИЗ ${adm.whisperSendCap} НА СЕГОДНЯ`;
+            subLine = adm.sprouted
+                ? 'поддержите человека в эфире (13–333 симв.) · если он сохранит кассету, вам вернётся +2 тепла'
+                : 'отправьте свой первый «Шёпот» (13–333 симв.), чтобы пробудить росток в сосуде';
+        } else {
+            mainLine = 'ПРИЁМ РАБОТАЕТ // ОТПРАВКА ПО ДОПУСКУ СЛУШАТЕЛЯ';
+            subLine = `принимайте шёпоты на свои посты уже сейчас · для отправки: ${adm.warmth}/${adm.warmthNeed} тепла и ${adm.trained}/${adm.trainedNeed} уроков`;
+        }
+    } else if (roomAnim.pagerMode === 'info') {
         mainLine = watchman
             ? 'РЕЗЕРВ // ВОЛНА «ПОТЕРЯННЫЙ СИГНАЛ»'
-            : 'ОДНОСТОРОННИЙ КАНАЛ // БЕЗ ИМЁН';
+            : 'КАНАЛ ЭМПАТИИ // 13–333 СИМВОЛА БЕЗ ИМЁН';
         subLine = watchman
             ? 'смотрители слышат голоса, оставшиеся без единого ответа'
-            : 'горшок пуст, пока молчит «Шёпот» — первый сигнал разбудит росток';
+            : '1 шёпот на 1 человека · запись чужого шёпота на кассету VTR-90 возвращает автору +2 тепла (1/день)';
     } else if (roomAnim.pagerMode === 'scan') {
         const screens = [
             [
@@ -9373,6 +9867,350 @@ function renderPager(warmthArg, ledgerArg, isWatchmanArg) {
 
     if (msgEl) msgEl.textContent = mainLine;
     if (subEl) subEl.textContent = subLine;
+}
+
+// ===== ИНТЕРАКТИВНЫЙ МАТРИЧНЫЙ ЭКРАН ПЕЙДЖЕРА NEEOSOMA // NMAV-04 (ЛЕНТА ЭМПАТИИ + ВХОДЯЩИЕ НА КАССЕТУ) =====
+function ensurePagerModal() {
+    if (typeof document === 'undefined' || !document.createElement) return null;
+    let ov = document.getElementById('pager-overlay');
+    if (ov) return ov;
+    ov = document.createElement('div');
+    ov.id = 'pager-overlay';
+    ov.className = 'pager-overlay hidden';
+    ov.setAttribute('role', 'dialog');
+    ov.setAttribute('aria-modal', 'true');
+    ov.setAttribute('aria-label', 'Пейджер NEEOSOMA // NMAV-04 — Канал Шёпот');
+    ov.innerHTML = `
+        <div class="soma-pager pager-modal-chassis" id="pager-modal-chassis">
+            <div class="pager-top pager-modal-top">
+                <span class="pager-brand"><i class="pager-led" aria-hidden="true"></i>NEEOSOMA // NMAV-04 · CH·04 «ШЁПОТ»</span>
+                <button type="button" class="pager-modal-close" id="pager-modal-close" aria-label="Закрыть пейджер">✕</button>
+            </div>
+            <div class="pager-modal-tabs" role="tablist">
+                <button type="button" class="pager-modal-tab" id="pager-tab-feed" role="tab" aria-selected="true">📡 ПОДДЕРЖАТЬ В ЭФИРЕ</button>
+                <button type="button" class="pager-modal-tab" id="pager-tab-inbox" role="tab" aria-selected="false">📥 ВХОДЯЩИЕ <span id="pager-inbox-badge" class="pager-inbox-badge hidden">0</span></button>
+            </div>
+            <div class="pager-bezel pager-modal-bezel">
+                <div class="pager-lcd pager-modal-lcd">
+                    <div class="pager-lcd-meta" id="pager-modal-meta"></div>
+                    <div class="pager-modal-notice hidden" id="pager-modal-notice"></div>
+                    <div class="pager-modal-body" id="pager-modal-body"></div>
+                </div>
+            </div>
+            <div class="pager-modal-foot" id="pager-modal-foot"></div>
+        </div>
+    `;
+    ov.addEventListener('click', (e) => {
+        if (e.target === ov) closePagerModal();
+    });
+    const closeBtn = ov.querySelector('#pager-modal-close');
+    if (closeBtn) closeBtn.onclick = () => closePagerModal();
+    const tabFeed = ov.querySelector('#pager-tab-feed');
+    if (tabFeed) {
+        tabFeed.onclick = () => {
+            roomAnim.pagerTab = 'feed';
+            roomAnim.pagerModalError = '';
+            if (typeof SFX !== 'undefined' && SFX.tap) SFX.tap();
+            renderPagerModal();
+        };
+    }
+    const tabInbox = ov.querySelector('#pager-tab-inbox');
+    if (tabInbox) {
+        tabInbox.onclick = () => {
+            roomAnim.pagerTab = 'inbox';
+            roomAnim.pagerModalError = '';
+            if (typeof SFX !== 'undefined' && SFX.tap) SFX.tap();
+            renderPagerModal();
+        };
+    }
+    if (document.body && document.body.appendChild) {
+        document.body.appendChild(ov);
+    }
+    const bodyScroll = ov.querySelector('#pager-modal-body');
+    if (bodyScroll && typeof bindSomaSceneScroll === 'function') {
+        bindSomaSceneScroll(bodyScroll);
+    }
+    return ov;
+}
+
+function mountPagerModalForCurrentMode() {
+    const ov = ensurePagerModal();
+    if (!ov || typeof document === 'undefined') return null;
+    const scene = document.getElementById('station-scene');
+    const station = document.getElementById('station');
+    const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+    const inFs = !!((fsEl && scene && (fsEl === scene || scene.contains(fsEl)))
+        || roomAnim.isFullscreen
+        || (station && station.classList && station.classList.contains('is-fullscreen')));
+    const target = (inFs && scene) ? scene : document.body;
+    if (target && ov.parentElement !== target && target.appendChild) {
+        target.appendChild(ov);
+    }
+    if (ov.classList) ov.classList.toggle('is-in-fs', target === scene);
+    const chassis = ov.querySelector('#pager-modal-chassis');
+    if (chassis) {
+        const cosm = getRoomCosmeticsSafe();
+        if (cosm && cosm.pager) chassis.dataset.skin = cosm.pager;
+        else delete chassis.dataset.skin;
+    }
+    return ov;
+}
+
+function openPagerModal(preferredTab) {
+    const ov = mountPagerModalForCurrentMode();
+    if (!ov) return;
+    const inbox = getPendingInboxWhispers();
+    roomAnim.pagerModalOpen = true;
+    roomAnim.pagerTab = preferredTab || (inbox.length > 0 ? 'inbox' : (roomAnim.pagerTab || 'feed'));
+    roomAnim.pagerModalError = '';
+    ov.classList.remove('hidden');
+    playObjectTone('pager');
+    syncPagerWhispers();
+    renderPagerModal();
+}
+
+function closePagerModal() {
+    const ov = typeof document !== 'undefined' && document.getElementById('pager-overlay');
+    if (ov && ov.classList) ov.classList.add('hidden');
+    roomAnim.pagerModalOpen = false;
+    roomAnim.pagerComposingPostId = '';
+    roomAnim.pagerModalError = '';
+    if (typeof restoreSomaScroll === 'function') {
+        try { restoreSomaScroll(); } catch (_) {}
+    }
+}
+
+function renderPagerModal() {
+    const ov = mountPagerModalForCurrentMode();
+    if (!ov || !roomAnim.pagerModalOpen) return;
+    const escFn = typeof esc === 'function'
+        ? esc
+        : (s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])));
+
+    const warmthNow = typeof player !== 'undefined' && player && Number.isFinite(Number(player.warmth))
+        ? Number(player.warmth)
+        : (Number(roomAnim.warmth) || 0);
+    const ledger = loadWarmthLedger();
+    const adm = whisperAdmission(warmthNow, ledger);
+    const pts = isPtsMode();
+    const canSend = adm.admitted || pts;
+    const inbox = getPendingInboxWhispers();
+    const tapes = loadCassettes();
+
+    const tabFeed = ov.querySelector('#pager-tab-feed');
+    const tabInbox = ov.querySelector('#pager-tab-inbox');
+    const badgeEl = ov.querySelector('#pager-inbox-badge');
+    const metaEl = ov.querySelector('#pager-modal-meta');
+    const noticeEl = ov.querySelector('#pager-modal-notice');
+    const bodyEl = ov.querySelector('#pager-modal-body');
+    const footEl = ov.querySelector('#pager-modal-foot');
+
+    const activeTab = roomAnim.pagerTab === 'inbox' ? 'inbox' : 'feed';
+    if (tabFeed) tabFeed.setAttribute('aria-selected', String(activeTab === 'feed'));
+    if (tabInbox) tabInbox.setAttribute('aria-selected', String(activeTab === 'inbox'));
+    if (badgeEl) {
+        badgeEl.textContent = String(inbox.length);
+        badgeEl.classList.toggle('hidden', inbox.length === 0);
+    }
+
+    if (metaEl) {
+        const bonusTxt = adm.ackBonusClaimedToday
+            ? 'БОНУС КАССЕТЫ ДНЯ: ✓ ПОЛУЧЕН (1/1)'
+            : `БОНУС КАССЕТЫ: +${PROGRESSION_RULES.WHISPER_ACK_WARMTH} ТЕПЛА · +${PROGRESSION_RULES.WHISPER_ACK_XP} XP (1/ДЕНЬ)`;
+        metaEl.innerHTML = `
+            <span>ШЁПОТОВ СЕГОДНЯ: <b>${adm.whisperLeftToday}/${adm.whisperSendCap}</b></span>
+            <span>${bonusTxt}</span>
+        `;
+    }
+
+    if (noticeEl) {
+        const msg = roomAnim.pagerModalError || roomAnim.pagerModalNotice
+            || (adm.testOpen ? 'ТЕСТ КАНАЛА: порог тепла и 13 уроков временно снят. Лимит 3 шёпота в сутки сохранён.' : '');
+        noticeEl.textContent = msg;
+        noticeEl.className = 'pager-modal-notice'
+            + (msg ? '' : ' hidden')
+            + (roomAnim.pagerModalError ? ' is-error' : '');
+    }
+
+    if (!bodyEl) return;
+
+    if (activeTab === 'inbox') {
+        if (!inbox.length) {
+            bodyEl.innerHTML = `
+                <div class="pager-empty-box">
+                    <div class="pager-empty-title">ВХОДЯЩИХ ШЁПОТОВ ПОКА НЕТ</div>
+                    <p class="pager-empty-sub">Когда кто-то из Слушателей станции прочитает ваш анонимный сигнал в «Ленте боли» и поддержит вас через пейджер, его тёплый отклик появится здесь.</p>
+                    <p class="pager-empty-sub">Вы сможете прочесть его и выбрать: <b>📼 Записать на кассету</b> в магнитофон VTR-90 (отправителю вернётся +2 Тепла) или <b>◌ Отпустить в эфир</b>.</p>
+                </div>
+            `;
+        } else {
+            bodyEl.innerHTML = inbox.map(w => `
+                <div class="pager-card pager-card--inbox" data-whisper-id="${escFn(w.id)}">
+                    <div class="pager-card-head">
+                        <span class="pager-card-tag">✦ ВХОДЯЩИЙ ШЁПОТ · #${escFn(w.post_tag || 'ЛИЧНАЯ БОЛЬ')}</span>
+                        <span class="pager-card-meta">CH·04 // АНОНИМНЫЙ СЛУШАТЕЛЬ</span>
+                    </div>
+                    ${w.post_preview ? `<div class="pager-card-quote">На ваш сигнал: «${escFn(w.post_preview)}»</div>` : ''}
+                    <p class="pager-card-text">«${escFn(w.text)}»</p>
+                    <div class="pager-card-actions">
+                        <button type="button" class="pager-act-btn pager-act-btn--save" data-act="save" data-id="${escFn(w.id)}">📼 ЗАПИСАТЬ НА КАССЕТУ VTR-90</button>
+                        <button type="button" class="pager-act-btn pager-act-btn--dismiss" data-act="dismiss" data-id="${escFn(w.id)}">◌ ОТПУСТИТЬ</button>
+                    </div>
+                </div>
+            `).join('');
+            bodyEl.querySelectorAll('[data-act="save"]').forEach(btn => {
+                btn.onclick = () => acceptIncomingWhisper(btn.dataset.id);
+            });
+            bodyEl.querySelectorAll('[data-act="dismiss"]').forEach(btn => {
+                btn.onclick = () => dismissIncomingWhisper(btn.dataset.id);
+            });
+        }
+    } else {
+        // Вкладка 📡 ПОДДЕРЖАТЬ В ЭФИРЕ
+        if (!canSend) {
+            const wPct = Math.min(100, Math.round((adm.warmth / adm.warmthNeed) * 100));
+            const tPct = Math.min(100, Math.round((adm.trained / adm.trainedNeed) * 100));
+            bodyEl.innerHTML = `
+                <div class="pager-gate-box">
+                    <div class="pager-empty-title">ДОПУСК К ОТПРАВКЕ «ШЁПОТА» ЗАКРЫТ</div>
+                    <p class="pager-empty-sub">Чтобы бережно поддерживать живых людей без советов и обесценивания, пройдите практику чуткого слушания в терминале и согрейте комнату:</p>
+                    <div class="pager-gate-meter">
+                        <div class="pager-gate-row"><span>1. ЖИВОЕ ТЕПЛО КОМНАТЫ</span><b>${adm.warmth} / ${adm.warmthNeed}</b></div>
+                        <div class="pager-gate-bar"><i style="width:${wPct}%"></i></div>
+                    </div>
+                    <div class="pager-gate-meter">
+                        <div class="pager-gate-row"><span>2. УРОКИ ТРЕНАЖЁРА «СЛУШАТЕЛЬ»</span><b>${adm.trained} / ${adm.trainedNeed}</b></div>
+                        <div class="pager-gate-bar"><i style="width:${tPct}%"></i></div>
+                    </div>
+                    <p class="pager-empty-sub">Принимать входящие «Шёпоты» на свои посты вы можете уже сейчас во вкладке <b>«📥 Входящие»</b>.</p>
+                    <button type="button" class="pager-act-btn pager-act-btn--save" id="pager-open-trainer-btn">▶ ОТКРЫТЬ ТРЕНАЖЁР «СЛУШАТЕЛЬ»</button>
+                </div>
+            `;
+            const trBtn = bodyEl.querySelector('#pager-open-trainer-btn');
+            if (trBtn) {
+                trBtn.onclick = () => {
+                    closePagerModal();
+                    if (typeof openTrainer === 'function') openTrainer();
+                };
+            }
+        } else {
+            const allPosts = (typeof feedPosts !== 'undefined' && Array.isArray(feedPosts)) ? feedPosts : [];
+            const myIds = new Set(getLocalMyPostIdsSafe());
+            const whisperedSet = new Set(getWhisperedPosts());
+            const candidates = allPosts
+                .filter(p => p && p.id && !myIds.has(String(p.id)))
+                .sort((a, b) => Number(whisperedSet.has(String(a.id))) - Number(whisperedSet.has(String(b.id))));
+
+            if (!candidates.length) {
+                bodyEl.innerHTML = `
+                    <div class="pager-empty-box">
+                        <div class="pager-empty-title">В ЭФИРЕ ПОКА ТИХО</div>
+                        <p class="pager-empty-sub">Новые чужие сигналы из «Ленты боли» появятся здесь автоматически.</p>
+                    </div>
+                `;
+            } else {
+                bodyEl.innerHTML = candidates.map(post => {
+                    const pid = String(post.id);
+                    const done = whisperedSet.has(pid);
+                    const isComposing = roomAnim.pagerComposingPostId === pid && !done;
+                    const draft = isComposing ? (roomAnim.pagerDraftText || '') : '';
+                    const trimLen = draft.trim().length;
+                    return `
+                        <div class="pager-card ${done ? 'is-whispered' : ''}" data-post-id="${escFn(pid)}">
+                            <div class="pager-card-head">
+                                <span class="pager-card-tag">${escFn(post.author || 'Аноним')} · #${escFn(post.tag || 'ЛИЧНАЯ БОЛЬ')}</span>
+                                <span class="pager-card-meta">${done ? '✓ ПОДДЕРЖАН (1/1)' : 'ЖДЁТ ТЕПЛА'}</span>
+                            </div>
+                            <p class="pager-card-text">${escFn(post.text || '')}</p>
+                            ${done
+                                ? `<div class="pager-card-done">✓ Вы уже отправили «Шёпот» этому человеку (1 сигнал = 1 шёпот).</div>`
+                                : isComposing
+                                    ? `<div class="pager-compose">
+                                        <div class="pager-compose-hint">Памятка Слушателя: без непрошеных советов и оценок — скажите человеку то, от чего ему станет не так одиноко (${PROGRESSION_RULES.WHISPER_MIN_LEN}–${PROGRESSION_RULES.WHISPER_MAX_LEN} симв.).</div>
+                                        <textarea id="pager-compose-input" class="pager-compose-input" rows="3" maxlength="${PROGRESSION_RULES.WHISPER_MAX_LEN}" placeholder="Напишите тёплый анонимный отклик (${PROGRESSION_RULES.WHISPER_MIN_LEN}–${PROGRESSION_RULES.WHISPER_MAX_LEN} симв.)...">${escFn(draft)}</textarea>
+                                        <div class="pager-compose-bar">
+                                            <span id="pager-compose-count" class="pager-compose-count">${draft.length} / ${PROGRESSION_RULES.WHISPER_MAX_LEN} (мин. ${PROGRESSION_RULES.WHISPER_MIN_LEN})</span>
+                                            <div class="pager-compose-btns">
+                                                <button type="button" class="pager-act-btn pager-act-btn--dismiss" id="pager-compose-cancel">ОТМЕНА</button>
+                                                <button type="button" class="pager-act-btn pager-act-btn--save" id="pager-compose-send" ${adm.whisperLeftToday <= 0 ? 'disabled' : ''}>◈ ШЕПНУТЬ (+${PROGRESSION_RULES.WHISPER_SEND_XP} XP)</button>
+                                            </div>
+                                        </div>
+                                    </div>`
+                                    : `<div class="pager-card-actions">
+                                        <button type="button" class="pager-act-btn pager-act-btn--save" data-act="compose" data-post-id="${escFn(pid)}" ${adm.whisperLeftToday <= 0 ? 'disabled' : ''}>
+                                            ${adm.whisperLeftToday > 0 ? '✦ ПРОЯВИТЬ ЭМПАТИЮ // ШЕПНУТЬ' : 'ЛИМИТ ДНЯ ИСЧЕРПАН (3/3)'}
+                                        </button>
+                                    </div>`
+                            }
+                        </div>
+                    `;
+                }).join('');
+
+                bodyEl.querySelectorAll('[data-act="compose"]').forEach(btn => {
+                    btn.onclick = () => {
+                        roomAnim.pagerComposingPostId = btn.dataset.postId;
+                        roomAnim.pagerDraftText = '';
+                        roomAnim.pagerModalError = '';
+                        roomAnim.pagerModalNotice = '';
+                        if (typeof SFX !== 'undefined' && SFX.tap) SFX.tap();
+                        renderPagerModal();
+                        const inp = bodyEl.querySelector('#pager-compose-input');
+                        if (inp && inp.focus) setTimeout(() => { try { inp.focus(); } catch (_) {} }, 30);
+                    };
+                });
+
+                const inp = bodyEl.querySelector('#pager-compose-input');
+                const cnt = bodyEl.querySelector('#pager-compose-count');
+                const cancelBtn = bodyEl.querySelector('#pager-compose-cancel');
+                const sendBtn = bodyEl.querySelector('#pager-compose-send');
+                if (inp) {
+                    inp.oninput = () => {
+                        if (inp.value.length > PROGRESSION_RULES.WHISPER_MAX_LEN) {
+                            inp.value = inp.value.slice(0, PROGRESSION_RULES.WHISPER_MAX_LEN);
+                        }
+                        roomAnim.pagerDraftText = inp.value;
+                        if (cnt) {
+                            cnt.textContent = `${inp.value.length} / ${PROGRESSION_RULES.WHISPER_MAX_LEN} (мин. ${PROGRESSION_RULES.WHISPER_MIN_LEN})`;
+                        }
+                    };
+                }
+                if (cancelBtn) {
+                    cancelBtn.onclick = () => {
+                        roomAnim.pagerComposingPostId = '';
+                        roomAnim.pagerDraftText = '';
+                        roomAnim.pagerModalError = '';
+                        renderPagerModal();
+                    };
+                }
+                if (sendBtn && inp) {
+                    sendBtn.onclick = async () => {
+                        const targetPost = candidates.find(p => String(p.id) === String(roomAnim.pagerComposingPostId));
+                        sendBtn.disabled = true;
+                        const res = await sendWhisperToPost(targetPost, inp.value, { allowOfflineFallback: true });
+                        if (!res.ok) {
+                            roomAnim.pagerModalError = '⛔ ' + res.error;
+                            if (typeof SFX !== 'undefined' && SFX.block) SFX.block();
+                            renderPagerModal();
+                        }
+                    };
+                }
+            }
+        }
+    }
+
+    if (footEl) {
+        footEl.innerHTML = `
+            <span class="pager-foot-rule">⚖ 13–333 симв. · 1 шёпот на человека · кассета даёт +2 Тепла (1/день)</span>
+            <button type="button" class="pager-foot-vhs" id="pager-open-vhs-btn">📼 КАССЕТЫ VTR-90 (${tapes.length})</button>
+        `;
+        const vhsBtn = footEl.querySelector('#pager-open-vhs-btn');
+        if (vhsBtn) {
+            vhsBtn.onclick = () => {
+                closePagerModal();
+                openVhsArchive();
+            };
+        }
+    }
 }
 
 function togglePtsDrawer() {
@@ -9644,7 +10482,7 @@ function renderRoom() {
         ? [-1, 0, 2, 5][previewIdx]
         : plantStage(warmth, {
             sprouted: adm.sprouted,
-            requireAcks: adm.live,
+            requireAcks: false,
             bloomAcks: adm.whisperAcks
         });
 
@@ -9863,16 +10701,10 @@ function renderRoom() {
             }
         } else if (shownStage < 5) {
             const needNext = Math.max(0, activeSteps[shownStage + 1] - effectiveWarmth);
-            if (shownStage === 4 && !isSeedPot && adm.live && needNext === 0 && adm.whisperAcks < PROGRESSION_RULES.WHISPER_BLOOM_ACKS) {
-                plantSub.textContent = `для цветения нужны живые отклики «стало теплее»: ${adm.whisperAcks}/${PROGRESSION_RULES.WHISPER_BLOOM_ACKS}`;
-            } else {
-                const hint = shownStage + 1 === PROGRESSION_RULES.SPECIES_REVEAL_STAGE ? 'до открытия вида' : 'до след. стадии';
-                plantSub.textContent = `${hint}: ещё ${needNext} тепла · ${rhythmTag}`;
-            }
+            const hint = shownStage + 1 === PROGRESSION_RULES.SPECIES_REVEAL_STAGE ? 'до открытия вида' : 'до след. стадии';
+            plantSub.textContent = `${hint}: ещё ${needNext} тепла · ${rhythmTag}`;
         } else {
-            plantSub.textContent = roomAnim.dewActive
-                ? `полное цветение · на лепестках держится свежая роса`
-                : `полное цветение сезона · ${rhythmTag}`;
+            plantSub.textContent = `полное цветение сезона · ${rhythmTag}`;
         }
     }
 
@@ -10200,3 +11032,13 @@ if (typeof document !== 'undefined' && document.addEventListener) {
         if (!document.hidden) ensureStationLoop();
     });
 }
+
+// Public pager API for integrations and headless regression tests.
+const pagerApi = {
+    validateWhisperText, hasWhisperedToPost, rememberWhisperedPost,
+    claimWhisperCassetteAck, getPendingInboxWhispers, receiveIncomingWhisperLocal,
+    acceptIncomingWhisper, dismissIncomingWhisper, sendWhisperToPost,
+    syncPagerWhispers, openPagerModal, closePagerModal, renderPagerModal
+};
+if (typeof window !== 'undefined') window.SOMA_ROOM = Object.assign(window.SOMA_ROOM || {}, pagerApi);
+if (typeof module !== 'undefined' && module.exports) Object.assign(module.exports, pagerApi);

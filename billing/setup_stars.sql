@@ -1,3 +1,5 @@
+begin;
+
 -- =====================================================================
 -- SOMA~LINK v15 // ПОЛНАЯ СХЕМА С НУЛЯ + RLS + АНТИ-ДЕАНОН + ЗАЩИТА ОПЛАТ
 -- Скопируйте этот файл целиком в Supabase → SQL Editor → нажмите Run.
@@ -244,3 +246,183 @@ drop trigger if exists trg_guard_soma_cosmetics on public.soma_users;
 create trigger trg_guard_soma_cosmetics
     before insert or update on public.soma_users
     for each row execute function public.guard_soma_cosmetics();
+
+-- 7. Таблица анонимного канала «Шёпот» (пейджер NEEOSOMA // NMAV-04):
+--    Связь идёт СТРОГО по post_id (без ID автора поста — 100% анонимность!).
+--    Ограничение unique (post_id, sender_uid) физически запрещает шептать одному человеку дважды.
+create table if not exists public.soma_whispers (
+    id text primary key check (char_length(id) between 4 and 64),
+    post_id text not null check (char_length(post_id) between 4 and 48),
+    post_tag text not null default 'ЛИЧНАЯ БОЛЬ' check (char_length(post_tag) <= 32),
+    post_preview text not null default '' check (char_length(post_preview) <= 180),
+    sender_uid text not null check (sender_uid ~ '^u_[0-9a-f]{4,32}$'),
+    text text not null check (char_length(text) between 13 and 333),
+    status text not null default 'pending' check (status in ('pending', 'saved', 'dismissed')),
+    created_at timestamptz not null default now(),
+    unique (post_id, sender_uid)
+);
+
+create index if not exists soma_whispers_post_idx
+    on public.soma_whispers (post_id, created_at desc);
+
+create index if not exists soma_whispers_sender_idx
+    on public.soma_whispers (sender_uid, status);
+
+alter table public.soma_whispers enable row level security;
+
+drop policy if exists "soma_whispers_select" on public.soma_whispers;
+create policy "soma_whispers_select" on public.soma_whispers
+    for select to anon, authenticated using (true);
+
+drop policy if exists "soma_whispers_insert" on public.soma_whispers;
+create policy "soma_whispers_insert" on public.soma_whispers
+    for insert to anon, authenticated
+    with check (
+        char_length(text) between 13 and 333
+        and status = 'pending'
+        and sender_uid ~ '^u_[0-9a-f]{4,32}$'
+    );
+
+drop policy if exists "soma_whispers_update_status" on public.soma_whispers;
+create policy "soma_whispers_update_status" on public.soma_whispers
+    for update to anon, authenticated using (true) with check (status in ('pending', 'saved', 'dismissed'));
+
+-- Триггер защиты шёпотов: запрещает менять текст, отправителя или пост после отправки (разрешён только перевод статуса pending -> saved/dismissed)
+create or replace function public.guard_soma_whispers()
+returns trigger
+language plpgsql
+as $$
+declare
+    v_role text := coalesce(current_setting('request.jwt.claim.role', true), '');
+begin
+    if v_role = 'service_role' or current_user in ('postgres', 'supabase_admin') then
+        return new;
+    end if;
+
+    if tg_op = 'UPDATE' then
+        new.id := old.id;
+        new.post_id := old.post_id;
+        new.post_tag := old.post_tag;
+        new.post_preview := old.post_preview;
+        new.sender_uid := old.sender_uid;
+        new.text := old.text;
+        new.created_at := old.created_at;
+        if old.status <> 'pending' then
+            new.status := old.status;
+        end if;
+    end if;
+    return new;
+end;
+$$;
+
+drop trigger if exists trg_guard_soma_whispers on public.soma_whispers;
+create trigger trg_guard_soma_whispers
+    before update on public.soma_whispers
+    for each row execute function public.guard_soma_whispers();
+
+-- 8. Private ownership: never infer it from client-supplied post IDs or Telegram data.
+create schema if not exists soma_private;
+revoke all on schema soma_private from public, anon, authenticated;
+create table if not exists soma_private.post_owners (
+    post_id text primary key references public.soma_posts(id) on delete cascade,
+    owner_id uuid not null
+);
+-- Defense in depth: no client policies; only owner-executed helper functions access it.
+alter table soma_private.post_owners enable row level security;
+revoke all on soma_private.post_owners from public, anon, authenticated;
+create or replace function public.capture_soma_post_owner()
+returns trigger language plpgsql security definer set search_path = '' as $$
+begin
+    if auth.uid() is not null then
+        insert into soma_private.post_owners values (new.id, auth.uid());
+    end if;
+    return new;
+end;
+$$;
+revoke all on function public.capture_soma_post_owner() from public;
+drop trigger if exists trg_soma_post_owner on public.soma_posts;
+create trigger trg_soma_post_owner after insert on public.soma_posts
+for each row execute function public.capture_soma_post_owner();
+
+create or replace function public.owns_soma_post(p_id text)
+returns boolean language sql stable security definer set search_path = '' as $$
+    select exists(select 1 from soma_private.post_owners
+                  where post_id = p_id and owner_id = auth.uid());
+$$;
+revoke all on function public.owns_soma_post(text) from public;
+grant execute on function public.owns_soma_post(text) to authenticated;
+
+alter table public.soma_whispers add column if not exists sender_auth_id uuid default auth.uid();
+create unique index if not exists soma_whispers_auth_post_idx
+on public.soma_whispers(post_id, sender_auth_id);
+create index if not exists soma_whispers_auth_created_idx
+on public.soma_whispers(sender_auth_id, created_at);
+-- Legacy rows without verified identities are deliberately inaccessible.
+drop policy if exists "soma_whispers_select" on public.soma_whispers;
+drop policy if exists "soma_whispers_insert" on public.soma_whispers;
+drop policy if exists "soma_whispers_update_status" on public.soma_whispers;
+create policy "soma_whispers_select" on public.soma_whispers
+for select to authenticated using (
+    sender_auth_id = auth.uid() or public.owns_soma_post(post_id)
+);
+create policy "soma_whispers_insert" on public.soma_whispers
+for insert to authenticated with check (
+    sender_auth_id = auth.uid() and status = 'pending'
+    and not public.owns_soma_post(post_id)
+);
+create policy "soma_whispers_update_status" on public.soma_whispers
+for update to authenticated using (public.owns_soma_post(post_id) and status = 'pending')
+with check (public.owns_soma_post(post_id) and status in ('saved', 'dismissed'));
+
+-- Column privileges prevent recipients from learning sender identity.
+revoke all on public.soma_whispers from anon, authenticated;
+grant select (id, post_id, post_tag, post_preview, text, status, created_at)
+on public.soma_whispers to authenticated;
+grant insert (id, post_id, post_tag, post_preview, sender_uid, text, status, created_at)
+on public.soma_whispers to authenticated;
+grant update (status) on public.soma_whispers to authenticated;
+
+create or replace function public.guard_soma_whispers()
+returns trigger language plpgsql security definer set search_path = '' as $$
+begin
+    if tg_op = 'INSERT' then
+        if auth.uid() is null then raise exception 'Authentication required'; end if;
+        -- Serialize concurrent sends from the same authenticated session.
+        perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(auth.uid()::text, 0));
+        new.sender_auth_id := auth.uid();
+        new.created_at := now();
+        if not exists(select 1 from soma_private.post_owners where post_id = new.post_id) then
+            raise exception 'Post has no verified recipient';
+        end if;
+        if public.owns_soma_post(new.post_id) then raise exception 'Cannot whisper to yourself'; end if;
+        if (select count(*) from public.soma_whispers where sender_auth_id = auth.uid()
+            and created_at >= date_trunc('day', now() at time zone 'UTC') at time zone 'UTC') >= 3 then
+            raise exception 'Daily whisper limit reached';
+        end if;
+    else
+        if not public.owns_soma_post(old.post_id) or old.status <> 'pending'
+           or new.status not in ('saved', 'dismissed') then
+            raise exception 'Invalid whisper transition';
+        end if;
+        new.id := old.id; new.post_id := old.post_id;
+        new.post_tag := old.post_tag; new.post_preview := old.post_preview;
+        new.sender_uid := old.sender_uid; new.sender_auth_id := old.sender_auth_id;
+        new.text := old.text; new.created_at := old.created_at;
+    end if;
+    return new;
+end;
+$$;
+drop trigger if exists trg_guard_soma_whispers on public.soma_whispers;
+create trigger trg_guard_soma_whispers before insert or update on public.soma_whispers
+for each row execute function public.guard_soma_whispers();
+
+create or replace function public.my_saved_soma_whispers()
+returns table(id text, status text) language sql stable security definer set search_path = '' as $$
+    select w.id, w.status from public.soma_whispers w
+    where w.sender_auth_id = auth.uid() and w.status = 'saved'
+    order by w.created_at desc;
+$$;
+revoke all on function public.my_saved_soma_whispers() from public;
+grant execute on function public.my_saved_soma_whispers() to authenticated;
+
+commit;

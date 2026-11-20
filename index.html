@@ -562,24 +562,24 @@
                 </div>
             </section>
 
-            <!-- РЕТРО-ПЕЙДЖЕР «ШЁПОТА» (ВРЕМЕННО ВНЕ ЭФИРА) -->
-            <section id="soma-pager" class="soma-pager" data-state="offline" data-admitted="0" aria-label="Пейджер частоты «Шёпот»">
+            <!-- РЕТРО-ПЕЙДЖЕР «ШЁПОТА» NEEOSOMA // NMAV-04 -->
+            <section id="soma-pager" class="soma-pager" data-state="locked" data-admitted="0" aria-label="Пейджер частоты «Шёпот»">
                 <div class="pager-top">
                     <span class="pager-brand"><i id="pager-led" class="pager-led" aria-hidden="true"></i>NEEOSOMA // NMAV-04</span>
                     <span class="pager-sig">CH·04 ШЁПОТ<span class="pager-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span></span>
                 </div>
-                <div class="pager-bezel">
+                <div class="pager-bezel" onclick="openWhisper()" role="button" tabindex="0" aria-label="Открыть экран пейджера «Шёпот»">
                     <div class="pager-lcd" aria-live="polite">
                         <div class="pager-lcd-meta">
-                            <span id="pager-carrier" class="pager-carrier">НЕТ НЕСУЩЕЙ</span>
-                            <span id="pager-gate">ДОПУСК 0/20 · ТРН 0/5</span>
+                            <span id="pager-carrier" class="pager-carrier">ПРИЁМ ВХОДЯЩИХ АКТИВЕН</span>
+                            <span id="pager-gate">ДОПУСК 0/20 · УРОКИ 0/13</span>
                         </div>
-                        <p id="pager-msg" class="pager-lcd-main">ЧАСТОТА «ШЁПОТ» ОТКЛЮЧЕНА</p>
-                        <p id="pager-sub" class="pager-lcd-sub">линия временно молчит · готовьте допуск в тишине и терминале</p>
+                        <p id="pager-msg" class="pager-lcd-main">ПРИЁМ РАБОТАЕТ // ОТПРАВКА ПО ДОПУСКУ СЛУШАТЕЛЯ</p>
+                        <p id="pager-sub" class="pager-lcd-sub">принимайте шёпоты на свои посты уже сейчас · для отправки: 0/20 тепла и 0/13 уроков</p>
                     </div>
                 </div>
                 <div class="pager-keys">
-                    <button type="button" class="pager-key" onclick="pressPagerScan()">◈ ПРОВЕРИТЬ ЧАСТОТУ</button>
+                    <button type="button" id="pager-scan-btn" class="pager-key" onclick="pressPagerScan()">◈ ОТКРЫТЬ ПЕЙДЖЕР (0/13)</button>
                     <button type="button" class="pager-key pager-key--alt" onclick="pressPagerInfo()">◌ ПАМЯТКА</button>
                 </div>
             </section>
@@ -982,6 +982,20 @@
             player.name = savedName;
             player.uid = await makeUid(savedName);
         }
+        // Anonymous Auth supplies an unforgeable database identity, not a public nickname.
+        if (supabaseClient) {
+            try {
+                const { data, error } = await supabaseClient.auth.getSession();
+                if (error) throw error;
+                if (!data.session) {
+                    const result = await supabaseClient.auth.signInAnonymously();
+                    if (result.error) throw result.error;
+                }
+            } catch (error) {
+                console.warn('Pager authentication unavailable:', error.message);
+                notify('Защищённый канал недоступен. Проверьте Anonymous Auth в Supabase.');
+            }
+        }
         renderRoom();
 
         try {
@@ -1013,13 +1027,19 @@
         updatePostQuotaUI();
         setInterval(updatePostQuotaUI, 30000);
         await fetchPosts();
+        if (typeof syncPagerWhispers === 'function') syncPagerWhispers();
         setInterval(refreshFeed, 8000);
-        document.addEventListener('visibilitychange', () => { updatePostQuotaUI(); refreshFeed(); });
+        document.addEventListener('visibilitychange', () => {
+            updatePostQuotaUI();
+            refreshFeed();
+            if (!document.hidden && typeof syncPagerWhispers === 'function') syncPagerWhispers();
+        });
     }
 
     async function refreshFeed() {
         if (!supabaseClient || document.hidden || holding) return;
         try {
+            if (typeof syncPagerWhispers === 'function') syncPagerWhispers();
             const { data, error } = await supabaseClient.from('soma_posts').select('*').order('created_at', { ascending: false }).limit(50);
             if (error || !data || !data.length) return;
             const sig = d => d.map(p => p.id + ':' + p.likes).join('|');
@@ -1575,7 +1595,10 @@
 
         if (tab === 'feed') updatePostQuotaUI();
         if (tab === 'top' && typeof renderLeaderboard === 'function') renderLeaderboard();
-        if (tab === 'profile') updateHeader();
+        if (tab === 'profile') {
+            updateHeader();
+            if (typeof syncPagerWhispers === 'function') syncPagerWhispers();
+        }
         restoreSomaScroll();
     }
 
@@ -1601,6 +1624,7 @@
             window.SOMA_RECEIVER.close();
             return;
         }
+        if (typeof closePagerModal === 'function') closePagerModal();
         if (typeof exitRoomFullscreen === 'function') exitRoomFullscreen();
         if (typeof closeDossier === 'function') closeDossier();
         if (typeof closeShop === 'function') closeShop();

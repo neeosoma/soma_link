@@ -21,7 +21,7 @@ function makeStorage(initial = {}) {
 function loadRoom(env = {}) {
     const localStorage = env.localStorage || makeStorage();
     return runInNewContext(
-        roomCode + ';({ stationPhases, PROGRESSION_RULES, GREENHOUSE_WARMTH_STEPS, ALIEN_WARMTH_STEPS, ALIEN_KINDS, alienSpec, gallerySpecForKind, isGreenhouseUnlocked, plantSecretAlienSeed, feedActiveRoomPlant, openGreenhouse, openGreenhouseFromFullscreen, drawGreenhouseVines, bindSomaSceneScroll, somaClientToLocal, somaScreenDeltaToLocal, mixHex, cyclePtsAlienKind, getWhisperBreachCount, recordWhisperSent, syncWhisperBreachCounter, RARE_MALTESE_INDEX, RARE_MALTESE_BREED, RARE_MOON_CAT_INDEX, RARE_MOON_CAT_COAT, NEEO_SKY_POLY, HEARTH_LANTERNS, COSMIC_DAWN_STARS, stationState, indifferenceIndex, equipStationPhase, inspectPlantStage, togglePlantGallery, inspectPlantKind, togglePtsDrawer, togglePtsDew, cyclePtsCatCoat, cyclePtsDogBreed, togglePtsDemoCassette, loadWarmthLedger, claimDailyWarmth, fireflyState, recordWhisperEcho, daysSinceLastWarmth, whisperAdmission, loadGreenhouse, plantNewGreenhouseSeed, selectGreenhouseSlot, formatCassetteDate, formatCassetteNum, loadCassettes, saveWhisperCassette, toggleCassetteFav, ejectCassette, playCassette, openVhsArchive, pressPagerScan, pressPagerInfo, renderPager, PLANT_KINDS, PLANT_NOTES, PLANT_STAGES, PLANT_WARMTH_STEPS, PLANT_LEAF, PLANT_BLOOM, PLANT_POTS, CAT_COATS, catSpec, DOG_BREEDS, dogSpec, drawCompanionCat, drawCompanionDog, CITY_WINDOWS, hashStr, rng, plantSpec, plantStage, drawPlantSprite, drawCrtMonitor, drawRoomCosmetics, drawWindowWorld, drawWindowLightBeams, drawStationFx, drawCassetteDeck, paintPlantFrame, isRealTelegramMiniApp, getNativeFullscreenElement, requestNativeRoomFullscreen, getFullscreenViewport, computeFullscreenSceneBox, toggleRoomFullscreen, enterRoomFullscreen, exitRoomFullscreen, flipRoomFullscreen, renderRoom, touchRoomObject, activateRoomObject, resetStationPreview, roomAnim });',
+        roomCode + ';({ ...pagerApi, stationPhases, PROGRESSION_RULES, GREENHOUSE_WARMTH_STEPS, ALIEN_WARMTH_STEPS, ALIEN_KINDS, alienSpec, gallerySpecForKind, isGreenhouseUnlocked, plantSecretAlienSeed, feedActiveRoomPlant, openGreenhouse, openGreenhouseFromFullscreen, drawGreenhouseVines, bindSomaSceneScroll, somaClientToLocal, somaScreenDeltaToLocal, mixHex, cyclePtsAlienKind, getWhisperBreachCount, recordWhisperSent, syncWhisperBreachCounter, RARE_MALTESE_INDEX, RARE_MALTESE_BREED, RARE_MOON_CAT_INDEX, RARE_MOON_CAT_COAT, NEEO_SKY_POLY, HEARTH_LANTERNS, COSMIC_DAWN_STARS, stationState, indifferenceIndex, equipStationPhase, inspectPlantStage, togglePlantGallery, inspectPlantKind, togglePtsDrawer, togglePtsDew, cyclePtsCatCoat, cyclePtsDogBreed, togglePtsDemoCassette, loadWarmthLedger, claimDailyWarmth, fireflyState, recordWhisperEcho, daysSinceLastWarmth, whisperAdmission, loadGreenhouse, plantNewGreenhouseSeed, selectGreenhouseSlot, formatCassetteDate, formatCassetteNum, loadCassettes, saveWhisperCassette, toggleCassetteFav, ejectCassette, playCassette, openVhsArchive, pressPagerScan, pressPagerInfo, renderPager, PLANT_KINDS, PLANT_NOTES, PLANT_STAGES, PLANT_WARMTH_STEPS, PLANT_LEAF, PLANT_BLOOM, PLANT_POTS, CAT_COATS, catSpec, DOG_BREEDS, dogSpec, drawCompanionCat, drawCompanionDog, CITY_WINDOWS, hashStr, rng, plantSpec, plantStage, drawPlantSprite, drawCrtMonitor, drawRoomCosmetics, drawWindowWorld, drawWindowLightBeams, drawStationFx, drawCassetteDeck, paintPlantFrame, isRealTelegramMiniApp, getNativeFullscreenElement, requestNativeRoomFullscreen, getFullscreenViewport, computeFullscreenSceneBox, toggleRoomFullscreen, enterRoomFullscreen, exitRoomFullscreen, flipRoomFullscreen, renderRoom, touchRoomObject, activateRoomObject, resetStationPreview, roomAnim });',
         { player: { uid: 'u_0123456789abcdef', name: 'AGENT_1001', warmth: 0 }, roomPreview: false, localStorage, ...env }
     );
 }
@@ -399,7 +399,7 @@ test('release UI hides spoilers, pager replaces NEEO_PHONE, window picks unlocke
     pressPagerScan();
     assert.ok(pagerMsgEl.textContent.includes('ПОИСК НЕСУЩЕЙ'));
     pressPagerInfo();
-    assert.ok(pagerMsgEl.textContent.includes('ОДНОСТОРОННИЙ'));
+    assert.ok(pagerMsgEl.textContent.includes('КАНАЛ ЭМПАТИИ'));
 
     // Hidden species on stages 1/6 & 2/6, revealed at 3/6 for a sprouted player
     ls.setItem('soma_warmth_ledger', JSON.stringify({ day: '2026-11-18', whispersSent: 1, trainedTotal: 5 }));
@@ -1971,4 +1971,96 @@ test('v15: 4th pot (pot_amethyst) + per-flower Greenhouse picker, sheer FS capti
     });
     assert.equal(greenColors.length, 0, `Hanging vines draw ZERO green colors (found: ${greenColors.join(', ')})`);
     assert.ok(recordedStyles.length > 200, 'Hanging vines render rich layered crimson-garnet foliage & buds');
+});
+
+
+test('live Whisper validates 13..333 characters and anonymity, with a 13-lesson gate', () => {
+    const r = loadRoom();
+    assert.equal(r.PROGRESSION_RULES.WHISPER_TRAINER_GATE, 13);
+    for (const n of [0, 12, 334]) assert.equal(r.validateWhisperText('я'.repeat(n)).ok, false);
+    for (const n of [13, 333]) assert.equal(r.validateWhisperText('я'.repeat(n)).ok, true);
+    for (const text of ['напишите мне @someone', 'ссылка https://example.com', 'телефон +12345678901']) {
+        assert.equal(r.validateWhisperText(text).ok, false);
+    }
+    assert.equal(r.whisperAdmission(100, { trainedTotal: 12 }).admitted, false);
+    assert.equal(r.whisperAdmission(100, { trainedTotal: 13 }).admitted, true);
+});
+
+test('Whisper sends once per post, caps at three per day, and grants only send XP', async () => {
+    const player = { uid: 'u_0123456789abcdef', warmth: 100, xp: 0 };
+    const localStorage = makeStorage({ soma_warmth_ledger: JSON.stringify({ day: '2026-11-18', trainedTotal: 13 }) });
+    const r = loadRoom({ player, localStorage });
+    const opts = { today: '2026-11-18', skipCloud: true };
+    const text = 'Пусть сегодня станет немного легче.';
+    assert.equal((await r.sendWhisperToPost({ id: 'post_1' }, text, opts)).ok, true);
+    assert.equal((await r.sendWhisperToPost({ id: 'post_1' }, text, opts)).code, 'already_whispered');
+    for (const id of ['post_2', 'post_3']) assert.equal((await r.sendWhisperToPost({ id }, text, opts)).ok, true);
+    assert.equal((await r.sendWhisperToPost({ id: 'post_4' }, text, opts)).code, 'daily_cap');
+    assert.equal(player.xp, 90);
+    assert.equal(player.warmth, 100);
+    assert.equal((await r.sendWhisperToPost({ id: 'post_4' }, text, { ...opts, today: '2026-11-19' })).ok, true);
+});
+
+test('incoming Whispers can be recorded or dismissed even without sender admission', async () => {
+    const r = loadRoom();
+    for (const id of ['incoming_1', 'incoming_2']) r.receiveIncomingWhisperLocal({ id, text: 'Пусть сегодня станет немного легче.' });
+    assert.equal(r.getPendingInboxWhispers().length, 2);
+    assert.equal((await r.acceptIncomingWhisper('incoming_1')).ok, true);
+    assert.equal(r.loadCassettes().length, 1);
+    assert.equal((await r.acceptIncomingWhisper('incoming_1')).ok, false);
+    assert.equal((await r.dismissIncomingWhisper('incoming_2')).ok, true);
+    assert.equal(r.loadCassettes().length, 1);
+    assert.equal(r.getPendingInboxWhispers().length, 0);
+    assert.equal(r.receiveIncomingWhisperLocal({ id: 'incoming_2', text: 'Пусть сегодня станет немного легче.' }), null);
+});
+
+test('cassette echoes grant +2 warmth and +50 XP at most once daily and never twice per ID', () => {
+    const player = { uid: 'u_0123456789abcdef', warmth: 0, xp: 0 };
+    const r = loadRoom({ player });
+    const a = r.claimWhisperCassetteAck('echo_1', '2026-11-18');
+    assert.equal(a.grantedWarmth, 2);
+    assert.equal(a.grantedXp, 50);
+    assert.equal(r.claimWhisperCassetteAck('echo_2', '2026-11-18').grantedWarmth, 0);
+    assert.equal(r.claimWhisperCassetteAck('echo_1', '2026-11-19').duplicate, true);
+    assert.equal(r.claimWhisperCassetteAck('echo_3', '2026-11-19').grantedWarmth, 2);
+    assert.equal(player.warmth, 4);
+    assert.equal(player.xp, 100);
+});
+
+test('failed cloud cassette acknowledgement leaves the inbox retryable', async () => {
+    const supabaseClient = { from: () => ({ update: () => ({ eq: () => ({ select: async () => ({ data: null, error: { message: 'offline' } }) }) }) }) };
+    const r = loadRoom({ supabaseClient });
+    r.receiveIncomingWhisperLocal({ id: 'retry_1', text: 'Пусть сегодня станет немного легче.' });
+    assert.equal((await r.acceptIncomingWhisper('retry_1')).ok, false);
+    assert.equal(r.getPendingInboxWhispers().length, 1);
+    assert.equal(r.loadCassettes().length, 0);
+    assert.equal((await r.dismissIncomingWhisper('retry_1')).ok, false);
+    assert.equal(r.getPendingInboxWhispers().length, 1);
+});
+
+test('Whisper schema restricts participants and sender identity, with a serialized server cap', () => {
+    const sql = readFileSync(require.resolve('../billing/setup_stars.sql'), 'utf8');
+    assert.ok(sql.includes('revoke all on public.soma_whispers from anon, authenticated'));
+    assert.ok(sql.includes('sender_auth_id = auth.uid() or public.owns_soma_post(post_id)'));
+    assert.ok(sql.includes('pg_advisory_xact_lock'));
+    assert.ok(sql.includes('Post has no verified recipient'));
+    assert.ok(sql.includes('on public.soma_whispers(post_id, sender_auth_id)'));
+    assert.ok(sql.trim().endsWith('commit;'));
+});
+
+test('temporary live test opens admission only with explicit flag and preserves send caps', async () => {
+    const window = { SOMA_CONFIG: { WHISPER_LIVE: true, WHISPER_TEST_OPEN: true } };
+    const r = loadRoom({ window });
+    assert.equal(r.whisperAdmission(0).admitted, true);
+    assert.equal(r.whisperAdmission(0).testOpen, true);
+    const opts = { today: '2026-11-18', skipCloud: true };
+    for (const id of ['test_a', 'test_b', 'test_c']) {
+        assert.equal((await r.sendWhisperToPost({ id }, 'Пусть сегодня станет немного легче.', opts)).ok, true);
+    }
+    assert.equal((await r.sendWhisperToPost({ id: 'test_d' }, 'Пусть сегодня станет немного легче.', opts)).code, 'daily_cap');
+    window.SOMA_CONFIG.WHISPER_TEST_OPEN = false;
+    assert.equal(r.whisperAdmission(0).admitted, false);
+    window.SOMA_CONFIG.WHISPER_TEST_OPEN = true;
+    window.SOMA_CONFIG.WHISPER_LIVE = false;
+    assert.equal(r.whisperAdmission(0).admitted, false);
 });

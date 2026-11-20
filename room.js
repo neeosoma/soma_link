@@ -11116,16 +11116,10 @@ function renderRoom() {
         }
     }
 
-    // На «Рассвете» звёзды растворяются в утреннем свете, в ночных фазах сияют по рангу (холодный XP)
+    // На «Рассвете» звёзды растворяются в утреннем свете, в ночных фазах сияют по атмосферам
     room.querySelectorAll('.station-sky circle, .station-sky line').forEach(el => {
         el.style.opacity = active === 3 ? 0 : (Number(el.dataset.star) <= stars ? 1 : 0);
     });
-    const stEl = document.getElementById('station-stars');
-    if (stEl) {
-        stEl.textContent = active === 3
-            ? `Созвездие атмосфер: ${stars}/${stationPhases.length} · растаяло в лучах рассвета (верните ночь через окно, чтобы увидеть).`
-            : `Созвездие атмосфер: ${stars}/${stationPhases.length} · сияет по открытым фазам за окном.`;
-    }
 
     // PTS-инспектор (строго скрыт в релизе; на PTS аккуратно сворачивается, чтобы видеть чистый интерфейс игрока)
     const ptsWrap = document.getElementById('pts-panel');

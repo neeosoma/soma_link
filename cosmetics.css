@@ -1,31 +1,5 @@
 /* ===== ПАНТЕОН ЦИНИКОВ, ПРЕМИАЛЬНАЯ КОСМЕТИКА И БУТИК ПРИВИЛЕГИЙ (SOMA~LINK) ===== */
 
-/* --- ШАПКА ТОПА, ПЕРЕКЛЮЧАТЕЛЬ РЕЖИМОВ И ПЛАШКА ПОГОНИ --- */
-.top-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 8px;
-}
-
-.top-title-wrap {
-    min-width: 0;
-}
-
-.top-kicker {
-    font: 9px 'Share Tech Mono', monospace;
-    letter-spacing: 0.14em;
-    color: #9e6770;
-    text-transform: uppercase;
-}
-
-.top-heading {
-    font: 700 13px 'Share Tech Mono', monospace;
-    letter-spacing: 0.08em;
-    color: #ffe8ec;
-    text-transform: uppercase;
-}
-
 .top-shop-btn {
     flex-shrink: 0;
     min-height: 34px;
@@ -51,174 +25,17 @@
     transform: translateY(1px);
 }
 
-.top-modes {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 5px;
-    padding: 3px;
-    background: #090305;
-    border: 1px solid #3c141d;
-    border-radius: 11px;
-}
-
-.top-mode-btn {
-    min-height: 32px;
-    padding: 4px 8px;
-    border-radius: 8px;
-    border: 1px solid transparent;
-    background: transparent;
-    font: 10px 'Share Tech Mono', monospace;
-    letter-spacing: 0.06em;
-    color: #9e757c;
-    cursor: pointer;
-    touch-action: manipulation;
-    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
-}
-
-.top-mode-btn[aria-pressed="true"] {
-    background: linear-gradient(180deg, #2b0b13 0%, #1a060b 100%);
-    border-color: rgba(255, 84, 104, 0.5);
-    color: #fff0f2;
-    font-weight: 700;
-}
-
-.top-subnote {
-    font: 9.5px 'Share Tech Mono', monospace;
-    letter-spacing: 0.04em;
-    color: #8f666e;
-    text-align: center;
-}
 
 /* Плашка азарта / погони за следующим местом */
-.top-chase {
-    display: grid;
-    gap: 6px;
-    padding: 10px 12px;
-    border-radius: 13px;
-    background: linear-gradient(135deg, #19070b 0%, #100407 100%);
-    border: 1px solid #591d29;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
-    cursor: pointer;
-}
 
-.top-chase-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    flex-wrap: wrap;
-    gap: 4px 8px;
-    font: 10.5px 'Share Tech Mono', monospace;
-}
 
-.top-chase-me {
-    color: #fff0f2;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-}
 
-.top-chase-gap {
-    color: #ff9ba6;
-    font-size: 9.8px;
-}
-
-.top-chase-bar {
-    height: 5px;
-    border-radius: 999px;
-    background: #080204;
-    border: 1px solid #3a121b;
-    overflow: hidden;
-}
-
-.top-chase-fill {
-    height: 100%;
-    border-radius: 999px;
-    background: linear-gradient(90deg, #8f182a, #ff586e, #f4c16d);
-    transition: width 0.55s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-/* --- ПЬЕДЕСТАЛ ТОП-3 (ТРОН #1 + ТРИАДА #2–#3) --- */
-.top-podium {
-    display: grid;
-    gap: 8px;
-}
-
-.top-throne {
-    position: relative;
-    overflow: hidden;
-    border-radius: 16px;
-    padding: 14px 14px 13px;
-    background:
-        radial-gradient(ellipse 85% 75% at 50% 0%, rgba(235, 168, 72, 0.16), transparent 68%),
-        radial-gradient(ellipse 80% 70% at 50% 100%, rgba(190, 24, 48, 0.2), transparent 72%),
-        linear-gradient(180deg, #1f080d 0%, #110407 65%, #0c0305 100%);
-    border: 1px solid rgba(238, 182, 92, 0.62);
-    box-shadow:
-        0 14px 32px rgba(0, 0, 0, 0.62),
-        0 0 22px rgba(214, 142, 54, 0.12),
-        inset 0 1px 0 rgba(255, 232, 184, 0.25);
-    display: grid;
-    gap: 7px;
-    text-align: center;
-    cursor: pointer;
-    transition: transform 0.2s ease, border-color 0.25s ease;
-}
-
-.top-throne::after {
-    content: '';
-    position: absolute;
-    inset: -40% -80%;
-    background: linear-gradient(115deg, transparent 44%, rgba(255, 224, 158, 0.11) 50%, transparent 56%);
-    pointer-events: none;
-    animation: soma-sheen 6.5s ease-in-out infinite;
-}
-
-@keyframes soma-sheen {
-    0%, 25% { transform: translateX(-38%); }
-    75%, 100% { transform: translateX(38%); }
-}
-
-.top-throne:hover,
-.top-runner:hover,
-.top-row:hover {
-    transform: translateY(-1px);
-}
-
-.top-throne-crown {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    margin: 0 auto;
-    padding: 2px 10px;
-    border-radius: 999px;
-    background: rgba(34, 16, 10, 0.85);
-    border: 1px solid rgba(242, 188, 98, 0.45);
-    font: 700 9.5px 'Share Tech Mono', monospace;
-    letter-spacing: 0.12em;
-    color: #f9d58b;
-}
-
-.top-throne-name {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 6px;
-    font: 700 16px 'Share Tech Mono', monospace;
-    letter-spacing: 0.05em;
-    color: #ff7c8d;
-    text-shadow: 0 0 14px rgba(255, 72, 94, 0.32);
-}
 
 .top-custom-title {
     font: 9.5px 'Share Tech Mono', monospace;
     letter-spacing: 0.11em;
     color: #f3b5be;
     text-transform: uppercase;
-}
-
-.top-throne .top-custom-title {
-    color: #f5cd84;
 }
 
 .top-epitaph {
@@ -229,145 +46,10 @@
     word-break: break-word;
 }
 
-.top-throne-stats {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px 14px;
-    padding-top: 5px;
-    border-top: 1px solid rgba(238, 182, 92, 0.18);
-    font: 10.5px 'Share Tech Mono', monospace;
-    color: #c8a2a9;
-}
 
-.top-throne-xp {
-    font-size: 13px;
-    font-weight: 700;
-    color: #ffd98e;
-}
 
-.top-podium-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-}
 
-.top-runner {
-    position: relative;
-    overflow: hidden;
-    border-radius: 14px;
-    padding: 11px 10px;
-    display: grid;
-    gap: 4px;
-    background: linear-gradient(180deg, #18070b 0%, #0e0406 100%);
-    border: 1px solid #5a222f;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
-    cursor: pointer;
-    transition: transform 0.2s ease, border-color 0.25s ease;
-}
 
-.top-runner--2 {
-    border-color: rgba(206, 214, 228, 0.44);
-    background:
-        radial-gradient(ellipse 90% 70% at 50% 0%, rgba(206, 216, 235, 0.11), transparent 70%),
-        linear-gradient(180deg, #19080d 0%, #0e0407 100%);
-}
-
-.top-runner--3 {
-    border-color: rgba(209, 122, 92, 0.48);
-    background:
-        radial-gradient(ellipse 90% 70% at 50% 0%, rgba(214, 112, 82, 0.13), transparent 70%),
-        linear-gradient(180deg, #1b080b 0%, #0e0406 100%);
-}
-
-.top-runner-place {
-    font: 700 9.5px 'Share Tech Mono', monospace;
-    letter-spacing: 0.1em;
-    color: #d6dde8;
-}
-
-.top-runner--3 .top-runner-place {
-    color: #e8a489;
-}
-
-.top-runner-name {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    min-width: 0;
-    font: 700 12px 'Share Tech Mono', monospace;
-    color: #ff7c8d;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.top-runner-xp {
-    font: 700 11.5px 'Share Tech Mono', monospace;
-    color: #ff7c8d;
-    padding-top: 2px;
-}
-
-/* Строки #4–#50 */
-.top-section-label {
-    font: 9px 'Share Tech Mono', monospace;
-    letter-spacing: 0.14em;
-    color: #875a63;
-    padding: 4px 2px 0;
-    text-transform: uppercase;
-}
-
-.top-row {
-    position: relative;
-    overflow: hidden;
-    padding: 10px 11px;
-    border-radius: 12px;
-    background: #120709;
-    border: 1px solid rgba(185, 42, 62, 0.24);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 8px;
-    font-family: 'Share Tech Mono', monospace;
-    cursor: pointer;
-    transition: transform 0.15s ease, border-color 0.25s ease, background-color 0.25s ease;
-}
-
-.top-row--lodge {
-    background: linear-gradient(90deg, #18070b 0%, #110508 100%);
-    border-color: rgba(224, 68, 88, 0.36);
-}
-
-.top-row--me {
-    border-color: rgba(255, 110, 124, 0.72);
-    box-shadow: 0 0 14px rgba(239, 68, 68, 0.14);
-}
-
-.top-row-left {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    min-width: 0;
-}
-
-.top-rank-num {
-    flex-shrink: 0;
-    min-width: 26px;
-    font-size: 11px;
-    font-weight: 700;
-    color: #8f636b;
-}
-
-.top-row--lodge .top-rank-num {
-    color: #e58e9b;
-}
-
-.top-row-info {
-    min-width: 0;
-    display: grid;
-    gap: 1px;
-}
 
 .top-row-name {
     display: flex;
@@ -386,14 +68,6 @@
     color: #fde68a;
     background: rgba(180, 115, 24, 0.24);
     border: 1px solid rgba(251, 191, 36, 0.38);
-}
-
-.top-row-sub {
-    font-size: 9.5px;
-    color: #987078;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 .top-row-xp {
@@ -663,11 +337,6 @@
     100% { transform: translateY(-28%) translateX(4px); opacity: 0.2; }
 }
 .soma-frame--ember .top-row-xp,
-.soma-frame--ember .top-throne-xp,
-.soma-frame--ember .top-runner-xp {
-    color: #ffab6e !important;
-    text-shadow: 0 0 10px rgba(255, 118, 52, 0.38);
-}
 
 /* 2) СБОЙ ПРОТОКОЛА — тактический RGB-сдвиг каналов, прицельные уголки и живой луч ЭЛТ-развёртки */
 .soma-frame--glitch {
@@ -747,11 +416,6 @@
     }
 }
 .soma-frame--glitch .top-row-xp,
-.soma-frame--glitch .top-throne-xp,
-.soma-frame--glitch .top-runner-xp {
-    color: #9be7ff !important;
-    text-shadow: -1px 0 rgba(255, 48, 92, 0.75), 1px 0 rgba(56, 189, 248, 0.65);
-}
 
 /* 3) БАГРОВЫЙ НЕОН — стеклянная неоновая трубка верхнего NEEO_CITY с бегущей плазменной дугой */
 .soma-frame--neon {
@@ -816,11 +480,6 @@
     }
 }
 .soma-frame--neon .top-row-xp,
-.soma-frame--neon .top-throne-xp,
-.soma-frame--neon .top-runner-xp {
-    color: #ff9cb8 !important;
-    text-shadow: 0 0 10px rgba(255, 42, 102, 0.65);
-}
 
 /* 4) ЧЁРНОЕ ЗОЛОТО — ювелирный оникс Ар-Деко, двойная филигрань 24k и скользящий шёлковый блик */
 .soma-frame--gold {
@@ -875,11 +534,6 @@
     62%, 100% { left: 122%; opacity: 0; }
 }
 .soma-frame--gold .top-row-xp,
-.soma-frame--gold .top-throne-xp,
-.soma-frame--gold .top-runner-xp {
-    color: #fae09e !important;
-    text-shadow: 0 0 10px rgba(244, 192, 88, 0.42);
-}
 
 /* 5) ПРИЗРАК ЭФИРА — переливчатая призма лунного серебра, аметиста и опала с орбитой авроры */
 .soma-frame--phantom {
@@ -944,11 +598,6 @@
     100% { transform: translateX(8%) scale(1.06); opacity: 1; }
 }
 .soma-frame--phantom .top-row-xp,
-.soma-frame--phantom .top-throne-xp,
-.soma-frame--phantom .top-runner-xp {
-    color: #ede4ff !important;
-    text-shadow: 0 0 10px rgba(196, 181, 253, 0.55);
-}
 
 /* 6) ПУЛЬС СТАНЦИИ — живой осциллограф SOMA_LINK: двойное сердцебиение и бегущий луч кардиограммы */
 .soma-frame--pulse {
@@ -1021,15 +670,6 @@
     100% { background-position: -60% 0; }
 }
 .soma-frame--pulse .top-row-xp,
-.soma-frame--pulse .top-throne-xp,
-.soma-frame--pulse .top-runner-xp {
-    color: #fecdd3 !important;
-    text-shadow: 0 0 10px rgba(251, 113, 133, 0.55);
-}
-
-.top-throne .soma-seal:not([class*="soma-seal--"]) {
-    color: #f8d282;
-}
 
 /* ===== 4 КОЛЛЕКЦИОННЫХ КОРПУСА ПЕЙДЖЕРА NEEOSOMA // NMAV-04 (ЕДИНЫЙ ТИР 140 ⭐ · ЖИВЫЕ КОРПУСА И ДИСПЛЕИ!) ===== */
 .soma-pager[data-skin] {
@@ -1564,7 +1204,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .top-throne::after,
     .soma-seal,
     .soma-seal *,
     .soma-title,

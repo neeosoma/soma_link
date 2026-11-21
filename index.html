@@ -2107,6 +2107,12 @@
     function validatePainPost(rawText) {
         const text = String(rawText || '').replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim().slice(0, 666);
         if (!text) return { ok: false, error: 'Напишите то, о чём молчите — пустой сигнал не уйдёт в эфир.' };
+        // Серверный фильтр — авторитет; клиентская проверка — для быстрой реакции.
+        const blockCheck = (window.SOMA_ROOM && typeof window.SOMA_ROOM.somaTextBlocked === 'function')
+            ? window.SOMA_ROOM.somaTextBlocked(text) : false;
+        if (blockCheck) {
+            return { ok: false, error: 'Протокол скрыл отправку: в сигнале есть запрещённая лексика.' };
+        }
         if (text.length < POST_MIN_LEN) {
             return { ok: false, error: `Слишком коротко (${text.length}/${POST_MIN_LEN}). У вас всего 1 сигнал в день — не тратьте его впустую.` };
         }

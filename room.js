@@ -3496,10 +3496,25 @@ function whisperAdmission(_warmth, ledger) {
 }
 
 // ===== ЖИВОЙ КАНАЛ «ШЁПОТ» (13..333 СИМВ., 1 ШЁПОТ НА ПОСТ, БОНУС КАССЕТЫ +4 ТЕПЛА МАКС. 1 РАЗ В СУТКИ) =====
+// Клиентская копия серверного фильтра (soma_text_blocked): быстрая реакция,
+// сервер — авторитет. Нормализация: только буквы/цифры, нижний регистр.
+const BLOCKED_TERMS = [
+    'хуй', 'хуя', 'хуём', 'хуев', 'хуёв', 'пидар', 'пидор', 'пидарас',
+    'педераст', 'падла', 'сука', 'блять', 'блядь', 'урод', 'ублюдок',
+    'гей', 'дурень', 'дура', 'fuck', 'shit'
+];
+function somaTextBlocked(rawText) {
+    const clean = String(rawText || '').toLowerCase().replace(/[^а-яёa-z0-9]/g, '');
+    return BLOCKED_TERMS.some(t => clean.includes(t));
+}
+
 function validateWhisperText(rawText) {
     const text = String(rawText || '').replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
     if (!text) {
         return { ok: false, error: 'Напишите тёплый отклик — пустой шёпот не уйдёт в эфир.' };
+    }
+    if (somaTextBlocked(text)) {
+        return { ok: false, error: 'Протокол скрыл отправку: в сообщении есть запрещённая лексика.' };
     }
     if (text.length < PROGRESSION_RULES.WHISPER_MIN_LEN) {
         return {
@@ -11586,7 +11601,7 @@ const pagerApi = {
     openFirstSignalSession, openWhisperForPost, signalTagLabel,
     acceptFirstSignalRules, completeFirstSession, updateFirstSignalRoom, trackFirstSignalEvent,
     renderFirstSignalEntry, getFirstSignalCandidates, getVisibleFirstSignalCandidates,
-    validateWhisperText, hasWhisperedToPost, rememberWhisperedPost,
+    validateWhisperText, somaTextBlocked, hasWhisperedToPost, rememberWhisperedPost,
     claimWhisperCassetteAck, getPendingInboxWhispers, receiveIncomingWhisperLocal,
     acceptIncomingWhisper, dismissIncomingWhisper, sendWhisperToPost,
     syncPagerWhispers, openPagerModal, closePagerModal, renderPagerModal,

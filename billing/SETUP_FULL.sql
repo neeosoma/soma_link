@@ -433,6 +433,35 @@ $$;
 revoke all on function public.my_saved_soma_whispers() from public;
 grant execute on function public.my_saved_soma_whispers() to authenticated;
 
+-- 9. Фильтр запрещённой лексики (анти-мат / токсичный текст).
+--    Нормализация: приведение к строчному, удаление ВСЕХ символов кроме букв/цифр,
+--    поэтому "х——у…..—-й", "х.уй", "ХУЙ" и пр. сводятся к "хуй" и попадают в фильтр.
+--    Список терминов — в text[]; без сетевых запросов, проверка — подстрокой.
+create or replace function public.soma_text_blocked(p_text text)
+returns boolean
+language plpgsql
+as $$
+declare
+    v_clean text;
+    v_term text;
+begin
+    if p_text is null then
+        return false;
+    end if;
+    v_clean := regexp_replace(lower(p_text), '[^а-яёa-z0-9]', '', 'g');
+    foreach v_term in array array[
+        'хуй', 'хуя', 'хуём', 'хуев', 'хуёв', 'пидар', 'пидор', 'пидарас',
+        'педераст', 'падла', 'сука', 'блять', 'блядь', 'урод', 'ублюдок',
+        'гей', 'дурень', 'дура', 'fuck', 'shit'
+    ] loop
+        if v_clean like '%' || v_term || '%' then
+            return true;
+        end if;
+    end loop;
+    return false;
+end;
+$$;
+
 commit;
 
 -- >>> STEP 2: private witness marks (setup_witness_marks.sql)

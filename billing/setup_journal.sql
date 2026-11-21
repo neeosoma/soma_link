@@ -82,6 +82,9 @@ begin
     if char_length(p_text) < 1 or char_length(p_text) > 500 then
         raise exception 'invalid_text: 1..500 chars';
     end if;
+    if public.soma_text_blocked(p_text) then
+        raise exception 'invalid_text: содержит запрещённую лексику';
+    end if;
 
     insert into public.soma_journal (id, kind, text, date_label, num, fav, author_auth_id)
     values (p_id, p_kind, p_text, p_date, coalesce(p_num, 0), coalesce(p_fav, false), auth.uid())

@@ -47,6 +47,9 @@ begin
     if char_length(p_tag) > 32 then
         p_tag := substring(p_tag from 1 for 32);
     end if;
+    if public.soma_text_blocked(p_text) then
+        raise exception 'invalid_text: содержит запрещённую лексику';
+    end if;
 
     insert into public.soma_posts (id, author, tag, text)
     values (p_id, p_author, p_tag, p_text);
@@ -101,6 +104,9 @@ begin
     end if;
     if char_length(p_post_preview) > 180 then
         p_post_preview := substring(p_post_preview from 1 for 180);
+    end if;
+    if public.soma_text_blocked(p_text) then
+        raise exception 'invalid_text: содержит запрещённую лексику';
     end if;
 
     insert into public.soma_whispers

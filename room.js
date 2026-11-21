@@ -4008,6 +4008,7 @@ function cloudWarn(msg, err) {
 // Persist one cassette row to Supabase (security-definer RPC). Fire-and-forget:
 // the local cache is already updated synchronously, the cloud write is best-effort.
 function cloudSaveCassette(item) {
+    if (typeof setCloudStatus === 'function') setCloudStatus('☁ journal: сохранение кассеты…', true);
     if (typeof supabaseClient === 'undefined' || !supabaseClient) {
         cloudWarn('supabaseClient отсутствует (проверьте config.js и загрузку supabase-js)');
         return { ok: true, offline: true };
@@ -4020,10 +4021,21 @@ function cloudSaveCassette(item) {
         p_num: item.num,
         p_fav: item.fav
     }).then(({ error }) => {
-        if (error) cloudWarn('save_soma_journal_entry (кассета): ' + (error.message || error.code || 'ошибка'));
+        if (error) {
+            const why = error.message || error.code || 'ошибка';
+            if (typeof setCloudStatus === 'function') setCloudStatus('☁ journal: ошибка кассеты — ' + why, false);
+            cloudWarn('save_soma_journal_entry (кассета): ' + why);
+        } else {
+            if (typeof setCloudStatus === 'function') setCloudStatus('☁ journal: кассета сохранена', true);
+        }
         return { ok: !error, offline: !error, error };
     })
-      .catch(e => { cloudWarn('save_soma_journal_entry (кассета): ' + (e && e.message || e)); return { ok: false, offline: false, error: e }; });
+      .catch(e => {
+          const why = e && e.message || String(e);
+          if (typeof setCloudStatus === 'function') setCloudStatus('☁ journal: ошибка кассеты — ' + why, false);
+          cloudWarn('save_soma_journal_entry (кассета): ' + why);
+          return { ok: false, offline: false, error: e };
+      });
 }
 
 // Save a cassette to the local cache immediately, then persist to the cloud in the
@@ -4106,6 +4118,8 @@ async function hydrateJournalFromCloud() {
 // через RPC, чтобы синхронизация с игрой проверялась на реальном Supabase.
 async function saveJournalEntry(id, text, dateLabel, tag) {
     const clean = String(text || '').trim().slice(0, 420);
+    // Диагностика: показываем, что journal-сохранение началось (что функция вызвана).
+    if (typeof setCloudStatus === 'function' && clean) setCloudStatus('☁ journal: сохранение…', true);
     if (!clean) return null;
     const entryId = String(id || 'e_' + Date.now());
     try { saveEntryTag(entryId, tag); } catch (_) {}
@@ -4117,10 +4131,18 @@ async function saveJournalEntry(id, text, dateLabel, tag) {
         const { error } = await supabaseClient.rpc('save_soma_journal_entry', {
             p_id: entryId, p_kind: 'entry', p_text: clean, p_date: dateLabel, p_num: 0, p_fav: false
         });
-        if (error) cloudWarn('save_soma_journal_entry (сигнал): ' + (error.message || error.code || 'ошибка'));
+        if (error) {
+            const why = error.message || error.code || 'ошибка';
+            if (typeof setCloudStatus === 'function') setCloudStatus('☁ journal: ошибка — ' + why, false);
+            cloudWarn('save_soma_journal_entry (сигнал): ' + why);
+        } else {
+            if (typeof setCloudStatus === 'function') setCloudStatus('☁ journal: сохранено', true);
+        }
         return { ok: !error, id: entryId, offline: !!error, error };
     } catch (e) {
-        cloudWarn('save_soma_journal_entry (сигнал): ' + (e && e.message || e));
+        const why = e && e.message || String(e);
+        if (typeof setCloudStatus === 'function') setCloudStatus('☁ journal: ошибка — ' + why, false);
+        cloudWarn('save_soma_journal_entry (сигнал): ' + why);
         return { ok: false, id: entryId, offline: false, error: e };
     }
 }

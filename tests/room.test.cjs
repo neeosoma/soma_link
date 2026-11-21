@@ -2064,6 +2064,49 @@ test('Whisper sends once per post, caps at three per day, and grants only warmth
     assert.equal((await r.sendWhisperToPost({ id: 'post_4' }, text, { ...opts, today: '2026-11-19' })).ok, true);
 });
 
+test('Whisper reply: sends once with p_reply_to, free of daily cap, marks original handled', async () => {
+    const calls = [];
+    const supabaseClient = {
+        async rpc(name, args) {
+            calls.push({ name, args });
+            if (name === 'send_soma_whisper') {
+                return {
+                    error: null,
+                    data: [{ id: args.p_id, reply_to_id: args.p_reply_to, status: 'pending' }]
+                };
+            }
+            return { error: null, data: [] };
+        }
+    };
+    // Личный счётчик уже исчерпан (3/3) — ответ НЕ должен сработать лимит.
+    const ledger = JSON.stringify({ day: '2026-11-18', whisperSentToday: 3, whispersSent: 3 });
+    const player = { uid: 'u_0123456789abcdef', warmth: 100 };
+    const r = loadRoom({ player, localStorage: makeStorage({ soma_signal_rules_v1: 'accepted', soma_warmth_ledger: ledger }), supabaseClient });
+    // Исходный входящий шёпот в переполненном ящике.
+    r.receiveIncomingWhisperLocal({ id: 'w_in_1', post_id: 'p_a1', text: 'Пусть сегодня станет немного легче.' });
+    assert.equal(r.getPendingInboxWhispers().length, 1);
+
+    const res = await r.sendWhisperReply({ id: 'w_in_1', post_id: 'p_a1', post_tag: 'ЛИЧНАЯ БОЛЬ', text: 'Пусть сегодня станет немного легче.' }, 'Это тёплый ответ на ваше сообщение.', { today: '2026-11-18' });
+    assert.equal(res.ok, true, 'reply succeeds even with exhausted daily cap');
+
+    const call = calls.find(c => c.name === 'send_soma_whisper');
+    assert.ok(call, 'send_soma_whisper called');
+    assert.equal(call.args.p_reply_to, 'w_in_1', 'p_reply_to carries the incoming whisper id');
+    assert.equal(call.args.p_text, 'Это тёплый ответ на ваше сообщение.');
+    // Оригинальный шёпот снят с входящих (handled).
+    assert.equal(r.getPendingInboxWhispers().length, 0, 'answered whisper removed from inbox');
+
+    // Личный счётчик не потрачен: whisperSentToday остаётся 3, общий счётчик +1.
+    const after = r.loadWarmthLedger('2026-11-18');
+    assert.equal(after.whisperSentToday, 3, 'daily cap counter unchanged');
+    assert.equal(after.whispersSent, 4, 'total whisper counter incremented');
+
+    // Короткий / пустой ответ — rejected до сети.
+    const short = await r.sendWhisperReply({ id: 'w_in_1', post_id: 'p_a1', text: 'Пусть сегодня станет немного легче.' }, 'коротко');
+    assert.equal(short.ok, false);
+    assert.equal(short.code, 'invalid_text');
+});
+
 test('incoming Whispers can be recorded or dismissed even without sender admission', async () => {
     const r = loadRoom();
     for (const id of ['incoming_1', 'incoming_2']) r.receiveIncomingWhisperLocal({ id, text: 'Пусть сегодня станет немного легче.' });

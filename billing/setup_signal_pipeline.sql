@@ -77,7 +77,7 @@ $$;
 -- ======================================================================
 create or replace function public.send_soma_whisper(
     p_id text, p_post_id text, p_post_tag text, p_post_preview text,
-    p_sender_uid text, p_text text
+    p_sender_uid text, p_text text, p_reply_to text
 )
 returns setof public.soma_whispers
 language plpgsql
@@ -86,7 +86,10 @@ set search_path = public, pg_temp
 as $$
 declare
     r_row public.soma_whispers%rowtype;
+    v_is_reply boolean;
 begin
+    v_is_reply := p_reply_to is not null and char_length(p_reply_to) > 0;
+
     if char_length(p_text) < 13 or char_length(p_text) > 333 then
         raise exception 'invalid_text: whisper must be 13..333 chars';
     end if;
@@ -99,6 +102,9 @@ begin
     if p_sender_uid !~ '^u_[0-9a-f]{4,32}$' then
         raise exception 'invalid_sender_uid';
     end if;
+    if v_is_reply and (char_length(p_reply_to) < 4 or char_length(p_reply_to) > 64) then
+        raise exception 'invalid_reply_id';
+    end if;
     if char_length(p_post_tag) > 32 then
         p_post_tag := substring(p_post_tag from 1 for 32);
     end if;
@@ -109,12 +115,26 @@ begin
         raise exception 'invalid_text: содержит запрещённую лексику';
     end if;
 
-    insert into public.soma_whispers
-        (id, post_id, post_tag, post_preview, sender_uid, text, status, created_at)
-    values
-        (p_id, p_post_id, p_post_tag, p_post_preview, p_sender_uid, p_text, 'pending', now())
-    on conflict (post_id, sender_uid) do update
-        set text = excluded.text, status = 'pending', created_at = now();
+    if v_is_reply then
+        -- Ответ на входящий шёпот: НЕ тратит дневной лимит шёпотов.
+        -- Проверки цели и «1 ответ на шёпот» — в trigger guard_soma_whispers (при insert).
+        -- Оригинальный шёпот переходит в статус answered.
+        insert into public.soma_whispers
+            (id, post_id, post_tag, post_preview, sender_uid, text, status, created_at, reply_to_id)
+        values
+            (p_id, p_post_id, p_post_tag, p_post_preview, p_sender_uid, p_text, 'pending', now(), p_reply_to);
+
+        update public.soma_whispers
+        set status = 'answered'
+        where id = p_reply_to;
+    else
+        -- Обычный шёпот: unique (post_id, sender_uid, reply_to_id) физически
+        -- запрещает шептать одному человеку дважды — повторная отправка даёт 23505.
+        insert into public.soma_whispers
+            (id, post_id, post_tag, post_preview, sender_uid, text, status, created_at, reply_to_id)
+        values
+            (p_id, p_post_id, p_post_tag, p_post_preview, p_sender_uid, p_text, 'pending', now(), coalesce(p_reply_to, ''));
+    end if;
 
     select * into r_row from public.soma_whispers where id = p_id;
 
@@ -137,7 +157,7 @@ as $$
 declare
     r_row public.soma_whispers%rowtype;
 begin
-    if p_status not in ('saved', 'dismissed', 'pending') then
+    if p_status not in ('saved', 'dismissed', 'pending', 'answered') then
         raise exception 'invalid_status';
     end if;
 
@@ -175,6 +195,33 @@ begin
         from public.soma_whispers w
         where w.post_id = any(p_post_ids)
           and w.status = 'pending'
+          and w.reply_to_id = ''
+          and w.sender_auth_id <> auth.uid()
+        order by w.created_at desc
+        limit 20;
+end;
+$$;
+
+-- ======================================================================
+-- 4b. Get replies to my sent whispers (ответы на мои отправленные шёпоты)
+--     RETURNS SETOF public.soma_whispers — тип берётся из реальной таблицы.
+-- ======================================================================
+create or replace function public.get_my_whisper_replies()
+returns setof public.soma_whispers
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+begin
+    return query
+        select w.*
+        from public.soma_whispers w
+        where w.reply_to_id <> ''
+          and w.reply_to_id in (
+            select t.id from public.soma_whispers t
+            where t.sender_auth_id = auth.uid()
+        )
+          and w.status = 'pending'
         order by w.created_at desc
         limit 20;
 end;
@@ -204,14 +251,17 @@ $$;
 revoke all on function public.submit_soma_post(text, text, text, text) from public;
 grant execute on function public.submit_soma_post(text, text, text, text) to anon, authenticated;
 
-revoke all on function public.send_soma_whisper(text, text, text, text, text, text) from public;
-grant execute on function public.send_soma_whisper(text, text, text, text, text, text) to anon, authenticated;
+revoke all on function public.send_soma_whisper(text, text, text, text, text, text, text) from public;
+grant execute on function public.send_soma_whisper(text, text, text, text, text, text, text) to anon, authenticated;
 
 revoke all on function public.set_soma_whisper_status(text, text) from public;
 grant execute on function public.set_soma_whisper_status(text, text) to anon, authenticated;
 
 revoke all on function public.get_my_pending_whispers(text[]) from public;
 grant execute on function public.get_my_pending_whispers(text[]) to anon, authenticated;
+
+revoke all on function public.get_my_whisper_replies() from public;
+grant execute on function public.get_my_whisper_replies() to anon, authenticated;
 
 revoke all on function public.get_my_saved_whispers() from public;
 grant execute on function public.get_my_saved_whispers() to anon, authenticated;

@@ -353,8 +353,24 @@ revoke all on function public.owns_soma_post(text) from public;
 grant execute on function public.owns_soma_post(text) to authenticated;
 
 alter table public.soma_whispers add column if not exists sender_auth_id uuid default auth.uid();
+-- Ответ на входящий шёпот: ссылается на id того входящего шёпота, на который отвечаем.
+-- Ответы НЕ тратят дневной лимит шёпотов (проверка в guard_soma_whispers).
+-- Сентинель «нет ответа» — пустая строка (не NULL): так уникальный индекс
+-- (post_id, sender_uid, reply_to_id) работает для всех строк и ON CONFLICT инферится.
+alter table public.soma_whispers add column if not exists reply_to_id text not null default '';
+-- Разрешаем статус «answered» (оригинальный шёпот, на который пришёл ответ).
+alter table public.soma_whispers drop constraint if exists soma_whispers_status_check;
+alter table public.soma_whispers add constraint soma_whispers_status_check
+    check (status in ('pending', 'saved', 'dismissed', 'answered'));
+-- Unique (post_id, sender_uid) сохраняется для обычных шёпотов; ответы добавляют
+-- reply_to_id в ключ — можно ответить на несколько шёпотов одного поста.
+alter table public.soma_whispers drop constraint if exists soma_whispers_post_id_sender_uid_key;
+create unique index if not exists soma_whispers_post_sender_uid_reply_idx
+    on public.soma_whispers(post_id, sender_uid, reply_to_id);
+-- Аналогично: уникальность (post_id, sender_auth_id) — только для обычных шёпотов.
+drop index if exists soma_whispers_auth_post_idx;
 create unique index if not exists soma_whispers_auth_post_idx
-on public.soma_whispers(post_id, sender_auth_id);
+    on public.soma_whispers(post_id, sender_auth_id) where reply_to_id = '';
 create index if not exists soma_whispers_auth_created_idx
 on public.soma_whispers(sender_auth_id, created_at);
 -- Legacy rows without verified identities are deliberately inaccessible.
@@ -391,17 +407,41 @@ begin
         perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(auth.uid()::text, 0));
         new.sender_auth_id := auth.uid();
         new.created_at := now();
-        if not exists(select 1 from soma_private.post_owners where post_id = new.post_id) then
-            raise exception 'Post has no verified recipient';
-        end if;
-        if public.owns_soma_post(new.post_id) then raise exception 'Cannot whisper to yourself'; end if;
-        if (select count(*) from public.soma_whispers where sender_auth_id = auth.uid()
-            and created_at >= date_trunc('day', now() at time zone 'UTC') at time zone 'UTC') >= 3 then
-            raise exception 'Daily whisper limit reached';
+        if new.reply_to_id <> '' then
+            -- Ответ на входящий шёпот: не тратит дневной лимит шёпотов и не проверяет владение постом.
+            -- Целевой шёпот должен быть входящим: его пост принадлежит мне.
+            if not exists(select 1 from public.soma_whispers t
+                where t.id = new.reply_to_id
+                  and public.owns_soma_post(t.post_id)) then
+                raise exception 'Reply target unavailable';
+            end if;
+            -- Один ответ на один шёпот.
+            if exists(select 1 from public.soma_whispers r
+                where r.reply_to_id = new.reply_to_id
+                  and r.sender_auth_id = auth.uid()) then
+                raise exception 'Reply already sent';
+            end if;
+            -- Шёпот ещё должен быть pending (не обработан, не уже отвечен).
+            if not exists(select 1 from public.soma_whispers t
+                where t.id = new.reply_to_id
+                  and t.status = 'pending') then
+                raise exception 'Reply target unavailable';
+            end if;
+        else
+            if not exists(select 1 from soma_private.post_owners where post_id = new.post_id) then
+                raise exception 'Post has no verified recipient';
+            end if;
+            if public.owns_soma_post(new.post_id) then raise exception 'Cannot whisper to yourself'; end if;
+            -- Лимит учитывает ТОЛЬКО обычные шёпоты: ответы не тратят дневной лимит и не начисляются в счётчик.
+            if (select count(*) from public.soma_whispers where sender_auth_id = auth.uid()
+                and reply_to_id = ''
+                and created_at >= date_trunc('day', now() at time zone 'UTC') at time zone 'UTC') >= 3 then
+                raise exception 'Daily whisper limit reached';
+            end if;
         end if;
     else
         if not public.owns_soma_post(old.post_id) or old.status <> 'pending'
-           or new.status not in ('saved', 'dismissed') then
+           or new.status not in ('saved', 'dismissed', 'answered') then
             raise exception 'Invalid whisper transition';
         end if;
         new.id := old.id; new.post_id := old.post_id;

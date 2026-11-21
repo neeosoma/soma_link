@@ -54,10 +54,10 @@ const A = '11111111-1111-4111-8111-111111111111';
         await db.exec("insert into public.soma_posts(id,text) values ('post_f2','История другого владельца.')");
         await asUser(A);
         await assert.rejects(
-            db.query("select * from public.send_soma_whisper('w_f1','post_f2','ЛИЧНАЯ БОЛЬ','Просто проверка','u_aaa1','Пиши, сука, не молчи.')"),
+            db.query("select * from public.send_soma_whisper('w_f1','post_f2','ЛИЧНАЯ БОЛЬ','Просто проверка','u_aaa1','Пиши, сука, не молчи.', null)"),
             /запрещённую лексику/i
         );
-        const cleanWhisper = await db.query("select * from public.send_soma_whisper('w_f_ok','post_f2','ЛИЧНАЯ БОЛЬ','Просто проверка','u_aaa2','Пусть сегодня станет легче.')");
+        const cleanWhisper = await db.query("select * from public.send_soma_whisper('w_f_ok','post_f2','ЛИЧНАЯ БОЛЬ','Просто проверка','u_aaa2','Пусть сегодня станет легче.', null)");
         assert.equal(cleanWhisper.rows.length, 1);
 
         // 4) save_soma_journal_entry rejects blocked text.

@@ -3796,7 +3796,6 @@ html.is-soma-fs-closing .app-h {
 }
 @keyframes vh-led-pulse { 0%,100% { opacity: .55; } 50% { opacity: 1; } }
 .vh-kicker { font-size: 10px; letter-spacing: .22em; font-weight: 700; color: #ff7a93; text-transform: uppercase; }
-.vh-sub { font-size: 10.5px; color: #9a7f88; margin-top: 2px; font-family: var(--tech-font, ui-monospace, monospace); letter-spacing: .04em; }
 .vh-close {
     background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1);
     color: #c9a0ad; width: 30px; height: 30px; border-radius: 9px; cursor: pointer; font-size: 13px;
@@ -4028,12 +4027,6 @@ html.is-soma-fs-closing .app-h {
     border-radius: 2px; background: linear-gradient(180deg, #e8c496, #9c6e49 78%, #ff6b7d);
     box-shadow: 0 2px 4px rgba(0,0,0,.6);
 }
-.vh-tt-hint {
-    padding: 4px 16px 6px; font-size: 10.5px; color: #9a7f88; text-align: center;
-    font-family: var(--tech-font, ui-monospace, monospace); letter-spacing: .03em;
-    min-height: 14px;
-}
-
 /* панель чтения сигнала */
 .vh-read {
     margin: 0 16px 12px; padding: 14px 16px; border-radius: 14px;

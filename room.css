@@ -2407,9 +2407,9 @@ html.is-soma-fs-closing .app-h {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font: 9px/1.2 'Share Tech Mono', monospace;
+    font: 10px/1.2 'Share Tech Mono', monospace;
     letter-spacing: 0.06em;
-    padding: 2px 5px;
+    padding: 3px 7px;
     border-radius: 999px;
     pointer-events: none;
     background: rgba(20, 50, 34, 0.62);
@@ -3779,7 +3779,7 @@ html.is-soma-fs-closing .app-h {
 }
 .witness-stat-big {
     color: #ff586c;
-    font: 700 28px/1 'Share Tech Mono', monospace;
+    font: 700 31px/1 'Share Tech Mono', monospace;
 }
 .witness-stat-link {
     display: inline-block;

@@ -1619,10 +1619,13 @@
                     const result = await supabaseClient.auth.signInAnonymously();
                     if (result.error) throw result.error;
                 }
+                console.log('[soma:auth] сессия установлена');
             } catch (error) {
-                console.warn('Pager authentication unavailable:', error.message);
+                console.error('[soma:auth] авторизация невозможна:', error && (error.message || error));
                 notify('Защищённый канал недоступен. Проверьте Anonymous Auth в Supabase.');
             }
+        } else {
+            console.error('[soma:auth] supabaseClient не создан — проверьте config.js и загрузку supabase-js из CDN');
         }
         renderRoom();
 

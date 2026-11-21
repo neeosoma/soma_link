@@ -93,7 +93,7 @@ begin
             fav = excluded.fav
         where public.soma_journal.author_auth_id = auth.uid();
 
-    return select * from public.soma_journal where id = p_id;
+    return (select * from public.soma_journal where id = p_id);
 end;
 $$;
 

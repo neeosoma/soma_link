@@ -3602,14 +3602,19 @@ function claimWhisperCassetteAck(whisperId, todayOverride) {
     }
 
     if (typeof roomAnim !== 'undefined' && roomAnim) {
-        roomAnim.pagerNotice = grantedWarmth > 0
+        const notice = grantedWarmth > 0
             ? `✦ Человек сохранил ваш «Шёпот» на кассету! +${grantedWarmth} Тепла пошли на рост растения.`
             : '✦ Ещё один ваш «Шёпот» бережно сохранён на кассету (бонус тепла 1/1 за сегодня уже впитался).';
+        roomAnim.pagerNotice = notice;
+        roomAnim.pagerModalNotice = notice;
+        roomAnim.pagerSavedAlert = true;
         roomAnim.customMode = 'ПЕЙДЖЕР // ОТКЛИК С КАССЕТЫ';
-        roomAnim.customEntry = roomAnim.pagerNotice;
+        roomAnim.customEntry = notice;
     }
+    if (typeof playObjectTone === 'function') playObjectTone('pager');
     trackFirstSignalEvent('echo_received');
     renderRoom();
+    if (typeof renderFeedPager === 'function') renderFeedPager();
     return { duplicate: false, grantedWarmth, ledger };
 }
 
@@ -4077,6 +4082,35 @@ async function saveJournalEntry(id, text, dateLabel) {
     } catch (e) {
         return { ok: false, id, offline: false, error: e };
     }
+}
+
+// Combined diary archive: the player's own entries (kind='entry') and saved
+// cassettes (kind='cassette'), merged from the cloud journal and the local cache.
+// Returns items sorted newest-first: { id, kind, text, date, ts, num, fav }.
+async function loadDiaryArchive() {
+    const items = [];
+    const localCassettes = loadCassettes();
+    localCassettes.forEach(c => items.push({ ...c, kind: 'cassette' }));
+    if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+        try {
+            const { data, error } = await supabaseClient.rpc('get_my_soma_journal');
+            if (!error && Array.isArray(data)) {
+                data.forEach(r => {
+                    if (!r || !r.id) return;
+                    const norm = normalizeJournalRow(r);
+                    if (r.kind === 'entry') {
+                        items.push({ ...norm, kind: 'entry' });
+                    } else {
+                        // cassette: cloud is authoritative on text/date
+                        const idx = items.findIndex(i => i.id === norm.id);
+                        if (idx >= 0) items[idx] = { ...norm, kind: 'cassette' };
+                        else items.push({ ...norm, kind: 'cassette' });
+                    }
+                });
+            }
+        } catch (_) {}
+    }
+    return items.sort((a, b) => (b.ts || 0) - (a.ts || 0));
 }
 
 function ejectCassette(silent) {
@@ -9419,18 +9453,19 @@ function touchRoomObject(obj, event) {
         if (tapes.length) {
             const current = tapes.find(c => c.id === roomAnim.activeCassetteId) || tapes[0];
             roomAnim.activeCassetteId = current.id;
-            modeLabel = `VHS #${formatCassetteNum(current.num)} · ${current.date}`;
+            modeLabel = `NEEOSOMA // VTR-90 · ДНЕВНИК · АРХИВ #${formatCassetteNum(current.num)}`;
             line = `«${current.text}»`;
         } else {
-            modeLabel = 'NEEOSOMA // VTR-90 · ВИДЕОАРХИВ';
+            modeLabel = 'NEEOSOMA // VTR-90 · ДНЕВНИК · АРХИВ';
             line = nextRoomLine('shelf', ROOM_LINES.shelf);
         }
-        // Открываем ламповый видеомагнитофон NEEOSOMA // VTR-90 прямо поверх сцены (без выхода из Fullscreen!)
-        if (typeof window !== 'undefined' && window.SOMA_VHS && typeof window.SOMA_VHS.open === 'function') {
-            roomAnim.customMode = modeLabel;
-            roomAnim.customEntry = line;
-            renderRoom();
-            window.SOMA_VHS.open(roomAnim.activeCassetteId || '');
+        // Открываем архив дневника (свои сигналы + кассеты) с поиском —
+        // аутентичное окно прямо поверх сцены (без выхода из Fullscreen!).
+        roomAnim.customMode = modeLabel;
+        roomAnim.customEntry = line;
+        renderRoom();
+        if (typeof window !== 'undefined' && typeof window.openDiaryArchive === 'function') {
+            window.openDiaryArchive();
             return;
         }
     } else if (obj === 'nightlight') {
@@ -9990,8 +10025,8 @@ function renderFeedPager(warmthArg, ledgerArg) {
         mainLine = 'ПОИСК НЕСУЩЕЙ... ЭФИР ПУСТ';
     } else if (adm.live) {
         mainLine = inbox.length ? `ВХОДЯЩИЕ: ${inbox.length}` : 'ЖИВАЯ ЧАСТОТА · ВЫ НА СВЯЗИ';
-        subLine = inbox.length ? 'Прочитать, сохранить или отпустить — решать вам.'
-            : roomAnim.pagerNotice || 'Прочитайте историю. Ответьте, если хочется.';
+        subLine = roomAnim.pagerNotice || (inbox.length ? 'Прочитать, сохранить или отпустить — решать вам.'
+            : 'Прочитайте историю. Ответьте, если хочется.');
     }
     if (msgEl) msgEl.textContent = mainLine;
     if (subEl) subEl.textContent = subLine;
@@ -10004,7 +10039,7 @@ const PAGER_MEMORIAL_LINES = [
     { main: 'АНОНИМНОСТЬ', sub: 'Все входящие и исходящие сообщения полностью анонимны. Никто не узнает, кто вы.' },
     { main: 'СЛУЧАЙНЫЙ КОНТАКТ', sub: 'Это игра о случайном контакте. Вы не знаете, с кем говорите — и это суть.' },
     { main: 'КАССЕТА VTR-90', sub: 'Самые тёплые послания можно сохранить на кассету — и переслушать когда захотите.' },
-    { main: 'ШЁПОТ', sub: 'Личный шёпот — это ваш выбор. Отвечать не обязательно. Слушайте своё состояние.' }
+    { main: 'ШЁПОТ', sub: 'Личный шёпот — это ваш выбор. Слушайте своё состояние.' }
 ];
 function togglePagerMemorial() {
     if (typeof document === 'undefined') return;
@@ -10323,7 +10358,7 @@ function renderPagerModal() {
                 <div class="pager-empty-box">
                     <div class="pager-empty-title">ВХОДЯЩИХ ШЁПОТОВ ПОКА НЕТ</div>
                     <p class="pager-empty-sub">Здесь появятся отклики на ваши истории.</p>
-                    <p class="pager-empty-sub">Понравится — сохраните на кассету. Отвечать не обязательно.</p>
+                    <p class="pager-empty-sub">Понравится — сохраните на кассету.</p>
                 </div>
             `;
         } else {
@@ -10419,9 +10454,9 @@ function renderPagerModal() {
                                 : isComposing && !adm.rulesAccepted
                                     ? `<div class="pager-gate-box">
                                         <div class="pager-gate-title">ПЕРЕД ОТВЕТОМ</div>
-                                        <div class="pager-gate-rule">Пишите от себя — без оценок и непрошеных советов.</div>
-                                        <div class="pager-gate-rule">Без ссылок и контактов.</div>
-                                        <div class="pager-gate-rule">До 3 шёпотов в сутки, один на пост. Ответ может не прийти.</div>
+                                        <div class="pager-gate-rule">Пишите искренне — от души.</div>
+                                        <div class="pager-gate-rule">Без оценок, ссылок и контактов.</div>
+                                        <div class="pager-gate-rule">Иногда, лучше промолчать.</div>
                                         <div class="pager-gate-actions">
                                             <button type="button" class="pager-act-btn" id="signal-rules-accept">ПОНЯТНО · ПРОДОЛЖИТЬ</button>
                                             <button type="button" class="pager-act-btn pager-act-btn--dismiss" id="signal-rules-later">НЕ СЕЙЧАС</button>
@@ -10473,7 +10508,7 @@ function renderPagerModal() {
                             await decidePagerStory(btn.dataset.postId, btn);
                         }
                         roomAnim.pagerModalNotice = btn.dataset.act === 'read'
-                            ? 'Можно просто прочитать. Отвечать не обязательно.' : 'Сигнал пропущен. Это нормально.';
+                            ? 'Можно просто прочитать.' : 'Сигнал пропущен. Это нормально.';
                         renderPagerModal();
                     };
                 });
@@ -11368,7 +11403,8 @@ const pagerApi = {
     claimWhisperCassetteAck, getPendingInboxWhispers, receiveIncomingWhisperLocal,
     acceptIncomingWhisper, dismissIncomingWhisper, sendWhisperToPost,
     syncPagerWhispers, openPagerModal, closePagerModal, renderPagerModal,
-    hydrateJournalFromCloud, saveJournalEntry, deleteCassette
+    hydrateJournalFromCloud, saveJournalEntry, deleteCassette, loadDiaryArchive,
+    playCassette, toggleCassetteFav
 };
 if (typeof window !== 'undefined') window.SOMA_ROOM = Object.assign(window.SOMA_ROOM || {}, pagerApi);
 if (typeof module !== 'undefined' && module.exports) Object.assign(module.exports, pagerApi);

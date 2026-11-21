@@ -3714,6 +3714,40 @@ html.is-soma-fs-closing .app-h {
     text-decoration: underline;
 }
 
+/* Нижний правый угол карточки: кнопка «записать кассету близкому» */
+.witness-card-foot {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+}
+.witness-cassette-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font: 9px 'Share Tech Mono', monospace;
+    letter-spacing: 0.12em;
+    color: #ffd9d9;
+    background: linear-gradient(180deg, rgba(255, 72, 94, 0.12) 0%, rgba(120, 20, 36, 0.22) 100%);
+    border: 1px solid rgba(255, 72, 94, 0.38);
+    border-radius: 999px;
+    padding: 8px 14px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease, border-color 0.2s ease;
+}
+.witness-cassette-btn svg {
+    color: #ff7c8d;
+    flex: 0 0 auto;
+}
+.witness-cassette-btn:hover {
+    background: linear-gradient(180deg, rgba(255, 72, 94, 0.2) 0%, rgba(150, 30, 48, 0.3) 100%);
+    border-color: rgba(255, 124, 141, 0.7);
+    box-shadow: 0 0 16px rgba(255, 72, 94, 0.28);
+}
+.witness-cassette-btn:active {
+    transform: scale(0.96);
+}
+
 /* ===== Вкладка Оранжерея ===== */
 .gh-tab-head { margin-bottom: 10px; }
 .gh-tab-kicker { color: #b79382; font: 8px 'Share Tech Mono', monospace; letter-spacing: 0.1em; }

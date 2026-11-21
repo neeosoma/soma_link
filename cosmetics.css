@@ -336,7 +336,6 @@
     75%  { opacity: 0.85; }
     100% { transform: translateY(-28%) translateX(4px); opacity: 0.2; }
 }
-.soma-frame--ember .top-row-xp,
 
 /* 2) СБОЙ ПРОТОКОЛА — тактический RGB-сдвиг каналов, прицельные уголки и живой луч ЭЛТ-развёртки */
 .soma-frame--glitch {
@@ -415,7 +414,6 @@
             inset 0 0 14px rgba(56, 189, 248, 0.18);
     }
 }
-.soma-frame--glitch .top-row-xp,
 
 /* 3) БАГРОВЫЙ НЕОН — стеклянная неоновая трубка верхнего NEEO_CITY с бегущей плазменной дугой */
 .soma-frame--neon {
@@ -479,7 +477,6 @@
             inset 0 0 8px rgba(255, 38, 98, 0.12);
     }
 }
-.soma-frame--neon .top-row-xp,
 
 /* 4) ЧЁРНОЕ ЗОЛОТО — ювелирный оникс Ар-Деко, двойная филигрань 24k и скользящий шёлковый блик */
 .soma-frame--gold {
@@ -533,7 +530,6 @@
     58%       { left: 122%; opacity: 1; }
     62%, 100% { left: 122%; opacity: 0; }
 }
-.soma-frame--gold .top-row-xp,
 
 /* 5) ПРИЗРАК ЭФИРА — переливчатая призма лунного серебра, аметиста и опала с орбитой авроры */
 .soma-frame--phantom {
@@ -597,7 +593,6 @@
     0%   { transform: translateX(-8%) scale(1); opacity: 0.72; }
     100% { transform: translateX(8%) scale(1.06); opacity: 1; }
 }
-.soma-frame--phantom .top-row-xp,
 
 /* 6) ПУЛЬС СТАНЦИИ — живой осциллограф SOMA_LINK: двойное сердцебиение и бегущий луч кардиограммы */
 .soma-frame--pulse {
@@ -669,7 +664,6 @@
     0%   { background-position: 140% 0; }
     100% { background-position: -60% 0; }
 }
-.soma-frame--pulse .top-row-xp,
 
 /* ===== 4 КОЛЛЕКЦИОННЫХ КОРПУСА ПЕЙДЖЕРА NEEOSOMA // NMAV-04 (ЕДИНЫЙ ТИР 140 ⭐ · ЖИВЫЕ КОРПУСА И ДИСПЛЕИ!) ===== */
 .soma-pager[data-skin] {

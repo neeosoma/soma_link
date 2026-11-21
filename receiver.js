@@ -932,8 +932,10 @@
                                     <div class="rx-cd-slot" aria-hidden="true"></div>
                                     <div class="rx-cd-tray" id="rx-cd-tray">
                                         <div class="rx-cd" id="rx-cd">
-                                            <div class="rx-cd-shine" aria-hidden="true"></div>
-                                            <div class="rx-cd-label" id="rx-label"></div>
+                                            <div class="rx-cd-spin">
+                                                <div class="rx-cd-shine" aria-hidden="true"></div>
+                                                <div class="rx-cd-label" id="rx-label"></div>
+                                            </div>
                                         </div>
                                     </div>
                                     <button type="button" class="rx-cd-eject" id="rx-cd-eject" title="Открыть лоток" aria-label="Открыть лоток">⏏</button>

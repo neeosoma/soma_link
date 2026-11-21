@@ -64,7 +64,7 @@ drop function if exists public.save_soma_journal_entry(text, text, text, text, i
 create or replace function public.save_soma_journal_entry(
     p_id text, p_kind text, p_text text, p_date text, p_num integer, p_fav boolean
 )
-returns public.soma_journal
+returns setof public.soma_journal
 language plpgsql
 security definer
 set search_path = public, pg_temp
@@ -93,7 +93,7 @@ begin
             fav = excluded.fav
         where public.soma_journal.author_auth_id = auth.uid();
 
-    return (select * from public.soma_journal where id = p_id);
+    return query select * from public.soma_journal where id = p_id;
 end;
 $$;
 

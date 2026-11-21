@@ -10438,6 +10438,7 @@ function closePagerModal() {
     roomAnim.pagerRequestedPostId = '';
     roomAnim.pagerComposingPostId = '';
     roomAnim.pagerModalError = '';
+    if (typeof hideKeyboard === 'function') { try { hideKeyboard(); } catch (_) {} }
     if (typeof restoreSomaScroll === 'function') {
         try { restoreSomaScroll(); } catch (_) {}
     }
@@ -10717,6 +10718,7 @@ function renderPagerModal() {
                         roomAnim.pagerComposingPostId = '';
                         roomAnim.pagerDraftText = '';
                         roomAnim.pagerModalError = '';
+                        if (typeof hideKeyboard === 'function') hideKeyboard();
                         renderPagerModal();
                     };
                 }
@@ -10724,6 +10726,7 @@ function renderPagerModal() {
                     sendBtn.onclick = async () => {
                         const targetPost = candidates.find(p => String(p.id) === String(roomAnim.pagerComposingPostId));
                         sendBtn.disabled = true;
+                        if (typeof hideKeyboard === 'function') hideKeyboard();
                         const res = await sendWhisperToPost(targetPost, inp.value);
                         if (!res.ok) {
                             roomAnim.pagerModalError = '⛔ ' + res.error;

@@ -3776,3 +3776,210 @@ html.is-soma-fs-closing .app-h {
 }
 .gh-tab-status { color: #9d9095; font: 8px 'Share Tech Mono', monospace; }
 
+
+/* ===== ВИНИЛОВАЯ ПОЛКА + ПРОИГРЫВАТЕЛЬ (Side-view turntable) — world-class game design ===== */
+#vinyl-archive-modal { --vh-accent: #ff4d6d; }
+.vh-shell {
+    background: linear-gradient(160deg, #0d0709 0%, #080203 100%);
+    border-color: rgba(255, 77, 109, .38);
+    box-shadow: 0 30px 80px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,120,150,.08);
+}
+.vh-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 18px 12px; border-bottom: 1px solid rgba(255,77,109,.16);
+    background: linear-gradient(180deg, rgba(255,77,109,.05), transparent);
+}
+.vh-led {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: #ff3355; box-shadow: 0 0 10px 2px rgba(255,51,85,.7);
+    animation: vh-led-pulse 2.4s ease-in-out infinite;
+}
+@keyframes vh-led-pulse { 0%,100% { opacity: .55; } 50% { opacity: 1; } }
+.vh-kicker { font-size: 10px; letter-spacing: .22em; font-weight: 700; color: #ff7a93; text-transform: uppercase; }
+.vh-sub { font-size: 10.5px; color: #9a7f88; margin-top: 2px; font-family: var(--tech-font, ui-monospace, monospace); letter-spacing: .04em; }
+.vh-close {
+    background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1);
+    color: #c9a0ad; width: 30px; height: 30px; border-radius: 9px; cursor: pointer; font-size: 13px;
+    transition: all .2s;
+}
+.vh-close:hover { background: rgba(255,77,109,.18); color: #ffd0db; border-color: rgba(255,77,109,.5); }
+.vh-search {
+    display: flex; align-items: center; gap: 8px; margin: 12px 18px 0;
+    padding: 9px 12px; border-radius: 12px; background: #120608;
+    border: 1px solid rgba(255,255,255,.08); color: #b58;
+}
+.vh-search svg { color: #ff6b85; flex: none; }
+.vh-search input {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: #f3e4ea; font-size: 13px; font-family: var(--tech-font, ui-monospace, monospace);
+}
+.vh-search input::placeholder { color: #6a5560; }
+
+/* сцена: полка слева + проигрыватель справа (вид сбоку) */
+.vh-stage {
+    display: grid; grid-template-columns: 1fr 300px; gap: 14px;
+    padding: 14px 18px 12px; min-height: 340px;
+}
+.vh-shelf-wrap { display: flex; flex-direction: column; min-width: 0; }
+.vh-shelf-bar {
+    height: 14px; margin: 6px 0; border-radius: 4px;
+    background: linear-gradient(180deg, #3a2014, #1c0e07);
+    box-shadow: inset 0 -3px 6px rgba(0,0,0,.6), 0 2px 0 rgba(255,180,120,.05);
+}
+.vh-shelf {
+    flex: 1; display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;
+    padding: 10px 6px 18px; overflow-y: auto;
+    background: linear-gradient(180deg, rgba(255,255,255,.015), rgba(0,0,0,.2));
+}
+.vh-empty {
+    flex: 1; display: flex; flex-direction: column; gap: 6px; align-items: center; justify-content: center;
+    text-align: center; color: #8a6b75; font-size: 12px; padding: 40px 10px;
+}
+.vh-empty strong { color: #ff7a93; font-size: 13px; letter-spacing: .06em; }
+
+/* карточка пластинки на полке (стоит вертикально, тень, при наведении приподнимается) */
+.vh-record-card {
+    position: relative; width: 96px; padding: 12px 10px 10px;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    border-radius: 14px; cursor: grab; user-select: none; touch-action: none;
+    background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.01));
+    border: 1px solid rgba(255,255,255,.07);
+    box-shadow: 0 10px 22px rgba(0,0,0,.45);
+    transition: transform .22s cubic-bezier(.2,.8,.2,1), box-shadow .22s, border-color .22s;
+}
+.vh-record-card:hover { transform: translateY(-4px); border-color: var(--vh-accent); box-shadow: 0 16px 30px rgba(0,0,0,.55), 0 0 24px -6px var(--vh-accent); }
+.vh-record-card:active { cursor: grabbing; }
+.vh-record-card.is-dragging { opacity: .25; transform: scale(.96); }
+.vh-record-card.is-placed { opacity: .3; filter: grayscale(.5); }
+.vh-record-disc {
+    width: 62px; height: 62px; border-radius: 50%; position: relative;
+    background:
+        radial-gradient(circle at 50% 50%, #151515 0 33%, transparent 33.2%),
+        repeating-radial-gradient(circle at 50% 50%, #1d1d1d 0 1px, #0e0e0e 1px 3px),
+        #161616;
+    box-shadow: 0 4px 10px rgba(0,0,0,.5), inset 0 0 0 2px rgba(255,255,255,.04);
+}
+.vh-record-disc::after {
+    content: ""; position: absolute; inset: 17px; border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, var(--vh-accent), #2a0a12 92%);
+    box-shadow: inset 0 0 6px rgba(0,0,0,.4);
+}
+.vh-record-label { display: flex; flex-direction: column; align-items: center; line-height: 1.2; }
+.vh-record-label .lk { font-size: 8px; letter-spacing: .16em; color: #ff8da6; font-weight: 700; }
+.vh-record-label .ld { font-size: 9px; color: #8a6b75; font-family: var(--tech-font, ui-monospace, monospace); }
+.vh-record-tag {
+    font-size: 9px; color: #d9b0bb; padding: 2px 8px; border-radius: 999px;
+    background: rgba(255,77,109,.1); border: 1px solid rgba(255,77,109,.2); max-width: 86px;
+    text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.vh-fav-dot {
+    position: absolute; top: 8px; right: 8px; background: none; border: none;
+    color: #5a414c; font-size: 12px; cursor: pointer; padding: 2px; line-height: 1;
+}
+.vh-fav-dot.is-on { color: #ffd24d; text-shadow: 0 0 8px rgba(255,210,77,.6); }
+
+/* летающая карточка при drag */
+.vh-ghost {
+    position: fixed; z-index: 9999; top: 0; left: 0; pointer-events: none;
+    box-shadow: 0 24px 50px rgba(0,0,0,.65), 0 0 40px -10px var(--vh-accent);
+    border-color: var(--vh-accent) !important;
+    animation: vh-ghost-in .15s ease;
+}
+@keyframes vh-ghost-in { from { transform: scale(.8); opacity: 0; } }
+
+/* ПРОИГРЫВАТЕЛЬ — вид сбоку (3/4): основание, горизонтальный вращающийся стол, тонарм */
+.vh-turntable {
+    position: relative; border-radius: 18px; padding: 18px 14px 14px;
+    background:
+        linear-gradient(180deg, rgba(255,255,255,.03), transparent 30%),
+        linear-gradient(160deg, #2a1410, #120705);
+    border: 1px solid rgba(255,160,120,.14);
+    box-shadow: inset 0 1px 0 rgba(255,200,160,.08), 0 16px 34px rgba(0,0,0,.5);
+    display: flex; flex-direction: column; align-items: center;
+}
+.vh-tt-base {
+    position: absolute; left: 10px; right: 10px; bottom: 10px; height: 10px;
+    border-radius: 4px;
+    background: linear-gradient(180deg, #3d2417, #150a06);
+    box-shadow: 0 6px 14px rgba(0,0,0,.5);
+}
+/* Горизонтальный вращающийся стол (плавун) — эллипс даёт 3/4-вид сбоку */
+.vh-tt-platter {
+    position: relative; width: 184px; height: 92px; margin-top: 16px;
+    border-radius: 50%;
+    background: radial-gradient(ellipse at 50% 40%, #303034 0 64%, #161618 66% 100%);
+    box-shadow: 0 16px 28px rgba(0,0,0,.55), inset 0 0 0 3px rgba(255,255,255,.05), inset 0 -6px 14px rgba(0,0,0,.45);
+    display: flex; align-items: center; justify-content: center;
+}
+/* Пластинка — круг, лежит на столе; крутится со 2D-вращением (чётко видно) */
+.vh-record {
+    position: relative; width: 96px; height: 96px;
+    border-radius: 50%;
+    transform-origin: 50% 50%;
+    background:
+        conic-gradient(from 20deg, transparent 0deg, rgba(255,255,255,.10) 30deg, transparent 70deg, transparent 180deg, rgba(255,224,200,.08) 210deg, transparent 250deg),
+        repeating-radial-gradient(circle at 50% 50%, #222222 0 1px, #101010 1px 3.5px),
+        #181818;
+    box-shadow: inset 0 0 0 2px rgba(255,255,255,.04), 0 8px 18px rgba(0,0,0,.6);
+    z-index: 2;
+}
+.vh-record.is-spinning { animation: vh-record-spin 5.5s linear infinite; }
+@keyframes vh-record-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+.vh-record-grooves {
+    position: absolute; inset: 5%; border-radius: 50%;
+    background: repeating-radial-gradient(circle at 50% 50%, rgba(255,255,255,.06) 0 1px, transparent 1px 3.5px);
+}
+.vh-record-label {
+    position: absolute; inset: 33%; border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, var(--vh-accent), #2a0a12 92%);
+    box-shadow: inset 0 0 5px rgba(0,0,0,.45), 0 0 0 1.5px rgba(255,234,206,.5);
+}
+.vh-tt-spindle {
+    position: absolute; top: 50%; left: 50%; width: 8px; height: 8px;
+    margin: -4px 0 0 -4px; border-radius: 50%; z-index: 3;
+    background: radial-gradient(circle at 35% 35%, #fff2d2, #9e6c38);
+    box-shadow: 0 0 0 1.5px rgba(8,3,5,.85);
+}
+/* тонарм сверху сбоку */
+.vh-tt-arm {
+    position: absolute; top: 10px; right: 22px; width: 90px; height: 10px;
+    border-radius: 6px; transform-origin: right center; transform: rotate(-28deg);
+    background: linear-gradient(180deg, #4a4a50, #222);
+    box-shadow: 0 4px 10px rgba(0,0,0,.5);
+}
+.vh-tt-arm::after {
+    content: ""; position: absolute; left: -4px; top: 0; width: 14px; height: 14px;
+    border-radius: 50%; background: radial-gradient(circle at 35% 35%, #6a6a72, #1c1c20);
+    box-shadow: 0 2px 6px rgba(0,0,0,.5);
+}
+.vh-tt-hint {
+    margin-top: 14px; font-size: 10.5px; color: #9a7f88; text-align: center;
+    font-family: var(--tech-font, ui-monospace, monospace); letter-spacing: .03em;
+    min-height: 14px;
+}
+
+/* панель чтения сигнала */
+.vh-read {
+    margin: 0 18px 12px; padding: 14px 16px; border-radius: 14px;
+    background: linear-gradient(180deg, rgba(255,77,109,.07), rgba(255,77,109,.02));
+    border: 1px solid rgba(255,77,109,.22);
+    animation: vh-read-in .3s ease;
+}
+@keyframes vh-read-in { from { opacity: 0; transform: translateY(8px); } }
+.vh-read-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.vh-read-kind {
+    font-size: 9px; letter-spacing: .18em; font-weight: 700; color: #0b0608;
+    background: linear-gradient(90deg, #ff8da6, #ff4d6d); padding: 3px 8px; border-radius: 6px;
+}
+.vh-read-date { font-size: 11px; color: #b08a96; flex: 1; font-family: var(--tech-font, ui-monospace, monospace); }
+.vh-read-close { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); color: #c9a0ad; width: 26px; height: 26px; border-radius: 8px; cursor: pointer; font-size: 12px; }
+.vh-read-close:hover { background: rgba(255,77,109,.18); color: #ffd0db; }
+.vh-read-text { font-size: 14px; line-height: 1.6; color: #f3e4ea; white-space: pre-wrap; word-break: break-word; }
+
+@media (max-width: 640px) {
+    .vh-stage { grid-template-columns: 1fr; }
+    .vh-turntable { order: -1; }
+}

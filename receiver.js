@@ -1,8 +1,8 @@
 // =========================================================================
-// NEEOSOMA // AV-88 — ЛАМПОВЫЙ HI-FI ПРИЁМНИК И КОЛЛЕКЦИОННАЯ ФОНОТЕКА ВИНИЛА 7"
+// NEEOSOMA // AV-88 — ЛАМПОВЫЙ HI-FI ПРИЁМНИК И КОЛЛЕКЦИОННАЯ ФОНОТЕКА CD
 // 0% рекламы · 0% pay-to-win · 100% сохранение Fullscreen (включая поворот ±90°)
 // Поддержка прямого <audio>, встроенного аналогового синтеза, Spotify,
-// Яндекс Музыки и коллекционных пластинок 7" ($1 · 50 ⭐ Telegram Stars).
+// Яндекс Музыки и коллекционных дисков ($1 · 50 ⭐ Telegram Stars).
 // =========================================================================
 (function () {
     'use strict';
@@ -14,7 +14,7 @@
     const state = {
         open: false,
         playing: false,
-        source: 'vinyl', // 'vinyl' | 'spotify' | 'yandex'
+        source: 'cd', // 'cd' | 'spotify' | 'yandex'
         tab: 'all',      // 'all' | 'radio' | 'collect' | 'owned'
         trackId: '',
         currentTime: 0,
@@ -25,6 +25,8 @@
         buying: '',
         notice: '',
         noticeTimer: null,
+        tray: 'closed',   // 'closed' | 'open'
+        trayTimer: null,
         dragging: false,
         energy: 0,
         mountedEmbedUrl: ''
@@ -302,7 +304,7 @@
             const d = buf.getChannelData(0);
             for (let i = 0; i < len; i++) {
                 const r = Math.random();
-                // Мягкий шёлк виниловой дорожки + редкие уютные микро-потрескивания иглы
+                // Мягкий шёлк CD-дорожки + редкие уютные микро-потрескивания иглы
                 d[i] = (r * 2 - 1) * 0.16 + (r > 0.9985 ? (Math.random() * 2 - 1) * 0.85 : 0);
             }
             noiseBuffer = buf;
@@ -435,7 +437,7 @@
                 }
             }
 
-            // 4) Тёплый шёпот виниловой дорожки 7"
+            // 4) Тёплый шёпот CD-дорожки
             if (beatInBar % 2 === 0 && spec.crackle) {
                 const nb = ensureNoiseBuffer(ctx);
                 if (nb) {
@@ -515,7 +517,7 @@
         scheduleSynthStep(tr, synthStep++, stepDur);
         if (typeof setInterval === 'function') {
             synthTimer = setInterval(() => {
-                if (!state.playing || state.source !== 'vinyl') { stopSynth(); return; }
+                if (!state.playing || state.source !== 'cd') { stopSynth(); return; }
                 const cur = currentTrack();
                 if (!cur) { stopPlayback(); return; }
                 scheduleSynthStep(cur, synthStep++, stepDur);
@@ -526,7 +528,7 @@
     function startPlayback() {
         const tr = currentTrack();
         if (!tr) return;
-        state.source = 'vinyl';
+        state.source = 'cd';
         const owned = isTrackOwned(tr);
         if (!owned && state.currentTime >= PREVIEW_SEC - 0.4) {
             state.currentTime = 0;
@@ -629,6 +631,26 @@
         }
     }
 
+    // ===== CD-ЛОТОК: выезд / закрытие. При смене песни лоток выезжает и закрывается =====
+    function trayEl() { return typeof document !== 'undefined' ? document.getElementById('rx-cd-tray') : null; }
+    function setTray(state_) {
+        state.tray = state_ === 'open' ? 'open' : 'closed';
+        const el = trayEl();
+        if (el) el.classList.toggle('is-ejected', state.tray === 'open');
+    }
+    function toggleTray() {
+        setTray(state.tray === 'open' ? 'closed' : 'open');
+        playTuningChime();
+    }
+    function ejectTray() { setTray('open'); }
+    function closeTray() { setTray('closed'); }
+    // Механика смены диска: лоток выезжает, диск меняется, лоток закрывается
+    function cycleTrayForNewDisc() {
+        if (state.trayTimer) { clearTimeout(state.trayTimer); state.trayTimer = null; }
+        ejectTray();
+        state.trayTimer = setTimeout(() => { closeTray(); state.trayTimer = null; }, 820);
+    }
+
     function selectTrack(id, autoPlay) {
         const tr = getTrackById(id);
         if (!tr) return;
@@ -640,12 +662,13 @@
             state.duration = Math.max(30, Number(tr.duration) || 180);
             savePrefs();
             playTuningChime();
+            if (state.source === 'cd') cycleTrayForNewDisc(); // лоток выезжает и закрывается — смена диска
         }
-        if (state.source !== 'vinyl') {
-            // Если выбран Spotify/Яндекс, но у новой пластинки нет потока — мягко возвращаем на винил
-            if (!resolveStreamForTrack(tr, state.source)) state.source = 'vinyl';
+        if (state.source !== 'cd') {
+            // Если выбран Spotify/Яндекс, но у нового диска нет потока — мягко возвращаем на CD
+            if (!resolveStreamForTrack(tr, state.source)) state.source = 'cd';
         }
-        if (autoPlay && state.source === 'vinyl') {
+        if (autoPlay && state.source === 'cd') {
             startPlayback();
         } else {
             if (changed && state.playing) startPlayback();
@@ -701,8 +724,8 @@
 
     function setSource(src) {
         const tr = currentTrack();
-        if (src === 'vinyl') {
-            state.source = 'vinyl';
+        if (src === 'cd') {
+            state.source = 'cd';
             state.mountedEmbedUrl = '';
             state.notice = '';
             playTuningChime();
@@ -714,9 +737,9 @@
             playTuningChime();
             const svc = src === 'spotify' ? 'Spotify' : 'Яндекс Музыке';
             if (tr && tr.collectible) {
-                showNotice(`«${tr.title}» — закрытый виниловый тираж 7": звучит напрямую с мастера NEEOSOMA // AV-88 (вне ${svc}).`, 5200);
+                showNotice(`«${tr.title}» — закрытый CD-тираж: звучит напрямую с мастера NEEOSOMA // AV-88 (вне ${svc}).`, 5200);
             } else {
-                showNotice(`Поток в ${svc} скоро подключится — сейчас пластинка играет напрямую с лампового мастера NEEOSOMA // AV-88.`, 4800);
+                showNotice(`Поток в ${svc} скоро подключится — сейчас диск играет напрямую с лампового мастера NEEOSOMA // AV-88.`, 4800);
             }
             return;
         }
@@ -728,7 +751,7 @@
         renderAll();
     }
 
-    // ===== ПОКУПКА КОЛЛЕКЦИОННОЙ ПЛАСТИНКИ 7" ($1 · 50 ⭐, 0% PAY-TO-WIN, БЕЗ ВЫХОДА ИЗ FULLSCREEN!) =====
+    // ===== ПОКУПКА КОЛЛЕКЦИОННОЙ ДИСКОВ ($1 · 50 ⭐, 0% PAY-TO-WIN, БЕЗ ВЫХОДА ИЗ FULLSCREEN!) =====
     async function buyTrack(id) {
         const tr = getTrackById(id);
         if (!tr || !tr.collectible || state.buying) return;
@@ -751,7 +774,7 @@
             state.currentTime = 0;
             savePrefs();
             startPlayback();
-            showNotice(`✓ PTS: винил «${tr.title}» (экз. ${serial}) навсегда в вашей фонотеке! В релизе — ${usd} (${stars} ⭐).`, 6500);
+            showNotice(`✓ PTS: CD «${tr.title}» (экз. ${serial}) навсегда в вашей фонотеке! В релизе — ${usd} (${stars} ⭐).`, 6500);
             return;
         }
 
@@ -824,7 +847,7 @@
         startPlayback();
         showNotice(
             !fnUrl
-                ? `Звучит фрагмент 0:${PREVIEW_SEC}. Касса коллекционного винила (${usd} · ${stars} ⭐) подключается.`
+                ? `Звучит фрагмент 0:${PREVIEW_SEC}. Касса коллекционного CD (${usd} · ${stars} ⭐) подключается.`
                 : `Звучит фрагмент 0:${PREVIEW_SEC}. Покупка навсегда (${usd} · ${stars} ⭐) доступна в Telegram Mini App.`,
             6200
         );
@@ -858,7 +881,7 @@
     }
 
     function isAudioActive() {
-        return !!(state.playing || (state.source !== 'vinyl' && resolveStreamForTrack(currentTrack(), state.source)));
+        return !!(state.playing || (state.source !== 'cd' && resolveStreamForTrack(currentTrack(), state.source)));
     }
 
     function isSceneFullscreen() {
@@ -905,11 +928,15 @@
                     <div class="rx-body">
                         <div class="rx-stage">
                             <div class="rx-deck-row">
-                                <div class="rx-platter" id="rx-platter-tap" title="Пуск / Пауза">
-                                    <div class="rx-vinyl" id="rx-vinyl" data-wax="obsidian">
-                                        <div class="rx-vinyl-label" id="rx-label"></div>
+                                <div class="rx-cd-deck" id="rx-cd-tap" title="Пуск / Пауза">
+                                    <div class="rx-cd-slot" aria-hidden="true"></div>
+                                    <div class="rx-cd-tray" id="rx-cd-tray">
+                                        <div class="rx-cd" id="rx-cd">
+                                            <div class="rx-cd-shine" aria-hidden="true"></div>
+                                            <div class="rx-cd-label" id="rx-label"></div>
+                                        </div>
                                     </div>
-                                    <div class="rx-tonearm" aria-hidden="true"></div>
+                                    <button type="button" class="rx-cd-eject" id="rx-cd-eject" title="Открыть лоток" aria-label="Открыть лоток">⏏</button>
                                 </div>
                                 <div class="rx-meta">
                                     <div class="rx-kicker-row" id="rx-badges"></div>
@@ -943,13 +970,13 @@
 
                             <div class="rx-controls" id="rx-controls">
                                 <div class="rx-transport">
-                                    <button type="button" class="rx-btn" id="rx-prev" aria-label="Предыдущая пластинка" title="Предыдущая">
+                                    <button type="button" class="rx-btn" id="rx-prev" aria-label="Предыдущий диск" title="Предыдущая">
                                         <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6V6zm3.5 6 8.5 6V6l-8.5 6z"/></svg>
                                     </button>
                                     <button type="button" class="rx-btn rx-btn--play" id="rx-play" aria-label="Воспроизвести или поставить на паузу">
                                         <svg id="rx-play-ico" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
                                     </button>
-                                    <button type="button" class="rx-btn" id="rx-next" aria-label="Следующая пластинка" title="Следующая">
+                                    <button type="button" class="rx-btn" id="rx-next" aria-label="Следующий диск" title="Следующая">
                                         <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M16 6h2v12h-2V6zM6 18l8.5-6L6 6v12z"/></svg>
                                     </button>
                                     <button type="button" class="rx-btn" id="rx-loop" aria-pressed="false" aria-label="Повтор пластинки" title="Повтор пластинки">
@@ -966,7 +993,7 @@
 
                             <div class="rx-collect-bar hidden" id="rx-collect-bar">
                                 <div class="rx-collect-copy">
-                                    <span id="rx-collect-title">✦ КОЛЛЕКЦИОННЫЙ ТИРАЖ 7"</span>
+                                    <span id="rx-collect-title">✦ КОЛЛЕКЦИОННЫЙ CD-ТИРАЖ</span>
                                     <small id="rx-collect-sub">Фрагмент 0:30 бесплатно · навсегда в фонотеке</small>
                                 </div>
                                 <button type="button" class="rx-buy-btn" id="rx-buy-btn">ЗАБРАТЬ · $1</button>
@@ -980,11 +1007,11 @@
                                 <div class="rx-tabs" role="tablist" aria-label="Разделы фонотеки">
                                     <button type="button" class="rx-tab" data-rx-tab="all" aria-pressed="true">ВСЕ</button>
                                     <button type="button" class="rx-tab" data-rx-tab="radio" aria-pressed="false">ЭФИР</button>
-                                    <button type="button" class="rx-tab rx-tab--gold" data-rx-tab="collect" aria-pressed="false">✦ ВИНИЛ 7"</button>
+                                    <button type="button" class="rx-tab rx-tab--gold" data-rx-tab="collect" aria-pressed="false">✦ CD</button>
                                     <button type="button" class="rx-tab" data-rx-tab="owned" aria-pressed="false" id="rx-tab-owned">МОИ</button>
                                 </div>
                                 <div class="rx-sources" aria-label="Источник звука">
-                                    <button type="button" class="rx-src-chip" data-rx-src="vinyl" aria-pressed="true" title="Ламповый проигрыватель NEEOSOMA AV-88">◉ ВИНИЛ</button>
+                                    <button type="button" class="rx-src-chip" data-rx-src="cd" aria-pressed="true" title="CD-ROM приёмник NEEOSOMA AV-88">◉ CD</button>
                                     <button type="button" class="rx-src-chip rx-src-chip--spotify" data-rx-src="spotify" aria-pressed="false" title="Слушать через Spotify">
                                         <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm4.58 14.42a.62.62 0 0 1-.86.2c-2.35-1.43-5.3-1.76-8.79-.96a.62.62 0 0 1-.27-1.21c3.82-.88 7.09-.5 9.72 1.11.3.18.39.57.2.86zm1.22-2.72a.78.78 0 0 1-1.07.26c-2.69-1.65-6.79-2.13-9.97-1.17a.78.78 0 1 1-.45-1.49c3.64-1.1 8.15-.57 11.23 1.33.37.22.49.7.26 1.07zm.1-2.83C14.68 8.96 9.36 8.78 6.28 9.72a.93.93 0 1 1-.54-1.78c3.54-1.08 9.42-.87 13.13 1.33a.93.93 0 0 1-.96 1.6z"/></svg>
                                         <span>SPOTIFY</span>
@@ -1026,7 +1053,7 @@
             if (openBtn) openBtn.addEventListener('click', e => { e.stopPropagation(); openReceiver(); });
             if (togBtn) togBtn.addEventListener('click', e => {
                 e.stopPropagation();
-                if (state.source !== 'vinyl') openReceiver();
+                if (state.source !== 'cd') openReceiver();
                 else togglePlay();
             });
         }
@@ -1051,7 +1078,7 @@
             bar.querySelector('#rx-inline-open').addEventListener('click', () => openReceiver());
             bar.querySelector('#rx-inline-show').addEventListener('click', () => openReceiver());
             bar.querySelector('#rx-inline-toggle').addEventListener('click', () => {
-                if (state.source !== 'vinyl') openReceiver();
+                if (state.source !== 'cd') openReceiver();
                 else togglePlay();
             });
         }
@@ -1070,7 +1097,8 @@
 
         ov.querySelector('#rx-close').addEventListener('click', () => closeReceiver());
         ov.querySelector('#rx-play').addEventListener('click', () => togglePlay());
-        ov.querySelector('#rx-platter-tap').addEventListener('click', () => togglePlay());
+        ov.querySelector('#rx-cd-tap').addEventListener('click', () => togglePlay());
+        ov.querySelector('#rx-cd-eject').addEventListener('click', e => { e.stopPropagation(); toggleTray(); });
         ov.querySelector('#rx-prev').addEventListener('click', () => stepTrack(-1));
         ov.querySelector('#rx-next').addEventListener('click', () => stepTrack(1));
         ov.querySelector('#rx-loop').addEventListener('click', () => {
@@ -1104,7 +1132,7 @@
         });
 
         ov.querySelectorAll('[data-rx-src]').forEach(btn => {
-            btn.addEventListener('click', () => setSource(btn.dataset.rxSrc || 'vinyl'));
+            btn.addEventListener('click', () => setSource(btn.dataset.rxSrc || 'cd'));
         });
 
         // Тактильная прокрутка по дорожке пластинки (поддерживает и мышь, и тач, и повёрнутый ±90° Fullscreen!)
@@ -1176,6 +1204,8 @@
 
     function closeReceiver() {
         state.open = false;
+        if (state.trayTimer) { clearTimeout(state.trayTimer); state.trayTimer = null; }
+        setTray('closed');
         const ov = typeof document !== 'undefined' && document.getElementById('rx-overlay');
         if (ov) ov.classList.add('hidden');
         syncMiniPlayers();
@@ -1234,7 +1264,7 @@
             if (locked) {
                 gateEl.style.left = `${((PREVIEW_SEC / dur) * 100).toFixed(2)}%`;
                 const colSub = document.getElementById('rx-collect-sub');
-                if (colSub && state.playing && state.source === 'vinyl') {
+                if (colSub && state.playing && state.source === 'cd') {
                     const left = Math.max(0, Math.ceil(PREVIEW_SEC - cur));
                     colSub.textContent = `♪ Звучит фрагмент · ещё ${fmtTime(left)} · экз. ${collectorSerial(tr.id)}`;
                 }
@@ -1288,7 +1318,9 @@
         ov.style.setProperty('--rx-accent-rgb', hexToRgbTriplet(accent, '255, 107, 125'));
         ov.style.setProperty('--rx-glow-rgb', hexToRgbTriplet(glow, '200, 30, 62'));
         ch.classList.toggle('is-playing', isAudioActive());
-        ch.classList.toggle('is-spinning', !!(state.playing && state.source === 'vinyl'));
+        ch.classList.toggle('is-spinning', !!(state.playing && state.source === 'cd'));
+        const cdSpin = ov.querySelector('#rx-cd');
+        if (cdSpin) cdSpin.classList.toggle('is-spinning', !!(state.playing && state.source === 'cd'));
 
         // FM-шкала и ламповая стрелка настройки (88.0 .. 108.0 MHz)
         const freqNum = Math.max(88, Math.min(108, parseFloat(tr.freq) || 88.4));
@@ -1300,10 +1332,10 @@
             needle.style.left = `${pct.toFixed(1)}%`;
         }
 
-        // Пластинка 7" и яблоко/обложка
-        const vinyl = ov.querySelector('#rx-vinyl');
+        // CD-диск и обложка
+        const cd = ov.querySelector('#rx-cd');
         const label = ov.querySelector('#rx-label');
-        if (vinyl) vinyl.dataset.wax = tr.wax || 'obsidian';
+        if (cd) cd.dataset.wax = tr.wax || 'obsidian';
         if (label) {
             label.style.backgroundImage = tr.coverUrl
                 ? `url("${String(tr.coverUrl).replace(/["\\]/g, '')}")`
@@ -1318,7 +1350,7 @@
             } else if (owned) {
                 badges.innerHTML = `<span class="rx-badge rx-badge--owned">✦ В КОЛЛЕКЦИИ · ЭКЗ. ${escHtml(collectorSerial(tr.id))}</span>`;
             } else {
-                badges.innerHTML = `<span class="rx-badge rx-badge--gold">✦ ${escHtml(tr.edition || 'КОЛЛЕКЦИОННЫЙ ВИНИЛ 7"')}</span><span class="rx-badge">ПРЕВЬЮ 0:${PREVIEW_SEC}</span>`;
+                badges.innerHTML = `<span class="rx-badge rx-badge--gold">✦ ${escHtml(tr.edition || 'КОЛЛЕКЦИОННЫЙ CD')}</span><span class="rx-badge">ПРЕВЬЮ 0:${PREVIEW_SEC}</span>`;
             }
         }
 
@@ -1337,8 +1369,8 @@
         updateVolumeDom();
         updateProgressDom();
 
-        // Переключение между виниловым столом и встроенным плеером Spotify / Яндекс Музыки
-        const streamInfo = state.source !== 'vinyl' ? resolveStreamForTrack(tr, state.source) : null;
+        // Переключение между CD-лотом и встроенным плеером Spotify / Яндекс Музыки
+        const streamInfo = state.source !== 'cd' ? resolveStreamForTrack(tr, state.source) : null;
         const scopeBox = ov.querySelector('#rx-scope-box');
         const ctrlBox = ov.querySelector('#rx-controls');
         const embedDrawer = ov.querySelector('#rx-embed-drawer');
@@ -1366,7 +1398,7 @@
             }
         }
 
-        // Коллекционная плашка покупки ($1 · 50 ⭐) для незабранных Dubplate 7"
+        // Коллекционная плашка покупки ($1 · 50 ⭐) для незабранных Dubplate
         const colBar = ov.querySelector('#rx-collect-bar');
         const buyBtn = ov.querySelector('#rx-buy-btn');
         const colSub = ov.querySelector('#rx-collect-sub');
@@ -1409,7 +1441,7 @@
         } else {
             listEl.innerHTML = shown.map(item => {
                 const isCur = item.id === tr.id;
-                const isPlay = isCur && state.playing && state.source === 'vinyl';
+                const isPlay = isCur && state.playing && state.source === 'cd';
                 const itemOwned = isTrackOwned(item);
                 const hasSp = !!parseSpotifyEmbed(item.spotifyUrl);
                 const hasYa = !!parseYandexEmbed(item.yandexUrl);
@@ -1442,7 +1474,7 @@
             listEl.querySelectorAll('[data-rx-pick]').forEach(row => {
                 row.addEventListener('click', () => {
                     const id = row.dataset.rxPick;
-                    if (id === state.trackId && state.source === 'vinyl') togglePlay();
+                    if (id === state.trackId && state.source === 'cd') togglePlay();
                     else selectTrack(id, true);
                 });
             });
@@ -1537,7 +1569,7 @@
     function uiTick(now) {
         uiRaf = 0;
         const tr = currentTrack();
-        if (state.playing && state.source === 'vinyl' && tr) {
+        if (state.playing && state.source === 'cd' && tr) {
             if (!tr.audioUrl || !audioEl || audioEl.paused) {
                 const dt = Math.max(0, Math.min(0.25, (now - (lastTickMs || now)) * 0.001));
                 lastTickMs = now;
@@ -1594,7 +1626,7 @@
             syncMount,
             refresh: () => { ensureDom(); renderAll(); },
             isOpen: () => !!state.open,
-            isPlaying: () => !!(state.playing && state.source === 'vinyl'),
+            isPlaying: () => !!(state.playing && state.source === 'cd'),
             isAudioActive,
             isTrackOwned: idOrTrack => isTrackOwned(typeof idOrTrack === 'string' ? getTrackById(idOrTrack) : idOrTrack),
             getEnergy: () => state.playing ? Math.max(0.22, state.energy || 0.45) : 0,

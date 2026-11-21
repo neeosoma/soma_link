@@ -11,9 +11,9 @@
     <!-- supabase-js vendored locally (avoids CDN dependence). Fallback to CDN only if local bundle is unavailable. -->
     <script src="assets/lib/supabase.umd.js"></script>
     <script>window.supabase || document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"><\/script>');</script>
-    <link rel="stylesheet" href="room.css?v=17">
+    <link rel="stylesheet" href="room.css?v=18">
     <link rel="stylesheet" href="cosmetics.css?v=15">
-    <link rel="stylesheet" href="receiver.css?v=15">
+    <link rel="stylesheet" href="receiver.css?v=16">
     <link rel="stylesheet" href="vhs.css?v=15">
     <link rel="stylesheet" href="greenhouse.css?v=15">
     <link rel="stylesheet" href="blimp.css?v=15">
@@ -659,33 +659,47 @@
         </div>
     </div>
 
-    <!-- ВИНИЛОВАЯ ПОЛКА СОБСТВЕННЫХ СИГНАЛОВ — отдельное окно (кассетный архив — через магнитофон в комнате) -->
-    <div id="vinyl-archive-modal" class="hidden fixed inset-0 z-[60] bg-black/92 backdrop-blur-[2px] flex items-center justify-center p-3 sm:p-4" onclick="if(event.target===this)closeVinylArchive()">
-        <div class="diary-shell w-full max-w-md max-h-[92vh] flex flex-col bg-[#0b0608] border border-red-500/45 rounded-2xl shadow-2xl overflow-hidden" role="dialog" aria-label="Архив сигналов">
+    <!-- ВИНИЛОВАЯ ПОЛКА СОБСТВЕННЫХ СИГНАЛОВ — полка, вытаскивание на проигрыватель, боковой вид, крутящаяся пластинка (кассетный архив — через магнитофон в комнате) -->
+    <div id="vinyl-archive-modal" class="hidden fixed inset-0 z-[60] bg-black/95 backdrop-blur-[3px] flex items-center justify-center p-3 sm:p-4" onclick="if(event.target===this)closeVinylArchive()">
+        <div class="vh-shell w-full max-w-3xl max-h-[94vh] flex flex-col bg-[#0a0507] border border-red-500/40 rounded-3xl shadow-2xl overflow-hidden" role="dialog" aria-label="Архив сигналов — винил">
             <!-- ШАПКА: бренд + счётчик -->
-            <div class="diary-head">
+            <div class="vh-head">
                 <div class="flex items-center gap-2">
-                    <span class="diary-led" aria-hidden="true"></span>
+                    <span class="vh-led" aria-hidden="true"></span>
                     <div>
-                        <div class="diary-kicker">NEEOSOMA // СИГНАЛЫ · ВИНИЛ</div>
-                        <div class="diary-sub" id="vinyl-count">ПЛАСТИНКИ ПОКАЗАНЫ НИЖЕ</div>
+                        <div class="vh-kicker">NEEOSOMA // СИГНАЛЫ · ВИНИЛ</div>
+                        <div class="vh-sub" id="vinyl-count">ПЛАСТИНКИ НА ПОЛКЕ</div>
                     </div>
                 </div>
-                <button type="button" onclick="closeVinylArchive()" class="diary-close" aria-label="Закрыть">✕</button>
+                <button type="button" onclick="closeVinylArchive()" class="vh-close" aria-label="Закрыть">✕</button>
             </div>
             <!-- ПОЛОСКА ПОИСКА (по тексту, дате и теме) -->
-            <div class="diary-search">
+            <div class="vh-search">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
                 <input type="search" id="vinyl-search-input" placeholder="По дате, теме или слову…" autocomplete="off" oninput="renderVinylArchive()">
             </div>
-            <!-- ПОЛКА С ВИНИЛОВЫМИ ПЛАСТИНКАМИ -->
-            <div class="diary-shelf-wrap">
-                <div class="diary-shelf-rail" aria-hidden="true"></div>
-                <div class="diary-shelf" id="vinyl-body"></div>
+            <!-- СЦЕНА: полка + проигрыватель -->
+            <div class="vh-stage">
+                <div class="vh-shelf-wrap">
+                    <div class="vh-shelf-bar" aria-hidden="true"></div>
+                    <div class="vh-shelf" id="vinyl-body"></div>
+                </div>
+                <div class="vh-turntable">
+                    <div class="vh-tt-base" aria-hidden="true"></div>
+                    <div class="vh-tt-platter" id="vinyl-platter">
+                        <div class="vh-record" id="vinyl-record">
+                            <div class="vh-record-grooves" aria-hidden="true"></div>
+                            <div class="vh-record-label" id="vinyl-record-label"></div>
+                        </div>
+                        <div class="vh-tt-spindle" aria-hidden="true"></div>
+                    </div>
+                    <div class="vh-tt-arm" aria-hidden="true"></div>
+                    <div class="vh-tt-hint" id="vinyl-tt-hint">Вытащите пластинку на проигрыватель</div>
+                </div>
             </div>
-            <!-- ПАНЕЛЬ ЧТЕНИЯ ОТКРЫТОЙ ПЛАСТИНКИ -->
-            <div class="diary-read hidden" id="vinyl-read"></div>
-            <div class="px-4 py-2 bg-[#080305] border-t border-red-500/15 text-[9.5px] font-mono-tech text-gray-500 text-center">
+            <!-- ПАНЕЛЬ ЧТЕНИЯ ПОМЕЩЕННОЙ ПЛАСТИНКИ -->
+            <div class="vh-read hidden" id="vinyl-read"></div>
+            <div class="px-4 py-2 bg-[#070203] border-t border-red-500/15 text-[9.5px] font-mono-tech text-gray-500 text-center">
                 Ваши сигналы · синхронизируются в Supabase · кассетный архив — через магнитофон в комнате
             </div>
         </div>
@@ -989,12 +1003,12 @@
 <script src="config.js"></script>
 <script src="scenarios.js?v=15"></script>
 <script src="music.js?v=15"></script>
-<script src="signals.js?v=2"></script>
+<script src="signals.js?v=3"></script>
 <script src="station-ritual.js?v=2"></script>
 <script src="witness.js?v=2"></script>
     <script src="room.js?v=19"></script>
 <script src="cosmetics.js?v=16"></script>
-<script src="receiver.js?v=15"></script>
+<script src="receiver.js?v=16"></script>
 <script src="vhs.js?v=15"></script>
 <script src="greenhouse.js?v=15"></script>
 <script src="blimp.js?v=15"></script>
@@ -1400,8 +1414,9 @@
         try { window.location.assign('gift.html'); } catch (e) { window.open('gift.html', '_self'); }
     }
 
-    // ===== ВИНИЛОВАЯ ПОЛКА СОБСТВЕННЫХ СИГНАЛОВ (отдельное окно; кассетный архив — через магнитофон в комнате) =====
-    const vinylArchive = { items: [], loading: false, readingId: '' };
+    // ===== ВИНИЛОВАЯ ПОЛКА СОБСТВЕННЫХ СИГНАЛОВ (полка → вытаскивание на проигрыватель → боковой вид → крутящаяся пластинка; кассетный архив — через магнитофон в комнате) =====
+    const vinylArchive = { items: [], loading: false, readingId: '', placedId: '', spinning: false };
+    const vinylDrag = { id: '', ghost: null, sx: 0, sy: 0, dx: 0, dy: 0, moved: false, suppress: false, bound: false };
 
     function _vinylTagRaw(it) {
         const api = window.SOMA_ROOM;
@@ -1412,16 +1427,24 @@
         if (window.SOMA_SIGNALS && typeof window.SOMA_SIGNALS.tagLabel === 'function') return window.SOMA_SIGNALS.tagLabel(raw);
         return String(raw || 'Без темы');
     }
+    function _vinylAccent(it) {
+        if (window.SOMA_SIGNALS && typeof window.SOMA_SIGNALS.accentFor === 'function') {
+            const c = window.SOMA_SIGNALS.accentFor(_vinylTagRaw(it));
+            if (c) return c;
+        }
+        return '#ff4d6d';
+    }
 
     async function openVinylArchive() {
         const modal = document.getElementById('vinyl-archive-modal');
         if (!modal) return;
         closeVinylRead();
         modal.classList.remove('hidden');
+        if (!vinylDrag.bound) { vinylDrag.bound = true; initVinylDrag(); }
         if (vinylArchive.loading) return;
         vinylArchive.loading = true;
         const body = document.getElementById('vinyl-body');
-        if (body) body.innerHTML = '<div class="diary-empty"><strong>ЗАГРУЗКА АРХИВА…</strong>Читаем ваши сигналы.</div>';
+        if (body) body.innerHTML = '<div class="vh-empty"><strong>ЗАГРУЗКА АРХИВА…</strong>Читаем ваши сигналы.</div>';
         try {
             const api = window.SOMA_ROOM;
             const all = (api && typeof api.loadDiaryArchive === 'function') ? await api.loadDiaryArchive() : [];
@@ -1437,6 +1460,7 @@
         const modal = document.getElementById('vinyl-archive-modal');
         if (modal) modal.classList.add('hidden');
         closeVinylRead();
+        removeVinylFromTurntable(true);
     }
 
     function renderVinylArchive() {
@@ -1457,27 +1481,148 @@
             count.textContent = all ? `${items.length} / ${all} ПЛАСТИНКАХ` : 'АРХИВ ПОКА ПОРОЖН';
         }
         if (!items.length) {
-            body.innerHTML = `<div class="diary-empty"><strong>${vinylArchive.items.length ? 'НИЧЕГО НЕ НАЙДЕНО' : 'В АРХИВЕ СИГНАЛЫ ПОКА ПОРОЖН'}</strong>${vinylArchive.items.length ? 'Измените запрос поиска.' : 'Отправьте сигнал в ленте — пластинка появится здесь. Кассетный архив — через магнитофон в комнате.'}</div>`;
+            body.innerHTML = `<div class="vh-empty"><strong>${vinylArchive.items.length ? 'НИЧЕГО НЕ НАЙДЕНО' : 'В АРХИВЕ СИГНАЛЫ ПОКА ПОРОЖН'}</strong>${vinylArchive.items.length ? 'Измените запрос поиска.' : 'Отправьте сигнал в ленте — пластинка появится на полке. Вытащите её на проигрыватель.'}</div>`;
             return;
         }
-        const readingId = vinylArchive.readingId || '';
+        const placedId = vinylArchive.placedId || '';
         body.innerHTML = items.map(it => {
             // fav приходит из merged-архива (локальный кеш + облако); isEntryFav — фолбэк.
             const fav = (it.fav !== undefined) ? !!it.fav
                 : (window.SOMA_ROOM && typeof window.SOMA_ROOM.isEntryFav === 'function'
                     ? window.SOMA_ROOM.isEntryFav(it.id) : false);
-            const favCls = fav ? 'diary-fav-dot is-on' : 'diary-fav-dot';
+            const favCls = fav ? 'vh-fav-dot is-on' : 'vh-fav-dot';
             const favGlyph = fav ? '★' : '☆';
             const tagLabel = _vinylTagLabel(it);
-            const reading = it.id === readingId ? ' is-reading' : '';
+            const isPlaced = it.id === placedId ? ' is-placed' : '';
             return `
-                <div class="diary-record diary-record--entry${reading}" data-vinyl-id="${esc(it.id)}" onclick="openVinylRecord('${esc(it.id)}')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')openVinylRecord('${esc(it.id)}')">
-                    <div class="diary-record-disc"></div>
-                    <div class="diary-record-label"><span class="lk">СИГНАЛ</span><span class="ld">${esc(it.date || '')}</span></div>
-                    <span class="diary-record-tag">${esc(tagLabel)}</span>
-                    <button type="button" class="${favCls}" onclick="event.stopPropagation(); toggleVinylFav('${esc(it.id)}')" aria-label="Избранное">${favGlyph}</button>
+                <div class="vh-record-card${isPlaced}" data-vinyl-id="${esc(it.id)}" role="button" tabindex="0"
+                     aria-label="Сигнал ${esc(it.date || '')} — вытащить на проигрыватель"
+                     onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();placeVinylOnTurntable('${esc(it.id)}')}">
+                    <div class="vh-record-disc" style="--vh-accent:${esc(_vinylAccent(it))}"></div>
+                    <div class="vh-record-label"><span class="lk">СИГНАЛ</span><span class="ld">${esc(it.date || '')}</span></div>
+                    <span class="vh-record-tag">${esc(tagLabel)}</span>
+                    <button type="button" class="${favCls}" data-vinyl-fav="${esc(it.id)}" aria-label="Избранное">${favGlyph}</button>
                 </div>`;
         }).join('');
+    }
+
+    // ===== Drag-and-drop: полка → проигрыватель (pointer-events: мышь + тач + Telegram WebView) =====
+    function initVinylDrag() {
+        const body = document.getElementById('vinyl-body');
+        const modal = document.getElementById('vinyl-archive-modal');
+        if (!body || !modal) return;
+        body.addEventListener('pointerdown', e => {
+            const favBtn = e.target.closest('[data-vinyl-fav]');
+            if (favBtn) return; // кнопка избранного — не запускаем drag
+            const card = e.target.closest('.vh-record-card');
+            if (!card) return;
+            if (vinylArchive.placedId && vinylArchive.placedId === card.dataset.vinylId) return; // уже на проигрывателе
+            const id = card.dataset.vinylId || '';
+            if (!id) return;
+            vinylDrag.id = id;
+            vinylDrag.sx = e.clientX; vinylDrag.sy = e.clientY;
+            vinylDrag.dx = 0; vinylDrag.dy = 0; vinylDrag.moved = false; vinylDrag.suppress = false;
+            vinylDrag.card = card;
+        });
+        modal.addEventListener('pointermove', e => {
+            if (!vinylDrag.id) return;
+            const dx = e.clientX - vinylDrag.sx;
+            const dy = e.clientY - vinylDrag.sy;
+            if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
+                if (!vinylDrag.moved) {
+                    vinylDrag.moved = true;
+                    const src = vinylDrag.card;
+                    if (src) {
+                        src.classList.add('is-dragging');
+                        vinylDrag.ghost = src.cloneNode(true);
+                        vinylDrag.ghost.classList.add('vh-ghost');
+                        vinylDrag.ghost.classList.remove('is-placed');
+                        vinylDrag.ghost.style.width = src.getBoundingClientRect().width + 'px';
+                        document.body.appendChild(vinylDrag.ghost);
+                    }
+                }
+                vinylDrag.dx = dx; vinylDrag.dy = dy;
+                if (vinylDrag.ghost) {
+                    vinylDrag.ghost.style.transform = `translate(${dx}px, ${dy}px) scale(1.06)`;
+                }
+            }
+        });
+        modal.addEventListener('pointerup', e => {
+            if (!vinylDrag.id) return;
+            const id = vinylDrag.id;
+            const moved = vinylDrag.moved;
+            const ghost = vinylDrag.ghost;
+            if (vinylDrag.card) vinylDrag.card.classList.remove('is-dragging');
+            if (ghost) ghost.remove();
+            vinylDrag.id = ''; vinylDrag.ghost = null; vinylDrag.moved = false;
+            if (moved) {
+                vinylDrag.suppress = true;
+                const platter = document.getElementById('vinyl-platter');
+                if (platter) {
+                    const r = platter.getBoundingClientRect();
+                    const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+                    if (inside) {
+                        placeVinylOnTurntable(id);
+                    } else {
+                        // бросили не на проигрыватель — просто вернём (новая позиция не сохраняется)
+                        renderVinylArchive();
+                    }
+                } else {
+                    renderVinylArchive();
+                }
+            }
+            setTimeout(() => { vinylDrag.suppress = false; }, 120);
+        });
+        modal.addEventListener('click', e => {
+            if (vinylDrag.suppress) { e.stopPropagation(); e.preventDefault(); return; }
+            const favBtn = e.target.closest('[data-vinyl-fav]');
+            if (favBtn) {
+                e.stopPropagation();
+                toggleVinylFav(favBtn.dataset.vinylFav);
+                return;
+            }
+            const card = e.target.closest('.vh-record-card');
+            if (card) {
+                const id = card.dataset.vinylId || '';
+                if (id === vinylArchive.placedId) { removeVinylFromTurntable(); return; }
+                placeVinylOnTurntable(id);
+            }
+        });
+    }
+
+    // Помещаем пластинку на проигрыватель: крутимся, показываем текст сигнала
+    function placeVinylOnTurntable(id) {
+        const it = vinylArchive.items.find(x => x.id === id);
+        if (!it) return;
+        vinylArchive.placedId = id;
+        const record = document.getElementById('vinyl-record');
+        const label = document.getElementById('vinyl-record-label');
+        const hint = document.getElementById('vinyl-tt-hint');
+        if (record) {
+            record.style.setProperty('--vh-accent', _vinylAccent(it));
+            record.classList.add('is-spinning');
+            vinylArchive.spinning = true;
+        }
+        if (label) {
+            label.style.backgroundImage = `radial-gradient(circle at 38% 32%, ${_vinylAccent(it)}, #2a0a12 90%)`;
+        }
+        if (hint) hint.textContent = 'Играет — нажмите на пластинку, чтобы вынуть';
+        openVinylRecord(id);
+        renderVinylArchive();
+        if (typeof SFX !== 'undefined' && typeof SFX.calm === 'function') SFX.calm();
+    }
+
+    // Вынимаем пластинку с проигрывателя обратно на полку
+    function removeVinylFromTurntable(silent) {
+        vinylArchive.placedId = '';
+        const record = document.getElementById('vinyl-record');
+        const hint = document.getElementById('vinyl-tt-hint');
+        if (record) record.classList.remove('is-spinning');
+        vinylArchive.spinning = false;
+        if (hint) hint.textContent = 'Вытащите пластинку на проигрыватель';
+        closeVinylRead();
+        renderVinylArchive();
+        if (!silent && typeof SFX !== 'undefined' && typeof SFX.calm === 'function') SFX.calm();
     }
 
     function openVinylRecord(id) {
@@ -1489,12 +1634,12 @@
             const tagLabel = _vinylTagLabel(it);
             read.classList.remove('hidden');
             read.innerHTML = `
-                <div class="diary-read-head">
-                    <span class="diary-read-kind diary-read-kind--entry">СИГНАЛ</span>
-                    <span class="diary-read-date">${esc(it.date || '')} · ${esc(tagLabel)}</span>
-                    <button type="button" class="diary-read-close" onclick="closeVinylRead()" aria-label="Закрыть">✕</button>
+                <div class="vh-read-head">
+                    <span class="vh-read-kind">СИГНАЛ</span>
+                    <span class="vh-read-date">${esc(it.date || '')} · ${esc(tagLabel)}</span>
+                    <button type="button" class="vh-read-close" onclick="closeVinylRead()" aria-label="Закрыть">✕</button>
                 </div>
-                <p class="diary-read-text">${esc(String(it.text || '').trim())}</p>`;
+                <p class="vh-read-text">${esc(String(it.text || '').trim())}</p>`;
         }
         renderVinylArchive();
     }
@@ -1508,7 +1653,7 @@
 
     function toggleVinylRow(el) {
         const id = el.dataset.vinylId || '';
-        if (id) openVinylRecord(id);
+        if (id) placeVinylOnTurntable(id);
     }
 
     async function toggleVinylFav(id) {

@@ -1087,14 +1087,14 @@ test('v11: enlarged sleeping dogs with tucked front paws, clean RX-88 header, fu
     assert.equal(vRoom.loadCassettes().find(c => c.id === added1.id).fav, true, 'favorite flag persisted in localStorage');
     assert.equal(vRoom.toggleCassetteFav(added1.id), false, 'cassette unfavorited cleanly');
 
-    // Opening the diary archive from room shelf inside fullscreen NEVER exits fullscreen
-    let diaryOpened = 0;
+    // Opening the cassette archive (VTR-90 deck) from room shelf inside fullscreen NEVER exits fullscreen
+    let vhsOpened = 0, vhsOpenedWith = null;
     const fsVhs = loadRoom({
         localStorage: store,
         window: {
             SOMA_CONFIG: { ENV: 'pts' },
-            SOMA_VHS: { open: () => {}, refresh() {}, syncMount() {} },
-            openDiaryArchive: () => { diaryOpened++; }
+            SOMA_VHS: { open: id => { vhsOpened++; vhsOpenedWith = id; }, refresh() {}, syncMount() {} },
+            openDiaryArchive: () => {}
         },
         document: {
             hidden: false,
@@ -1104,8 +1104,8 @@ test('v11: enlarged sleeping dogs with tucked front paws, clean RX-88 header, fu
     });
     fsVhs.roomAnim.isFullscreen = true;
     fsVhs.activateRoomObject('shelf');
-    assert.equal(diaryOpened, 1, 'tapping room shelf opens the diary archive window');
-    assert.equal(fsVhs.roomAnim.isFullscreen, true, 'opening diary archive MUST NEVER exit fullscreen!');
+    assert.equal(vhsOpened, 1, 'tapping room shelf opens the cassette archive (VTR-90 deck)');
+    assert.equal(fsVhs.roomAnim.isFullscreen, true, 'opening cassette archive MUST NEVER exit fullscreen!');
 
     // PTS demo pack inserts 4 full-date VHS cassettes and cleanly removes only demo cassettes on second toggle
     fsVhs.togglePtsDemoCassette();

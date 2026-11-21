@@ -143,7 +143,7 @@ test('unique plant binding matches legacy anonymous ID formula identically', () 
             return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
         };
         return {
-            kind: Math.floor(r() * 7),
+            kind: Math.floor(r() * 8),
             leafIdx: Math.floor(r() * 6),
             bloomIdx: Math.floor(r() * 6),
             potIdx: Math.floor(r() * 5),
@@ -166,7 +166,7 @@ test('unique plant binding matches legacy anonymous ID formula identically', () 
         const actual = plantSpec(uid);
         seenKinds.add(actual.kind);
         assert.equal(actual.kind, expected.kind);
-        assert.equal(actual.kindName, LEGACY_KINDS[expected.kind]);
+        assert.equal(actual.kindName, PLANT_KINDS[expected.kind]);
         assert.equal(actual.leafIdx, expected.leafIdx);
         assert.equal(actual.bloomIdx, expected.bloomIdx);
         assert.equal(actual.potIdx, expected.potIdx);
@@ -174,7 +174,7 @@ test('unique plant binding matches legacy anonymous ID formula identically', () 
         assert.equal(actual.lean, expected.lean);
         assert.equal(actual.potShape, expected.potShape);
     }
-    assert.equal(seenKinds.size, 7, 'all 7 legacy species must be reachable');
+    assert.equal(seenKinds.size, 8, 'all 8 species must be reachable');
 
     const fallbackRoom = loadRoom({ player: { uid: '', name: 'AGENT_4821', warmth: 0 } });
     assert.equal(fallbackRoom.plantSpec().seed, legacySpec('', 'AGENT_4821').seed);

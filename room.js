@@ -279,7 +279,8 @@ function rng(seed) {
 function plantSpec(id) {
     const fallback = typeof player !== 'undefined' && player ? (player.uid || player.name) : '';
     const r = rng(hashStr(id || fallback || 'x'));
-    const kind = Math.floor(r() * 7);
+    // Все 8 земных видов с равным шансом (ранее было *7 — ОРХИДЕЯ была недостижима).
+    const kind = Math.floor(r() * 8);
     const leafIdx = Math.floor(r() * PLANT_LEAF.length);
     const bloomIdx = Math.floor(r() * PLANT_BLOOM.length);
     const potIdx = Math.floor(r() * PLANT_POTS.length);
@@ -335,8 +336,11 @@ function plantStage(warmth, opts) {
     const o = (opts && typeof opts === 'object') ? opts : {};
     const steps = Array.isArray(o.steps) ? o.steps : PLANT_WARMTH_STEPS;
     const sprouted = !!o.sprouted;
-    if (!sprouted || w < steps[0]) return -1;
+    if (!sprouted) return -1;
     let st = steps.reduce((last, at, i) => w >= at ? i : last, -1);
+    // Родное растение: первый росток появляется сразу после первого шёпота,
+    // независимо от тепла (тепло нужно только для следующих стадий роста).
+    if (st < 0 && o.sproutImmediate) st = 0;
     if (st >= 5 && o.requireAcks && (Number(o.bloomAcks) || 0) < PROGRESSION_RULES.WHISPER_BLOOM_ACKS) {
         st = 4;
     }
@@ -10980,6 +10984,7 @@ function renderRoom() {
         ? [-1, 0, 2, 5][previewIdx]
         : plantStage(warmth, {
             sprouted: adm.sprouted,
+            sproutImmediate: true,
             requireAcks: false,
             bloomAcks: adm.whisperAcks
         });

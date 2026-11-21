@@ -1,68 +1,50 @@
-/* Intent and reader boundaries. Existing tag column, no author identity attached. */
+/* Topic tags for signals. Existing tag column, no author identity attached. */
 (function (root) {
     'use strict';
-    const INTENTS = Object.freeze([
-        { id: 'N', title: 'Побудь рядом', hint: 'Выслушайте. Советы не нужны.', light: false },
-        { id: 'V', title: 'Хочу взгляд со стороны', hint: 'Поделитесь своим взглядом. Без диагнозов.', light: false },
-        { id: 'W', title: 'Маленькая победа', hint: 'Разделите радость — без советов.', light: true },
-        { id: 'S', title: 'Просто делюсь', hint: 'Можно просто прочитать. Советы не запрошены.', light: true }
-    ]);
-    function packTag(intentId, rawTopic) {
-        const intent = INTENTS.find(x => x.id === intentId);
-        if (!intent) throw new Error('Выберите, какой отклик вам сейчас нужен.');
-        const topic = String(rawTopic || '').replace(/[^\p{L}\p{N} _#-]/gu, '').trim().toUpperCase().slice(0, 24);
-        return `S1:${intent.id}|${topic}`;
+    function sanitizeTopic(rawTopic) {
+        return String(rawTopic || '').replace(/[^\p{L}\p{N} _#-]/gu, '').trim().toUpperCase().slice(0, 24);
+    }
+    function packTag(rawTopic) {
+        return sanitizeTopic(rawTopic);
     }
     function unpackTag(raw) {
         const tag = String(raw || '');
-        const match = /^S1:([NVWS])\|([\s\S]*)$/.exec(tag);
-        const intent = match ? INTENTS.find(x => x.id === match[1]) : null;
-        return { intent, topic: intent ? match[2] : tag, legacy: !intent };
+        // Legacy S1:<intent>|<topic> format from older releases — keep the topic, drop the intent.
+        const match = /^S1:[^|]+\|([\s\S]*)$/.exec(tag);
+        if (match) return { topic: match[1], legacy: true };
+        return { topic: tag, legacy: false };
     }
     function readPrefs(storage) {
         try {
             const p = JSON.parse(storage.getItem('soma_contact_prefs_v1') || '{}');
             return {
-                light: !!p && p.light === true,
                 hidden: p && Array.isArray(p.hidden) ? p.hidden.filter(x => typeof x === 'string').slice(-500) : []
             };
-        } catch (_) { return { light: false, hidden: [] }; }
+        } catch (_) { return { hidden: [] }; }
     }
     function writePrefs(storage, prefs) {
-        storage.setItem('soma_contact_prefs_v1', JSON.stringify({ light: prefs.light === true, hidden: [...new Set(prefs.hidden)].slice(-500) }));
+        storage.setItem('soma_contact_prefs_v1', JSON.stringify({ hidden: [...new Set(prefs.hidden)].slice(-500) }));
     }
-    function filterPosts(posts, prefs, intentId = 'all') {
+    function filterPosts(posts, prefs) {
         const hidden = new Set(prefs.hidden);
         return (Array.isArray(posts) ? posts : []).filter(p => {
             if (!p || !p.id || hidden.has(String(p.id))) return false;
-            const { intent } = unpackTag(p.tag);
-            // Self-selected labels are not content moderation or a safety classifier.
-            if (prefs.light && (!intent || !intent.light)) return false;
-            return intentId === 'all' || (intent && intent.id === intentId);
+            return true;
         });
     }
     function tagLabel(raw) {
-        const { intent, topic } = unpackTag(raw);
-        return [intent && intent.title, topic].filter(Boolean).join(' · ') || 'Без темы';
+        const { topic } = unpackTag(raw);
+        return topic || 'Без темы';
     }
-    // Акцентный цвет пластинки по теме сигнала (каждая тема — своя виниловая этикетка).
     function accentFor(raw) {
-        const { intent } = unpackTag(raw);
-        const m = {
-            N: ['#7c8cff', '#3440c8'], // Побудь рядом — синий рассвет
-            V: ['#7ad7c4', '#1d8a76'], // Взгляд со стороны — бирюзовый
-            W: ['#ffd166', '#c79100'], // Маленькая победа — золото
-            S: ['#ff8fab', '#c81e5c']  // Просто делюсь — розовый огонь
-        };
-        if (intent && m[intent.id]) return m[intent.id][0];
         return '#ff4d6d';
     }
     function visiblePosts(posts) {
         let prefs;
-        try { prefs = readPrefs(root.localStorage); } catch (_) { prefs = { light: false, hidden: [] }; }
+        try { prefs = readPrefs(root.localStorage); } catch (_) { prefs = { hidden: [] }; }
         return filterPosts(posts, prefs);
     }
-    const api = { INTENTS, packTag, unpackTag, readPrefs, writePrefs, filterPosts, tagLabel, accentFor, visiblePosts };
+    const api = { packTag, unpackTag, readPrefs, writePrefs, filterPosts, tagLabel, accentFor, visiblePosts };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     if (root.document) root.SOMA_SIGNALS = api;
 })(typeof window !== 'undefined' ? window : globalThis);

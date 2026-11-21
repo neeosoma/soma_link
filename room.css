@@ -2399,18 +2399,17 @@ html.is-soma-fs-closing .app-h {
 @keyframes pulse-led { 0%, 100% { opacity: 0.25; box-shadow: 0 0 3px rgba(255, 72, 94, 0.3); } 50% { opacity: 1; box-shadow: 0 0 8px rgba(255, 72, 94, 0.85); } }
 .app-sound { padding: 3px; color: #bfa7a8; font-size: 11px; }
 
-/* Бейдж статуса сети/облака — пиксель-перфектно в шапке панели (в статус-баре),
+/* Бейдж статуса сети/облака — по размеру текста: плотно облепливает текст,
    как ник с мигающей лампочкой. Только значок облачка + статус; зелёный = ок, красный = проблема. */
 .app-cloud-badge {
     flex: 0 0 auto;
     align-self: center;
-    max-width: 44vw;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     font: 9px/1.2 'Share Tech Mono', monospace;
     letter-spacing: 0.06em;
-    padding: 3px 8px;
+    padding: 2px 5px;
     border-radius: 999px;
     pointer-events: none;
     background: rgba(20, 50, 34, 0.62);
@@ -3780,7 +3779,7 @@ html.is-soma-fs-closing .app-h {
 }
 .witness-stat-big {
     color: #ff586c;
-    font: 700 22px/1 'Share Tech Mono', monospace;
+    font: 700 28px/1 'Share Tech Mono', monospace;
 }
 .witness-stat-link {
     display: inline-block;

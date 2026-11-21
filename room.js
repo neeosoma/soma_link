@@ -3986,6 +3986,7 @@ function writeCassetteCache(list) {
 // Локальный кеш собственных записей-сигналов (как у кассет): запись
 // сохраняется локально сразу, облако — best-effort. Это гарантирует, что
 // отправленный сигнал появляется в виниловом архиве даже без Supabase.
+// Полный жизненный цикл: save/update/delete/fav — параллельно механике кассет.
 const ENTRY_CACHE_KEY = 'soma_entries';
 function loadEntries() {
     let list = [];
@@ -4000,12 +4001,42 @@ function loadEntries() {
             date: e.date || '',
             ts,
             text: e.text.trim().slice(0, 420),
-            tag: String(e.tag || '')
+            tag: String(e.tag || ''),
+            fav: !!e.fav
         };
-    });
+    }).sort((a, b) => (b.ts || 0) - (a.ts || 0));
 }
 function writeEntriesCache(list) {
     lsSet(ENTRY_CACHE_KEY, JSON.stringify(list.slice(0, 200)));
+}
+
+// Локальное сохранение одной записи (синхронное, без сети). Возвращает запись.
+// Облачная синхронизация — отдельный best-effort шаг (см. saveJournalEntry).
+function saveEntry(item) {
+    const clean = String(item && item.text || '').trim().slice(0, 420);
+    if (!clean) return null;
+    const list = loadEntries();
+    const entry = {
+        id: String(item.id || 'e_' + Date.now()),
+        date: String(item.date || ''),
+        ts: Number(item.ts) || Date.now(),
+        text: clean,
+        tag: String(item.tag || ''),
+        fav: !!(item.fav)
+    };
+    const idx = list.findIndex(e => e.id === entry.id);
+    if (idx >= 0) list[idx] = entry; else list.unshift(entry);
+    writeEntriesCache(list);
+    return entry;
+}
+
+// Удаление записи из локального кеша (облако — best-effort, см. deleteJournalEntry).
+function deleteEntry(id) {
+    const entryId = String(id || '');
+    if (!entryId) return false;
+    const next = loadEntries().filter(e => e.id !== entryId);
+    writeEntriesCache(next);
+    return true;
 }
 
 // Persist one cassette row to Supabase (security-definer RPC). Fire-and-forget:
@@ -4107,48 +4138,61 @@ async function hydrateEntriesFromCloud() {
         const cloudEntries = data
             .filter(r => r && r.kind === 'entry' && r.author_auth_id)
             .map(normalizeJournalRow)
-            .map(n => ({ id: n.id, date: n.date, ts: n.ts, text: n.text, tag: getEntryTag(n.id) || '' }));
+            .map(n => ({ id: n.id, date: n.date, ts: n.ts, text: n.text, tag: getEntryTag(n.id) || '', fav: !!n.fav }));
         if (!cloudEntries.length) return;
         const local = loadEntries();
         const byId = new Map(local.map(e => [e.id, e]));
         cloudEntries.forEach(e => {
             const prev = byId.get(e.id);
-            if (!prev || !prev.text) byId.set(e.id, e);
+            // Облако авторитетно по тексту/дате/избранному.
+            if (!prev || !prev.text || prev.fav !== e.fav) byId.set(e.id, e);
         });
         writeEntriesCache([...byId.values()]);
     } catch (_) {}
 }
 
 // Save the player's own diary/journal entry (a signal they published).
-// Запись сохраняется в локальный кеш СРАЗУ (гарантировано попадает в архив),
-// облако — best-effort синхронизация.
+// Локальное сохранение — гарантированно (saveEntry, синхронно). Облачная
+// синхронизация — отдельный best-effort шаг, его результат возвращается
+// в ответе, чтобы можно было проверить синхронизацию с облаком.
 async function saveJournalEntry(id, text, dateLabel, tag) {
     const clean = String(text || '').trim().slice(0, 420);
     if (!clean) return null;
     const entryId = String(id || 'e_' + Date.now());
-    // Локальный кеш: запись доступна в архиве даже без сети/Supabase.
-    const list = loadEntries();
-    const item = {
+    // 1) Локальное сохранение — гарантированно попадает в архив.
+    const entry = saveEntry({
         id: entryId,
         date: String(dateLabel || ''),
         ts: Date.now(),
         text: clean,
-        tag: String(tag || '')
-    };
-    const idx = list.findIndex(e => e.id === entryId);
-    if (idx >= 0) list[idx] = item; else list.unshift(item);
-    writeEntriesCache(list);
+        tag: String(tag || ''),
+        fav: false
+    });
     try { saveEntryTag(entryId, tag); } catch (_) {}
-    // Облако — best-effort.
-    if (typeof supabaseClient === 'undefined' || !supabaseClient) return { ok: true, id: entryId, offline: true };
+    // 2) Облачная синхронизация — best-effort, результат в ответе.
+    if (typeof supabaseClient === 'undefined' || !supabaseClient) {
+        return { ok: true, id: entryId, offline: true, local: entry };
+    }
     try {
         const { error } = await supabaseClient.rpc('save_soma_journal_entry', {
             p_id: entryId, p_kind: 'entry', p_text: clean, p_date: dateLabel, p_num: 0, p_fav: false
         });
-        return { ok: !error, id: entryId, offline: !!error, error };
+        return { ok: !error, id: entryId, offline: !!error, error, local: entry };
     } catch (e) {
-        return { ok: false, id: entryId, offline: false, error: e };
+        return { ok: false, id: entryId, offline: false, error: e, local: entry };
     }
+}
+
+// Удаление записи: локально + в облаке (best-effort). Параллельно deleteCassette.
+async function deleteJournalEntry(id) {
+    const entryId = String(id || '');
+    if (!entryId) return false;
+    deleteEntry(entryId);
+    try { saveEntryTag(entryId, ''); } catch (_) {}
+    if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+        try { await supabaseClient.rpc('delete_soma_journal_entry', { p_id: entryId }); } catch (_) {}
+    }
+    return true;
 }
 
 // Локальный каталог тэгов собственных записей: { entryId: packedTag }.
@@ -4175,6 +4219,9 @@ function getEntryTag(entryId) {
 // Избранное для собственных записей: локально + в облаке (journal.fav).
 const ENTRY_FAVS_KEY = 'soma_entry_favs';
 function isEntryFav(entryId) {
+    const found = loadEntries().find(e => e.id === String(entryId));
+    if (found) return !!found.fav;
+    // Облачная-только запись (не в локальном кеше) — фолбэк в набор избранных.
     try {
         const arr = JSON.parse(lsGet(ENTRY_FAVS_KEY) || '[]');
         return Array.isArray(arr) && arr.map(String).includes(String(entryId));
@@ -4186,15 +4233,23 @@ function toggleEntryFav(entryId) {
     // Кассета — существующая механика.
     const list = loadCassettes();
     if (list.some(c => c.id === id)) return toggleCassetteFav(id);
-    // Запись (entry): локально + cloud.
-    let fav = false;
-    try {
-        const arr = JSON.parse(lsGet(ENTRY_FAVS_KEY) || '[]');
-        const set = new Set(arr.map(String));
-        fav = !set.has(id);
-        if (fav) set.add(id); else set.delete(id);
-        lsSet(ENTRY_FAVS_KEY, JSON.stringify([...set]));
-    } catch (_) {}
+    // Запись (entry): избранное в локальном кеше + cloud.
+    const entries = loadEntries();
+    const idx = entries.findIndex(e => e.id === id);
+    let fav;
+    if (idx >= 0) {
+        entries[idx].fav = !entries[idx].fav;
+        fav = entries[idx].fav;
+        writeEntriesCache(entries);
+    } else {
+        try {
+            const arr = JSON.parse(lsGet(ENTRY_FAVS_KEY) || '[]');
+            const set = new Set(arr.map(String));
+            fav = !set.has(id);
+            if (fav) set.add(id); else set.delete(id);
+            lsSet(ENTRY_FAVS_KEY, JSON.stringify([...set]));
+        } catch (_) { fav = true; }
+    }
     if (typeof supabaseClient !== 'undefined' && supabaseClient) {
         supabaseClient.rpc('set_soma_journal_fav', { p_id: id, p_fav: fav })
             .catch(_ => {});
@@ -11544,7 +11599,8 @@ const pagerApi = {
     claimWhisperCassetteAck, getPendingInboxWhispers, receiveIncomingWhisperLocal,
     acceptIncomingWhisper, dismissIncomingWhisper, sendWhisperToPost,
     syncPagerWhispers, openPagerModal, closePagerModal, renderPagerModal,
-    hydrateJournalFromCloud, hydrateEntriesFromCloud, saveJournalEntry, deleteCassette, loadDiaryArchive,
+    hydrateJournalFromCloud, hydrateEntriesFromCloud, saveJournalEntry, deleteJournalEntry,
+    deleteCassette, loadDiaryArchive, loadEntries, saveEntry, deleteEntry,
     playCassette, toggleCassetteFav, getEntryTag, isEntryFav, toggleEntryFav
 };
 if (typeof window !== 'undefined') window.SOMA_ROOM = Object.assign(window.SOMA_ROOM || {}, pagerApi);

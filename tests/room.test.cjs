@@ -1204,6 +1204,79 @@ test('sent signal is saved to the local entry cache and appears in the vinyl arc
     assert.equal(archive2.find(it => it.id === 'e_p_1700000000000').text, 'Обновлённый текст сигнала.');
 });
 
+test('cloud save + sync with the game: saveJournalEntry calls Supabase, loadDiaryArchive merges cloud (authoritative), delete/fav sync', async () => {
+    const calls = [];
+    const cloudJournal = [];
+    const supabaseClient = {
+        async rpc(name, args) {
+            calls.push({ name, args });
+            if (name === 'save_soma_journal_entry') {
+                cloudJournal.push({
+                    id: args.p_id, kind: 'entry', text: args.p_text,
+                    date_label: args.p_date, num: args.p_num, fav: args.p_fav,
+                    author_auth_id: 'auth_test', created_at: Date.now()
+                });
+                return { error: null, data: [] };
+            }
+            if (name === 'delete_soma_journal_entry') {
+                const i = cloudJournal.findIndex(r => r.id === args.p_id);
+                if (i >= 0) cloudJournal.splice(i, 1);
+                return { error: null };
+            }
+            if (name === 'set_soma_journal_fav') {
+                const r = cloudJournal.find(r => r.id === args.p_id);
+                if (r) r.fav = args.p_fav;
+                return { error: null };
+            }
+            if (name === 'get_my_soma_journal') return { error: null, data: cloudJournal };
+            return { error: null };
+        }
+    };
+    const r = loadRoom({ localStorage: makeStorage(), supabaseClient });
+
+    // 1) saveJournalEntry — локально + вызов cloud RPC с правильными аргументами.
+    const res = await r.saveJournalEntry('e_cloud_1', 'Сигнал в облако.', '2026-11-21', 'S1:S|Тема');
+    assert.equal(res.ok, true, 'saveJournalEntry succeeds with cloud');
+    assert.equal(res.offline, false, 'cloud path is reported as online');
+    const saveCall = calls.find(c => c.name === 'save_soma_journal_entry');
+    assert.ok(saveCall, 'cloud RPC save_soma_journal_entry is called');
+    assert.equal(saveCall.args.p_id, 'e_cloud_1');
+    assert.equal(saveCall.args.p_kind, 'entry');
+    assert.equal(saveCall.args.p_text, 'Сигнал в облако.');
+    assert.equal(saveCall.args.p_date, '2026-11-21');
+    // Локально тоже сохранено.
+    assert.ok(r.loadEntries().some(e => e.id === 'e_cloud_1'), 'entry also saved to local cache');
+
+    // 2) loadDiaryArchive — облачная запись появляется в архиве (kind=entry).
+    const archive = await r.loadDiaryArchive();
+    const cloudEntry = archive.find(it => it.id === 'e_cloud_1' && it.kind === 'entry');
+    assert.ok(cloudEntry, 'cloud entry appears in the archive');
+    assert.equal(cloudEntry.text, 'Сигнал в облако.');
+
+    // 3) Облако авторитетно: изменим текст в облаке, локальная копия перезаписывается.
+    const cloudRow = cloudJournal.find(x => x.id === 'e_cloud_1');
+    cloudRow.text = 'Облачный авторитетный текст.';
+    const archive2 = await r.loadDiaryArchive();
+    assert.equal(archive2.find(it => it.id === 'e_cloud_1').text, 'Облачный авторитетный текст.',
+        'cloud text is authoritative over the local copy');
+
+    // 4) toggleEntryFav — синхронизирует избранное в облако.
+    const fav = r.toggleEntryFav('e_cloud_1');
+    assert.equal(fav, true, 'entry marked favorite');
+    const favCall = calls.find(c => c.name === 'set_soma_journal_fav' && c.args.p_id === 'e_cloud_1');
+    assert.ok(favCall, 'cloud RPC set_soma_journal_fav is called');
+    assert.equal(favCall.args.p_fav, true);
+    // Избранное читается из merged-архива / локального кеша.
+    assert.equal(r.isEntryFav('e_cloud_1'), true, 'isEntryFav reflects the favorite');
+
+    // 5) deleteJournalEntry — удаление в облаке + локально.
+    await r.deleteJournalEntry('e_cloud_1');
+    const delCall = calls.find(c => c.name === 'delete_soma_journal_entry' && c.args.p_id === 'e_cloud_1');
+    assert.ok(delCall, 'cloud RPC delete_soma_journal_entry is called');
+    assert.ok(!cloudJournal.some(x => x.id === 'e_cloud_1'), 'entry removed from cloud');
+    assert.ok(!r.loadEntries().some(e => e.id === 'e_cloud_1'), 'entry removed from local cache');
+});
+
 test('v12: top-left fullscreen vinyl bar, unified NEEOSOMA/NEEO~CITY/SOMA~LINK branding, Whisper-only protocol breaches, 0.1% White Maltese, Greenhouse conservatory + 7 secret alien plants (room-only growth), and NEEOSOMA // SKY-01 window airship', async () => {
     const p = require('path'), fs = require('fs'), vm = require('vm');
     const rxCss = fs.readFileSync(p.join(__dirname, '..', 'receiver.css'), 'utf8');

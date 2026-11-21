@@ -1460,8 +1460,10 @@
         }
         const readingId = vinylArchive.readingId || '';
         body.innerHTML = items.map(it => {
-            const fav = (window.SOMA_ROOM && typeof window.SOMA_ROOM.isEntryFav === 'function')
-                ? window.SOMA_ROOM.isEntryFav(it.id) : !!it.fav;
+            // fav приходит из merged-архива (локальный кеш + облако); isEntryFav — фолбэк.
+            const fav = (it.fav !== undefined) ? !!it.fav
+                : (window.SOMA_ROOM && typeof window.SOMA_ROOM.isEntryFav === 'function'
+                    ? window.SOMA_ROOM.isEntryFav(it.id) : false);
             const favCls = fav ? 'diary-fav-dot is-on' : 'diary-fav-dot';
             const favGlyph = fav ? '★' : '☆';
             const tagLabel = _vinylTagLabel(it);

@@ -3792,29 +3792,29 @@ html.is-soma-fs-closing .app-h {
     text-decoration: underline;
 }
 
-/* Правый нижний угол карточки: кнопка «записать кассету» */
-.witness-card-foot {
+/* Блок «Своему человеку» с встроенной кнопкой записи кассеты */
+.witness-stat--friend {
     display: flex;
-    justify-content: flex-end;
-    align-items: flex-end;
-    margin-top: 14px;
-    padding-top: 12px;
-    border-top: 1px solid rgba(138, 38, 54, 0.18);
+    flex-direction: column;
+    gap: 8px;
 }
 .witness-cassette-btn {
     display: inline-flex;
     align-items: center;
-    gap: 7px;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    margin-top: 2px;
     font: 9px 'Share Tech Mono', monospace;
     letter-spacing: 0.12em;
     color: #ffd9d9;
     background: linear-gradient(180deg, rgba(255, 72, 94, 0.14) 0%, rgba(120, 20, 36, 0.24) 100%);
     border: 1px solid rgba(255, 72, 94, 0.42);
-    border-radius: 10px;
-    padding: 9px 15px;
+    border-radius: 9px;
+    padding: 8px 10px;
     cursor: pointer;
     text-transform: uppercase;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 180, 190, 0.08);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 180, 190, 0.08);
     transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease, border-color 0.2s ease;
 }
 .witness-cassette-btn svg {
@@ -3825,10 +3825,10 @@ html.is-soma-fs-closing .app-h {
 .witness-cassette-btn:hover {
     background: linear-gradient(180deg, rgba(255, 72, 94, 0.24) 0%, rgba(150, 30, 48, 0.32) 100%);
     border-color: rgba(255, 124, 141, 0.75);
-    box-shadow: 0 0 18px rgba(255, 72, 94, 0.32), 0 4px 12px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 0 16px rgba(255, 72, 94, 0.3), 0 3px 10px rgba(0, 0, 0, 0.4);
 }
 .witness-cassette-btn:active {
-    transform: scale(0.96);
+    transform: scale(0.97);
 }
 
 /* ===== Вкладка Оранжерея ===== */

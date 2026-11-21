@@ -1088,6 +1088,46 @@
     color: #d6a4ad;
 }
 
+/* Индикатор непрочитанных сигналов в эфире: ● N (ярко, пульс) — есть непрочитанные;
+   ● НЕТ (тускло) — непрочитанных нет */
+.pager-unread {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font: 9px 'Share Tech Mono', monospace;
+    letter-spacing: 0.08em;
+    color: #6b5559;
+    padding: 1px 7px;
+    border-radius: 999px;
+    border: 1px solid rgba(138, 38, 54, 0.2);
+    background: rgba(20, 8, 10, 0.4);
+    white-space: nowrap;
+    transition: color 0.3s ease, border-color 0.3s ease, background 0.3s ease;
+}
+.pager-unread::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #4d2324;
+    box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.7);
+    flex: 0 0 auto;
+}
+.pager-unread.is-unread {
+    color: #ffc24d;
+    border-color: rgba(251, 191, 36, 0.55);
+    background: rgba(60, 30, 8, 0.5);
+}
+.pager-unread.is-unread::before {
+    background: #fbbf24;
+    box-shadow: 0 0 8px rgba(251, 191, 36, 0.9);
+    animation: pager-unread-pulse 1.5s ease-in-out infinite;
+}
+@keyframes pager-unread-pulse {
+    0%, 100% { opacity: 0.5; box-shadow: 0 0 4px rgba(251, 191, 36, 0.5); }
+    50% { opacity: 1; box-shadow: 0 0 10px rgba(251, 191, 36, 1); }
+}
+
 .pager-led {
     width: 7px;
     height: 7px;
@@ -2319,8 +2359,7 @@ html.is-soma-fs-closing .app-h {
 #first-signal-entry[hidden],
 .first-session-card[hidden],
 .feed-theme-filter[hidden],
-.station-night-ritual-note[hidden],
-.station-first-signal-note[hidden] {
+.station-night-ritual-note[hidden] {
     display: none !important;
 }
 
@@ -2347,11 +2386,44 @@ html.is-soma-fs-closing .app-h {
 }
 
 .app-user-line { gap: 7px; min-width: 0; color: #ead8d2; }
-.app-user-line #user-badge { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Ник на панели горит красным светом, как лампочка сигнала */
+.app-user-line #user-badge {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #ff586c;
+    text-shadow: 0 0 8px rgba(255, 72, 94, 0.85), 0 0 3px rgba(255, 72, 94, 0.6);
+}
 .app-pulse { width: 20px; height: 22px; display: grid; place-items: center; flex: 0 0 auto; }
 .app-pulse span { width: 6px; height: 6px; border-radius: 50%; background: #ff586c; box-shadow: 0 0 6px rgba(255, 72, 94, 0.7); animation: pulse-led 2.4s ease-in-out infinite; }
 @keyframes pulse-led { 0%, 100% { opacity: 0.25; box-shadow: 0 0 3px rgba(255, 72, 94, 0.3); } 50% { opacity: 1; box-shadow: 0 0 8px rgba(255, 72, 94, 0.85); } }
 .app-sound { padding: 3px; color: #bfa7a8; font-size: 11px; }
+
+/* Бейдж статуса сети/облака — только на панели (в статус-баре), как ник с лампочкой.
+   Только значок облачка + статус; зелёный = ок, красный = проблема. */
+.app-cloud-badge {
+    flex: 0 0 auto;
+    max-width: 46vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font: 9px 'Share Tech Mono', monospace;
+    letter-spacing: 0.08em;
+    line-height: 1.3;
+    padding: 2px 8px;
+    border-radius: 999px;
+    pointer-events: none;
+    background: rgba(24, 60, 38, 0.5);
+    color: #c9ffe0;
+    border: 1px solid rgba(120, 220, 150, 0.4);
+    transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+}
+.app-cloud-badge.is-err {
+    background: rgba(78, 22, 22, 0.55);
+    color: #ffd6d6;
+    border-color: rgba(255, 130, 130, 0.45);
+}
+.app-cloud-badge.is-empty { display: none; }
 .app-rank { flex: 0 1 auto; overflow: hidden; color: #a9959a; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
 .app-xp-line { gap: 9px; margin-top: 4px; color: #988a90; font: 9px 'Share Tech Mono', monospace; }
 .app-xp-track { height: 3px; flex: 1; overflow: hidden; border-radius: 99px; background: #241a1e; }
@@ -3532,8 +3604,7 @@ html.is-soma-fs-closing .app-h {
 
 #feed-warmth-status { color: #b9aeb0; }
 
-.station-night-ritual-note,
-.station-first-signal-note {
+.station-night-ritual-note {
     margin: 7px 0 0;
     padding: 7px 9px;
     border: 1px solid rgba(255, 207, 135, 0.32);
@@ -3543,7 +3614,6 @@ html.is-soma-fs-closing .app-h {
     font: 9.5px/1.4 'Share Tech Mono', monospace;
 }
 
-.station-first-signal-note { border-color: rgba(233, 165, 138, 0.24); color: #d9b6a7; }
 .station[data-first-signal="seen"] .station-light::after {
     content: '';
     position: absolute;
@@ -3722,11 +3792,14 @@ html.is-soma-fs-closing .app-h {
     text-decoration: underline;
 }
 
-/* Нижний правый угол карточки: кнопка «записать кассету близкому» */
+/* Правый нижний угол карточки: кнопка «записать кассету» */
 .witness-card-foot {
     display: flex;
     justify-content: flex-end;
-    margin-top: 12px;
+    align-items: flex-end;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(138, 38, 54, 0.18);
 }
 .witness-cassette-btn {
     display: inline-flex;
@@ -3735,22 +3808,24 @@ html.is-soma-fs-closing .app-h {
     font: 9px 'Share Tech Mono', monospace;
     letter-spacing: 0.12em;
     color: #ffd9d9;
-    background: linear-gradient(180deg, rgba(255, 72, 94, 0.12) 0%, rgba(120, 20, 36, 0.22) 100%);
-    border: 1px solid rgba(255, 72, 94, 0.38);
-    border-radius: 999px;
-    padding: 8px 14px;
+    background: linear-gradient(180deg, rgba(255, 72, 94, 0.14) 0%, rgba(120, 20, 36, 0.24) 100%);
+    border: 1px solid rgba(255, 72, 94, 0.42);
+    border-radius: 10px;
+    padding: 9px 15px;
     cursor: pointer;
     text-transform: uppercase;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 180, 190, 0.08);
     transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease, border-color 0.2s ease;
 }
 .witness-cassette-btn svg {
     color: #ff7c8d;
     flex: 0 0 auto;
+    filter: drop-shadow(0 0 4px rgba(255, 72, 94, 0.5));
 }
 .witness-cassette-btn:hover {
-    background: linear-gradient(180deg, rgba(255, 72, 94, 0.2) 0%, rgba(150, 30, 48, 0.3) 100%);
-    border-color: rgba(255, 124, 141, 0.7);
-    box-shadow: 0 0 16px rgba(255, 72, 94, 0.28);
+    background: linear-gradient(180deg, rgba(255, 72, 94, 0.24) 0%, rgba(150, 30, 48, 0.32) 100%);
+    border-color: rgba(255, 124, 141, 0.75);
+    box-shadow: 0 0 18px rgba(255, 72, 94, 0.32), 0 4px 12px rgba(0, 0, 0, 0.45);
 }
 .witness-cassette-btn:active {
     transform: scale(0.96);

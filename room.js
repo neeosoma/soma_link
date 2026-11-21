@@ -3351,8 +3351,6 @@ function updateFirstSignalRoom() {
         if (lit) station.dataset.firstSignal = 'seen';
         else delete station.dataset.firstSignal;
     }
-    const note = document.getElementById('station-first-signal-note');
-    if (note) note.hidden = !lit;
     return lit;
 }
 
@@ -10141,6 +10139,7 @@ function renderFeedPager(warmthArg, ledgerArg) {
     const gateEl = document.getElementById('feed-pager-gate');
     const msgEl = document.getElementById('feed-pager-msg');
     const subEl = document.getElementById('feed-pager-sub');
+    const unreadEl = document.getElementById('feed-pager-unread');
 
     if (carrierEl) {
         carrierEl.textContent = !adm.live
@@ -10148,10 +10147,20 @@ function renderFeedPager(warmthArg, ledgerArg) {
             : inbox.length > 0
                 ? `ВХОДЯЩИЙ ШЁПОТ (${inbox.length})`
                 : adm.admitted
-                    ? `ЭФИР АКТИВЕН · ${adm.whisperLeftToday}/${adm.whisperSendCap} ДН`
+                    ? 'ЭФИР АКТИВЕН'
                     : 'ПРИЁМ ВХОДЯЩИХ АКТИВЕН';
     }
     if (gateEl) gateEl.textContent = `СЕГОДНЯ: ${adm.whisperLeftToday}/${adm.whisperSendCap}`;
+    // Индикатор непрочитанных сигналов в эфире
+    if (unreadEl) {
+        if (inbox.length > 0) {
+            unreadEl.textContent = `${inbox.length}`;
+            unreadEl.classList.add('is-unread');
+        } else {
+            unreadEl.textContent = 'НЕТ';
+            unreadEl.classList.remove('is-unread');
+        }
+    }
     // Если ПАМЯТКА активна — не перезаписываем текст подсказок на дисплее.
     if (pagerMemorialOpen) return;
     let mainLine = 'ЧАСТОТА «ШЁПОТ» ВЫКЛЮЧЕНА';
@@ -10170,6 +10179,7 @@ function renderFeedPager(warmthArg, ledgerArg) {
 // ПАМЯТКА — цикл памяток по игре на дисплее пейджера
 let pagerMemorialOpen = false;
 let pagerMemorialStep = 0;
+let pagerMemorialTimer = null;
 const PAGER_MEMORIAL_LINES = [
     { main: 'АНОНИМНОСТЬ', sub: 'Все входящие и исходящие сообщения полностью анонимны. Никто не узнает, кто вы.' },
     { main: 'СЛУЧАЙНЫЙ КОНТАКТ', sub: 'Это игра о случайном контакте. Вы не знаете, с кем говорите — и это суть.' },
@@ -10188,7 +10198,11 @@ function togglePagerMemorial() {
         pagerMemorialStep = 0;
         showPagerMemorialLine(0);
         if (btn) btn.classList.add('is-active');
+        // Через некоторое время памятка автоматически возвращает текст к прежнему состоянию
+        if (pagerMemorialTimer) { clearTimeout(pagerMemorialTimer); pagerMemorialTimer = null; }
+        pagerMemorialTimer = setTimeout(() => { pagerMemorialTimer = null; togglePagerMemorial(); }, 7000);
     } else {
+        if (pagerMemorialTimer) { clearTimeout(pagerMemorialTimer); pagerMemorialTimer = null; }
         if (btn) btn.classList.remove('is-active');
         // Восстанавливаем нормальный текст дисплея
         renderFeedPager();
@@ -10215,6 +10229,9 @@ function cyclePagerMemorial() {
         return;
     }
     showPagerMemorialLine(pagerMemorialStep);
+    // Каждый цикл памятки обновляет автовосстановление
+    if (pagerMemorialTimer) { clearTimeout(pagerMemorialTimer); pagerMemorialTimer = null; }
+    pagerMemorialTimer = setTimeout(() => { pagerMemorialTimer = null; togglePagerMemorial(); }, 7000);
 }
 
 async function syncPagerWhispers() {

@@ -3884,52 +3884,49 @@ html.is-soma-fs-closing .app-h {
 }
 .gh-tab-status { color: #9d9095; font: 8px 'Share Tech Mono', monospace; }
 
-/* ===== ФОНОТЕКА — ПИКСЕЛЬНАЯ СЛУШАЛЬНАЯ (Vinyl vault · fullscreen pixel-art) ===== */
+/* ===== ФОНОТЕКА — ПИКСЕЛЬНАЯ СЛУШАЛЬНАЯ (Vinyl vault · fullscreen pixel-art · as concept v2) ===== */
 #vinyl-archive-modal { --vh-accent: #ff4d6d; }
 
-/* ===== Атмосфера: пиксельная слушальная (фон, луч, пыль, виньетка) ===== */
+/* ===== Атмосфера: винная/пурпурная слушальная ===== */
 .vh-scene {
     position: absolute; inset: 0; z-index: 0; pointer-events: none;
     background:
-        radial-gradient(80% 50% at 50% -8%, rgba(255,77,109,.16), transparent 72%),
-        radial-gradient(50% 40% at 85% 100%, rgba(255,140,60,.08), transparent 70%),
-        linear-gradient(180deg, #0b0408 0%, #120610 55%, #070203 100%);
+        radial-gradient(85% 46% at 50% -10%, rgba(150,30,110,.28), transparent 72%),
+        radial-gradient(56% 40% at 88% 98%, rgba(255,90,60,.07), transparent 70%),
+        linear-gradient(180deg, #160412 0%, #1d0618 48%, #10030e 100%);
 }
 .vh-scene::after {
     content: ''; position: absolute; inset: 0;
     background:
-        repeating-linear-gradient(90deg, rgba(255,77,109,.035) 0 1px, transparent 1px 4px),
-        repeating-linear-gradient(0deg, rgba(255,77,109,.035) 0 1px, transparent 1px 4px);
+        repeating-linear-gradient(90deg, rgba(255,77,109,.03) 0 1px, transparent 1px 4px),
+        repeating-linear-gradient(0deg, rgba(255,77,109,.03) 0 1px, transparent 1px 4px);
     image-rendering: pixelated;
 }
 .vh-beam {
     position: absolute; inset: 0; z-index: 1; pointer-events: none;
     background:
-        radial-gradient(46% 34% at 50% 2%, rgba(255,170,120,.12), transparent 70%),
-        radial-gradient(34% 26% at 88% 96%, rgba(255,77,109,.08), transparent 72%);
-    animation: vh-beam-drift 7s steps(4) infinite;
+        radial-gradient(50% 32% at 50% 0%, rgba(190,60,140,.22), transparent 70%),
+        radial-gradient(36% 26% at 92% 96%, rgba(255,120,80,.08), transparent 72%);
+    animation: vh-beam-drift 8s steps(4) infinite;
 }
-@keyframes vh-beam-drift {
-    from { opacity: .7; }
-    to { opacity: 1; }
-}
+@keyframes vh-beam-drift { from { opacity: .7; } to { opacity: 1; } }
 .vh-dust {
     position: absolute; inset: 0; z-index: 2; pointer-events: none; overflow: hidden;
 }
 .vh-dust span {
     position: absolute; width: 3px; height: 3px;
-    background: rgba(255,190,140,.7);
-    box-shadow: 2px 2px 0 rgba(255,170,120,.45);
+    background: rgba(255,200,160,.6);
+    box-shadow: 2px 2px 0 rgba(255,170,120,.4);
     animation: vh-dust-float 14s steps(10) infinite;
 }
-.vh-dust span:nth-child(1) { left: 8%; top: 82%; animation-delay: 0s; }
-.vh-dust span:nth-child(2) { left: 21%; top: 60%; animation-delay: 2.6s; }
-.vh-dust span:nth-child(3) { left: 34%; top: 90%; animation-delay: 4.4s; }
-.vh-dust span:nth-child(4) { left: 47%; top: 72%; animation-delay: 1.4s; }
-.vh-dust span:nth-child(5) { left: 59%; top: 88%; animation-delay: 5.8s; }
-.vh-dust span:nth-child(6) { left: 71%; top: 58%; animation-delay: 3.1s; }
-.vh-dust span:nth-child(7) { left: 84%; top: 80%; animation-delay: 6.6s; }
-.vh-dust span:nth-child(8) { left: 93%; top: 52%; animation-delay: 8.2s; }
+.vh-dust span:nth-child(1) { left: 8%; top: 84%; animation-delay: 0s; }
+.vh-dust span:nth-child(2) { left: 22%; top: 62%; animation-delay: 2.6s; }
+.vh-dust span:nth-child(3) { left: 36%; top: 90%; animation-delay: 4.4s; }
+.vh-dust span:nth-child(4) { left: 50%; top: 74%; animation-delay: 1.4s; }
+.vh-dust span:nth-child(5) { left: 62%; top: 90%; animation-delay: 5.8s; }
+.vh-dust span:nth-child(6) { left: 74%; top: 60%; animation-delay: 3.1s; }
+.vh-dust span:nth-child(7) { left: 86%; top: 82%; animation-delay: 6.6s; }
+.vh-dust span:nth-child(8) { left: 94%; top: 54%; animation-delay: 8.2s; }
 @keyframes vh-dust-float {
     0% { transform: translate(0, 0); opacity: 0; }
     14% { opacity: .9; }
@@ -3938,10 +3935,10 @@ html.is-soma-fs-closing .app-h {
 }
 .vh-vignette {
     position: absolute; inset: 0; z-index: 3; pointer-events: none;
-    background: radial-gradient(120% 96% at 50% 42%, transparent 46%, rgba(6,2,4,.78) 80%, rgba(4,1,3,.95) 100%);
+    background: radial-gradient(120% 96% at 50% 40%, transparent 44%, rgba(10,2,10,.8) 82%, rgba(6,1,8,.96) 100%);
 }
 
-/* ===== Полный экран: вертикальная оболочка ===== */
+/* ===== Полный экран ===== */
 .vh-shell {
     position: relative; z-index: 4;
     display: flex; flex-direction: column;
@@ -3949,49 +3946,48 @@ html.is-soma-fs-closing .app-h {
     overflow: hidden;
 }
 
-/* ===== Шапка: pixel-bar с брендом и статистикой ===== */
+/* ===== Шапка: тонкая, на тёмном фоне ===== */
 .vh-head {
     flex: none; display: flex; align-items: center; justify-content: space-between; gap: 10px;
-    padding: 12px 14px;
-    background: rgba(8,3,6,.82);
-    border-bottom: 2px solid rgba(255,77,109,.35);
-    box-shadow: 0 4px 0 rgba(255,77,109,.12);
+    padding: 11px 14px 9px;
+    background: linear-gradient(180deg, rgba(22,4,18,.82), rgba(22,4,18,.35));
+    border-bottom: 1.5px solid rgba(255,77,109,.25);
 }
 .vh-brand { display: flex; align-items: center; gap: 9px; min-width: 0; }
 .vh-led {
     width: 9px; height: 9px; flex: none;
     background: #ff3355;
-    box-shadow: 2px 2px 0 rgba(255,51,85,.35), 0 0 10px 2px rgba(255,51,85,.5);
+    box-shadow: 2px 2px 0 rgba(255,51,85,.3), 0 0 10px 2px rgba(255,51,85,.5);
     animation: vh-led-pulse 2.4s steps(2) infinite;
 }
 @keyframes vh-led-pulse { 0%,100% { opacity: .5; } 50% { opacity: 1; } }
 .vh-kicker {
     font-family: 'Share Tech Mono', ui-monospace, monospace;
     font-size: 12px; letter-spacing: .28em; font-weight: 700; color: #ff8da6;
-    text-shadow: 2px 2px 0 rgba(0,0,0,.6);
+    text-shadow: 2px 2px 0 rgba(0,0,0,.7);
 }
 .vh-sub {
     font-family: 'Share Tech Mono', ui-monospace, monospace;
-    font-size: 8.5px; letter-spacing: .24em; color: #8a6a74; margin-top: 2px;
+    font-size: 8.5px; letter-spacing: .24em; color: #a06a84; margin-top: 2px;
 }
 .vh-stats { display: flex; gap: 8px; flex: none; }
 .vh-stat {
     font-family: 'Share Tech Mono', ui-monospace, monospace;
-    font-size: 9.5px; letter-spacing: .06em; color: #d9a0ab;
+    font-size: 9.5px; letter-spacing: .06em; color: #e0a8b4;
     padding: 5px 10px;
     background: rgba(255,77,109,.1);
-    border: 1.5px solid rgba(255,77,109,.4);
-    box-shadow: 2px 2px 0 rgba(255,77,109,.18);
+    border: 1.5px solid rgba(255,77,109,.35);
+    box-shadow: 2px 2px 0 rgba(255,77,109,.15);
 }
-.vh-stat b { color: #ffb0c4; }
+.vh-stat b { color: #ffb8cc; }
 .vh-stat--dim {
-    color: #8a6a74; border-color: rgba(255,255,255,.12); background: rgba(255,255,255,.03);
+    color: #90707c; border-color: rgba(255,255,255,.1); background: rgba(255,255,255,.03);
     box-shadow: 2px 2px 0 rgba(0,0,0,.4);
 }
 .vh-close {
-    flex: none; width: 30px; height: 30px; cursor: pointer; font-size: 13px; line-height: 1;
-    background: rgba(255,255,255,.06);
-    border: 1.5px solid rgba(255,255,255,.14);
+    flex: none; width: 28px; height: 28px; cursor: pointer; font-size: 12px; line-height: 1;
+    background: rgba(255,255,255,.05);
+    border: 1.5px solid rgba(255,255,255,.12);
     color: #c9a0ad;
     box-shadow: 2px 2px 0 rgba(0,0,0,.5);
     transition: all .15s;
@@ -3999,34 +3995,34 @@ html.is-soma-fs-closing .app-h {
 .vh-close:hover { background: rgba(255,77,109,.25); color: #ffd0db; border-color: rgba(255,77,109,.7); }
 .vh-close:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 rgba(0,0,0,.5); }
 
-/* ===== Поиск: pixel-инпут + фильтры НОМЕР / ДАТА / ТЕГИ ===== */
+/* ===== Поиск: тонкий pixel-инпут + чипы ===== */
 .vh-search {
     flex: none; display: flex; align-items: center; gap: 9px;
-    padding: 10px 14px;
-    background: rgba(10,3,6,.85);
-    border-bottom: 2px solid rgba(255,77,109,.28);
+    padding: 8px 14px;
+    background: linear-gradient(180deg, rgba(20,3,16,.7), rgba(20,3,16,.3));
+    border-bottom: 1.5px solid rgba(255,77,109,.22);
 }
 .vh-search svg { color: #ff6b85; flex: none; }
 .vh-search input {
     flex: 1; min-width: 0;
-    background: rgba(4,2,4,.85);
-    border: 1.5px solid rgba(255,77,109,.35);
+    background: rgba(10,2,10,.8);
+    border: 1.5px solid rgba(255,77,109,.3);
     box-shadow: inset 2px 2px 0 rgba(0,0,0,.55);
-    color: #f3e4ea; font-size: 12.5px;
+    color: #f3e4ea; font-size: 12px;
     font-family: 'Share Tech Mono', ui-monospace, monospace;
-    padding: 7px 10px;
+    padding: 6px 10px;
     outline: none;
 }
-.vh-search input::placeholder { color: #6a5560; }
+.vh-search input::placeholder { color: #70505c; }
 .vh-search input:focus { border-color: rgba(255,77,109,.8); box-shadow: inset 2px 2px 0 rgba(0,0,0,.55), 0 0 10px -2px rgba(255,77,109,.5); }
-.vh-chips { display: flex; gap: 6px; flex: none; }
+.vh-chips { display: flex; gap: 5px; flex: none; }
 .vh-chip {
     font-family: 'Share Tech Mono', ui-monospace, monospace;
-    font-size: 9.5px; letter-spacing: .1em; font-weight: 700;
+    font-size: 9px; letter-spacing: .1em; font-weight: 700;
     color: #b08a96; cursor: pointer;
-    padding: 7px 11px;
-    background: rgba(255,255,255,.05);
-    border: 1.5px solid rgba(255,255,255,.14);
+    padding: 6px 9px;
+    background: rgba(255,255,255,.04);
+    border: 1.5px solid rgba(255,255,255,.12);
     box-shadow: 2px 2px 0 rgba(0,0,0,.5);
     transition: all .15s;
 }
@@ -4034,42 +4030,42 @@ html.is-soma-fs-closing .app-h {
 .vh-chip:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 rgba(0,0,0,.5); }
 .vh-chip.is-active {
     color: #fff;
-    background: linear-gradient(180deg, rgba(255,77,109,.35), rgba(255,77,109,.18));
+    background: linear-gradient(180deg, rgba(255,77,109,.35), rgba(255,77,109,.16));
     border-color: rgba(255,77,109,.9);
     box-shadow: 2px 2px 0 rgba(255,77,109,.4), 0 0 12px -2px rgba(255,77,109,.6);
 }
 
-/* ===== Сцена: шкаф (верх) + проигрыватель (низ) ===== */
+/* ===== Сцена: шкаф-стена (верх) + проигрыватель-центрпикс (низ) ===== */
 .vh-stage {
     position: relative; z-index: 4;
     flex: 1; display: flex; flex-direction: column; min-height: 0;
-    padding: 12px 14px 14px; gap: 12px;
+    padding: 10px 12px 12px; gap: 10px;
 }
 
-/* ===== КАБИНЕТ — пиксельный шкаф с пластинками ===== */
+/* ===== КАБИНЕТ-СТЕНА: плотные ряды обложек, доминирует верх ===== */
 .vh-cabinet {
     position: relative; flex: 1; min-height: 0;
     display: flex; flex-direction: column;
     border-radius: 8px;
-    background: linear-gradient(180deg, #2c1808, #160c04);
-    border: 2px solid #5a3a20;
-    box-shadow: 4px 4px 0 rgba(0,0,0,.6), inset 0 0 0 2px rgba(255,224,180,.06);
+    background: linear-gradient(180deg, #2a1220, #160814);
+    border: 2px solid #5a2440;
+    box-shadow: 4px 4px 0 rgba(0,0,0,.6), inset 0 0 0 2px rgba(255,200,220,.05);
     overflow: hidden;
 }
 .vh-cab-back {
     position: absolute; inset: 8px; border-radius: 5px; z-index: 0;
     background:
-        radial-gradient(140% 100% at 50% -10%, #241507 0%, #120a04 62%, #0b0602 100%);
+        radial-gradient(140% 100% at 50% -10%, #2c1020 0%, #180712 62%, #0d030c 100%);
     box-shadow: inset 0 8px 22px rgba(0,0,0,.7), inset 0 -6px 14px rgba(0,0,0,.5);
 }
 .vh-cab-glass {
     position: absolute; inset: 8px; border-radius: 5px; z-index: 4; pointer-events: none;
-    background: linear-gradient(118deg, transparent 38%, rgba(255,224,180,.05) 50%, transparent 62%);
+    background: linear-gradient(118deg, transparent 36%, rgba(255,200,220,.05) 48%, transparent 60%);
 }
 .vh-cab-interior {
     position: relative; z-index: 1; flex: 1;
-    display: flex; flex-wrap: wrap; gap: 9px 7px; align-content: flex-start;
-    padding: 14px 10px 12px;
+    display: flex; flex-wrap: wrap; gap: 8px 6px; align-content: flex-start;
+    padding: 12px 9px 10px;
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: rgba(255,77,109,.4) transparent;
@@ -4077,29 +4073,29 @@ html.is-soma-fs-closing .app-h {
 .vh-cab-interior::-webkit-scrollbar { width: 6px; }
 .vh-cab-interior::-webkit-scrollbar-thumb { background: rgba(255,77,109,.4); border-radius: 3px; }
 .vh-cab-frame {
-    position: absolute; left: 0; right: 0; bottom: 0; height: 14px; z-index: 2;
+    position: absolute; left: 0; right: 0; bottom: 0; height: 13px; z-index: 2;
     border-radius: 0 0 6px 6px;
-    background: linear-gradient(180deg, #4a2c17, #241407);
-    border-top: 2px solid rgba(255,224,180,.1);
+    background: linear-gradient(180deg, #4a2038, #240818);
+    border-top: 2px solid rgba(255,200,220,.1);
     box-shadow: 0 -4px 8px rgba(0,0,0,.5);
 }
 .vh-cab-label {
-    position: absolute; left: 12px; bottom: 16px; z-index: 3;
+    position: absolute; left: 12px; bottom: 15px; z-index: 3;
     font-family: 'Share Tech Mono', ui-monospace, monospace;
-    font-size: 8px; letter-spacing: .22em; color: rgba(255,214,170,.5);
+    font-size: 8px; letter-spacing: .22em; color: rgba(255,200,220,.45);
     text-shadow: 1px 1px 0 rgba(0,0,0,.7);
 }
 .vh-cab-shelf {
-    flex: 1 1 100%; height: 8px; margin: 5px 3px 3px;
+    flex: 1 1 100%; height: 7px; margin: 4px 3px 3px;
     border-radius: 2px;
-    background: linear-gradient(180deg, #5a3618, #2c1808);
-    border: 1.5px solid rgba(255,224,180,.12);
+    background: linear-gradient(180deg, #5a2440, #2c1020);
+    border: 1.5px solid rgba(255,200,220,.1);
     box-shadow: 0 4px 0 rgba(0,0,0,.55);
 }
 
-/* ===== ПЛАСТИНКА В ОБЛОЖКЕ — pixel cover-art ===== */
+/* ===== ПЛАСТИНКА В ОБЛОЖКЕ — pixel cover-art (разные цвета обложек) ===== */
 .vh-record-card {
-    position: relative; width: 62px; height: 94px;
+    position: relative; width: 58px; height: 88px;
     cursor: grab; user-select: none; touch-action: none;
     transition: transform .15s, box-shadow .15s;
 }
@@ -4116,27 +4112,38 @@ html.is-soma-fs-closing .app-h {
     border: 1.5px solid rgba(255,255,255,.12);
     box-shadow: 3px 3px 0 rgba(0,0,0,.55);
 }
-/* pixel cover-art */
 .vh-rc-cover {
-    position: relative; height: 62px; overflow: hidden;
-    background: var(--vh-accent);
-    border-bottom: 2px solid rgba(0,0,0,.5);
+    position: relative; height: 58px; overflow: hidden;
+    border-bottom: 2px solid rgba(0,0,0,.55);
 }
+/* обложки: красная / белая / янтарная / пурпурная */
 .vh-rc-cover--0 { background: var(--vh-accent); }
-.vh-rc-cover--1 { background: #2a0a14; }
-.vh-rc-cover--1::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, var(--vh-accent), transparent 60%); opacity: .8; }
-.vh-rc-cover--2 { background: #1a0710; }
-.vh-rc-cover--2::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, transparent 0 6px, rgba(255,255,255,.14) 6px 7px, transparent 7px 13px); }
-.vh-rc-cover--3 { background: #3a0d1a; }
-.vh-rc-cover--3::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 6px, rgba(0,0,0,.35) 6px 7px, transparent 7px 13px); }
+.vh-rc-cover--1 { background: #e8e0e4; }
+.vh-rc-cover--1::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(255,77,109,.85), transparent 62%);
+}
+.vh-rc-cover--2 { background: #c97a2a; }
+.vh-rc-cover--2::after {
+    content: ''; position: absolute; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent 0 6px, rgba(0,0,0,.28) 6px 7px, transparent 7px 13px);
+}
+.vh-rc-cover--3 { background: #6a1a4a; }
+.vh-rc-cover--3::after {
+    content: ''; position: absolute; inset: 0;
+    background: repeating-linear-gradient(90deg, transparent 0 6px, rgba(0,0,0,.3) 6px 7px, transparent 7px 13px);
+}
 .vh-rc-motif {
-    position: absolute; inset: 0; opacity: .55;
+    position: absolute; inset: 0; opacity: .6;
     background:
-        radial-gradient(circle at 62% 30%, rgba(255,255,255,.35) 0 4px, transparent 5px),
+        radial-gradient(circle at 62% 30%, rgba(255,255,255,.4) 0 4px, transparent 5px),
         repeating-radial-gradient(circle at 62% 30%, transparent 0 7px, rgba(0,0,0,.22) 7px 8px, transparent 8px 15px);
 }
-.vh-rc-cover--1 .vh-rc-motif {
-    background: repeating-linear-gradient(48deg, transparent 0 5px, rgba(255,255,255,.2) 5px 6px, transparent 6px 11px);
+.vh-rc-cover--2 .vh-rc-motif {
+    background: repeating-linear-gradient(48deg, transparent 0 5px, rgba(255,255,255,.22) 5px 6px, transparent 6px 11px);
+}
+.vh-rc-cover--3 .vh-rc-motif {
+    background: repeating-linear-gradient(48deg, transparent 0 5px, rgba(255,255,255,.16) 5px 6px, transparent 6px 11px);
 }
 .vh-rc-title {
     position: absolute; left: 5px; bottom: 4px; z-index: 2;
@@ -4144,9 +4151,10 @@ html.is-soma-fs-closing .app-h {
     font-size: 7px; letter-spacing: .14em; font-weight: 700; color: #fff;
     text-shadow: 1px 1px 0 rgba(0,0,0,.65);
 }
-/* пиксельная пластинка (нижний край обложки) */
+.vh-rc-cover--1 .vh-rc-title { color: #b02040; text-shadow: none; }
+.vh-rc-cover--2 .vh-rc-title { color: #3a1200; text-shadow: none; }
 .vh-rc-vinyl {
-    height: 30px; position: relative;
+    height: 28px; position: relative;
     background:
         repeating-linear-gradient(90deg, #1d1d20 0 2px, #101013 2px 4px),
         #161619;
@@ -4166,7 +4174,7 @@ html.is-soma-fs-closing .app-h {
     font-size: 7px; color: #f0d0da; background: rgba(8,3,6,.9);
     padding: 1px 5px;
     border: 1px solid rgba(255,77,109,.3);
-    max-width: 46px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    max-width: 44px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .vh-fav-dot {
     position: absolute; top: -6px; right: -6px; z-index: 5;
@@ -4182,35 +4190,42 @@ html.is-soma-fs-closing .app-h {
     text-shadow: 1px 1px 0 rgba(0,0,0,.6), 0 0 8px rgba(255,210,77,.6);
 }
 
-/* летающая пластинка при drag */
 .vh-ghost {
     position: fixed; z-index: 9999; top: 0; left: 0; pointer-events: none;
     transform-origin: 50% 50%;
     box-shadow: 8px 8px 0 rgba(0,0,0,.55), 0 0 22px -2px var(--vh-accent);
 }
 
-/* ===== ПРОИГРЫВАТЕЛЬ — пиксельный 3/4 (низ экрана) ===== */
+/* ===== ПРОИГРЫВАТЕЛЬ — большой светящийся центрпикс (низ) ===== */
 .vh-turntable {
     flex: none; position: relative;
     display: flex; flex-direction: column; align-items: center;
-    padding: 6px 0 4px;
+    padding: 4px 0 2px;
+}
+/* ореол света под проигрывателем */
+.vh-tt-halo {
+    position: absolute; left: 50%; top: 30%; transform: translateX(-50%);
+    width: 340px; height: 160px; z-index: 0; pointer-events: none;
+    background: radial-gradient(ellipse at 50% 70%, rgba(255,77,109,.22), rgba(255,140,60,.1) 45%, transparent 72%);
+    filter: blur(6px);
+    animation: vh-beam-drift 6s steps(4) infinite;
 }
 .vh-tt-base {
-    position: relative; width: 262px; height: 46px;
-    border-radius: 8px; z-index: 1;
-    background: linear-gradient(180deg, #5a3a20 0%, #3a2313 60%, #241407 100%);
-    border: 2px solid #6a4526;
-    box-shadow: 5px 5px 0 rgba(0,0,0,.6), inset 0 0 0 2px rgba(255,224,180,.1);
+    position: relative; width: 300px; height: 50px;
+    border-radius: 10px; z-index: 2;
+    background: linear-gradient(180deg, #5a2a38 0%, #3a1422 60%, #240a14 100%);
+    border: 2.5px solid #7a3a52;
+    box-shadow: 5px 5px 0 rgba(0,0,0,.6), inset 0 0 0 2px rgba(255,200,220,.08), 0 0 30px -6px rgba(255,77,109,.4);
 }
 .vh-tt-base::before {
-    content: ''; position: absolute; inset: 5px 9px; border-radius: 5px;
+    content: ''; position: absolute; inset: 6px 10px; border-radius: 6px;
     background:
-        repeating-linear-gradient(90deg, rgba(0,0,0,.16) 0 2px, transparent 2px 8px),
-        linear-gradient(180deg, #4a2c17, #2c1808);
-    border: 1.5px solid rgba(255,224,180,.1);
+        repeating-linear-gradient(90deg, rgba(0,0,0,.18) 0 2px, transparent 2px 8px),
+        linear-gradient(180deg, #4a1c2c, #2c0c18);
+    border: 1.5px solid rgba(255,200,220,.1);
 }
 .vh-tt-base::after {
-    content: ''; position: absolute; left: 20px; right: 20px; top: -8px; height: 12px;
+    content: ''; position: absolute; left: 22px; right: 22px; top: -8px; height: 13px;
     border-radius: 4px;
     background: linear-gradient(180deg, #4a4a52, #19191d);
     border: 1.5px solid rgba(255,255,255,.1);
@@ -4219,24 +4234,23 @@ html.is-soma-fs-closing .app-h {
 .vh-tt-brand {
     position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 2;
     font-family: 'Share Tech Mono', ui-monospace, monospace;
-    font-size: 8px; letter-spacing: .2em; color: rgba(255,214,170,.55);
+    font-size: 8.5px; letter-spacing: .2em; color: rgba(255,214,200,.6);
     white-space: nowrap;
 }
 .vh-tt-led {
-    position: absolute; right: 14px; top: 50%; transform: translateY(-50%); z-index: 2;
-    width: 7px; height: 7px;
+    position: absolute; right: 15px; top: 50%; transform: translateY(-50%); z-index: 2;
+    width: 8px; height: 8px;
     background: #ff3355;
-    box-shadow: 1px 1px 0 rgba(0,0,0,.5), 0 0 9px 2px rgba(255,51,85,.55);
+    box-shadow: 1px 1px 0 rgba(0,0,0,.5), 0 0 12px 3px rgba(255,51,85,.65);
     animation: vh-led-pulse 2.4s steps(2) infinite;
 }
-/* плавун (эллипс, 3/4) */
 .vh-tt-platter {
-    position: relative; width: 210px; height: 88px; margin-top: -16px; z-index: 2;
+    position: relative; width: 244px; height: 102px; margin-top: -18px; z-index: 2;
     border-radius: 50%;
     background:
-        radial-gradient(ellipse at 50% 38%, #3c3c44 0 56%, #19191d 60% 100%);
+        radial-gradient(ellipse at 50% 38%, #3c3c44 0 54%, #19191d 58% 100%);
     border: 2px solid rgba(255,255,255,.06);
-    box-shadow: 4px 5px 0 rgba(0,0,0,.55);
+    box-shadow: 4px 5px 0 rgba(0,0,0,.55), 0 0 30px -4px rgba(255,77,109,.25);
     display: flex; align-items: center; justify-content: center;
     transition: box-shadow .2s, transform .2s;
 }
@@ -4247,13 +4261,12 @@ html.is-soma-fs-closing .app-h {
 }
 .vh-tt-platter.is-drop {
     border-color: var(--vh-accent);
-    box-shadow: 4px 5px 0 rgba(0,0,0,.55), 0 0 22px 2px var(--vh-accent);
+    box-shadow: 4px 5px 0 rgba(0,0,0,.55), 0 0 30px 2px var(--vh-accent);
     transform: scale(1.03);
 }
-.vh-tt-platter.is-drop .vh-tt-glow { opacity: .55; }
-/* пластинка */
+.vh-tt-platter.is-drop .vh-tt-glow { opacity: .6; }
 .vh-record {
-    position: relative; width: 128px; height: 64px; border-radius: 50%;
+    position: relative; width: 150px; height: 75px; border-radius: 50%;
     transform-origin: 50% 50%;
     opacity: 0; visibility: hidden;
     background:
@@ -4280,14 +4293,13 @@ html.is-soma-fs-closing .app-h {
     box-shadow: 1px 1px 0 rgba(0,0,0,.4);
 }
 .vh-tt-spindle {
-    position: absolute; top: 50%; left: 50%; width: 8px; height: 8px;
-    margin: -4px 0 0 -4px; border-radius: 50%; z-index: 3;
+    position: absolute; top: 50%; left: 50%; width: 9px; height: 9px;
+    margin: -4.5px 0 0 -4.5px; border-radius: 50%; z-index: 3;
     background: #e8c496;
     box-shadow: 1px 1px 0 rgba(0,0,0,.6);
 }
-/* тонарм */
 .vh-tt-arm {
-    position: absolute; top: 2px; right: 30px; width: 9px; height: 88px;
+    position: absolute; top: 2px; right: 34px; width: 10px; height: 100px;
     border-radius: 4px; transform-origin: 5px 5px; transform: rotate(-32deg);
     background: linear-gradient(180deg, #4a4a52, #1c1c20);
     border: 1.5px solid rgba(255,255,255,.08);
@@ -4297,22 +4309,21 @@ html.is-soma-fs-closing .app-h {
 }
 .vh-turntable.is-playing .vh-tt-arm { transform: rotate(12deg); }
 .vh-tt-arm::before {
-    content: ''; position: absolute; top: -6px; left: -4px; width: 16px; height: 16px;
+    content: ''; position: absolute; top: -7px; left: -4px; width: 17px; height: 17px;
     border-radius: 50%;
     background: radial-gradient(circle at 35% 35%, #6a6a72, #16161a);
     border: 1.5px solid rgba(255,255,255,.08);
 }
 .vh-tt-arm::after {
-    content: ''; position: absolute; top: 7px; left: 5px; width: 2px; height: 54px;
+    content: ''; position: absolute; top: 8px; left: 5px; width: 2px; height: 60px;
     background: linear-gradient(180deg, #e8c496, #9c6e49 78%, #ff6b7d);
 }
-/* VU-метры */
 .vh-tt-meters {
-    position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%); z-index: 3;
-    display: flex; gap: 14px;
+    position: absolute; left: 50%; bottom: 3px; transform: translateX(-50%); z-index: 3;
+    display: flex; gap: 16px;
 }
 .vh-meter {
-    width: 9px; height: 24px; overflow: hidden;
+    width: 10px; height: 28px; overflow: hidden;
     background: #0a0405;
     border: 1.5px solid rgba(255,255,255,.1);
     box-shadow: 2px 2px 0 rgba(0,0,0,.5);
@@ -4320,7 +4331,7 @@ html.is-soma-fs-closing .app-h {
 .vh-meter-fill {
     display: block; width: 100%; height: 18%;
     background: linear-gradient(180deg, #ffd24d, #ff7a3d 60%, #ff4d6d);
-    box-shadow: 0 0 8px rgba(255,150,80,.55);
+    box-shadow: 0 0 10px rgba(255,150,80,.6);
     transition: height .15s;
 }
 .vh-turntable.is-playing .vh-meter-fill {
@@ -4337,13 +4348,13 @@ html.is-soma-fs-closing .app-h {
 
 /* ===== ПАНЕЛЬ ЧТЕНИЯ (лайнер-нотыс) ===== */
 .vh-read {
-    flex: none; margin: 0 0 2px; padding: 12px 14px;
-    background: rgba(8,3,6,.9);
+    flex: none; margin: 0 0 2px; padding: 11px 14px;
+    background: rgba(12,3,12,.92);
     border: 2px solid rgba(255,77,109,.5);
     border-radius: 6px;
     box-shadow: 4px 4px 0 rgba(255,77,109,.2);
     animation: vh-read-in .25s steps(4);
-    max-height: 180px; overflow-y: auto;
+    max-height: 170px; overflow-y: auto;
 }
 @keyframes vh-read-in { from { opacity: 0; transform: translateY(8px); } }
 .vh-read-head { display: flex; align-items: center; gap: 9px; margin-bottom: 8px; }
@@ -4389,8 +4400,9 @@ html.is-soma-fs-closing .app-h {
     .vh-stats { order: 3; width: 100%; justify-content: flex-start; }
     .vh-chips { gap: 4px; }
     .vh-chip { padding: 6px 8px; font-size: 8.5px; }
-    .vh-tt-base { width: 232px; }
-    .vh-tt-platter { width: 184px; height: 76px; }
-    .vh-record { width: 112px; height: 56px; }
+    .vh-tt-halo { width: 300px; }
+    .vh-tt-base { width: 270px; }
+    .vh-tt-platter { width: 216px; height: 90px; }
+    .vh-record { width: 132px; height: 66px; }
 }
 

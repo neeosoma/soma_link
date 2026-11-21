@@ -10583,6 +10583,18 @@ function renderPagerModal() {
                 candidates = candidates.filter(p => !skipped.has(String(p.id)) && !whisperedSet.has(String(p.id))).slice(0, 1);
             }
 
+            // Перед перерисовкой bodyEl.innerHTML удерживаем фокус textarea «Шёпота».
+            // Периодический refreshFeed (каждые 8 сек.) вызывает renderPagerModal и
+            // пересоздаёт DOM — без этого сохранения фокус терялся и клавиатура закрывалась.
+            let composeFocus = null;
+            const activeComposing = document.activeElement && document.activeElement.id === 'pager-compose-input';
+            if (activeComposing && roomAnim.pagerComposingPostId) {
+                composeFocus = {
+                    start: document.activeElement.selectionStart,
+                    end: document.activeElement.selectionEnd
+                };
+            }
+
             if (!candidates.length) {
                 bodyEl.innerHTML = `
                     <div class="pager-empty-box">
@@ -10722,6 +10734,19 @@ function renderPagerModal() {
                             renderPagerModal();
                         }
                     };
+                }
+
+                // Восстанавливаем фокус в textarea «Шёпота» после перерисовки
+                // (refreshFeed каждые 8 сек. вызывает renderPagerModal, который
+                // пересоздаёт DOM и без этого сбрасывал фокус → клавиатура закрывалась).
+                if (inp && composeFocus && roomAnim.pagerComposingPostId) {
+                    try {
+                        inp.focus();
+                        const len = String(inp.value || '').length;
+                        const s = Math.max(0, Math.min(composeFocus.start ?? len, len));
+                        const e = Math.max(s, Math.min(composeFocus.end ?? len, len));
+                        if (typeof inp.setSelectionRange === 'function') inp.setSelectionRange(s, e);
+                    } catch (_) {}
                 }
             }
         }

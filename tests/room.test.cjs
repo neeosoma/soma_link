@@ -732,7 +732,7 @@ test('v8: body-portal FLIP fullscreen + 180 flip + rotated pointer mapping, Dawn
         indexHtml.includes('id="station-fs-flip"')
         && indexHtml.includes('room.js?v=19')
         && indexHtml.includes('cosmetics.css?v=15')
-        && indexHtml.includes('receiver.js?v=16')
+        && indexHtml.includes('receiver.js?v=17')
         && indexHtml.includes('vhs.js?v=15')
         && indexHtml.includes('greenhouse.js?v=15')
         && indexHtml.includes('blimp.js?v=15')

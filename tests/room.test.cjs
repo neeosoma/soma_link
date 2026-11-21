@@ -730,7 +730,7 @@ test('v8: body-portal FLIP fullscreen + 180 flip + rotated pointer mapping, Dawn
     assert.ok(indexHtml.includes('soma-post-cta') && indexHtml.includes('soma-post-beacon') && indexHtml.includes('soma-post-arrow'));
     assert.ok(
         indexHtml.includes('id="station-fs-flip"')
-        && indexHtml.includes('room.js?v=19')
+        && indexHtml.includes('room.js?v=20')
         && indexHtml.includes('cosmetics.css?v=15')
         && indexHtml.includes('receiver.js?v=17')
         && indexHtml.includes('vhs.js?v=15')
@@ -2216,8 +2216,7 @@ test('first session is dismissible, offers only a real visible post, and leaves 
         ['first-session-copy', { textContent: '' }],
         ['first-session-open', { hidden: false, disabled: false }],
         ['first-session-look', { hidden: false }],
-        ['station', { dataset: {} }],
-        ['station-first-signal-note', { hidden: true }]
+        ['station', { dataset: {} }]
     ]);
     const document = { getElementById: id => elements.get(id) || null };
     const player = { uid: 'u_0123456789abcdef', name: 'AGENT_1001', warmth: 0, xp: 71 };
@@ -2233,15 +2232,13 @@ test('first session is dismissible, offers only a real visible post, and leaves 
     assert.equal(r.completeFirstSession('read'), true);
     assert.equal(elements.get('first-signal-entry').hidden, true);
     assert.equal(elements.get('station').dataset.firstSignal, 'seen');
-    assert.equal(elements.get('station-first-signal-note').hidden, false);
     assert.equal(localStorage.getItem('soma_first_session_v1'), 'read');
     assert.equal(player.xp, 71, 'the private room mark gives no XP');
 
     const skipStorage = makeStorage();
     const skipElements = new Map([
         ['first-signal-entry', { hidden: true, dataset: {} }],
-        ['station', { dataset: {} }],
-        ['station-first-signal-note', { hidden: true }]
+        ['station', { dataset: {} }]
     ]);
     const skipPlayer = { uid: 'u_0123456789abcdef', name: 'AGENT_1001', warmth: 0, xp: 71 };
     const skipRoom = loadRoom({
@@ -2252,7 +2249,6 @@ test('first session is dismissible, offers only a real visible post, and leaves 
     });
     assert.equal(skipRoom.completeFirstSession('skip'), true);
     assert.equal(skipElements.get('station').dataset.firstSignal, undefined, 'skipping does not produce the private read glow');
-    assert.equal(skipElements.get('station-first-signal-note').hidden, true);
     assert.equal(skipPlayer.xp, 71, 'skipping has no reward or penalty');
 
     const emptyStorage = makeStorage();

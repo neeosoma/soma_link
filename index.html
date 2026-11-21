@@ -11,7 +11,7 @@
     <!-- supabase-js vendored locally (avoids CDN dependence). Fallback to CDN only if local bundle is unavailable. -->
     <script src="assets/lib/supabase.umd.js"></script>
     <script>window.supabase || document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"><\/script>');</script>
-    <link rel="stylesheet" href="room.css?v=21">
+    <link rel="stylesheet" href="room.css?v=22">
     <link rel="stylesheet" href="cosmetics.css?v=15">
     <link rel="stylesheet" href="receiver.css?v=17">
     <link rel="stylesheet" href="vhs.css?v=15">
@@ -713,12 +713,13 @@
                     <span id="user-badge">@GUEST</span>
                     <button id="snd-btn" onclick="toggleSound()" class="app-sound" aria-label="Переключить звук">🔊</button>
                 </div>
+                <span id="soma-cloud-badge" class="app-cloud-badge" aria-live="polite"></span>
             </div>
         </header>
 
         <!-- ОСНОВНАЯ НАВИГАЦИЯ -->
         <nav class="app-tabs" aria-label="Разделы станции">
-            <button id="tab-feed" onclick="switchTab('feed')" aria-current="page">ДНЕВНИК</button>
+            <button id="tab-feed" onclick="switchTab('feed')" aria-current="page">ПЕЙДЖЕР</button>
             <button id="tab-room" onclick="switchTab('room')">МОЯ КОМНАТА</button>
             <button id="tab-greenhouse" onclick="switchTab('greenhouse')">ОРАНЖЕРЕЯ</button>
         </nav>
@@ -749,6 +750,7 @@
                 <!-- ШАПКА УСТРОЙСТВА: бренд + LED + полоски силы связи -->
                 <div class="pager-top">
                     <span class="pager-brand"><i class="pager-led" aria-hidden="true"></i>NEEOSOMA // <span class="pager-code">NMAV-04 «ШЁПОТ»</span></span>
+                    <span id="feed-pager-unread" class="pager-unread" aria-live="polite"></span>
                     <span class="pager-sig-bar" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
                 </div>
                 <!-- LCD-ЭКРАН: CRT-люминофорная матрица -->
@@ -804,9 +806,9 @@
                         </div>
                     </div>
                     <div class="witness-card-foot">
-                        <button type="button" onclick="openFriendCassette()" class="witness-cassette-btn" aria-label="Записать кассету близкому">
+                        <button type="button" onclick="openFriendCassette()" class="witness-cassette-btn" aria-label="Записать кассету своему человеку">
                             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9h2M7 13h2M15 9h2M15 13h2"/><circle cx="8" cy="17" r="1.1" fill="currentColor" stroke="none"/><circle cx="16" cy="17" r="1.1" fill="currentColor" stroke="none"/></svg>
-                            ЗАПИСАТЬ КАССЕТУ БЛИЗКОМУ
+                            ЗАПИСАТЬ КАССЕТУ
                         </button>
                     </div>
                 </div>
@@ -917,7 +919,6 @@
                             </span>
                         </div>
                         <div id="station-night-ritual-note" class="station-night-ritual-note" hidden aria-live="polite"></div>
-                        <p id="station-first-signal-note" class="station-first-signal-note" hidden>✦ ЛИЧНАЯ ОТМЕТКА · ПЕРВАЯ ИСТОРИЯ ЗАМЕЧЕНА</p>
                         <div id="station-greenhouse" class="station-gh hidden" aria-label="Оранжерея станции">
                             <div class="station-gh-head">
                                 <span>ОРАНЖЕРЕЯ СТАНЦИИ</span>
@@ -1003,7 +1004,7 @@
 <script src="signals.js?v=3"></script>
 <script src="station-ritual.js?v=2"></script>
 <script src="witness.js?v=2"></script>
-    <script src="room.js?v=19"></script>
+    <script src="room.js?v=20"></script>
 <script src="cosmetics.js?v=16"></script>
 <script src="receiver.js?v=17"></script>
 <script src="vhs.js?v=15"></script>
@@ -2033,10 +2034,19 @@
         } catch(e) {}
     }
 
+    // Стабильный цифровой серийный номер для анонимного ника «Аноним #N».
+    function anonSerialNum(raw) {
+        const s = String(raw || '');
+        const hex = s.startsWith('u_') ? s.slice(2) : s;
+        const n = parseInt(hex.replace(/[^0-9a-f]/gi, ''), 16);
+        return (Number.isFinite(n) ? n : 0) % 90000 + 10000;
+    }
+
     function updateHeader() {
         document.getElementById('user-badge').innerText = `@${player.name}`;
 
-        document.getElementById('card-name').innerText = `@${player.name}`;
+        // Карточка свидетеля: никнейм игрока — анонимный серийный номер
+        document.getElementById('card-name').innerText = `Аноним #${anonSerialNum(player.uid || player.name || 'guest')}`;
         const breaches = typeof getWhisperBreachCount === 'function'
             ? getWhisperBreachCount()
             : Math.max(0, Number(player.whispersSent) || 0);
@@ -2409,24 +2419,30 @@
         try { Telegram.WebApp.showAlert(msg); } catch (e) { alert(msg); }
     }
 
-    // Постоянный бейдж статуса сети/облака — видно в игре без консоли браузера.
-    // ok=true (зелёное) = всё подключено, ok=false (красное) = проблема.
+    // Бейдж статуса сети — виден только на панели (в статус-баре), как ник с мигающей лампочкой.
+    // Показываем только значок облачка + статус (без слова «облако»). ok=true (зелёный) = всё ок, false (красный) = проблема.
     function setCloudStatus(text, ok) {
         try {
             if (typeof document === 'undefined') return;
+            // Оставляем только значок облачка и статус: убираем категорий «облако:» / «journal:».
+            const clean = String(text || '')
+                .replace(/^☁\s*/, '')
+                .replace(/^(облако|journal)\s*[:：]\s*/i, '')
+                .trim();
             let b = document.getElementById('soma-cloud-badge');
             if (!b) {
-                b = document.createElement('div');
+                b = document.createElement('span');
                 b.id = 'soma-cloud-badge';
-                b.style.cssText = 'position:fixed;right:10px;top:10px;z-index:9999;max-width:78vw;' +
-                    'padding:4px 9px;border-radius:10px;font-size:11px;line-height:1.3;font-family:inherit;' +
-                    'pointer-events:none;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);';
-                document.body.appendChild(b);
+                b.className = 'app-cloud-badge';
+                const slot = document.querySelector('.app-status-top');
+                if (slot && slot.appendChild) slot.appendChild(b);
+                else if (document.body && document.body.appendChild) document.body.appendChild(b);
             }
-            b.textContent = text;
-            b.style.color = ok ? '#c9ffe0' : '#ffd6d6';
-            b.style.background = ok ? 'rgba(24,60,38,.72)' : 'rgba(78,22,22,.72)';
-            b.style.border = '1px solid ' + (ok ? 'rgba(120,220,150,.45)' : 'rgba(255,130,130,.45)');
+            if (!clean) { b.classList.add('is-empty'); b.textContent = ''; return; }
+            b.classList.remove('is-empty');
+            b.textContent = '☁ ' + clean;
+            b.classList.toggle('is-ok', !!ok);
+            b.classList.toggle('is-err', !ok);
         } catch (e) {}
     }
 
@@ -2527,11 +2543,13 @@
     // 1) при касании у самого верха (0) или низа (max) сдвигает scrollTop на 1px внутрь, чтобы WebKit
     //    никогда не передавал жест скролла наружному body (где скролл замирал до смены вкладки);
     // 2) после закрытия клавиатуры, модальных окон и полного экрана возвращает окно и активную вкладку в живое состояние.
+    let _somaTextFocus = false; // лаtch: клавиатура открыта на текстовом поле
     function restoreSomaScroll() {
         try {
             // Не трогать скролл, пока клавиатура открыта на текстовом поле:
             // window.scrollTo / scrollTop на мобильных WebView сворачивают клавиатуру,
             // создавая луп (клавиатура открылась -> viewportChanged -> restoreSomaScroll -> клавиатура свернулась).
+            if (_somaTextFocus) return;
             const ae = document.activeElement;
             if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)) {
                 return;
@@ -2569,6 +2587,19 @@
         if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', attach, { once: true });
         else attach();
         document.addEventListener('focusout', () => { setTimeout(restoreSomaScroll, 80); }, { passive: true });
+        // Следим за фокусом на текстовых полях: клавиатура должна оставаться открытой
+        // пока пользователь печатает (напр. шёпот в пейджере), и не сверяться лупом.
+        const isTextTarget = el => !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
+        document.addEventListener('focusin', (e) => { if (isTextTarget(e.target)) _somaTextFocus = true; }, { passive: true });
+        document.addEventListener('focusout', (e) => {
+            if (isTextTarget(e.target)) {
+                // сбрасываем latch, когда фокус переходит на не-текстовое поле
+                setTimeout(() => {
+                    const ae = document.activeElement;
+                    if (!isTextTarget(ae)) _somaTextFocus = false;
+                }, 120);
+            }
+        }, { passive: true });
         document.addEventListener('visibilitychange', () => {
             holdCancel();
             if (!document.hidden) setTimeout(restoreSomaScroll, 60);

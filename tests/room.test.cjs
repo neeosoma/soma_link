@@ -2022,6 +2022,18 @@ test('v15: 4th pot (pot_amethyst) + per-flower Greenhouse picker, sheer FS capti
 });
 
 
+test('profanity filter blocks toxic text and obfuscation in whisper validation', () => {
+    const r = loadRoom();
+    assert.equal(typeof r.somaTextBlocked, 'function');
+    assert.equal(r.somaTextBlocked('Ты ублюдок, иди на хуй!'), true);
+    assert.equal(r.somaTextBlocked('х——у…..—-й'), true);
+    assert.equal(r.somaTextBlocked('ХУЙ'), true);
+    assert.equal(r.somaTextBlocked('просто хороший день'), false);
+    // whisper validation rejects toxic text, keeps clean text
+    assert.equal(r.validateWhisperText('Ты сука, замолчи.').ok, false);
+    assert.equal(r.validateWhisperText('Пусть сегодня станет немного легче.').ok, true);
+});
+
 test('live Whisper validates 13..333 characters without a warmth or lesson gate', () => {
     const r = loadRoom();
     assert.equal('WHISPER_TRAINER_GATE' in r.PROGRESSION_RULES, false);

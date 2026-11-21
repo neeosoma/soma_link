@@ -3983,6 +3983,31 @@ function writeCassetteCache(list) {
     }
 }
 
+// Локальный кеш собственных записей-сигналов (как у кассет): запись
+// сохраняется локально сразу, облако — best-effort. Это гарантирует, что
+// отправленный сигнал появляется в виниловом архиве даже без Supabase.
+const ENTRY_CACHE_KEY = 'soma_entries';
+function loadEntries() {
+    let list = [];
+    try { list = JSON.parse(lsGet(ENTRY_CACHE_KEY) || '[]'); } catch (_) { list = []; }
+    if (!Array.isArray(list)) return [];
+    const valid = list.filter(e => e && typeof e.text === 'string' && e.text.trim()).slice(0, 200);
+    return valid.map(e => {
+        const idStr = String(e.id || `e_${Date.now()}`);
+        const ts = Number(e.ts) || parseCassetteDateTs(e.date, 0) || 0;
+        return {
+            id: idStr,
+            date: e.date || '',
+            ts,
+            text: e.text.trim().slice(0, 420),
+            tag: String(e.tag || '')
+        };
+    });
+}
+function writeEntriesCache(list) {
+    lsSet(ENTRY_CACHE_KEY, JSON.stringify(list.slice(0, 200)));
+}
+
 // Persist one cassette row to Supabase (security-definer RPC). Fire-and-forget:
 // the local cache is already updated synchronously, the cloud write is best-effort.
 function cloudSaveCassette(item) {
@@ -4073,21 +4098,56 @@ async function hydrateJournalFromCloud() {
     } catch (_) {}
 }
 
+// Досинхронизируем локальный кеш записей с облаком (облако авторитетно).
+async function hydrateEntriesFromCloud() {
+    if (typeof supabaseClient === 'undefined' || !supabaseClient) return;
+    try {
+        const { data, error } = await supabaseClient.rpc('get_my_soma_journal');
+        if (error || !Array.isArray(data)) return;
+        const cloudEntries = data
+            .filter(r => r && r.kind === 'entry' && r.author_auth_id)
+            .map(normalizeJournalRow)
+            .map(n => ({ id: n.id, date: n.date, ts: n.ts, text: n.text, tag: getEntryTag(n.id) || '' }));
+        if (!cloudEntries.length) return;
+        const local = loadEntries();
+        const byId = new Map(local.map(e => [e.id, e]));
+        cloudEntries.forEach(e => {
+            const prev = byId.get(e.id);
+            if (!prev || !prev.text) byId.set(e.id, e);
+        });
+        writeEntriesCache([...byId.values()]);
+    } catch (_) {}
+}
+
 // Save the player's own diary/journal entry (a signal they published).
+// Запись сохраняется в локальный кеш СРАЗУ (гарантировано попадает в архив),
+// облако — best-effort синхронизация.
 async function saveJournalEntry(id, text, dateLabel, tag) {
     const clean = String(text || '').trim().slice(0, 420);
     if (!clean) return null;
-    // Сохраняем тэг локально (для архива сигналов по тэгу) — не зависит от
-    // применения SQL в Supabase.
-    try { saveEntryTag(id, tag); } catch (_) {}
-    if (typeof supabaseClient === 'undefined' || !supabaseClient) return { id, offline: true };
+    const entryId = String(id || 'e_' + Date.now());
+    // Локальный кеш: запись доступна в архиве даже без сети/Supabase.
+    const list = loadEntries();
+    const item = {
+        id: entryId,
+        date: String(dateLabel || ''),
+        ts: Date.now(),
+        text: clean,
+        tag: String(tag || '')
+    };
+    const idx = list.findIndex(e => e.id === entryId);
+    if (idx >= 0) list[idx] = item; else list.unshift(item);
+    writeEntriesCache(list);
+    try { saveEntryTag(entryId, tag); } catch (_) {}
+    // Облако — best-effort.
+    if (typeof supabaseClient === 'undefined' || !supabaseClient) return { ok: true, id: entryId, offline: true };
     try {
         const { error } = await supabaseClient.rpc('save_soma_journal_entry', {
-            p_id: id, p_kind: 'entry', p_text: clean, p_date: dateLabel, p_num: 0, p_fav: false
+            p_id: entryId, p_kind: 'entry', p_text: clean, p_date: dateLabel, p_num: 0, p_fav: false
         });
-        return { ok: !error, id, offline: !!error, error };
+        return { ok: !error, id: entryId, offline: !!error, error };
     } catch (e) {
-        return { ok: false, id, offline: false, error: e };
+        return { ok: false, id: entryId, offline: false, error: e };
     }
 }
 
@@ -4103,6 +4163,9 @@ function saveEntryTag(entryId, tag) {
     } catch (_) {}
 }
 function getEntryTag(entryId) {
+    // Сначала локальный кеш записей, затем каталог тэгов (обратная совместимость).
+    const found = loadEntries().find(e => e.id === String(entryId));
+    if (found && found.tag) return found.tag;
     try {
         const map = JSON.parse(lsGet(ENTRY_TAGS_KEY) || '{}');
         return map[String(entryId)] || '';
@@ -4144,8 +4207,12 @@ function toggleEntryFav(entryId) {
 // Returns items sorted newest-first: { id, kind, text, date, ts, num, fav }.
 async function loadDiaryArchive() {
     const items = [];
+    // Локальные кассеты.
     const localCassettes = loadCassettes();
     localCassettes.forEach(c => items.push({ ...c, kind: 'cassette' }));
+    // Локальные записи-сигналы (гарантированно доступны, даже без сети).
+    loadEntries().forEach(e => items.push({ ...e, kind: 'entry' }));
+    // Облако — авторитетно по тексту/дате (перезаписывает локальные копии).
     if (typeof supabaseClient !== 'undefined' && supabaseClient) {
         try {
             const { data, error } = await supabaseClient.rpc('get_my_soma_journal');
@@ -4154,7 +4221,9 @@ async function loadDiaryArchive() {
                     if (!r || !r.id) return;
                     const norm = normalizeJournalRow(r);
                     if (r.kind === 'entry') {
-                        items.push({ ...norm, kind: 'entry' });
+                        const idx = items.findIndex(i => i.id === norm.id && i.kind === 'entry');
+                        if (idx >= 0) items[idx] = { ...norm, kind: 'entry' };
+                        else items.push({ ...norm, kind: 'entry' });
                     } else {
                         // cassette: cloud is authoritative on text/date
                         const idx = items.findIndex(i => i.id === norm.id);
@@ -11475,7 +11544,7 @@ const pagerApi = {
     claimWhisperCassetteAck, getPendingInboxWhispers, receiveIncomingWhisperLocal,
     acceptIncomingWhisper, dismissIncomingWhisper, sendWhisperToPost,
     syncPagerWhispers, openPagerModal, closePagerModal, renderPagerModal,
-    hydrateJournalFromCloud, saveJournalEntry, deleteCassette, loadDiaryArchive,
+    hydrateJournalFromCloud, hydrateEntriesFromCloud, saveJournalEntry, deleteCassette, loadDiaryArchive,
     playCassette, toggleCassetteFav, getEntryTag, isEntryFav, toggleEntryFav
 };
 if (typeof window !== 'undefined') window.SOMA_ROOM = Object.assign(window.SOMA_ROOM || {}, pagerApi);

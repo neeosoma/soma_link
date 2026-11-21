@@ -1183,6 +1183,27 @@ test('v11: enlarged sleeping dogs with tucked front paws, clean RX-88 header, fu
     }
 });
 
+test('sent signal is saved to the local entry cache and appears in the vinyl archive even without Supabase', async () => {
+    const store = makeStorage();
+    const r = loadRoom({ localStorage: store });
+    assert.equal(r.loadDiaryArchive ? typeof r.loadDiaryArchive : 'missing', 'function');
+    // Нет Supabase: запись должна сохраниться локально и попасть в архив.
+    const res = await r.saveJournalEntry('e_p_1700000000000', 'Сегодня был тихий вечер у окна.', '2026-11-21', 'S1:S|Тихий вечер');
+    assert.equal(res.offline, true, 'saveJournalEntry reports offline when Supabase is absent');
+    const archive = await r.loadDiaryArchive();
+    const entry = archive.find(it => it.id === 'e_p_1700000000000');
+    assert.ok(entry, 'sent signal entry is present in the diary/vinyl archive');
+    assert.equal(entry.kind, 'entry', 'entry is marked kind=entry for the vinyl shelf');
+    assert.equal(entry.text, 'Сегодня был тихий вечер у окна.');
+    assert.match(entry.date, /2026-11-21/, 'entry date is preserved');
+    assert.equal(r.getEntryTag('e_p_1700000000000'), 'S1:S|Тихий вечер', 'entry tag is readable for vinyl-archive search');
+    // Повторная отправка того же id обновляет запись, не дублирует.
+    await r.saveJournalEntry('e_p_1700000000000', 'Обновлённый текст сигнала.', '2026-11-21', 'S1:S|Тихий вечер');
+    const archive2 = await r.loadDiaryArchive();
+    assert.equal(archive2.filter(it => it.id === 'e_p_1700000000000').length, 1, 're-saving same id does not duplicate');
+    assert.equal(archive2.find(it => it.id === 'e_p_1700000000000').text, 'Обновлённый текст сигнала.');
+});
+
 test('v12: top-left fullscreen vinyl bar, unified NEEOSOMA/NEEO~CITY/SOMA~LINK branding, Whisper-only protocol breaches, 0.1% White Maltese, Greenhouse conservatory + 7 secret alien plants (room-only growth), and NEEOSOMA // SKY-01 window airship', async () => {
     const p = require('path'), fs = require('fs'), vm = require('vm');
     const rxCss = fs.readFileSync(p.join(__dirname, '..', 'receiver.css'), 'utf8');

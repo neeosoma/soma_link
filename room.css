@@ -4126,3 +4126,63 @@ html.is-soma-fs-closing .app-h {
     .vh-tt-platter { width: 160px; height: 76px; }
     .vh-record { width: 92px; height: 92px; }
 }
+
+/* ============ Пиксельное фото к сигналу (кнопка + превью + рендер в карточке) ============ */
+.ts-photo-row {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    margin: 10px 0 4px;
+}
+.ts-photo-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 7px 12px; border-radius: 10px; cursor: pointer;
+    background: rgba(255, 77, 109, 0.06);
+    border: 1px solid rgba(255, 77, 109, 0.35);
+    color: #ffd0db; font-size: 11px; font-weight: 600;
+    font-family: var(--tech-font, ui-monospace, monospace);
+    letter-spacing: .08em; transition: background .15s, border-color .15s;
+}
+.ts-photo-btn:hover { background: rgba(255, 77, 109, 0.14); border-color: rgba(255, 77, 109, 0.6); }
+.ts-photo-glyph { font-size: 14px; line-height: 1; }
+.ts-photo-label { white-space: nowrap; }
+.ts-photo-preview {
+    display: flex; align-items: center; gap: 8px;
+    padding: 4px; border-radius: 10px;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 77, 109, 0.3);
+}
+.ts-photo-thumb {
+    width: 72px; height: 72px; object-fit: cover; border-radius: 6px;
+    image-rendering: pixelated; image-rendering: crisp-edges;
+    border: 1px solid rgba(255, 77, 109, 0.4);
+}
+/* Рендер фото в pager-карточке сигнала */
+.pager-card-photo {
+    width: 100%; margin: 10px 0 4px; border-radius: 10px; overflow: hidden;
+    border: 1px solid rgba(255, 77, 109, 0.28);
+    background: #0a0304;
+    box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.4);
+}
+.pager-card-photo img {
+    display: block; width: 100%; height: auto;
+    image-rendering: pixelated; image-rendering: crisp-edges;
+}
+/* Рендер фото в архивной записи (vinyl) */
+.vinyl-read-photo {
+    width: 100%; max-width: 320px; margin: 10px auto 0; border-radius: 10px; overflow: hidden;
+    border: 1px solid rgba(255, 77, 109, 0.28);
+    image-rendering: pixelated; image-rendering: crisp-edges;
+    background: #0a0304;
+}
+.vinyl-read-photo img {
+    display: block; width: 100%; height: auto;
+    image-rendering: pixelated; image-rendering: crisp-edges;
+}
+
+/* Фото на винильном диске в архиве: под паститой, grooves остаются сверху */
+.vh-rc-vinyl { z-index: 0; }
+.vh-rc-photo {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; image-rendering: pixelated; image-rendering: crisp-edges;
+    opacity: .9; z-index: 0;
+}
+.vh-rc-grooves, .vh-rc-edge, .vh-record-tag { z-index: 1; }

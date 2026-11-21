@@ -19,12 +19,15 @@ create table if not exists public.soma_journal (
     id text primary key,
     kind text not null default 'cassette' check (kind in ('cassette', 'entry')),
     text text not null check (char_length(text) between 1 and 500),
+    photo text check (photo is null or char_length(photo) <= 200000),
     date_label text,
     num integer not null default 0,
     fav boolean not null default false,
     created_at timestamptz not null default now(),
     author_auth_id uuid not null default auth.uid()
 );
+
+alter table public.soma_journal add column if not exists photo text;
 
 create index if not exists soma_journal_author_idx
     on public.soma_journal (author_auth_id, kind, num desc);
@@ -52,17 +55,18 @@ create policy "soma_journal_delete" on public.soma_journal
 
 -- Запрет прямого доступа к колонкам вне RPC (защищаем авторство).
 revoke all on public.soma_journal from anon, authenticated;
-grant select (id, kind, text, date_label, num, fav, created_at) on public.soma_journal to authenticated;
-grant insert (id, kind, text, date_label, num, fav, created_at) on public.soma_journal to authenticated;
+grant select (id, kind, text, photo, date_label, num, fav, created_at) on public.soma_journal to authenticated;
+grant insert (id, kind, text, photo, date_label, num, fav, created_at) on public.soma_journal to authenticated;
 grant update (fav) on public.soma_journal to authenticated;
 grant delete on public.soma_journal to authenticated;
 
 -- ----------------------------------------------------------------------
 -- 2. RPC: сохранение записи (upsert по id)
 -- ----------------------------------------------------------------------
+drop function if exists public.save_soma_journal_entry(text, text, text, text, text, integer, boolean);
 drop function if exists public.save_soma_journal_entry(text, text, text, text, integer, boolean);
 create or replace function public.save_soma_journal_entry(
-    p_id text, p_kind text, p_text text, p_date text, p_num integer, p_fav boolean
+    p_id text, p_kind text, p_text text, p_date text, p_photo text default null, p_num integer default 0, p_fav boolean default false
 )
 returns setof public.soma_journal
 language plpgsql
@@ -82,12 +86,16 @@ begin
     if char_length(p_text) < 1 or char_length(p_text) > 500 then
         raise exception 'invalid_text: 1..500 chars';
     end if;
+    if p_photo is not null and char_length(p_photo) > 200000 then
+        raise exception 'invalid_photo: photo too large';
+    end if;
 
-    insert into public.soma_journal (id, kind, text, date_label, num, fav, author_auth_id)
-    values (p_id, p_kind, p_text, p_date, coalesce(p_num, 0), coalesce(p_fav, false), auth.uid())
+    insert into public.soma_journal (id, kind, text, photo, date_label, num, fav, author_auth_id)
+    values (p_id, p_kind, p_text, p_photo, p_date, coalesce(p_num, 0), coalesce(p_fav, false), auth.uid())
     on conflict (id) do update
         set kind = excluded.kind,
             text = excluded.text,
+            photo = excluded.photo,
             date_label = excluded.date_label,
             num = excluded.num,
             fav = excluded.fav
@@ -172,12 +180,14 @@ as $$
      where author_auth_id = auth.uid() and kind = 'cassette';
 $$;
 
+revoke all on function public.save_soma_journal_entry(text, text, text, text, text, integer, boolean) from public;
 revoke all on function public.save_soma_journal_entry(text, text, text, text, integer, boolean) from public;
 revoke all on function public.get_my_soma_journal() from public;
 revoke all on function public.set_soma_journal_fav(text, boolean) from public;
 revoke all on function public.delete_soma_journal_entry(text) from public;
 revoke all on function public.next_soma_journal_num() from public;
 
+grant execute on function public.save_soma_journal_entry(text, text, text, text, text, integer, boolean) to authenticated;
 grant execute on function public.save_soma_journal_entry(text, text, text, text, integer, boolean) to authenticated;
 grant execute on function public.get_my_soma_journal() to authenticated;
 grant execute on function public.set_soma_journal_fav(text, boolean) to authenticated;

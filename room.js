@@ -10129,6 +10129,13 @@ function renderFeedPager(warmthArg, ledgerArg) {
     const adm = whisperAdmission(w, ledger);
     const inbox = getPendingInboxWhispers();
 
+    // Источник индикатора — истории в эфире, которые ещё можно почитать
+    // (не прочитанные и не пропущенные), а не входящие сообщения.
+    const whisperedSet = new Set(getWhisperedPosts());
+    const skippedSet = new Set(roomAnim.firstSignalSkipped || []);
+    const toRead = (typeof getVisibleFirstSignalCandidates === 'function' ? getVisibleFirstSignalCandidates() : [])
+        .filter(p => p && p.id && !whisperedSet.has(String(p.id)) && !skippedSet.has(String(p.id)));
+
     pager.dataset.state = adm.live
         ? (inbox.length > 0 ? 'inbox' : (adm.admitted ? 'ready' : 'locked'))
         : 'offline';
@@ -10151,10 +10158,10 @@ function renderFeedPager(warmthArg, ledgerArg) {
                     : 'ПРИЁМ ВХОДЯЩИХ АКТИВЕН';
     }
     if (gateEl) gateEl.textContent = `СЕГОДНЯ: ${adm.whisperLeftToday}/${adm.whisperSendCap}`;
-    // Индикатор непрочитанных сигналов в эфире
+    // Индикатор: истории в эфире, которые ещё можно почитать (не входящие сообщения)
     if (unreadEl) {
-        if (inbox.length > 0) {
-            unreadEl.textContent = `${inbox.length}`;
+        if (adm.live && toRead.length > 0) {
+            unreadEl.textContent = `${toRead.length}`;
             unreadEl.classList.add('is-unread');
         } else {
             unreadEl.textContent = 'НЕТ';

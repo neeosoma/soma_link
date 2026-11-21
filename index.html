@@ -11,7 +11,7 @@
     <!-- supabase-js vendored locally (avoids CDN dependence). Fallback to CDN only if local bundle is unavailable. -->
     <script src="assets/lib/supabase.umd.js"></script>
     <script>window.supabase || document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"><\/script>');</script>
-    <link rel="stylesheet" href="room.css?v=19">
+    <link rel="stylesheet" href="room.css?v=20">
     <link rel="stylesheet" href="cosmetics.css?v=15">
     <link rel="stylesheet" href="receiver.css?v=16">
     <link rel="stylesheet" href="vhs.css?v=15">
@@ -678,44 +678,26 @@
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
                 <input type="search" id="vinyl-search-input" placeholder="По дате, теме или слову…" autocomplete="off" oninput="renderVinylArchive()">
             </div>
-            <!-- СЦЕНА: кабинет с пластинками + магнитофон с проигрывателем наверху (как в комнате) -->
+            <!-- СЦЕНА: проигрыватель (вид с боку) слева + кабинет с пластинками справа -->
             <div class="vh-stage">
+                <!-- ПРОИГРЫВАТЕЛЬ — вид с боку: основание, горизонтальный плавун, тонарм. Пластинка не показывается до момента постановки -->
+                <div class="vh-turntable" id="vinyl-turntable">
+                    <div class="vh-tt-base" aria-hidden="true"></div>
+                    <div class="vh-tt-platter" id="vinyl-platter">
+                        <div class="vh-record" id="vinyl-record">
+                            <div class="vh-record-grooves" aria-hidden="true"></div>
+                            <div class="vh-record-label" id="vinyl-record-label"></div>
+                        </div>
+                        <div class="vh-tt-spindle" aria-hidden="true"></div>
+                    </div>
+                    <div class="vh-tt-arm" aria-hidden="true"></div>
+                </div>
                 <!-- КАБИНЕТ: много пластинок, стоящих вертикально на деревянных полках -->
                 <div class="vh-cabinet">
                     <div class="vh-cab-back" aria-hidden="true"></div>
                     <div class="vh-cab-glass" aria-hidden="true"></div>
                     <div class="vh-cab-interior" id="vinyl-body"></div>
                     <div class="vh-cab-frame" aria-hidden="true"></div>
-                </div>
-                <!-- МАГНИТОФОН: проигрыватель лежит на нём сверху, кассета/VU/ручки внизу -->
-                <div class="vh-tape-deck" id="vinyl-deck">
-                    <div class="vh-deck-top">
-                        <div class="vh-tt-platter" id="vinyl-platter">
-                            <div class="vh-record" id="vinyl-record">
-                                <div class="vh-record-grooves" aria-hidden="true"></div>
-                                <div class="vh-record-label" id="vinyl-record-label"></div>
-                            </div>
-                            <div class="vh-tt-spindle" aria-hidden="true"></div>
-                        </div>
-                        <div class="vh-tt-arm" aria-hidden="true"></div>
-                    </div>
-                    <div class="vh-deck-face">
-                        <div class="vh-cassette" aria-hidden="true">
-                            <div class="vh-cassette-window">
-                                <div class="vh-cassette-reel"></div>
-                                <div class="vh-cassette-reel"></div>
-                            </div>
-                        </div>
-                        <div class="vh-vu" aria-hidden="true">
-                            <div class="vh-vu-bar"></div>
-                            <div class="vh-vu-bar"></div>
-                        </div>
-                        <div class="vh-knobs" aria-hidden="true">
-                            <span class="vh-knob"></span>
-                            <span class="vh-knob"></span>
-                        </div>
-                        <div class="vh-deck-brand">NEEOSOMA // AV-88</div>
-                    </div>
                 </div>
             </div>
             <div class="vh-tt-hint" id="vinyl-tt-hint">Достаньте пластинку из шкафа и положите на проигрыватель</div>
@@ -1632,7 +1614,7 @@
         });
     }
 
-    // Помещаем пластинку на проигрыватель: крутимся, показываем текст сигнала
+    // Помещаем пластинку на проигрыватель: появляется, крутится, показываем текст сигнала
     function placeVinylOnTurntable(id) {
         const it = vinylArchive.items.find(x => x.id === id);
         if (!it) return;
@@ -1640,17 +1622,17 @@
         const record = document.getElementById('vinyl-record');
         const label = document.getElementById('vinyl-record-label');
         const hint = document.getElementById('vinyl-tt-hint');
-        const deck = document.getElementById('vinyl-deck');
+        const tt = document.getElementById('vinyl-turntable');
         if (record) {
             record.style.setProperty('--vh-accent', _vinylAccent(it));
             record.classList.add('is-spinning');
             vinylArchive.spinning = true;
         }
-        if (deck) deck.classList.add('is-playing');
+        if (tt) tt.classList.add('is-playing');
         if (label) {
             label.style.backgroundImage = `radial-gradient(circle at 38% 32%, ${_vinylAccent(it)}, #2a0a12 90%)`;
         }
-        if (hint) hint.textContent = 'Играет — нажмите на пластинку, чтобы вынуть обратно в шкаф';
+        if (hint) hint.textContent = 'Играет — нажмите на проигрыватель, чтобы вынуть пластинку обратно в шкаф';
         openVinylRecord(id);
         renderVinylArchive();
         if (typeof SFX !== 'undefined' && typeof SFX.calm === 'function') SFX.calm();
@@ -1661,9 +1643,9 @@
         vinylArchive.placedId = '';
         const record = document.getElementById('vinyl-record');
         const hint = document.getElementById('vinyl-tt-hint');
-        const deck = document.getElementById('vinyl-deck');
+        const tt = document.getElementById('vinyl-turntable');
         if (record) record.classList.remove('is-spinning');
-        if (deck) deck.classList.remove('is-playing');
+        if (tt) tt.classList.remove('is-playing');
         vinylArchive.spinning = false;
         if (hint) hint.textContent = 'Достаньте пластинку из шкафа и положите на проигрыватель';
         closeVinylRead();

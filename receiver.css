@@ -294,7 +294,7 @@
     z-index: 1;
 }
 
-/* Лоток с диском: по умолчанию встроен, при eject выезжает вперёд */
+/* Лоток с диском: по умолчанию встроен, при eject выезжает вперёд (к зрителю) */
 .rx-cd-tray {
     position: absolute;
     inset: 6px;
@@ -307,12 +307,13 @@
     z-index: 2;
 }
 .rx-cd-tray.is-ejected {
-    transform: translateY(14px) scale(1.04);
+    transform: translateY(18px) scale(1.03);
 }
 
-/* CD-диск — внешняя оболочка. Обрабатывает «извлечение и исчезновение» диска:
-   при eject поднимается вверх, уменьшается, опрокидывается и растворяется (opacity→0),
-   вместо того чтобы торчать наполовину из лотока. Внутренний спин-элемент вращается независимо. */
+/* CD-диск — внешняя оболочка. При eject диск правдоподобно выезжает из лотока и исчезает:
+   1) выезжает вперёд (к зрителю), чуть увеличиваясь и вспыхивая светом на выходе;
+   2) поднимается, опрокидывается и мягко растворяется (opacity→0, blur, уменьшение).
+   Внутренний спин-элемент вращается независимо, так что поворот не конфликтует с выездом. */
 .rx-cd {
     position: relative;
     width: 78px;
@@ -324,13 +325,32 @@
     transform: translateY(0) scale(1) rotate(0deg);
     opacity: 1;
     filter: blur(0);
-    transition: transform 0.55s cubic-bezier(0.34, 1.35, 0.45, 1), opacity 0.42s ease, filter 0.42s ease;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.8);
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease, filter 0.5s ease, box-shadow 0.5s ease;
     z-index: 2;
 }
 .rx-cd-tray.is-ejected .rx-cd {
-    transform: translateY(-30px) scale(0.5) rotate(-18deg);
-    opacity: 0;
-    filter: blur(2px);
+    animation: rx-cd-eject 0.8s cubic-bezier(0.45, 0.05, 0.25, 1) forwards;
+}
+@keyframes rx-cd-eject {
+    0% {
+        transform: translateY(0) scale(1) rotate(0deg);
+        opacity: 1;
+        filter: blur(0);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.8);
+    }
+    45% {
+        transform: translateY(26px) scale(1.12) rotate(0deg);
+        opacity: 1;
+        filter: blur(0);
+        box-shadow: 0 14px 30px rgba(0, 0, 0, 0.7), 0 0 26px rgba(var(--rx-glow-rgb), 0.55);
+    }
+    100% {
+        transform: translateY(-6px) scale(0.42) rotate(-16deg);
+        opacity: 0;
+        filter: blur(3px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    }
 }
 
 /* Внутренний вращающийся диск — металлический, с радужной искрой */

@@ -11170,8 +11170,7 @@ function renderRoom() {
                     ? '✦ ВНЕЗЕМНАЯ ФОРМА ЖИЗНИ'
                     : (shownStage === 0 ? 'НЕИЗВЕСТНЫЙ РОСТОК' : 'НЕИЗВЕСТНЫЙ ПОБЕГ'));
             const prefix = (otherKind || (!previewing && shownStage !== liveStage)) ? 'ОСМОТР' : 'РОСТ';
-            const glowMark = (ff.active && ff.count > 0) ? ` · ✦ ${ff.count}/7` : '';
-            plantInfo.textContent = `${title} // ${prefix} ${shownStage + 1}/6 · ${PLANT_STAGES[shownStage].toUpperCase()}${glowMark}`;
+            plantInfo.textContent = `${title} // ${prefix} ${shownStage + 1}/6 · ${PLANT_STAGES[shownStage].toUpperCase()}`;
         }
     }
 
@@ -11220,9 +11219,8 @@ function renderRoom() {
                 plantSub.textContent = `росток проснётся, когда откроется «Шёпот» · ${rhythmTag}`;
             }
         } else if (shownStage < 5) {
-            const needNext = Math.max(0, activeSteps[shownStage + 1] - effectiveWarmth);
-            const hint = shownStage + 1 === PROGRESSION_RULES.SPECIES_REVEAL_STAGE ? 'до открытия вида' : 'до след. стадии';
-            plantSub.textContent = `${hint}: ещё ${needNext} тепла · ${rhythmTag}`;
+            const hint = shownStage + 1 === PROGRESSION_RULES.SPECIES_REVEAL_STAGE ? 'открытие вида' : 'след. стадия';
+            plantSub.textContent = hint;
         } else {
             plantSub.textContent = `полное цветение сезона · ${rhythmTag}`;
         }

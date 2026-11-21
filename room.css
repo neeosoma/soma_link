@@ -1749,6 +1749,22 @@
     color: #e4bcc3;
 }
 
+/* Кнопка «Ответить» — мягкий тёплый акцент (ответ на входящий шёпот, без дневного лимита) */
+.pager-act-btn--reply {
+    flex: 1 1 auto;
+    border-color: rgba(255, 176, 96, 0.42);
+    background: linear-gradient(180deg, rgba(120, 70, 26, 0.85), rgba(58, 33, 12, 0.92));
+    color: #ffd8a8;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 210, 150, 0.12);
+}
+
+.pager-act-btn--reply:hover {
+    border-color: rgba(255, 196, 120, 0.72);
+    background: linear-gradient(180deg, rgba(142, 84, 32, 0.92), rgba(70, 40, 15, 0.96));
+    color: #ffe6c2;
+    box-shadow: 0 2px 8px rgba(255, 170, 90, 0.14), inset 0 1px 0 rgba(255, 220, 170, 0.2);
+}
+
 .pager-act-btn:disabled {
     opacity: 0.45;
     cursor: not-allowed;

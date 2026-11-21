@@ -10133,6 +10133,91 @@ async function sendWhisperToPostOnce(postObj, rawText, opts) {
     return { ok: true, whisper: wRow, firstSprout, ledger: sentRes.ledger };
 }
 
+// Отправка ответа на входящий «Шёпот» — НЕ тратит дневной лимит шёпотов (1 ответ на 1 шёпот).
+// Сервер — авторитет: проверка «ответ уже отправлен» и «шёпот ещё pending» выполняется в guard.
+async function sendWhisperReply(whisper, rawText, opts) {
+    const o = (opts && typeof opts === 'object') ? opts : {};
+    if (roomAnim.whisperSending) return { ok: false, code: 'busy', error: 'Предыдущий шёпот ещё отправляется.' };
+    roomAnim.whisperSending = true;
+    try {
+        const w = (whisper && typeof whisper === 'object') ? whisper : null;
+        if (!w || !w.id) {
+            return { ok: false, code: 'invalid_whisper', error: 'Выберите шёпот, на который хотите ответить.' };
+        }
+        const check = validateWhisperText(rawText);
+        if (!check.ok) {
+            return { ok: false, code: 'invalid_text', error: check.error };
+        }
+        if (!(typeof supabaseClient !== 'undefined' && supabaseClient)) {
+            return { ok: false, code: 'network_error', error: 'Нет соединения с каналом. Ответ не отправлен — попробуйте позже.' };
+        }
+
+        const senderUid = String((typeof player !== 'undefined' && player && player.uid) || 'u_local0000');
+        const replyId = 'w_' + Date.now() + '_' + Math.floor(Math.random() * 9000 + 1000);
+        const { data, error } = await supabaseClient.rpc('send_soma_whisper', {
+            p_id: replyId,
+            p_post_id: String(w.post_id || ''),
+            p_post_tag: String(w.post_tag || 'ЛИЧНАЯ БОЛЬ').slice(0, 32),
+            // Пreview ответа — ваше исходное сообщение: отправителю это покажет контекст.
+            p_post_preview: String(w.text || '').replace(/\s+/g, ' ').trim().slice(0, 180),
+            p_sender_uid: senderUid,
+            p_text: check.value,
+            p_reply_to: String(w.id),
+        });
+        if (error) {
+            const ecode = String(error.code || '');
+            const emsg = String(error.message || 'ошибка сети');
+            if (ecode === '23505' || /duplicate key/i.test(emsg)) {
+                return { ok: false, code: 'already_replied', error: 'Ответ на этот шёпот уже отправлен.' };
+            }
+            if (/Reply target unavailable/i.test(emsg)) {
+                return { ok: false, code: 'reply_target_unavailable', error: 'Этот шёпот уже обработан — ответить уже нельзя.' };
+            }
+            if (/Reply already sent/i.test(emsg)) {
+                return { ok: false, code: 'already_replied', error: 'Ответ на этот шёпот уже отправлен.' };
+            }
+            return { ok: false, code: 'network_error', error: 'Эфир временно недоступен: ' + emsg };
+        }
+
+        // Ответ принят сервером: оригинал переведён в статус answered и снят с входящих.
+        markWhisperHandled(w.id, 'answered');
+        // Ответ — реальный шёпот, но НЕ тратит дневной лимит: счётчик только общий (whispersSent).
+        const ledger = loadWarmthLedger(o.today);
+        ledger.whispersSent = (Number(ledger.whispersSent) || 0) + 1;
+        saveWarmthLedger(ledger);
+        syncWhisperBreachCounter(ledger.whispersSent);
+
+        trackFirstSignalEvent('send_success');
+        completeFirstSession('reply');
+        if (typeof window !== 'undefined' && typeof window.refreshStationRitual === 'function') {
+            try { window.refreshStationRitual(true); } catch (_) {}
+        }
+        if (typeof player !== 'undefined' && player) {
+            if (typeof updateCloudProfile === 'function') {
+                try { updateCloudProfile(); } catch (_) {}
+            }
+        }
+        if (typeof updateHeader === 'function') {
+            try { updateHeader(); } catch (_) {}
+        }
+
+        roomAnim.pagerReplyingTo = '';
+        roomAnim.pagerReplyDraft = '';
+        roomAnim.pagerModalError = '';
+        roomAnim.pagerModalNotice = '✦ Ответ отправлен. Дневной лимит шёпотов не потрачен.';
+        playObjectTone('pager');
+        try { Telegram.WebApp.HapticFeedback.notificationOccurred('success'); } catch (_) {}
+        renderRoom();
+        if (roomAnim.pagerModalOpen) renderPagerModal();
+        return { ok: true, replyId, whisper: w };
+    } catch (_) {
+        roomAnim.pagerReplyingTo = '';
+        return { ok: false, code: 'network_error', error: 'Эфир временно недоступен.' };
+    } finally {
+        roomAnim.whisperSending = false;
+    }
+}
+
 // Синхронизирует входящие «Шёпоты» на посты игрока и проверяет, сохранили ли получатели отправленные им «Шёпоты» на кассету
 // Обновляет компактный интерфейс пейджера во вкладке «ПЕЙДЖЕР»
 function renderFeedPager(warmthArg, ledgerArg) {
@@ -10289,6 +10374,33 @@ async function syncPagerWhispers() {
                     saveRawInboxWhispers([...map.values()]);
                     playObjectTone('pager');
                                 }
+            }
+
+            // 1b) Ответы на наши отправленные «Шёпоты» (человек, которому мы шептали, ответил нам)
+            const { data: replyRows } = await supabaseClient.rpc('get_my_whisper_replies');
+            if (Array.isArray(replyRows) && replyRows.length) {
+                const handled2 = getHandledWhispers();
+                let addedReply = false;
+                replyRows.forEach(r => {
+                    const rId = r.id;
+                    if (!rId || handled2[rId] || map.has(rId)) return;
+                    map.set(rId, {
+                        id: String(rId),
+                        post_id: String(r.post_id || ''),
+                        post_tag: String(r.post_tag || 'ЛИЧНАЯ БОЛЬ'),
+                        post_preview: String(r.post_preview || ''),
+                        text: String(r.text || '').slice(0, PROGRESSION_RULES.WHISPER_MAX_LEN),
+                        created_at: r.created_at || new Date().toISOString(),
+                        status: 'pending',
+                        is_reply: true,
+                        reply_to: r.reply_to_id ? String(r.reply_to_id) : ''
+                    });
+                    addedReply = true;
+                });
+                if (addedReply) {
+                    saveRawInboxWhispers([...map.values()]);
+                    playObjectTone('pager');
+                }
             }
         }
 
@@ -10452,6 +10564,8 @@ function closePagerModal() {
     roomAnim.pagerSafetyTarget = null;
     roomAnim.pagerRequestedPostId = '';
     roomAnim.pagerComposingPostId = '';
+    roomAnim.pagerReplyingTo = '';
+    roomAnim.pagerReplyDraft = '';
     roomAnim.pagerModalError = '';
     if (typeof hideKeyboard === 'function') { try { hideKeyboard(); } catch (_) {} }
     if (typeof restoreSomaScroll === 'function') {
@@ -10537,21 +10651,41 @@ function renderPagerModal() {
                 </div>
             `;
         } else {
-            bodyEl.innerHTML = inbox.map(w => `
+            bodyEl.innerHTML = inbox.map(w => {
+                const isReply = w.is_reply === true;
+                const isComposing = roomAnim.pagerReplyingTo && String(roomAnim.pagerReplyingTo) === String(w.id);
+                const draft = isComposing ? (roomAnim.pagerReplyDraft || '') : '';
+                return `
                 <div class="pager-card pager-card--inbox" data-whisper-id="${escFn(w.id)}">
                     <div class="pager-card-head">
-                        <span class="pager-card-tag">✦ ВХОДЯЩИЙ ШЁПОТ · #${escFn(signalTagLabel(w.post_tag))}</span>
+                        <span class="pager-card-tag">${isReply ? '✦ ОТВЕТ НА ВАШ ШЁПОТ' : '✦ ВХОДЯЩИЙ ШЁПОТ'} · #${escFn(signalTagLabel(w.post_tag))}</span>
                         <span class="pager-card-meta">CH·04 // АНОНИМНЫЙ СЛУШАТЕЛЬ</span>
                     </div>
-                    ${w.post_preview ? `<div class="pager-card-quote">На ваш сигнал: «${escFn(w.post_preview)}»</div>` : ''}
+                    ${w.post_preview ? `<div class="pager-card-quote">${isReply ? 'Ваше сообщение:' : 'На ваш сигнал:'} «${escFn(w.post_preview)}»</div>` : ''}
                     <p class="pager-card-text">«${escFn(w.text)}»</p>
-                    <div class="pager-card-actions">
+                    ${isReply
+                        ? `<div class="pager-card-actions">
                         <button type="button" class="pager-act-btn pager-act-btn--save" data-act="save" data-id="${escFn(w.id)}">📼 ЗАПИСАТЬ НА КАССЕТУ VTR-90</button>
                         <button type="button" class="pager-act-btn pager-act-btn--dismiss" data-act="dismiss" data-id="${escFn(w.id)}">◌ ОТПУСТИТЬ</button>
-                    </div>
+                    </div>`
+                        : `<div class="pager-card-actions">
+                        <button type="button" class="pager-act-btn pager-act-btn--save" data-act="save" data-id="${escFn(w.id)}">📼 ЗАПИСАТЬ НА КАССЕТУ VTR-90</button>
+                        <button type="button" class="pager-act-btn pager-act-btn--reply" data-act="reply" data-id="${escFn(w.id)}">Ответить</button>
+                        <button type="button" class="pager-act-btn pager-act-btn--dismiss" data-act="dismiss" data-id="${escFn(w.id)}">◌ ОТПУСТИТЬ</button>
+                    </div>`}
                     ${isWhisperSafetyLive() ? `<div class="pager-card-actions">
                         <button type="button" class="pager-act-btn pager-act-btn--dismiss" data-act="report" data-id="${escFn(w.id)}">ПОЖАЛОВАТЬСЯ</button>
                         <button type="button" class="pager-act-btn pager-act-btn--dismiss" data-act="block" data-id="${escFn(w.id)}">БЛОКИРОВАТЬ ОТПРАВИТЕЛЯ</button>
+                    </div>` : ''}
+                    ${isComposing ? `<div class="pager-compose">
+                        <textarea id="pager-reply-input" class="pager-compose-input" rows="3" maxlength="${PROGRESSION_RULES.WHISPER_MAX_LEN}" placeholder="Ответ на этот шёпот — не тратит дневной лимит...">${escFn(draft)}</textarea>
+                        <div class="pager-compose-bar">
+                            <span id="pager-reply-count" class="pager-compose-count">${draft.length} / ${PROGRESSION_RULES.WHISPER_MAX_LEN} (мин. ${PROGRESSION_RULES.WHISPER_MIN_LEN})</span>
+                            <div class="pager-compose-btns">
+                                <button type="button" class="pager-act-btn pager-act-btn--dismiss" id="pager-reply-cancel">ОТМЕНА</button>
+                                <button type="button" class="pager-act-btn pager-act-btn--save" id="pager-reply-send">◈ ПЕРЕДАТЬ ОТВЕТ</button>
+                            </div>
+                        </div>
                     </div>` : ''}
                     ${isWhisperSafetyLive() && roomAnim.pagerSafetyTarget && roomAnim.pagerSafetyTarget.id === w.id ? `<div class="pager-compose">
                         ${roomAnim.pagerSafetyTarget.mode === 'report' ? `<label class="pager-empty-sub" for="pager-report-reason">Причина жалобы</label><select id="pager-report-reason" class="pager-compose-input"><option value="spam">Спам</option><option value="harassment">Оскорбления или преследование</option><option value="unsafe">Опасное содержание</option><option value="other">Другое</option></select>
@@ -10559,8 +10693,8 @@ function renderPagerModal() {
                         <button type="button" class="pager-act-btn" data-act="safety-confirm" data-id="${escFn(w.id)}">${roomAnim.pagerSafetyTarget.mode === 'report' ? 'ОТПРАВИТЬ ЖАЛОБУ' : 'ПОДТВЕРДИТЬ БЛОКИРОВКУ'}</button>
                         <button type="button" class="pager-act-btn pager-act-btn--dismiss" data-act="safety-cancel">ОТМЕНА</button>
                     </div>` : ''}
-                </div>
-            `).join('');
+                </div>`;
+            }).join('');
             bodyEl.querySelectorAll('[data-act="report"], [data-act="block"]').forEach(btn => {
                 btn.onclick = () => { roomAnim.pagerSafetyTarget = { id: btn.dataset.id, mode: btn.dataset.act }; roomAnim.pagerReportReason = 'spam'; renderPagerModal(); };
             });
@@ -10584,6 +10718,62 @@ function renderPagerModal() {
             bodyEl.querySelectorAll('[data-act="dismiss"]').forEach(btn => {
                 btn.onclick = () => dismissIncomingWhisper(btn.dataset.id);
             });
+            bodyEl.querySelectorAll('[data-act="reply"]').forEach(btn => {
+                btn.onclick = () => {
+                    trackFirstSignalEvent('compose_open');
+                    roomAnim.pagerReplyingTo = btn.dataset.id;
+                    roomAnim.pagerReplyDraft = '';
+                    roomAnim.pagerModalError = '';
+                    roomAnim.pagerModalNotice = '';
+                    if (typeof SFX !== 'undefined' && SFX.tap) SFX.tap();
+                    renderPagerModal();
+                    const inp = bodyEl.querySelector('#pager-reply-input');
+                    if (inp && inp.focus) setTimeout(() => { try { inp.focus(); } catch (_) {} }, 30);
+                };
+            });
+            const replyInp = bodyEl.querySelector('#pager-reply-input');
+            const replyCnt = bodyEl.querySelector('#pager-reply-count');
+            const replyCancel = bodyEl.querySelector('#pager-reply-cancel');
+            const replySend = bodyEl.querySelector('#pager-reply-send');
+            if (replyInp) {
+                replyInp.oninput = () => {
+                    if (replyInp.value.length > PROGRESSION_RULES.WHISPER_MAX_LEN) {
+                        replyInp.value = replyInp.value.slice(0, PROGRESSION_RULES.WHISPER_MAX_LEN);
+                    }
+                    roomAnim.pagerReplyDraft = replyInp.value;
+                    if (replyCnt) {
+                        replyCnt.textContent = `${replyInp.value.length} / ${PROGRESSION_RULES.WHISPER_MAX_LEN} (мин. ${PROGRESSION_RULES.WHISPER_MIN_LEN})`;
+                    }
+                };
+            }
+            if (replyCancel) {
+                replyCancel.onclick = () => {
+                    roomAnim.pagerReplyingTo = '';
+                    roomAnim.pagerReplyDraft = '';
+                    roomAnim.pagerModalError = '';
+                    if (typeof hideKeyboard === 'function') hideKeyboard();
+                    renderPagerModal();
+                };
+            }
+            if (replySend && replyInp) {
+                replySend.onclick = async () => {
+                    const w = inbox.find(x => String(x.id) === String(roomAnim.pagerReplyingTo));
+                    if (!w) {
+                        roomAnim.pagerModalError = '⛔ Шёпот уже обработан.';
+                        if (typeof SFX !== 'undefined' && SFX.block) SFX.block();
+                        renderPagerModal();
+                        return;
+                    }
+                    replySend.disabled = true;
+                    if (typeof hideKeyboard === 'function') hideKeyboard();
+                    const res = await sendWhisperReply(w, replyInp.value);
+                    if (!res.ok) {
+                        roomAnim.pagerModalError = '⛔ ' + res.error;
+                        if (typeof SFX !== 'undefined' && SFX.block) SFX.block();
+                        renderPagerModal();
+                    }
+                };
+            }
         }
     } else {
         // Reading/skipping stay open; the short rules are required only after choosing to compose.
@@ -11603,7 +11793,7 @@ const pagerApi = {
     renderFirstSignalEntry, getFirstSignalCandidates, getVisibleFirstSignalCandidates,
     validateWhisperText, somaTextBlocked, hasWhisperedToPost, rememberWhisperedPost,
     claimWhisperCassetteAck, getPendingInboxWhispers, receiveIncomingWhisperLocal,
-    acceptIncomingWhisper, dismissIncomingWhisper, sendWhisperToPost,
+    acceptIncomingWhisper, dismissIncomingWhisper, sendWhisperToPost, sendWhisperReply,
     syncPagerWhispers, openPagerModal, closePagerModal, renderPagerModal,
     hydrateJournalFromCloud, saveJournalEntry, deleteCassette, loadDiaryArchive,
     playCassette, toggleCassetteFav, getEntryTag, isEntryFav, toggleEntryFav

@@ -11,7 +11,7 @@
     <!-- supabase-js vendored locally (avoids CDN dependence). Fallback to CDN only if local bundle is unavailable. -->
     <script src="assets/lib/supabase.umd.js"></script>
     <script>window.supabase || document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"><\/script>');</script>
-    <link rel="stylesheet" href="room.css?v=29">
+    <link rel="stylesheet" href="room.css?v=28">
     <link rel="stylesheet" href="cosmetics.css?v=15">
     <link rel="stylesheet" href="receiver.css?v=18">
     <link rel="stylesheet" href="vhs.css?v=15">
@@ -534,15 +534,6 @@
                 <textarea id="new-pain-text" rows="5" minlength="13" maxlength="666" oninput="updateCharCount()" onfocus="scrollSendIntoView()" placeholder="Что произошло? Что хочется разделить с другим человеком? (13–666 символов)" class="ts-textarea"></textarea>
                 <div class="ts-field-glow" aria-hidden="true"></div>
                 <div class="ts-field-scan" aria-hidden="true"></div>
-            </div>
-            <!-- Пиксельное фото к сигналу -->
-            <div class="ts-photo-row">
-                <input type="file" id="new-pain-photo" accept="image/*" capture style="display:none" onchange="onPainPhotoPicked(event)" />
-                <button type="button" id="pain-photo-pick" class="ts-photo-btn" onclick="document.getElementById('new-pain-photo').click()" aria-label="Прикрепить фото">
-                    <span class="ts-photo-glyph" aria-hidden="true">◷</span>
-                    <span class="ts-photo-label">ФОТО · ПИКСЕЛЬ</span>
-                </button>
-                <div id="pain-photo-preview" class="ts-photo-preview hidden"></div>
             </div>
             <!-- Ошибка -->
             <div id="post-error" class="ts-error hidden"></div>
@@ -1489,7 +1480,6 @@
                         <span class="vh-rc-kind">СИГНАЛ</span>
                     </div>
                     <div class="vh-rc-vinyl">
-                        ${it.photo ? `<img class="vh-rc-photo" src="${esc(it.photo)}" alt="" />` : ''}
                         <div class="vh-rc-grooves" aria-hidden="true"></div>
                         <div class="vh-rc-edge" aria-hidden="true"></div>
                         <span class="vh-record-tag">${esc(tagLabel)}</span>
@@ -1645,8 +1635,7 @@
                     <span class="vh-read-date">${esc(it.date || '')} · ${esc(tagLabel)}</span>
                     <button type="button" class="vh-read-close" onclick="closeVinylRead()" aria-label="Закрыть">✕</button>
                 </div>
-                <p class="vh-read-text">${esc(String(it.text || '').trim())}</p>
-                ${it.photo ? `<div class="vinyl-read-photo"><img src="${esc(it.photo)}" alt="пиксельное фото к сигналу" /></div>` : ''}`;
+                <p class="vh-read-text">${esc(String(it.text || '').trim())}</p>`;
         }
         renderVinylArchive();
     }
@@ -2115,84 +2104,6 @@
         return `${d.getDate()} ${months[d.getMonth()]}`;
     }
 
-    // Пиксельизация фото: фотка с телефона → детализированный пиксельный арт
-    // (не 64×64-чипование, а крупные пиксели с сохранением композиции и цвета).
-    const PAIN_PHOTO_MAX_BYTES = 200000; // паритет с SQL-лимитом
-    let painPhotoDataUrl = null; // data URL пиксельного фото для отправки
-
-    function makePixelCanvas(img, target) {
-        // Поддержание пропорций: возьмём максимальный размер по кратному пикселям.
-        const maxSide = Math.max(img.width, img.height);
-        const scale = Math.min(1, target / maxSide);
-        const w = Math.max(1, Math.round(img.width * scale));
-        const h = Math.max(1, Math.round(img.height * scale));
-        const cv = document.createElement('canvas');
-        cv.width = w;
-        cv.height = h;
-        const g = cv.getContext('2d');
-        g.imageSmoothingEnabled = false;
-        g.drawImage(img, 0, 0, w, h);
-        return cv;
-    }
-
-    async function onPainPhotoPicked(event) {
-        const file = event && event.target && event.target.files && event.target.files[0];
-        if (!file) return;
-        if (!/^image\//.test(file.type)) {
-            showPostError('Выберите изображение (jpg, png, webp).');
-            return;
-        }
-        if (file.size > 12 * 1024 * 1024) {
-            showPostError('Фото слишком большое (максимум ~12 МБ).');
-            return;
-        }
-        showPostError('');
-        try {
-            const url = URL.createObjectURL(file);
-            const img = await new Promise((resolve, reject) => {
-                const im = new Image();
-                im.onload = () => resolve(im);
-                im.onerror = () => reject(new Error('не удалось прочитать фото'));
-                im.src = url;
-            });
-            // Детализированный пиксельный арт: targeting по большой стороне (минимум 160px).
-            const cv = makePixelCanvas(img, 256);
-            let dataUrl = cv.toDataURL('image/png');
-            if (dataUrl.length > PAIN_PHOTO_MAX_BYTES * 1.4) {
-                // Уменьшаем масштаб, пока не уложимся в лимит.
-                let target = 192;
-                while (target >= 128) {
-                    const cv2 = makePixelCanvas(img, target);
-                    const du = cv2.toDataURL('image/png');
-                    if (du.length <= PAIN_PHOTO_MAX_BYTES * 1.4) {
-                        dataUrl = du;
-                        break;
-                    }
-                    target -= 32;
-                }
-            }
-            if (dataUrl.length > PAIN_PHOTO_MAX_BYTES * 1.4) {
-                throw new Error('изображение слишком большое для передачи');
-            }
-            painPhotoDataUrl = dataUrl;
-            const prev = document.getElementById('pain-photo-preview');
-            if (prev) {
-                prev.innerHTML = `<img class="ts-photo-thumb" src="${dataUrl}" alt="пиксельное фото к сигналу" />`;
-                prev.classList.remove('hidden');
-            }
-        } catch (e) {
-            painPhotoDataUrl = null;
-            showPostError('Фото не обработалось: ' + (e && e.message || 'ошибка'));
-        }
-        try { event.target.value = ''; } catch (_) {}
-    }
-
-    function clearPainPhoto() {
-        painPhotoDataUrl = null;
-        const prev = document.getElementById('pain-photo-preview');
-        if (prev) { prev.innerHTML = ''; prev.classList.add('hidden'); }
-    }
-
     function validatePainPost(rawText) {
         const text = String(rawText || '').replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim().slice(0, 666);
         if (!text) return { ok: false, error: 'Напишите то, о чём молчите — пустой сигнал не уйдёт в эфир.' };
@@ -2562,7 +2473,7 @@
         const text = check.value;
 
         const tag = window.SOMA_SIGNALS.packTag(document.getElementById('new-pain-tag').value);
-        const insertRow = { id: 'p_' + Date.now(), author: randAnon(), tag: tag, text: text, photo: painPhotoDataUrl };
+        const insertRow = { id: 'p_' + Date.now(), author: randAnon(), tag: tag, text: text };
 
         const label = btn.innerText;
         btn.disabled = true;
@@ -2578,7 +2489,6 @@
                 p_author: insertRow.author,
                 p_tag: insertRow.tag,
                 p_text: insertRow.text,
-                p_photo: insertRow.photo || null,
             });
             if (error) throw error;
             if (!data || data.length === 0) throw new Error('RPC вернул пустой ответ');
@@ -2602,18 +2512,17 @@
         hideKeyboard();
         // Сохраняем собственную запись в дневник в Supabase (journal) — кассеты/записи
         // синхронизируются между устройствами, а не только в localStorage.
-            try {
-                const journalApi = window.SOMA_ROOM;
-                if (journalApi && typeof journalApi.saveJournalEntry === 'function') {
-                    const d = new Date();
-                    const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-                    journalApi.saveJournalEntry('e_' + insertRow.id, text, today, insertRow.photo || null, insertRow.tag);
-                }
-            } catch (_) {}
-            activeFeedTag = 'ВСЕ';
-            clearPainPhoto();
-            closePostModal();
-            textareaEl.value = '';
+        try {
+            const journalApi = window.SOMA_ROOM;
+            if (journalApi && typeof journalApi.saveJournalEntry === 'function') {
+                const d = new Date();
+                const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                journalApi.saveJournalEntry('e_' + insertRow.id, text, today, insertRow.tag);
+            }
+        } catch (_) {}
+        activeFeedTag = 'ВСЕ';
+        closePostModal();
+        textareaEl.value = '';
         document.getElementById('new-pain-tag').value = '';
         try { localStorage.removeItem('soma_signal_draft_topic'); } catch (_) {}
         updateCharCount(true);

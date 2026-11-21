@@ -451,7 +451,7 @@ test('release UI hides spoilers, pager replaces NEEO_PHONE, window picks unlocke
 
 test('mobile hotspots never overlap and main targets stay >=44px down to 320px width', () => {
     const blocks = [...roomCss.matchAll(/\.station-hit--(\w+)\s*\{([^}]+)\}/g)];
-    assert.equal(blocks.length, 11);
+    assert.equal(blocks.length, 12);
     const num = (body, prop) => Number(body.match(new RegExp(prop + ':\\s*([\\d.]+)%'))[1]) / 100;
     const defs = blocks.map(([, name, body]) => ({
         name, left: num(body, 'left'), top: num(body, 'top'), width: num(body, 'width'), height: num(body, 'height')
@@ -868,8 +868,8 @@ test('v9: true native browser fullscreen (even with Telegram SDK loaded), fixed-
             hitBoxes[m[1]] = { l: num('left'), t: num('top'), r: num('left') + num('width'), b: num('top') + num('height') };
         }
     }
-    assert.equal(Object.keys(hitBoxes).length, 11, 'all 11 interactive hotspots including dog and living vines must be styled');
-    assert.ok(hitBoxes.dog && hitBoxes.vines, '.station-hit--dog and .station-hit--vines must exist');
+    assert.equal(Object.keys(hitBoxes).length, 12, 'all 12 interactive hotspots including vinyl player, dog and living vines must be styled');
+    assert.ok(hitBoxes.dog && hitBoxes.vines && hitBoxes.vinyl, '.station-hit--dog, .station-hit--vines and .station-hit--vinyl must exist');
     const names = Object.keys(hitBoxes);
     for (let i = 0; i < names.length; i++) {
         for (let j = i + 1; j < names.length; j++) {

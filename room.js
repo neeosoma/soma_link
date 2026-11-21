@@ -234,6 +234,10 @@ const ROOM_LINES = {
         'Карман старой деки мягко открылся, показал кассету без подписи и плавно втянул её обратно.',
         'Механика магнитофона тихо вздохнула: кассета выехала на мгновение и вернулась на место.'
     ],
+    vinyl: [
+        'Проигрыватель мягко опустил рычаг: пластинка закружилась, подхватив ваши старые сигналы.',
+        'Винил тихо завертелся под иголкой — запись из архива готова к прослушиванию.'
+    ],
     nightlight: [
         'Решётчатый ночник у терминала плавно разгорелся изнутри, согревая край стола.',
         'Тёплый алый свет мягко наполнил стекло ночника и медленно успокоился.'
@@ -9338,6 +9342,11 @@ function playObjectTone(obj) {
         if (typeof noise === 'function') { noise(0.04, 0.02, 0.02, 1500); noise(0.035, 0.016, 2.32, 1350); }
         tone(210, 0.24, 'sine', 0.015, 0.15, 260);
         tone(250, 0.24, 'sine', 0.014, 1.55, 195);
+    } else if (obj === 'vinyl') {
+        // Тёплый щелчок проигрателя винила + плавное кручение пластинки.
+        if (typeof noise === 'function') noise(0.03, 0.018, 0.02, 1200);
+        tone(176, 0.2, 'sine', 0.015, 0.1, 220);
+        tone(262, 0.26, 'sine', 0.013, 0.16, 330);
     } else if (obj === 'nightlight' || obj === 'nightlightR') {
         tone(294, 0.65, 'sine', 0.02, 0, 330);
         tone(440, 0.75, 'sine', 0.013, 0.12);
@@ -9517,6 +9526,19 @@ function touchRoomObject(obj, event) {
         renderRoom();
         if (typeof window !== 'undefined' && typeof window.SOMA_VHS === 'object' && window.SOMA_VHS && typeof window.SOMA_VHS.open === 'function') {
             window.SOMA_VHS.open(roomAnim.activeCassetteId || (tapes.length ? tapes[0].id : ''));
+        }
+    } else if (obj === 'vinyl') {
+        // Проигрыватель винила: открываем виниловый архив собственных сигналов
+        // (отдельное окно с пластинками, поиск по дате/тексту/теме).
+        if ((now - roomAnim.deckStart) > 2850) {
+            roomAnim.deckStart = now;
+            playObjectTone('vinyl');
+        }
+        roomAnim.customMode = 'NEEOSOMA // ВИНИЛ · АРХИВ СИГНАЛОВ';
+        roomAnim.customEntry = nextRoomLine('vinyl', ROOM_LINES.vinyl);
+        renderRoom();
+        if (typeof window !== 'undefined' && typeof window.openVinylArchive === 'function') {
+            window.openVinylArchive();
         }
     } else if (obj === 'nightlight') {
         roomAnim.contextPanel = '';

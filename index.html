@@ -671,13 +671,11 @@
                 </div>
                 <button type="button" onclick="closeVinylArchive()" class="diary-close" aria-label="Закрыть">✕</button>
             </div>
-            <!-- ПОЛОСКА ПОИСКА (по тексту, дате и тэгу) -->
+            <!-- ПОЛОСКА ПОИСКА (по тексту, дате и теме) -->
             <div class="diary-search">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-                <input type="search" id="vinyl-search-input" placeholder="По дате, тэгу или слову…" autocomplete="off" oninput="renderVinylArchive()">
+                <input type="search" id="vinyl-search-input" placeholder="По дате, теме или слову…" autocomplete="off" oninput="renderVinylArchive()">
             </div>
-            <!-- ФИЛЬТРЫ (по тэгу/настроению) -->
-            <div class="diary-filters" id="vinyl-filters" role="tablist" aria-label="Фильтр сигналов"></div>
             <!-- ПОЛКА С ВИНИЛОВЫМИ ПЛАСТИНКАМИ -->
             <div class="diary-shelf-wrap">
                 <div class="diary-shelf-rail" aria-hidden="true"></div>
@@ -729,10 +727,6 @@
                     </span>
                     <span class="feed-send-label" id="open-post-title">Отправить сигнал</span>
                     <span class="feed-send-badge" id="open-post-badge">1 / день</span>
-                </button>
-                <button id="vinyl-archive-btn" type="button" onclick="openVinylArchive()" class="feed-vinyl-btn" aria-label="Архив собственных сигналов">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.4" fill="currentColor" stroke="none"/></svg>
-                    <span>Архив сигналов</span>
                 </button>
                 <span id="open-post-sub" class="feed-send-note">Запишите, что было сегодня — яркое, живое. Другие прочтут анонимно.</span>
             </div>
@@ -850,6 +844,7 @@
                     <button type="button" class="station-hit station-hit--window" data-obj="window" aria-label="Окно — осмотреть NEEO~CITY" onclick="activateRoomObject('window', event)"></button>
                     <button type="button" id="station-hit-blimp" class="station-hit--blimp hidden" aria-label="Дирижабль над NEEO~CITY" onclick="window.SOMA_BLIMP && window.SOMA_BLIMP.catchActive(event)"></button>
                     <button type="button" class="station-hit station-hit--lamp" data-obj="lamp" aria-label="Висячая лампа — качнуть" onclick="activateRoomObject('lamp', event)"></button>
+                    <button type="button" class="station-hit station-hit--vinyl" data-obj="vinyl" aria-label="Проигрыватель винила — открыть архив сигналов" onclick="activateRoomObject('vinyl', event)"></button>
                     <button type="button" class="station-hit station-hit--shelf" data-obj="shelf" aria-label="Полка NEEOSOMA — открыть кассетный архив VTR-90" onclick="activateRoomObject('shelf', event)"></button>
                     <button type="button" class="station-hit station-hit--nightlight" data-obj="nightlight" aria-label="Ночник у терминала — подсветить" onclick="activateRoomObject('nightlight', event)"></button>
                     <button type="button" id="station-hit-bed" class="station-hit station-hit--bed" data-obj="bed" aria-label="Кушетка — осмотреть" onclick="activateRoomObject('bed', event)"></button>
@@ -1404,7 +1399,7 @@
     }
 
     // ===== ВИНИЛОВАЯ ПОЛКА СОБСТВЕННЫХ СИГНАЛОВ (отдельное окно; кассетный архив — через магнитофон в комнате) =====
-    const vinylArchive = { items: [], filter: 'all', loading: false, readingId: '' };
+    const vinylArchive = { items: [], loading: false, readingId: '' };
 
     function _vinylTagRaw(it) {
         const api = window.SOMA_ROOM;
@@ -1414,14 +1409,6 @@
         const raw = _vinylTagRaw(it);
         if (window.SOMA_SIGNALS && typeof window.SOMA_SIGNALS.tagLabel === 'function') return window.SOMA_SIGNALS.tagLabel(raw);
         return String(raw || 'Без темы');
-    }
-    function _vinylIntentId(it) {
-        const raw = _vinylTagRaw(it);
-        if (window.SOMA_SIGNALS && typeof window.SOMA_SIGNALS.unpackTag === 'function') {
-            const u = window.SOMA_SIGNALS.unpackTag(raw);
-            return (u && u.intent && u.intent.id) || '';
-        }
-        return '';
     }
 
     async function openVinylArchive() {
@@ -1441,7 +1428,6 @@
             vinylArchive.items = [];
         }
         vinylArchive.loading = false;
-        setVinylFilter(vinylArchive.filter);
         renderVinylArchive();
     }
 
@@ -1451,46 +1437,25 @@
         closeVinylRead();
     }
 
-    function renderVinylFilters() {
-        const wrap = document.getElementById('vinyl-filters');
-        if (!wrap) return;
-        const intents = (window.SOMA_SIGNALS && Array.isArray(window.SOMA_SIGNALS.INTENTS)) ? window.SOMA_SIGNALS.INTENTS : [];
-        const chips = [{ id: 'all', label: 'ВСЕ' }];
-        intents.forEach(it => chips.push({ id: it.id, label: it.title }));
-        wrap.innerHTML = chips.map(c =>
-            `<button type="button" class="diary-chip${vinylArchive.filter === c.id ? ' is-active' : ''}" data-vinyl-filter="${esc(c.id)}" onclick="setVinylFilter('${esc(c.id)}')">${esc(c.label)}</button>`
-        ).join('');
-    }
-
-    function setVinylFilter(f) {
-        vinylArchive.filter = f || 'all';
-        renderVinylFilters();
-        renderVinylArchive();
-    }
-
     function renderVinylArchive() {
         const body = document.getElementById('vinyl-body');
         const count = document.getElementById('vinyl-count');
         if (!body) return;
-        renderVinylFilters();
         const q = (document.getElementById('vinyl-search-input') ? document.getElementById('vinyl-search-input').value : '') || '';
         const ql = q.trim().toLowerCase();
         const items = vinylArchive.items.filter(it => {
-            if (vinylArchive.filter !== 'all' && _vinylIntentId(it) !== vinylArchive.filter) return false;
-            if (ql) {
-                const tagLabel = _vinylTagLabel(it);
-                if (!(String(it.text || '').toLowerCase().includes(ql)
-                    || String(it.date || '').toLowerCase().includes(ql)
-                    || String(tagLabel).toLowerCase().includes(ql))) return false;
-            }
-            return true;
+            if (!ql) return true;
+            const tagLabel = _vinylTagLabel(it);
+            return String(it.text || '').toLowerCase().includes(ql)
+                || String(it.date || '').toLowerCase().includes(ql)
+                || String(tagLabel).toLowerCase().includes(ql);
         });
         if (count) {
             const all = vinylArchive.items.length;
             count.textContent = all ? `${items.length} / ${all} ПЛАСТИНКАХ` : 'АРХИВ ПОКА ПОРОЖН';
         }
         if (!items.length) {
-            body.innerHTML = `<div class="diary-empty"><strong>${vinylArchive.items.length ? 'НИЧЕГО НЕ НАЙДЕНО' : 'В АРХИВЕ СИГНАЛЫ ПОКА ПОРОЖН'}</strong>${vinylArchive.items.length ? 'Измените запрос или тэг-фильтр.' : 'Отправьте сигнал в ленте — пластинка появится здесь. Кассетный архив — через магнитофон в комнате.'}</div>`;
+            body.innerHTML = `<div class="diary-empty"><strong>${vinylArchive.items.length ? 'НИЧЕГО НЕ НАЙДЕНО' : 'В АРХИВЕ СИГНАЛЫ ПОКА ПОРОЖН'}</strong>${vinylArchive.items.length ? 'Измените запрос поиска.' : 'Отправьте сигнал в ленте — пластинка появится здесь. Кассетный архив — через магнитофон в комнате.'}</div>`;
             return;
         }
         const readingId = vinylArchive.readingId || '';

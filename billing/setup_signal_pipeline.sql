@@ -17,7 +17,6 @@
 begin;
 
 -- Сначала удаляем старые функции (42P13: cannot change return type)
-drop function if exists public.submit_soma_post(text, text, text, text, text);
 drop function if exists public.submit_soma_post(text, text, text, text);
 drop function if exists public.send_soma_whisper(text, text, text, text, text, text);
 drop function if exists public.set_soma_whisper_status(text, text);
@@ -30,7 +29,7 @@ drop function if exists public.get_my_saved_whispers();
 --    исключает 42804 при расхождении типов колонок.
 -- ======================================================================
 create or replace function public.submit_soma_post(
-    p_id text, p_author text, p_tag text, p_text text, p_photo text default null
+    p_id text, p_author text, p_tag text, p_text text
 )
 returns setof public.soma_posts
 language plpgsql
@@ -48,12 +47,9 @@ begin
     if char_length(p_tag) > 32 then
         p_tag := substring(p_tag from 1 for 32);
     end if;
-    if p_photo is not null and char_length(p_photo) > 200000 then
-        raise exception 'invalid_photo: photo too large';
-    end if;
 
-    insert into public.soma_posts (id, author, tag, text, photo)
-    values (p_id, p_author, p_tag, p_text, p_photo);
+    insert into public.soma_posts (id, author, tag, text)
+    values (p_id, p_author, p_tag, p_text);
 
     -- Захват владельца поста: без записи в soma_private.post_owners
     -- next_soma_pager_story() не найдёт пост для пейджера других игроков
@@ -199,8 +195,6 @@ $$;
 -- ======================================================================
 -- Права: RPC могут вызывать anon и authenticated (Anonymous Auth).
 -- ======================================================================
-revoke all on function public.submit_soma_post(text, text, text, text, text) from public;
-grant execute on function public.submit_soma_post(text, text, text, text, text) to anon, authenticated;
 revoke all on function public.submit_soma_post(text, text, text, text) from public;
 grant execute on function public.submit_soma_post(text, text, text, text) to anon, authenticated;
 

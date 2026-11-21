@@ -1709,6 +1709,23 @@
     gap: 6px;
 }
 
+/* Меню вторичных действий — ответ + жалоба/блок: separated dashed strip, compact buttons */
+.pager-card-menu {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 7px;
+    padding-top: 8px;
+    border-top: 1px dashed rgba(201, 56, 76, 0.28);
+}
+
+.pager-card-menu .pager-act-btn {
+    flex: 1 1 auto;
+    min-height: 32px;
+    padding: 6px 9px;
+    font-size: 9.5px;
+}
+
 /* ===== Action buttons ===== */
 .pager-act-btn {
     flex: 1 1 auto;

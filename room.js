@@ -10663,19 +10663,14 @@ function renderPagerModal() {
                     </div>
                     ${w.post_preview ? `<div class="pager-card-quote">${isReply ? 'Ваше сообщение:' : 'На ваш сигнал:'} «${escFn(w.post_preview)}»</div>` : ''}
                     <p class="pager-card-text">«${escFn(w.text)}»</p>
-                    ${isReply
-                        ? `<div class="pager-card-actions">
+                    <div class="pager-card-actions">
                         <button type="button" class="pager-act-btn pager-act-btn--save" data-act="save" data-id="${escFn(w.id)}">📼 ЗАПИСАТЬ НА КАССЕТУ VTR-90</button>
                         <button type="button" class="pager-act-btn pager-act-btn--dismiss" data-act="dismiss" data-id="${escFn(w.id)}">◌ ОТПУСТИТЬ</button>
-                    </div>`
-                        : `<div class="pager-card-actions">
-                        <button type="button" class="pager-act-btn pager-act-btn--save" data-act="save" data-id="${escFn(w.id)}">📼 ЗАПИСАТЬ НА КАССЕТУ VTR-90</button>
-                        <button type="button" class="pager-act-btn pager-act-btn--reply" data-act="reply" data-id="${escFn(w.id)}">Ответить</button>
-                        <button type="button" class="pager-act-btn pager-act-btn--dismiss" data-act="dismiss" data-id="${escFn(w.id)}">◌ ОТПУСТИТЬ</button>
-                    </div>`}
-                    ${isWhisperSafetyLive() ? `<div class="pager-card-actions">
-                        <button type="button" class="pager-act-btn pager-act-btn--dismiss" data-act="report" data-id="${escFn(w.id)}">ПОЖАЛОВАТЬСЯ</button>
-                        <button type="button" class="pager-act-btn pager-act-btn--dismiss" data-act="block" data-id="${escFn(w.id)}">БЛОКИРОВАТЬ ОТПРАВИТЕЛЯ</button>
+                    </div>
+                    ${(!isReply || isWhisperSafetyLive()) ? `<div class="pager-card-menu">
+                        ${!isReply ? `<button type="button" class="pager-act-btn pager-act-btn--reply" data-act="reply" data-id="${escFn(w.id)}">Ответить</button>` : ''}
+                        ${isWhisperSafetyLive() ? `<button type="button" class="pager-act-btn pager-act-btn--dismiss" data-act="report" data-id="${escFn(w.id)}">ПОЖАЛОВАТЬСЯ</button>
+                        <button type="button" class="pager-act-btn pager-act-btn--dismiss" data-act="block" data-id="${escFn(w.id)}">БЛОКИРОВАТЬ</button>` : ''}
                     </div>` : ''}
                     ${isComposing ? `<div class="pager-compose">
                         <textarea id="pager-reply-input" class="pager-compose-input" rows="3" maxlength="${PROGRESSION_RULES.WHISPER_MAX_LEN}" placeholder="Ответ на этот шёпот — не тратит дневной лимит...">${escFn(draft)}</textarea>

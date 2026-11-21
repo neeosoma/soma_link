@@ -661,14 +661,15 @@
 
     <!-- ФОНОТЕКА — СЛУШАЛЬНАЯ: архив сигналов на виниле. Атмосферный фон + детальный проигрыватель (VU-метры, тонарм) + шкаф с обложками пластинок -->
     <div id="vinyl-archive-modal" class="hidden fixed inset-0 z-[60] vinyl-modal" onclick="if(event.target===this)closeVinylArchive()">
-        <!-- Атмосферный фон-сцена (слушальная) -->
+        <!-- Атмосферный фон-сцена (слушальная, пиксельная) -->
         <div class="vh-scene" aria-hidden="true"></div>
         <div class="vh-beam" aria-hidden="true"></div>
         <div class="vh-dust" aria-hidden="true">
             <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
         </div>
         <div class="vh-vignette" aria-hidden="true"></div>
-        <div class="vh-shell w-full max-w-5xl max-h-[94vh] flex flex-col overflow-hidden" role="dialog" aria-label="Архив сигналов — винил">
+        <!-- ПОЛНЫЙ ЭКРАН: вертикальная компоновка — шапка → поиск → шкаф (верх) → проигрыватель (низ) -->
+        <div class="vh-shell" role="dialog" aria-label="Архив сигналов — винил">
             <!-- ШАПКА: бренд + статистика -->
             <div class="vh-head">
                 <div class="vh-brand">
@@ -681,14 +682,29 @@
                 <div class="vh-stats" id="vinyl-stats"></div>
                 <button type="button" onclick="closeVinylArchive()" class="vh-close" aria-label="Закрыть">✕</button>
             </div>
-            <!-- ПОИСК (по тексту, дате и теме) -->
+            <!-- ПОИСК: поле + фильтры НОМЕР / ДАТА / ТЕГИ -->
             <div class="vh-search">
-                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-                <input type="search" id="vinyl-search-input" placeholder="Найдите сигнал по дате, теме или слову…" autocomplete="off" oninput="renderVinylArchive()">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+                <input type="search" id="vinyl-search-input" placeholder="Найдите сигнал по номеру, дате или теме…" autocomplete="off" oninput="renderVinylArchive()">
+                <div class="vh-chips">
+                    <button type="button" class="vh-chip" id="vinyl-filter-id" data-filter="id" onclick="setVinylFilter('id')">НОМЕР</button>
+                    <button type="button" class="vh-chip" id="vinyl-filter-date" data-filter="date" onclick="setVinylFilter('date')">ДАТА</button>
+                    <button type="button" class="vh-chip" id="vinyl-filter-tag" data-filter="tag" onclick="setVinylFilter('tag')">ТЕГИ</button>
+                </div>
             </div>
-            <!-- СЦЕНА: проигрыватель (3/4) слева + шкаф с пластинками справа -->
+            <!-- СЦЕНА: шкаф с пластинками (верх, скролл) + проигрыватель (низ) -->
             <div class="vh-stage">
-                <!-- ПРОИГРЫВАТЕЛЬ — 3/4: корпус, плавун, крутящаяся пластинка, тонарм, VU-метры -->
+                <!-- КАБИНЕТ: пластинки в обложках, стоящие вертикально на pixel-полках -->
+                <div class="vh-cabinet">
+                    <div class="vh-cab-back" aria-hidden="true"></div>
+                    <div class="vh-cab-glass" aria-hidden="true"></div>
+                    <div class="vh-cab-interior" id="vinyl-body"></div>
+                    <div class="vh-cab-frame" aria-hidden="true"></div>
+                    <div class="vh-cab-label" aria-hidden="true">СИГНАЛЬНАЯ ПОДКЛИКА</div>
+                </div>
+                <!-- ПАНЕЛЬ ЧТЕНИЯ ПОМЕЩЕННОЙ ПЛАСТИНКИ (лайнер-нотыс) -->
+                <div class="vh-read hidden" id="vinyl-read"></div>
+                <!-- ПРОИГРЫВАТЕЛЬ — пиксельный 3/4: корпус, плавун, крутящаяся пластинка, тонарм, VU-метры -->
                 <div class="vh-turntable" id="vinyl-turntable">
                     <div class="vh-tt-base">
                         <div class="vh-tt-brand" aria-hidden="true">NEEOSOMA // AV-88</div>
@@ -708,19 +724,8 @@
                         <div class="vh-meter"><span class="vh-meter-fill" id="vh-meter-r"></span></div>
                     </div>
                 </div>
-                <!-- КАБИНЕТ: пластинки в обложках, стоящие вертикально на деревянных полках -->
-                <div class="vh-cabinet">
-                    <div class="vh-cab-back" aria-hidden="true"></div>
-                    <div class="vh-cab-glass" aria-hidden="true"></div>
-                    <div class="vh-cab-interior" id="vinyl-body"></div>
-                    <div class="vh-cab-frame" aria-hidden="true"></div>
-                    <div class="vh-cab-label" aria-hidden="true">СИГНАЛЬНАЯ ПОДКЛИКА</div>
-                </div>
             </div>
-            <!-- ПАНЕЛЬ ЧТЕНИЯ ПОМЕЩЕННОЙ ПЛАСТИНКИ (лайнер-нотыс) -->
-            <div class="vh-read hidden" id="vinyl-read"></div>
         </div>
-    </div>
 
     <!-- ОСНОВНОЙ ИНТЕРФЕЙС -->
     <div class="w-full max-w-md bg-[#0e0608] md:border md:border-red-500/30 md:rounded-3xl shadow-2xl flex flex-col app-h overflow-hidden relative">
@@ -1416,7 +1421,7 @@
     }
 
     // ===== ВИНИЛОВАЯ ПОЛКА СОБСТВЕННЫХ СИГНАЛОВ (полка → вытаскивание на проигрыватель → боковой вид → крутящаяся пластинка; кассетный архив — через магнитофон в комнате) =====
-    const vinylArchive = { items: [], loading: false, readingId: '', placedId: '', spinning: false };
+    const vinylArchive = { items: [], loading: false, readingId: '', placedId: '', spinning: false, filter: 'all' };
     const vinylDrag = { id: '', ghost: null, sx: 0, sy: 0, dx: 0, dy: 0, moved: false, suppress: false, bound: false };
 
     function _vinylTagRaw(it) {
@@ -1464,14 +1469,35 @@
         removeVinylFromTurntable(true);
     }
 
+    function setVinylFilter(f) {
+        if (!['id', 'date', 'tag'].includes(f)) return;
+        const next = vinylArchive.filter === f ? 'all' : f;
+        vinylArchive.filter = next;
+        document.querySelectorAll('.vh-chip').forEach(btn => {
+            btn.classList.toggle('is-active', btn.dataset.filter === next);
+        });
+        const input = document.getElementById('vinyl-search-input');
+        if (input) {
+            input.placeholder = next === 'id' ? 'По номеру сигнала…'
+                : next === 'date' ? 'По дате записи…'
+                : next === 'tag' ? 'По теме сигнала…'
+                : 'Найдите сигнал по номеру, дате или теме…';
+        }
+        renderVinylArchive();
+    }
+
     function renderVinylArchive() {
         const body = document.getElementById('vinyl-body');
         if (!body) return;
         const q = (document.getElementById('vinyl-search-input') ? document.getElementById('vinyl-search-input').value : '') || '';
         const ql = q.trim().toLowerCase();
+        const f = vinylArchive.filter || 'all';
         const items = vinylArchive.items.filter(it => {
             if (!ql) return true;
             const tagLabel = _vinylTagLabel(it);
+            if (f === 'id') return String(it.id || '').toLowerCase().includes(ql);
+            if (f === 'date') return String(it.date || '').toLowerCase().includes(ql);
+            if (f === 'tag') return String(tagLabel).toLowerCase().includes(ql);
             return String(it.text || '').toLowerCase().includes(ql)
                 || String(it.date || '').toLowerCase().includes(ql)
                 || String(tagLabel).toLowerCase().includes(ql);

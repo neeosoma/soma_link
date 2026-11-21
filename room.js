@@ -11226,8 +11226,9 @@ function renderRoom() {
                 plantSub.textContent = `росток проснётся, когда откроется «Шёпот» · ${rhythmTag}`;
             }
         } else if (shownStage < 5) {
+            const needNext = Math.max(0, activeSteps[shownStage + 1] - effectiveWarmth);
             const hint = shownStage + 1 === PROGRESSION_RULES.SPECIES_REVEAL_STAGE ? 'открытие вида' : 'след. стадия';
-            plantSub.textContent = hint;
+            plantSub.textContent = `${hint} ${needNext} тепла · ${rhythmTag}`;
         } else {
             plantSub.textContent = `полное цветение сезона · ${rhythmTag}`;
         }

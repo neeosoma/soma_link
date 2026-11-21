@@ -45,12 +45,24 @@
         const { intent, topic } = unpackTag(raw);
         return [intent && intent.title, topic].filter(Boolean).join(' · ') || 'Без темы';
     }
+    // Акцентный цвет пластинки по теме сигнала (каждая тема — своя виниловая этикетка).
+    function accentFor(raw) {
+        const { intent } = unpackTag(raw);
+        const m = {
+            N: ['#7c8cff', '#3440c8'], // Побудь рядом — синий рассвет
+            V: ['#7ad7c4', '#1d8a76'], // Взгляд со стороны — бирюзовый
+            W: ['#ffd166', '#c79100'], // Маленькая победа — золото
+            S: ['#ff8fab', '#c81e5c']  // Просто делюсь — розовый огонь
+        };
+        if (intent && m[intent.id]) return m[intent.id][0];
+        return '#ff4d6d';
+    }
     function visiblePosts(posts) {
         let prefs;
         try { prefs = readPrefs(root.localStorage); } catch (_) { prefs = { light: false, hidden: [] }; }
         return filterPosts(posts, prefs);
     }
-    const api = { INTENTS, packTag, unpackTag, readPrefs, writePrefs, filterPosts, tagLabel, visiblePosts };
+    const api = { INTENTS, packTag, unpackTag, readPrefs, writePrefs, filterPosts, tagLabel, accentFor, visiblePosts };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     if (root.document) root.SOMA_SIGNALS = api;
 })(typeof window !== 'undefined' ? window : globalThis);

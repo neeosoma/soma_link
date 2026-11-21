@@ -45,9 +45,12 @@ create table if not exists public.soma_posts (
     author text not null default 'Аноним' check (char_length(author) <= 32),
     tag text not null default 'ЛИЧНАЯ БОЛЬ' check (char_length(tag) <= 32),
     text text not null check (char_length(text) between 13 and 666),
+    photo text check (photo is null or char_length(photo) <= 200000),
     likes integer not null default 0 check (likes >= 0),
     created_at timestamptz not null default now()
 );
+
+alter table public.soma_posts add column if not exists photo text;
 
 create index if not exists soma_posts_created_idx
     on public.soma_posts (created_at desc);
@@ -104,6 +107,7 @@ begin
         new.author := old.author;
         new.tag := old.tag;
         new.text := old.text;
+        new.photo := old.photo;
         new.created_at := old.created_at;
         new.likes := least(old.likes + 1, greatest(old.likes, coalesce(new.likes, old.likes)));
     end if;

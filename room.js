@@ -3949,6 +3949,7 @@ function normalizeJournalRow(row) {
         date,
         ts: Number(row.created_at) ? new Date(row.created_at).getTime() : parseCassetteDateTs(date, Date.now()),
         text: String(row.text || '').trim().slice(0, 420),
+        photo: row.photo ? String(row.photo) : '',
         fav: !!row.fav
     };
 }
@@ -4118,7 +4119,7 @@ async function hydrateJournalFromCloud() {
 // Save the player's own diary/journal entry (a signal they published).
 // Записи хранятся ТОЛЬКО в облаке (Supabase journal) — сохранение проходит
 // через RPC, чтобы синхронизация с игрой проверялась на реальном Supabase.
-async function saveJournalEntry(id, text, dateLabel, tag) {
+async function saveJournalEntry(id, text, dateLabel, photo, tag) {
     const clean = String(text || '').trim().slice(0, 420);
     // Диагностика: показываем, что journal-сохранение началось (что функция вызвана).
     if (typeof setCloudStatus === 'function' && clean) setCloudStatus('☁ journal: сохранение…', true);
@@ -4131,7 +4132,8 @@ async function saveJournalEntry(id, text, dateLabel, tag) {
     }
     try {
         const { error } = await supabaseClient.rpc('save_soma_journal_entry', {
-            p_id: entryId, p_kind: 'entry', p_text: clean, p_date: dateLabel, p_num: 0, p_fav: false
+            p_id: entryId, p_kind: 'entry', p_text: clean, p_date: dateLabel,
+            p_photo: photo || null, p_num: 0, p_fav: false
         });
         if (error) {
             const why = error.message || error.code || 'ошибка';
@@ -10617,6 +10619,7 @@ function renderPagerModal() {
                                 <span class="pager-card-meta">${done ? '✓ ОТКЛИК ОТПРАВЛЕН' : 'ГОЛОС СО СТАНЦИИ'}</span>
                             </div>
                             <p class="pager-card-text">${escFn(post.text || '')}</p>
+                            ${post.photo ? `<div class="pager-card-photo"><img src="${escFn(post.photo)}" alt="пиксельное фото к сигналу" /></div>` : ''}
                             ${adm.firstAvailable && !isComposing ? `<div class="pager-card-actions">
                                 <button type="button" class="pager-act-btn pager-act-btn--dismiss" data-act="read" data-post-id="${escFn(pid)}">ПРОСТО ПРОЧИТАТЬ</button>
                                 <button type="button" class="pager-act-btn pager-act-btn--dismiss" data-act="skip" data-post-id="${escFn(pid)}">ПРОПУСТИТЬ</button>

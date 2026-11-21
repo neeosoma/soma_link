@@ -3995,6 +3995,7 @@ function cloudWarn(msg, err) {
     try {
         console.error('[soma:cloud]', msg, err || '');
     } catch (_) {}
+    if (typeof setCloudStatus === 'function') setCloudStatus('☁ облако: ошибка синхронизации', false);
     if (typeof notify === 'function') {
         const now = Date.now();
         if (now - _cloudWarnT > 6000) {

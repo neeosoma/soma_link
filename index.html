@@ -2372,6 +2372,13 @@
     // 2) после закрытия клавиатуры, модальных окон и полного экрана возвращает окно и активную вкладку в живое состояние.
     function restoreSomaScroll() {
         try {
+            // Не трогать скролл, пока клавиатура открыта на текстовом поле:
+            // window.scrollTo / scrollTop на мобильных WebView сворачивают клавиатуру,
+            // создавая луп (клавиатура открылась -> viewportChanged -> restoreSomaScroll -> клавиатура свернулась).
+            const ae = document.activeElement;
+            if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)) {
+                return;
+            }
             if (document.body && !document.body.classList.contains('soma-room-fs')) {
                 document.body.style.removeProperty('position');
                 document.body.style.removeProperty('top');

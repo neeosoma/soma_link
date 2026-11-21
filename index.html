@@ -659,28 +659,43 @@
         </div>
     </div>
 
-    <!-- ВИНИЛОВАЯ ПОЛКА СОБСТВЕННЫХ СИГНАЛОВ — полка, вытаскивание на проигрыватель, боковой вид, крутящаяся пластинка (кассетный архив — через магнитофон в комнате) -->
-    <div id="vinyl-archive-modal" class="hidden fixed inset-0 z-[60] bg-black/95 backdrop-blur-[3px] flex items-center justify-center p-3 sm:p-4" onclick="if(event.target===this)closeVinylArchive()">
-        <div class="vh-shell w-full max-w-3xl max-h-[94vh] flex flex-col bg-[#0a0507] border border-red-500/40 rounded-3xl shadow-2xl overflow-hidden" role="dialog" aria-label="Архив сигналов — винил">
-            <!-- ШАПКА: бренд -->
+    <!-- ФОНОТЕКА — СЛУШАЛЬНАЯ: архив сигналов на виниле. Атмосферный фон + детальный проигрыватель (VU-метры, тонарм) + шкаф с обложками пластинок -->
+    <div id="vinyl-archive-modal" class="hidden fixed inset-0 z-[60] vinyl-modal" onclick="if(event.target===this)closeVinylArchive()">
+        <!-- Атмосферный фон-сцена (слушальная) -->
+        <div class="vh-scene" aria-hidden="true"></div>
+        <div class="vh-beam" aria-hidden="true"></div>
+        <div class="vh-dust" aria-hidden="true">
+            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+        </div>
+        <div class="vh-vignette" aria-hidden="true"></div>
+        <div class="vh-shell w-full max-w-5xl max-h-[94vh] flex flex-col overflow-hidden" role="dialog" aria-label="Архив сигналов — винил">
+            <!-- ШАПКА: бренд + статистика -->
             <div class="vh-head">
-                <div class="flex items-center gap-2">
+                <div class="vh-brand">
                     <span class="vh-led" aria-hidden="true"></span>
-                    <div class="vh-kicker">NEEOSOMA // ДНЕВНИК</div>
+                    <div>
+                        <div class="vh-kicker">NEEOSOMA</div>
+                        <div class="vh-sub">ФОНОТЕКА · ДНЕВНИК СИГНАЛОВ</div>
+                    </div>
                 </div>
+                <div class="vh-stats" id="vinyl-stats"></div>
                 <button type="button" onclick="closeVinylArchive()" class="vh-close" aria-label="Закрыть">✕</button>
             </div>
-            <!-- ПОЛОСКА ПОИСКА (по тексту, дате и теме) -->
+            <!-- ПОИСК (по тексту, дате и теме) -->
             <div class="vh-search">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-                <input type="search" id="vinyl-search-input" placeholder="По дате, теме или слову…" autocomplete="off" oninput="renderVinylArchive()">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+                <input type="search" id="vinyl-search-input" placeholder="Найдите сигнал по дате, теме или слову…" autocomplete="off" oninput="renderVinylArchive()">
             </div>
-            <!-- СЦЕНА: проигрыватель (вид с боку) слева + кабинет с пластинками справа -->
+            <!-- СЦЕНА: проигрыватель (3/4) слева + шкаф с пластинками справа -->
             <div class="vh-stage">
-                <!-- ПРОИГРЫВАТЕЛЬ — вид с боку: основание, горизонтальный плавун, тонарм. Пластинка не показывается до момента постановки -->
+                <!-- ПРОИГРЫВАТЕЛЬ — 3/4: корпус, плавун, крутящаяся пластинка, тонарм, VU-метры -->
                 <div class="vh-turntable" id="vinyl-turntable">
-                    <div class="vh-tt-base" aria-hidden="true"></div>
+                    <div class="vh-tt-base">
+                        <div class="vh-tt-brand" aria-hidden="true">NEEOSOMA // AV-88</div>
+                        <div class="vh-tt-led" aria-hidden="true"></div>
+                    </div>
                     <div class="vh-tt-platter" id="vinyl-platter">
+                        <div class="vh-tt-glow" aria-hidden="true"></div>
                         <div class="vh-record" id="vinyl-record">
                             <div class="vh-record-grooves" aria-hidden="true"></div>
                             <div class="vh-record-label" id="vinyl-record-label"></div>
@@ -688,16 +703,21 @@
                         <div class="vh-tt-spindle" aria-hidden="true"></div>
                     </div>
                     <div class="vh-tt-arm" aria-hidden="true"></div>
+                    <div class="vh-tt-meters">
+                        <div class="vh-meter"><span class="vh-meter-fill" id="vh-meter-l"></span></div>
+                        <div class="vh-meter"><span class="vh-meter-fill" id="vh-meter-r"></span></div>
+                    </div>
                 </div>
-                <!-- КАБИНЕТ: много пластинок, стоящих вертикально на деревянных полках -->
+                <!-- КАБИНЕТ: пластинки в обложках, стоящие вертикально на деревянных полках -->
                 <div class="vh-cabinet">
                     <div class="vh-cab-back" aria-hidden="true"></div>
                     <div class="vh-cab-glass" aria-hidden="true"></div>
                     <div class="vh-cab-interior" id="vinyl-body"></div>
                     <div class="vh-cab-frame" aria-hidden="true"></div>
+                    <div class="vh-cab-label" aria-hidden="true">СИГНАЛЬНАЯ ПОДКЛИКА</div>
                 </div>
             </div>
-            <!-- ПАНЕЛЬ ЧТЕНИЯ ПОМЕЩЕННОЙ ПЛАСТИНКИ -->
+            <!-- ПАНЕЛЬ ЧТЕНИЯ ПОМЕЩЕННОЙ ПЛАСТИНКИ (лайнер-нотыс) -->
             <div class="vh-read hidden" id="vinyl-read"></div>
         </div>
     </div>
@@ -1456,8 +1476,9 @@
                 || String(it.date || '').toLowerCase().includes(ql)
                 || String(tagLabel).toLowerCase().includes(ql);
         });
+        renderVinylStats(items.length, vinylArchive.items.length);
         if (!items.length) {
-            body.innerHTML = `<div class="vh-empty"><strong>${vinylArchive.items.length ? 'НИЧЕГО НЕ НАЙДЕНО В ШКАФУ' : 'В архиве пока сигналов нет'}</strong>${vinylArchive.items.length ? 'Измените запрос поиска.' : 'Отправьте сигнал в эфир.'}</div>`;
+            body.innerHTML = `<div class="vh-empty"><strong>${vinylArchive.items.length ? 'НИЧЕГО НЕ НАЙДЕНО В ШКАФУ' : 'В архиве пока сигналов нет'}</strong>${vinylArchive.items.length ? 'Измените запрос поиска.' : 'Отправьте сигнал в эфир — он станет пластинкой в вашей фонотеке.'}</div>`;
             return;
         }
         const placedId = vinylArchive.placedId || '';
@@ -1472,19 +1493,23 @@
             const favGlyph = fav ? '★' : '☆';
             const tagLabel = _vinylTagLabel(it);
             const isPlaced = it.id === placedId ? ' is-placed' : '';
+            const cover = i % 4; // обложка: 4 мотива циклически
             html += `
                 <div class="vh-record-card${isPlaced}" data-vinyl-id="${esc(it.id)}" role="button" tabindex="0"
                      aria-label="Сигнал ${esc(it.date || '')} — достать из шкафа и положить на проигрыватель"
                      onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();placeVinylOnTurntable('${esc(it.id)}')}">
-                    <div class="vh-rc-top" style="--vh-accent:${esc(_vinylAccent(it))}">
-                        <span class="vh-rc-kind">СИГНАЛ</span>
-                    </div>
-                    <div class="vh-rc-vinyl">
-                        <div class="vh-rc-grooves" aria-hidden="true"></div>
-                        <div class="vh-rc-edge" aria-hidden="true"></div>
-                        <span class="vh-record-tag">${esc(tagLabel)}</span>
-                    </div>
                     <button type="button" class="${favCls}" data-vinyl-fav="${esc(it.id)}" aria-label="Избранное">${favGlyph}</button>
+                    <div class="vh-rc-sleeve" style="--vh-accent:${esc(_vinylAccent(it))}">
+                        <div class="vh-rc-cover vh-rc-cover--${cover}">
+                            <div class="vh-rc-motif" aria-hidden="true"></div>
+                            <span class="vh-rc-title">СИГНАЛ</span>
+                        </div>
+                        <div class="vh-rc-vinyl">
+                            <div class="vh-rc-grooves" aria-hidden="true"></div>
+                            <div class="vh-rc-edge" aria-hidden="true"></div>
+                            <span class="vh-record-tag">${esc(tagLabel)}</span>
+                        </div>
+                    </div>
                 </div>`;
             // деревянная полка шкафа между рядами пластинок
             if ((i + 1) % ROW === 0 && i + 1 < items.length) {
@@ -1492,6 +1517,12 @@
             }
         });
         body.innerHTML = html;
+    }
+
+    function renderVinylStats(visible, total) {
+        const el = document.getElementById('vinyl-stats');
+        if (!el) return;
+        el.innerHTML = `<span class="vh-stat"><b>${total}</b> пластинок</span><span class="vh-stat vh-stat--dim">${visible} в подклике</span>`;
     }
 
     // ===== Drag-and-drop: полка → проигрыватель (pointer-events: мышь + тач + Telegram WebView) =====
@@ -1628,14 +1659,17 @@
         const read = document.getElementById('vinyl-read');
         if (read) {
             const tagLabel = _vinylTagLabel(it);
+            const accent = _vinylAccent(it);
             read.classList.remove('hidden');
+            read.style.setProperty('--vh-accent', accent);
             read.innerHTML = `
                 <div class="vh-read-head">
-                    <span class="vh-read-kind">СИГНАЛ</span>
+                    <span class="vh-read-kind">СИГНАЛ · ЛАЙНЕР</span>
                     <span class="vh-read-date">${esc(it.date || '')} · ${esc(tagLabel)}</span>
                     <button type="button" class="vh-read-close" onclick="closeVinylRead()" aria-label="Закрыть">✕</button>
                 </div>
-                <p class="vh-read-text">${esc(String(it.text || '').trim())}</p>`;
+                <p class="vh-read-text">${esc(String(it.text || '').trim())}</p>
+                <div class="vh-read-foot" aria-hidden="true">— конец стороны —</div>`;
         }
         renderVinylArchive();
     }

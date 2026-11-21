@@ -329,6 +329,73 @@
             #splash::before, .splash-glyph .ring, .splash-progress i { animation: none; }
             .splash-title .ltr, .splash-kicker, .splash-sub, .splash-enter, .splash-glyph { opacity: 1; animation: none; transform: none; }
         }
+
+        /* ===== АРХИВ ДНЕВНИКА (полка над магнитофоном) ===== */
+        .diary-shell { animation: diary-in 0.32s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        @keyframes diary-in { from { opacity: 0; transform: translateY(14px) scale(0.98); } to { opacity: 1; transform: none; } }
+        .diary-head {
+            display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+            padding: 14px 16px 12px; border-bottom: 1px solid rgba(138, 38, 54, 0.22);
+            background: linear-gradient(180deg, rgba(40, 12, 18, 0.35) 0%, rgba(11, 6, 8, 0) 100%);
+        }
+        .diary-led {
+            width: 10px; height: 10px; border-radius: 50%; flex: 0 0 auto; margin-top: 4px;
+            background: #ff4d5e; box-shadow: 0 0 10px rgba(255, 77, 94, 0.7);
+            animation: diary-pulse 1.8s ease-in-out infinite;
+        }
+        @keyframes diary-pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+        .diary-kicker { font-family: 'Share Tech Mono', monospace; font-size: 11px; letter-spacing: 0.16em; color: #ff7c8d; text-transform: uppercase; }
+        .diary-sub { font-family: 'Share Tech Mono', monospace; font-size: 9px; color: #6b4548; letter-spacing: 0.08em; margin-top: 2px; }
+        .diary-close {
+            flex: 0 0 auto; color: #8a555e; font-size: 15px; padding: 2px 6px; border-radius: 8px;
+            cursor: pointer; transition: color 0.2s, background 0.2s;
+        }
+        .diary-close:hover { color: #fff; background: rgba(255, 72, 94, 0.12); }
+        .diary-search {
+            display: flex; align-items: center; gap: 8px; margin: 12px 16px 0;
+            padding: 9px 12px; border-radius: 12px; color: #8a555e;
+            background: rgba(20, 7, 12, 0.6); border: 1px solid rgba(138, 38, 54, 0.25);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .diary-search:focus-within { border-color: rgba(255, 72, 94, 0.5); box-shadow: 0 0 0 2px rgba(255, 72, 94, 0.12); }
+        .diary-search input {
+            flex: 1 1 auto; min-width: 0; background: transparent; border: none; outline: none;
+            color: #f0e0e1; font: 13px 'Inter', sans-serif;
+        }
+        .diary-search input::placeholder { color: #6b4548; }
+        .diary-filters { display: flex; gap: 8px; padding: 12px 16px 4px; }
+        .diary-chip {
+            font-family: 'Share Tech Mono', monospace; font-size: 10px; letter-spacing: 0.1em;
+            color: #8a555e; background: rgba(20, 7, 12, 0.5); border: 1px solid rgba(138, 38, 54, 0.2);
+            border-radius: 999px; padding: 5px 12px; cursor: pointer; text-transform: uppercase;
+            transition: color 0.2s, border-color 0.2s, background 0.2s;
+        }
+        .diary-chip.is-active { color: #ffd9d9; border-color: rgba(255, 72, 94, 0.55); background: rgba(255, 72, 94, 0.14); }
+        .diary-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 10px 16px 16px; display: flex; flex-direction: column; gap: 10px; }
+        .diary-row {
+            border: 1px solid rgba(138, 38, 54, 0.2); border-radius: 12px; padding: 11px 12px;
+            background: linear-gradient(180deg, rgba(42, 13, 20, 0.32) 0%, rgba(15, 6, 9, 0.5) 100%);
+            cursor: pointer; transition: border-color 0.2s, background 0.2s, transform 0.15s;
+        }
+        .diary-row:hover { border-color: rgba(255, 72, 94, 0.45); background: linear-gradient(180deg, rgba(60, 18, 28, 0.4) 0%, rgba(18, 7, 10, 0.55) 100%); }
+        .diary-row:active { transform: scale(0.995); }
+        .diary-row-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+        .diary-kind {
+            font-family: 'Share Tech Mono', monospace; font-size: 8.5px; letter-spacing: 0.12em;
+            padding: 3px 7px; border-radius: 999px; text-transform: uppercase;
+        }
+        .diary-kind--entry { color: #ffd9d9; background: rgba(255, 72, 94, 0.14); border: 1px solid rgba(255, 72, 94, 0.3); }
+        .diary-kind--cassette { color: #e8c87a; background: rgba(232, 200, 122, 0.1); border: 1px solid rgba(232, 200, 122, 0.3); }
+        .diary-date { font-family: 'Share Tech Mono', monospace; font-size: 9px; color: #6b4548; letter-spacing: 0.06em; }
+        .diary-fav {
+            flex: 0 0 auto; color: #6b4548; font-size: 14px; cursor: pointer; padding: 2px 4px;
+            background: none; border: none; line-height: 1;
+        }
+        .diary-fav.is-on { color: #e8c87a; }
+        .diary-text { font-size: 13px; color: #d9c2c3; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+        .diary-text.clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .diary-empty { padding: 40px 16px; text-align: center; color: #6b4548; font-family: 'Share Tech Mono', monospace; font-size: 11px; line-height: 1.6; }
+        .diary-empty strong { display: block; color: #8a555e; font-size: 12px; margin-bottom: 6px; letter-spacing: 0.1em; }
     </style>
 </head>
 <body class="crt h-full flex flex-col items-center justify-center p-0 md:p-4">
@@ -533,6 +600,39 @@
         </div>
     </div>
 
+    <!-- АРХИВ ДНЕВНИКА (СВОИ СИГНАЛЫ + КАССЕТЫ) — полка над магнитофоном -->
+    <div id="diary-archive-modal" class="hidden fixed inset-0 z-[60] bg-black/92 backdrop-blur-[2px] flex items-center justify-center p-3 sm:p-4" onclick="if(event.target===this)closeDiaryArchive()">
+        <div class="diary-shell w-full max-w-md max-h-[92vh] flex flex-col bg-[#0b0608] border border-red-500/45 rounded-2xl shadow-2xl overflow-hidden" role="dialog" aria-label="Архив дневника">
+            <!-- ШАПКА: бренд + счётчик -->
+            <div class="diary-head">
+                <div class="flex items-center gap-2">
+                    <span class="diary-led" aria-hidden="true"></span>
+                    <div>
+                        <div class="diary-kicker">NEEOSOMA // ДНЕВНИК · АРХИВ</div>
+                        <div class="diary-sub" id="diary-count">ЗАПИСИ ПОКАЗАНЫ НИЖЕ</div>
+                    </div>
+                </div>
+                <button type="button" onclick="closeDiaryArchive()" class="diary-close" aria-label="Закрыть">✕</button>
+            </div>
+            <!-- ПОЛОСКА ПОИСКА -->
+            <div class="diary-search">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+                <input type="search" id="diary-search-input" placeholder="Найти запись…" autocomplete="off" oninput="renderDiaryArchive()">
+            </div>
+            <!-- ФИЛЬТРЫ -->
+            <div class="diary-filters" role="tablist" aria-label="Фильтр записей">
+                <button type="button" class="diary-chip" data-diary-filter="all" onclick="setDiaryFilter('all')">ВСЕ</button>
+                <button type="button" class="diary-chip" data-diary-filter="entry" onclick="setDiaryFilter('entry')">СИГНАЛЫ</button>
+                <button type="button" class="diary-chip" data-diary-filter="cassette" onclick="setDiaryFilter('cassette')">КАССЕТЫ</button>
+            </div>
+            <!-- ЛИСТ ЗАПИСЕЙ -->
+            <div class="diary-body" id="diary-body"></div>
+            <div class="px-4 py-2 bg-[#080305] border-t border-red-500/15 text-[9.5px] font-mono-tech text-gray-500 text-center">
+                Свои сигналы и сохранённые кассеты · синхронизируются в Supabase
+            </div>
+        </div>
+    </div>
+
     <!-- ОСНОВНОЙ ИНТЕРФЕЙС -->
     <div class="w-full max-w-md bg-[#0e0608] md:border md:border-red-500/30 md:rounded-3xl shadow-2xl flex flex-col app-h overflow-hidden relative">
         
@@ -634,6 +734,12 @@
                             <div class="witness-stat-value witness-stat-amber">—</div>
                         </div>
                     </div>
+                    <div class="witness-card-foot">
+                        <button type="button" onclick="openFriendCassette()" class="witness-cassette-btn" aria-label="Записать кассету близкому">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9h2M7 13h2M15 9h2M15 13h2"/><circle cx="8" cy="17" r="1.1" fill="currentColor" stroke="none"/><circle cx="16" cy="17" r="1.1" fill="currentColor" stroke="none"/></svg>
+                            ЗАПИСАТЬ КАССЕТУ БЛИЗКОМУ
+                        </button>
+                    </div>
                 </div>
             </section>
         </div>
@@ -682,7 +788,7 @@
                     <button type="button" class="station-hit station-hit--window" data-obj="window" aria-label="Окно — осмотреть NEEO~CITY" onclick="activateRoomObject('window', event)"></button>
                     <button type="button" id="station-hit-blimp" class="station-hit--blimp hidden" aria-label="Дирижабль над NEEO~CITY" onclick="window.SOMA_BLIMP && window.SOMA_BLIMP.catchActive(event)"></button>
                     <button type="button" class="station-hit station-hit--lamp" data-obj="lamp" aria-label="Висячая лампа — качнуть" onclick="activateRoomObject('lamp', event)"></button>
-                    <button type="button" class="station-hit station-hit--shelf" data-obj="shelf" aria-label="Видеомагнитофон NEEOSOMA // VTR-90 — открыть VHS-архив тёплых слов" onclick="activateRoomObject('shelf', event)"></button>
+                    <button type="button" class="station-hit station-hit--shelf" data-obj="shelf" aria-label="Полка дневника NEEOSOMA — открыть архив своих сигналов и кассет" onclick="activateRoomObject('shelf', event)"></button>
                     <button type="button" class="station-hit station-hit--nightlight" data-obj="nightlight" aria-label="Ночник у терминала — подсветить" onclick="activateRoomObject('nightlight', event)"></button>
                     <button type="button" id="station-hit-bed" class="station-hit station-hit--bed" data-obj="bed" aria-label="Кушетка — осмотреть" onclick="activateRoomObject('bed', event)"></button>
                     <button type="button" id="station-hit-dog" class="station-hit station-hit--dog hidden" data-obj="dog" aria-label="Погладить пса на коврике у пледа" onclick="activateRoomObject('dog', event)"></button>
@@ -1229,6 +1335,110 @@
     function openExt(url) {
         try { if (window.Telegram && Telegram.WebApp.initData) { Telegram.WebApp.openLink(url); return; } } catch (e) {}
         window.open(url, '_blank');
+    }
+    // Открывает композицию кассеты для своего человека (standalone gift.html).
+    function openFriendCassette() {
+        try { window.location.assign('gift.html'); } catch (e) { window.open('gift.html', '_self'); }
+    }
+
+    // ===== АРХИВ ДНЕВНИКА (полка над магнитофоном: свои сигналы + кассеты) =====
+    const diaryArchive = { items: [], filter: 'all', loading: false };
+
+    async function openDiaryArchive() {
+        const modal = document.getElementById('diary-archive-modal');
+        if (!modal) return;
+        modal.classList.remove('hidden');
+        if (diaryArchive.loading) return;
+        diaryArchive.loading = true;
+        const body = document.getElementById('diary-body');
+        if (body) body.innerHTML = '<div class="diary-empty"><strong>ЗАГРУЗКА АРХИВА…</strong>Читаем ваш дневник.</div>';
+        try {
+            const api = window.SOMA_ROOM;
+            if (api && typeof api.loadDiaryArchive === 'function') {
+                diaryArchive.items = await api.loadDiaryArchive();
+            } else {
+                diaryArchive.items = [];
+            }
+        } catch (e) {
+            diaryArchive.items = [];
+        }
+        diaryArchive.loading = false;
+        setDiaryFilter(diaryArchive.filter);
+        renderDiaryArchive();
+    }
+
+    function closeDiaryArchive() {
+        const modal = document.getElementById('diary-archive-modal');
+        if (modal) modal.classList.add('hidden');
+    }
+
+    function setDiaryFilter(f) {
+        diaryArchive.filter = f || 'all';
+        document.querySelectorAll('[data-diary-filter]').forEach(btn => {
+            btn.classList.toggle('is-active', btn.dataset.diaryFilter === diaryArchive.filter);
+        });
+        renderDiaryArchive();
+    }
+
+    function renderDiaryArchive() {
+        const body = document.getElementById('diary-body');
+        const count = document.getElementById('diary-count');
+        if (!body) return;
+        const q = (document.getElementById('diary-search-input') ? document.getElementById('diary-search-input').value : '') || '';
+        const ql = q.trim().toLowerCase();
+        const items = diaryArchive.items.filter(it => {
+            if (diaryArchive.filter !== 'all' && it.kind !== diaryArchive.filter) return false;
+            if (ql && !(String(it.text || '').toLowerCase().includes(ql) || String(it.date || '').toLowerCase().includes(ql))) return false;
+            return true;
+        });
+        if (count) {
+            const all = diaryArchive.items.length;
+            count.textContent = all ? `${items.length} / ${all} ЗАПИСЕЙ` : 'АРХИВ ПОКА ПОРОЖН';
+        }
+        if (!items.length) {
+            body.innerHTML = `<div class="diary-empty"><strong>${diaryArchive.items.length ? 'НИЧЕГО НЕ НАЙДЕНО' : 'В ДНЕВНИКЕ ПОКА ПУСТО'}</strong>${diaryArchive.items.length ? 'Измените запрос или фильтр.' : 'Запишите сигнал в ленте — он появится здесь. Сохранённые кассеты тоже попадут в архив.'}</div>`;
+            return;
+        }
+        body.innerHTML = items.map(it => {
+            const kindLabel = it.kind === 'entry' ? 'СИГНАЛ' : 'КАССЕТА';
+            const kindCls = it.kind === 'entry' ? 'diary-kind--entry' : 'diary-kind--cassette';
+            const favCls = it.fav ? 'diary-fav is-on' : 'diary-fav';
+            const favGlyph = it.fav ? '★' : '☆';
+            const text = String(it.text || '').trim();
+            return `
+                <div class="diary-row" data-diary-id="${esc(it.id)}" onclick="toggleDiaryRow(this)">
+                    <div class="diary-row-top">
+                        <span class="diary-kind ${kindCls}">${kindLabel}</span>
+                        <span class="diary-date">${esc(it.date || '')}</span>
+                        <button type="button" class="${favCls}" onclick="event.stopPropagation(); toggleDiaryFav('${esc(it.id)}')" aria-label="Избранное">${favGlyph}</button>
+                    </div>
+                    <p class="diary-text clamp">${esc(text)}</p>
+                </div>`;
+        }).join('');
+    }
+
+    function toggleDiaryRow(el) {
+        const textEl = el.querySelector('.diary-text');
+        if (!textEl) return;
+        const clamped = textEl.classList.toggle('clamp');
+        // Если это кассета — можно включить в VHS-магнитофон.
+        if (!clamped) {
+            const id = el.dataset.diaryId || '';
+            const api = window.SOMA_ROOM;
+            if (api && typeof api.playCassette === 'function') {
+                try { api.playCassette(id, { openDeck: true }); } catch (_) {}
+            } else if (window.SOMA_VHS && typeof window.SOMA_VHS.open === 'function') {
+                window.SOMA_VHS.open(id);
+            }
+        }
+    }
+
+    async function toggleDiaryFav(id) {
+        const api = window.SOMA_ROOM;
+        if (!api || typeof api.toggleCassetteFav !== 'function') return;
+        await api.toggleCassetteFav(id);
+        diaryArchive.items = diaryArchive.items.map(it => it.id === id ? { ...it, fav: !it.fav } : it);
+        renderDiaryArchive();
     }
 
     // ===== ПАСХАЛКА: ПЕРЕХВАЧЕННЫЙ СИГНАЛ (7 нажатий на красный пульс) =====

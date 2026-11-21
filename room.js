@@ -4079,6 +4079,35 @@ async function saveJournalEntry(id, text, dateLabel) {
     }
 }
 
+// Combined diary archive: the player's own entries (kind='entry') and saved
+// cassettes (kind='cassette'), merged from the cloud journal and the local cache.
+// Returns items sorted newest-first: { id, kind, text, date, ts, num, fav }.
+async function loadDiaryArchive() {
+    const items = [];
+    const localCassettes = loadCassettes();
+    localCassettes.forEach(c => items.push({ ...c, kind: 'cassette' }));
+    if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+        try {
+            const { data, error } = await supabaseClient.rpc('get_my_soma_journal');
+            if (!error && Array.isArray(data)) {
+                data.forEach(r => {
+                    if (!r || !r.id) return;
+                    const norm = normalizeJournalRow(r);
+                    if (r.kind === 'entry') {
+                        items.push({ ...norm, kind: 'entry' });
+                    } else {
+                        // cassette: cloud is authoritative on text/date
+                        const idx = items.findIndex(i => i.id === norm.id);
+                        if (idx >= 0) items[idx] = { ...norm, kind: 'cassette' };
+                        else items.push({ ...norm, kind: 'cassette' });
+                    }
+                });
+            }
+        } catch (_) {}
+    }
+    return items.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+}
+
 function ejectCassette(silent) {
     roomAnim.activeCassetteId = '';
     const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
@@ -9419,18 +9448,19 @@ function touchRoomObject(obj, event) {
         if (tapes.length) {
             const current = tapes.find(c => c.id === roomAnim.activeCassetteId) || tapes[0];
             roomAnim.activeCassetteId = current.id;
-            modeLabel = `VHS #${formatCassetteNum(current.num)} · ${current.date}`;
+            modeLabel = `NEEOSOMA // VTR-90 · ДНЕВНИК · АРХИВ #${formatCassetteNum(current.num)}`;
             line = `«${current.text}»`;
         } else {
-            modeLabel = 'NEEOSOMA // VTR-90 · ВИДЕОАРХИВ';
+            modeLabel = 'NEEOSOMA // VTR-90 · ДНЕВНИК · АРХИВ';
             line = nextRoomLine('shelf', ROOM_LINES.shelf);
         }
-        // Открываем ламповый видеомагнитофон NEEOSOMA // VTR-90 прямо поверх сцены (без выхода из Fullscreen!)
-        if (typeof window !== 'undefined' && window.SOMA_VHS && typeof window.SOMA_VHS.open === 'function') {
-            roomAnim.customMode = modeLabel;
-            roomAnim.customEntry = line;
-            renderRoom();
-            window.SOMA_VHS.open(roomAnim.activeCassetteId || '');
+        // Открываем архив дневника (свои сигналы + кассеты) с поиском —
+        // аутентичное окно прямо поверх сцены (без выхода из Fullscreen!).
+        roomAnim.customMode = modeLabel;
+        roomAnim.customEntry = line;
+        renderRoom();
+        if (typeof window !== 'undefined' && typeof window.openDiaryArchive === 'function') {
+            window.openDiaryArchive();
             return;
         }
     } else if (obj === 'nightlight') {
@@ -11368,7 +11398,8 @@ const pagerApi = {
     claimWhisperCassetteAck, getPendingInboxWhispers, receiveIncomingWhisperLocal,
     acceptIncomingWhisper, dismissIncomingWhisper, sendWhisperToPost,
     syncPagerWhispers, openPagerModal, closePagerModal, renderPagerModal,
-    hydrateJournalFromCloud, saveJournalEntry, deleteCassette
+    hydrateJournalFromCloud, saveJournalEntry, deleteCassette, loadDiaryArchive,
+    playCassette, toggleCassetteFav
 };
 if (typeof window !== 'undefined') window.SOMA_ROOM = Object.assign(window.SOMA_ROOM || {}, pagerApi);
 if (typeof module !== 'undefined' && module.exports) Object.assign(module.exports, pagerApi);

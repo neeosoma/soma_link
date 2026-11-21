@@ -998,7 +998,7 @@
 <script src="config.js"></script>
 <script src="scenarios.js?v=15"></script>
 <script src="music.js?v=15"></script>
-<script src="signals.js?v=3"></script>
+<script src="signals.js?v=4"></script>
 <script src="station-ritual.js?v=2"></script>
 <script src="witness.js?v=2"></script>
     <script src="room.js?v=24"></script>
@@ -1243,20 +1243,8 @@
     }
     function pickTag(t) { const input = document.getElementById('new-pain-tag'); input.value = t; input.oninput(); SFX.tap(); }
 
-    let contactIntent = 'all';
     function initContactUI() {
         const api = window.SOMA_SIGNALS;
-        const prefs = api.readPrefs(localStorage);
-        const light = document.getElementById('contact-light');
-        if (!light) return;
-        light.checked = prefs.light;
-        light.onchange = () => {
-            const next = api.readPrefs(localStorage);
-            next.light = light.checked;
-            try { api.writePrefs(localStorage, next); }
-            catch (_) { light.checked = !light.checked; notify('Не удалось сохранить настройку чтения.'); }
-            renderFeed();
-        };
         const contactRestore = document.getElementById('contact-restore');
         if (contactRestore) contactRestore.onclick = () => {
             const next = api.readPrefs(localStorage);
@@ -1265,8 +1253,6 @@
             catch (_) { notify('Не удалось вернуть скрытые истории.'); return; }
             renderFeed();
         };
-        let saved = 'S';
-        try { saved = localStorage.getItem('soma_signal_draft_intent') || 'S'; } catch (_) {}
         const topic = document.getElementById('new-pain-tag');
         try { topic.value = localStorage.getItem('soma_signal_draft_topic') || ''; } catch (_) {}
         topic.oninput = () => {
@@ -2199,10 +2185,7 @@
     function renderFeedFilterSummary() {
         const summary = document.getElementById('feed-filter-status');
         if (!summary) return;
-        const api = window.SOMA_SIGNALS;
-        const prefs = api.readPrefs(localStorage);
         const labels = [];
-        if (prefs.light) labels.push('Полегче*');
         if (activeFeedTag !== 'ВСЕ') labels.push(activeFeedTag);
         summary.textContent = labels.length ? labels.join(' · ') : 'Все истории';
     }
@@ -2475,7 +2458,7 @@
         }
         const text = check.value;
 
-        const tag = window.SOMA_SIGNALS.packTag('S', document.getElementById('new-pain-tag').value);
+        const tag = window.SOMA_SIGNALS.packTag(document.getElementById('new-pain-tag').value);
         const insertRow = { id: 'p_' + Date.now(), author: randAnon(), tag: tag, text: text };
 
         const label = btn.innerText;
@@ -2523,7 +2506,6 @@
             }
         } catch (_) {}
         activeFeedTag = 'ВСЕ';
-        contactIntent = 'all';
         closePostModal();
         textareaEl.value = '';
         document.getElementById('new-pain-tag').value = '';

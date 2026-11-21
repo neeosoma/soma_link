@@ -1183,28 +1183,7 @@ test('v11: enlarged sleeping dogs with tucked front paws, clean RX-88 header, fu
     }
 });
 
-test('sent signal is saved to the local entry cache and appears in the vinyl archive even without Supabase', async () => {
-    const store = makeStorage();
-    const r = loadRoom({ localStorage: store });
-    assert.equal(r.loadDiaryArchive ? typeof r.loadDiaryArchive : 'missing', 'function');
-    // Нет Supabase: запись должна сохраниться локально и попасть в архив.
-    const res = await r.saveJournalEntry('e_p_1700000000000', 'Сегодня был тихий вечер у окна.', '2026-11-21', 'S1:S|Тихий вечер');
-    assert.equal(res.offline, true, 'saveJournalEntry reports offline when Supabase is absent');
-    const archive = await r.loadDiaryArchive();
-    const entry = archive.find(it => it.id === 'e_p_1700000000000');
-    assert.ok(entry, 'sent signal entry is present in the diary/vinyl archive');
-    assert.equal(entry.kind, 'entry', 'entry is marked kind=entry for the vinyl shelf');
-    assert.equal(entry.text, 'Сегодня был тихий вечер у окна.');
-    assert.match(entry.date, /2026-11-21/, 'entry date is preserved');
-    assert.equal(r.getEntryTag('e_p_1700000000000'), 'S1:S|Тихий вечер', 'entry tag is readable for vinyl-archive search');
-    // Повторная отправка того же id обновляет запись, не дублирует.
-    await r.saveJournalEntry('e_p_1700000000000', 'Обновлённый текст сигнала.', '2026-11-21', 'S1:S|Тихий вечер');
-    const archive2 = await r.loadDiaryArchive();
-    assert.equal(archive2.filter(it => it.id === 'e_p_1700000000000').length, 1, 're-saving same id does not duplicate');
-    assert.equal(archive2.find(it => it.id === 'e_p_1700000000000').text, 'Обновлённый текст сигнала.');
-});
-
-test('cloud save + sync with the game: saveJournalEntry calls Supabase, loadDiaryArchive merges cloud (authoritative), delete/fav sync', async () => {
+test('cloud-only signal storage: saveJournalEntry calls Supabase, loadDiaryArchive reads cloud (authoritative), fav syncs', async () => {
     const calls = [];
     const cloudJournal = [];
     const supabaseClient = {
@@ -1218,14 +1197,9 @@ test('cloud save + sync with the game: saveJournalEntry calls Supabase, loadDiar
                 });
                 return { error: null, data: [] };
             }
-            if (name === 'delete_soma_journal_entry') {
-                const i = cloudJournal.findIndex(r => r.id === args.p_id);
-                if (i >= 0) cloudJournal.splice(i, 1);
-                return { error: null };
-            }
             if (name === 'set_soma_journal_fav') {
-                const r = cloudJournal.find(r => r.id === args.p_id);
-                if (r) r.fav = args.p_fav;
+                const row = cloudJournal.find(r => r.id === args.p_id);
+                if (row) row.fav = args.p_fav;
                 return { error: null };
             }
             if (name === 'get_my_soma_journal') return { error: null, data: cloudJournal };
@@ -1234,7 +1208,7 @@ test('cloud save + sync with the game: saveJournalEntry calls Supabase, loadDiar
     };
     const r = loadRoom({ localStorage: makeStorage(), supabaseClient });
 
-    // 1) saveJournalEntry — локально + вызов cloud RPC с правильными аргументами.
+    // 1) saveJournalEntry — вызов cloud RPC с правильными аргументами (без локального хранения).
     const res = await r.saveJournalEntry('e_cloud_1', 'Сигнал в облако.', '2026-11-21', 'S1:S|Тема');
     assert.equal(res.ok, true, 'saveJournalEntry succeeds with cloud');
     assert.equal(res.offline, false, 'cloud path is reported as online');
@@ -1244,8 +1218,6 @@ test('cloud save + sync with the game: saveJournalEntry calls Supabase, loadDiar
     assert.equal(saveCall.args.p_kind, 'entry');
     assert.equal(saveCall.args.p_text, 'Сигнал в облако.');
     assert.equal(saveCall.args.p_date, '2026-11-21');
-    // Локально тоже сохранено.
-    assert.ok(r.loadEntries().some(e => e.id === 'e_cloud_1'), 'entry also saved to local cache');
 
     // 2) loadDiaryArchive — облачная запись появляется в архиве (kind=entry).
     const archive = await r.loadDiaryArchive();
@@ -1253,12 +1225,12 @@ test('cloud save + sync with the game: saveJournalEntry calls Supabase, loadDiar
     assert.ok(cloudEntry, 'cloud entry appears in the archive');
     assert.equal(cloudEntry.text, 'Сигнал в облако.');
 
-    // 3) Облако авторитетно: изменим текст в облаке, локальная копия перезаписывается.
+    // 3) Облако авторитетно: изменение в облаке отражается в архиве.
     const cloudRow = cloudJournal.find(x => x.id === 'e_cloud_1');
     cloudRow.text = 'Облачный авторитетный текст.';
     const archive2 = await r.loadDiaryArchive();
     assert.equal(archive2.find(it => it.id === 'e_cloud_1').text, 'Облачный авторитетный текст.',
-        'cloud text is authoritative over the local copy');
+        'cloud text is reflected in the archive');
 
     // 4) toggleEntryFav — синхронизирует избранное в облако.
     const fav = r.toggleEntryFav('e_cloud_1');
@@ -1266,15 +1238,7 @@ test('cloud save + sync with the game: saveJournalEntry calls Supabase, loadDiar
     const favCall = calls.find(c => c.name === 'set_soma_journal_fav' && c.args.p_id === 'e_cloud_1');
     assert.ok(favCall, 'cloud RPC set_soma_journal_fav is called');
     assert.equal(favCall.args.p_fav, true);
-    // Избранное читается из merged-архива / локального кеша.
     assert.equal(r.isEntryFav('e_cloud_1'), true, 'isEntryFav reflects the favorite');
-
-    // 5) deleteJournalEntry — удаление в облаке + локально.
-    await r.deleteJournalEntry('e_cloud_1');
-    const delCall = calls.find(c => c.name === 'delete_soma_journal_entry' && c.args.p_id === 'e_cloud_1');
-    assert.ok(delCall, 'cloud RPC delete_soma_journal_entry is called');
-    assert.ok(!cloudJournal.some(x => x.id === 'e_cloud_1'), 'entry removed from cloud');
-    assert.ok(!r.loadEntries().some(e => e.id === 'e_cloud_1'), 'entry removed from local cache');
 });
 
 test('v12: top-left fullscreen vinyl bar, unified NEEOSOMA/NEEO~CITY/SOMA~LINK branding, Whisper-only protocol breaches, 0.1% White Maltese, Greenhouse conservatory + 7 secret alien plants (room-only growth), and NEEOSOMA // SKY-01 window airship', async () => {

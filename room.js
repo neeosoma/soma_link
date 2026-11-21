@@ -3602,14 +3602,19 @@ function claimWhisperCassetteAck(whisperId, todayOverride) {
     }
 
     if (typeof roomAnim !== 'undefined' && roomAnim) {
-        roomAnim.pagerNotice = grantedWarmth > 0
+        const notice = grantedWarmth > 0
             ? `✦ Человек сохранил ваш «Шёпот» на кассету! +${grantedWarmth} Тепла пошли на рост растения.`
             : '✦ Ещё один ваш «Шёпот» бережно сохранён на кассету (бонус тепла 1/1 за сегодня уже впитался).';
+        roomAnim.pagerNotice = notice;
+        roomAnim.pagerModalNotice = notice;
+        roomAnim.pagerSavedAlert = true;
         roomAnim.customMode = 'ПЕЙДЖЕР // ОТКЛИК С КАССЕТЫ';
-        roomAnim.customEntry = roomAnim.pagerNotice;
+        roomAnim.customEntry = notice;
     }
+    if (typeof playObjectTone === 'function') playObjectTone('pager');
     trackFirstSignalEvent('echo_received');
     renderRoom();
+    if (typeof renderFeedPager === 'function') renderFeedPager();
     return { duplicate: false, grantedWarmth, ledger };
 }
 
@@ -10020,8 +10025,8 @@ function renderFeedPager(warmthArg, ledgerArg) {
         mainLine = 'ПОИСК НЕСУЩЕЙ... ЭФИР ПУСТ';
     } else if (adm.live) {
         mainLine = inbox.length ? `ВХОДЯЩИЕ: ${inbox.length}` : 'ЖИВАЯ ЧАСТОТА · ВЫ НА СВЯЗИ';
-        subLine = inbox.length ? 'Прочитать, сохранить или отпустить — решать вам.'
-            : roomAnim.pagerNotice || 'Прочитайте историю. Ответьте, если хочется.';
+        subLine = roomAnim.pagerNotice || (inbox.length ? 'Прочитать, сохранить или отпустить — решать вам.'
+            : 'Прочитайте историю. Ответьте, если хочется.');
     }
     if (msgEl) msgEl.textContent = mainLine;
     if (subEl) subEl.textContent = subLine;
@@ -10034,7 +10039,7 @@ const PAGER_MEMORIAL_LINES = [
     { main: 'АНОНИМНОСТЬ', sub: 'Все входящие и исходящие сообщения полностью анонимны. Никто не узнает, кто вы.' },
     { main: 'СЛУЧАЙНЫЙ КОНТАКТ', sub: 'Это игра о случайном контакте. Вы не знаете, с кем говорите — и это суть.' },
     { main: 'КАССЕТА VTR-90', sub: 'Самые тёплые послания можно сохранить на кассету — и переслушать когда захотите.' },
-    { main: 'ШЁПОТ', sub: 'Личный шёпот — это ваш выбор. Отвечать не обязательно. Слушайте своё состояние.' }
+    { main: 'ШЁПОТ', sub: 'Личный шёпот — это ваш выбор. Слушайте своё состояние.' }
 ];
 function togglePagerMemorial() {
     if (typeof document === 'undefined') return;
@@ -10353,7 +10358,7 @@ function renderPagerModal() {
                 <div class="pager-empty-box">
                     <div class="pager-empty-title">ВХОДЯЩИХ ШЁПОТОВ ПОКА НЕТ</div>
                     <p class="pager-empty-sub">Здесь появятся отклики на ваши истории.</p>
-                    <p class="pager-empty-sub">Понравится — сохраните на кассету. Отвечать не обязательно.</p>
+                    <p class="pager-empty-sub">Понравится — сохраните на кассету.</p>
                 </div>
             `;
         } else {
@@ -10449,9 +10454,9 @@ function renderPagerModal() {
                                 : isComposing && !adm.rulesAccepted
                                     ? `<div class="pager-gate-box">
                                         <div class="pager-gate-title">ПЕРЕД ОТВЕТОМ</div>
-                                        <div class="pager-gate-rule">Пишите от себя — без оценок и непрошеных советов.</div>
-                                        <div class="pager-gate-rule">Без ссылок и контактов.</div>
-                                        <div class="pager-gate-rule">До 3 шёпотов в сутки, один на пост. Ответ может не прийти.</div>
+                                        <div class="pager-gate-rule">Пишите искренне — от души.</div>
+                                        <div class="pager-gate-rule">Без оценок, ссылок и контактов.</div>
+                                        <div class="pager-gate-rule">Иногда, лучше промолчать.</div>
                                         <div class="pager-gate-actions">
                                             <button type="button" class="pager-act-btn" id="signal-rules-accept">ПОНЯТНО · ПРОДОЛЖИТЬ</button>
                                             <button type="button" class="pager-act-btn pager-act-btn--dismiss" id="signal-rules-later">НЕ СЕЙЧАС</button>
@@ -10503,7 +10508,7 @@ function renderPagerModal() {
                             await decidePagerStory(btn.dataset.postId, btn);
                         }
                         roomAnim.pagerModalNotice = btn.dataset.act === 'read'
-                            ? 'Можно просто прочитать. Отвечать не обязательно.' : 'Сигнал пропущен. Это нормально.';
+                            ? 'Можно просто прочитать.' : 'Сигнал пропущен. Это нормально.';
                         renderPagerModal();
                     };
                 });

@@ -1183,6 +1183,64 @@ test('v11: enlarged sleeping dogs with tucked front paws, clean RX-88 header, fu
     }
 });
 
+test('cloud-only signal storage: saveJournalEntry calls Supabase, loadDiaryArchive reads cloud (authoritative), fav syncs', async () => {
+    const calls = [];
+    const cloudJournal = [];
+    const supabaseClient = {
+        async rpc(name, args) {
+            calls.push({ name, args });
+            if (name === 'save_soma_journal_entry') {
+                cloudJournal.push({
+                    id: args.p_id, kind: 'entry', text: args.p_text,
+                    date_label: args.p_date, num: args.p_num, fav: args.p_fav,
+                    author_auth_id: 'auth_test', created_at: Date.now()
+                });
+                return { error: null, data: [] };
+            }
+            if (name === 'set_soma_journal_fav') {
+                const row = cloudJournal.find(r => r.id === args.p_id);
+                if (row) row.fav = args.p_fav;
+                return { error: null };
+            }
+            if (name === 'get_my_soma_journal') return { error: null, data: cloudJournal };
+            return { error: null };
+        }
+    };
+    const r = loadRoom({ localStorage: makeStorage(), supabaseClient });
+
+    // 1) saveJournalEntry — вызов cloud RPC с правильными аргументами (без локального хранения).
+    const res = await r.saveJournalEntry('e_cloud_1', 'Сигнал в облако.', '2026-11-21', 'S1:S|Тема');
+    assert.equal(res.ok, true, 'saveJournalEntry succeeds with cloud');
+    assert.equal(res.offline, false, 'cloud path is reported as online');
+    const saveCall = calls.find(c => c.name === 'save_soma_journal_entry');
+    assert.ok(saveCall, 'cloud RPC save_soma_journal_entry is called');
+    assert.equal(saveCall.args.p_id, 'e_cloud_1');
+    assert.equal(saveCall.args.p_kind, 'entry');
+    assert.equal(saveCall.args.p_text, 'Сигнал в облако.');
+    assert.equal(saveCall.args.p_date, '2026-11-21');
+
+    // 2) loadDiaryArchive — облачная запись появляется в архиве (kind=entry).
+    const archive = await r.loadDiaryArchive();
+    const cloudEntry = archive.find(it => it.id === 'e_cloud_1' && it.kind === 'entry');
+    assert.ok(cloudEntry, 'cloud entry appears in the archive');
+    assert.equal(cloudEntry.text, 'Сигнал в облако.');
+
+    // 3) Облако авторитетно: изменение в облаке отражается в архиве.
+    const cloudRow = cloudJournal.find(x => x.id === 'e_cloud_1');
+    cloudRow.text = 'Облачный авторитетный текст.';
+    const archive2 = await r.loadDiaryArchive();
+    assert.equal(archive2.find(it => it.id === 'e_cloud_1').text, 'Облачный авторитетный текст.',
+        'cloud text is reflected in the archive');
+
+    // 4) toggleEntryFav — синхронизирует избранное в облако.
+    const fav = r.toggleEntryFav('e_cloud_1');
+    assert.equal(fav, true, 'entry marked favorite');
+    const favCall = calls.find(c => c.name === 'set_soma_journal_fav' && c.args.p_id === 'e_cloud_1');
+    assert.ok(favCall, 'cloud RPC set_soma_journal_fav is called');
+    assert.equal(favCall.args.p_fav, true);
+    assert.equal(r.isEntryFav('e_cloud_1'), true, 'isEntryFav reflects the favorite');
+});
+
 test('v12: top-left fullscreen vinyl bar, unified NEEOSOMA/NEEO~CITY/SOMA~LINK branding, Whisper-only protocol breaches, 0.1% White Maltese, Greenhouse conservatory + 7 secret alien plants (room-only growth), and NEEOSOMA // SKY-01 window airship', async () => {
     const p = require('path'), fs = require('fs'), vm = require('vm');
     const rxCss = fs.readFileSync(p.join(__dirname, '..', 'receiver.css'), 'utf8');

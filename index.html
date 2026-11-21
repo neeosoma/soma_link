@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
     <meta id="soma-theme-color" name="theme-color" content="#0b0708">
     <title>АНОНИМНЫЙ ДНЕВНИК · NEEOSOMA // SOMA~LINK</title>
     <meta name="description" content="Ночная станция живого контакта. Разделите историю, маленькую победу или несколько слов с другим человеком. Отвечать не обязательно.">
@@ -11,7 +11,7 @@
     <!-- supabase-js vendored locally (avoids CDN dependence). Fallback to CDN only if local bundle is unavailable. -->
     <script src="assets/lib/supabase.umd.js"></script>
     <script>window.supabase || document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"><\/script>');</script>
-    <link rel="stylesheet" href="room.css?v=27">
+    <link rel="stylesheet" href="room.css?v=28">
     <link rel="stylesheet" href="cosmetics.css?v=15">
     <link rel="stylesheet" href="receiver.css?v=18">
     <link rel="stylesheet" href="vhs.css?v=15">
@@ -531,7 +531,7 @@
             <!-- Текст сигнала -->
             <div class="ts-field-wrap">
                 <div class="ts-field-corners" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
-                <textarea id="new-pain-text" rows="5" minlength="13" maxlength="666" oninput="updateCharCount()" placeholder="Что произошло? Что хочется разделить с другим человеком? (13–666 символов)" class="ts-textarea"></textarea>
+                <textarea id="new-pain-text" rows="5" minlength="13" maxlength="666" oninput="updateCharCount()" onfocus="scrollSendIntoView()" placeholder="Что произошло? Что хочется разделить с другим человеком? (13–666 символов)" class="ts-textarea"></textarea>
                 <div class="ts-field-glow" aria-hidden="true"></div>
                 <div class="ts-field-scan" aria-hidden="true"></div>
             </div>
@@ -2330,9 +2330,15 @@
         updateCharCount(true);
         updatePostQuotaUI();
         document.getElementById('post-modal').classList.remove('hidden');
+        // Прокрутить кнопку отправки в зону видимости — клавиатура не перекроет её.
+        const sendBtn = document.getElementById('send-btn');
+        if (sendBtn && sendBtn.scrollIntoView) {
+            try { sendBtn.scrollIntoView({ block: 'end', behavior: 'smooth' }); } catch (e) {}
+        }
     }
     function closePostModal() {
         showPostError('');
+        hideKeyboard();
         const ae = document.activeElement;
         if (ae && typeof ae.blur === 'function') { try { ae.blur(); } catch (e) {} }
         document.getElementById('post-modal').classList.add('hidden');
@@ -2439,6 +2445,14 @@
         }
     }
 
+    // Прокрутить кнопку отправки сигнала в зону видимости при фокусе на textarea:
+    // при открытой клавиатуре «ОТПРАВИТЬ В ЭФИР» не перекрывается складкой контента.
+    function scrollSendIntoView() {
+        const sendBtn = document.getElementById('send-btn');
+        if (!sendBtn || typeof sendBtn.scrollIntoView !== 'function') return;
+        try { sendBtn.scrollIntoView({ block: 'end', behavior: 'smooth' }); } catch (e) {}
+    }
+
     async function submitPainPost() {
         if (hasSentPainToday()) {
             showPostError(`Лимит: 1 история в сутки. Новый сигнал откроется через ${formatUntilNextSignal()}.`);
@@ -2495,6 +2509,7 @@
         try { localStorage.setItem(POST_DAY_KEY, currentPostDayKey()); } catch (e) {}
         try { localStorage.removeItem(POST_DRAFT_KEY); } catch (e) {}
         rememberMyPostId(insertRow.id);
+        hideKeyboard();
         // Сохраняем собственную запись в дневник в Supabase (journal) — кассеты/записи
         // синхронизируются между устройствами, а не только в localStorage.
         try {

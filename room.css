@@ -3817,7 +3817,7 @@ html.is-soma-fs-closing .app-h {
 
 /* СЦЕНА: кабинет с пластинками слева + магнитофон с проигрывателем справа (ниже — как в комнате) */
 .vh-stage {
-    display: grid; grid-template-columns: 1.2fr 0.95fr; gap: 12px;
+    display: grid; grid-template-columns: 0.9fr 1.2fr; gap: 12px;
     padding: 12px 16px 6px; align-items: end; min-height: 372px;
 }
 
@@ -3933,49 +3933,64 @@ html.is-soma-fs-closing .app-h {
 }
 @keyframes vh-ghost-in { from { opacity: 0; } }
 
-/* ===== МАГНИТОФОН С ПРОИГРЫВАТЕЛЕМ НАВЕРХУ ===== */
-.vh-tape-deck { position: relative; display: flex; flex-direction: column; min-width: 0; }
-/* верх магнитофона: проигрыватель (плавун) + тонарм */
-.vh-deck-top {
-    position: relative; display: flex; align-items: flex-start; justify-content: center;
-    padding: 2px 0 0;
+/* ===== ПРОИГРЫВАТЕЛЬ — вид с боку (3/4): корпус, горизонтальный плавун-эллипс, тонарм ===== */
+.vh-turntable {
+    position: relative; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; min-width: 0; padding: 6px 0 4px;
 }
-.vh-tt-platter {
-    position: relative; width: 152px; height: 152px; border-radius: 50%;
+/* корпус проигрывателя (основание, вид с боку) */
+.vh-tt-base {
+    position: relative; width: 226px; height: 26px; border-radius: 8px; z-index: 1;
     background:
-        radial-gradient(circle at 50% 42%, #303034 0 63%, #18181a 65% 100%);
+        linear-gradient(180deg, #2c2c32 0%, #15151a 100%);
+    box-shadow: 0 12px 24px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.1), inset 0 -3px 6px rgba(0,0,0,.5);
+}
+/* плавун — горизонтальный диск, вид с боку = эллипс */
+.vh-tt-platter {
+    position: relative; width: 188px; height: 90px; margin-top: -12px; border-radius: 50%; z-index: 2;
+    background:
+        radial-gradient(ellipse at 50% 40%, #34343a 0 60%, #19191d 62% 100%);
     box-shadow:
-        0 14px 26px rgba(0,0,0,.6),
-        inset 0 0 0 5px #0e0e10,
-        inset 0 0 0 6px rgba(255,255,255,.05),
-        inset 0 -8px 16px rgba(0,0,0,.5);
+        0 16px 28px rgba(0,0,0,.55),
+        inset 0 0 0 3px rgba(255,255,255,.05),
+        inset 0 -7px 16px rgba(0,0,0,.45),
+        inset 0 4px 10px rgba(255,255,255,.04);
     display: flex; align-items: center; justify-content: center;
     transition: box-shadow .2s, transform .2s;
 }
+/* подсветка, когда пластинка наведена на проигрыватель */
 .vh-tt-platter.is-drop {
     box-shadow:
-        0 14px 26px rgba(0,0,0,.6),
-        inset 0 0 0 5px #0e0e10,
-        inset 0 0 0 6px rgba(255,255,255,.05),
-        0 0 34px 4px var(--vh-accent),
-        inset 0 -8px 16px rgba(0,0,0,.5);
-    transform: scale(1.03);
+        0 16px 28px rgba(0,0,0,.55),
+        inset 0 0 0 3px rgba(255,255,255,.05),
+        inset 0 -7px 16px rgba(0,0,0,.45),
+        0 0 34px 4px var(--vh-accent);
+    transform: scale(1.04);
 }
-/* пластинка на плавунe — крутится */
+/* пластинка — скрыта, показывается только во время анимации постановки на проигрыватель */
 .vh-record {
-    position: relative; width: 112px; height: 112px; border-radius: 50%;
+    position: relative; width: 106px; height: 106px; border-radius: 50%;
     transform-origin: 50% 50%;
+    opacity: 0; visibility: hidden;
     background:
         conic-gradient(from 20deg, transparent 0deg, rgba(255,255,255,.12) 32deg, transparent 72deg, transparent 180deg, rgba(255,224,200,.10) 212deg, transparent 252deg),
         repeating-radial-gradient(circle at 50% 50%, #232326 0 1px, #111114 1px 3.6px),
         #191919;
-    box-shadow: inset 0 0 0 2px rgba(255,255,255,.05), 0 9px 20px rgba(0,0,0,.62);
+    box-shadow: inset 0 0 0 2px rgba(255,255,255,.05), 0 10px 22px rgba(0,0,0,.62);
     z-index: 2;
 }
-.vh-record.is-spinning { animation: vh-record-spin 5.5s linear infinite; }
+/* поставлена на проигрыватель — появляется и крутится */
+.vh-record.is-spinning {
+    opacity: 1; visibility: visible;
+    animation: vh-record-spin 5.5s linear infinite, vh-record-in .4s ease;
+}
 @keyframes vh-record-spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
+}
+@keyframes vh-record-in {
+    from { opacity: 0; transform: scale(.7); }
+    to { opacity: 1; transform: scale(1); }
 }
 .vh-record-grooves {
     position: absolute; inset: 5%; border-radius: 50%;
@@ -3993,88 +4008,25 @@ html.is-soma-fs-closing .app-h {
     background: radial-gradient(circle at 35% 35%, #fff2d2, #9e6c38);
     box-shadow: 0 0 0 1.5px rgba(8,3,5,.85);
 }
-/* тонарм сверху справа */
+/* тонарм — поднимается справа, ложится на пластинку при воспроизведении */
 .vh-tt-arm {
-    position: absolute; top: 8px; right: 12px; width: 9px; height: 86px;
-    border-radius: 5px; transform-origin: 5px 5px; transform: rotate(-26deg);
+    position: absolute; top: 2px; right: 20px; width: 9px; height: 80px;
+    border-radius: 5px; transform-origin: 5px 5px; transform: rotate(-30deg);
     background: linear-gradient(180deg, #4a4a50, #1c1c20);
     box-shadow: 0 4px 10px rgba(0,0,0,.55);
     pointer-events: none; z-index: 3;
+    transition: transform .5s cubic-bezier(.22,1,.36,1);
 }
-.vh-tape-deck.is-playing .vh-tt-arm { transform: rotate(14deg); }
+.vh-turntable.is-playing .vh-tt-arm { transform: rotate(10deg); }
 .vh-tt-arm::before {
     content: ''; position: absolute; top: -5px; left: -3px; width: 15px; height: 15px;
     border-radius: 50%; background: radial-gradient(circle at 35% 35%, #6a6a72, #16161a);
     box-shadow: 0 2px 5px rgba(0,0,0,.6);
 }
 .vh-tt-arm::after {
-    content: ''; position: absolute; top: 6px; left: 4px; width: 2px; height: 58px;
+    content: ''; position: absolute; top: 6px; left: 4px; width: 2px; height: 54px;
     border-radius: 2px; background: linear-gradient(180deg, #e8c496, #9c6e49 78%, #ff6b7d);
     box-shadow: 0 2px 4px rgba(0,0,0,.6);
-}
-
-/* лицевая панель магнитофона: кассета, VU, ручки */
-.vh-deck-face {
-    position: relative; margin-top: -10px; z-index: 1;
-    border-radius: 14px; padding: 12px 14px 11px;
-    background: linear-gradient(160deg, #1e1e24, #0c0c10);
-    border: 1px solid rgba(255,255,255,.08);
-    box-shadow: 0 14px 28px rgba(0,0,0,.62), inset 0 1px 0 rgba(255,255,255,.07), inset 0 -3px 8px rgba(0,0,0,.5);
-    display: grid; grid-template-columns: 1fr auto; grid-template-areas:
-        "cassette vu"
-        "knobs brand";
-    gap: 9px 12px; align-items: center;
-}
-/* кассета с двумя катушками */
-.vh-cassette {
-    grid-area: cassette; width: 100%; aspect-ratio: 1.7 / 1;
-    border-radius: 7px; position: relative;
-    background: linear-gradient(160deg, #2b2b30, #141418);
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,.06), 0 3px 8px rgba(0,0,0,.5);
-    display: flex; align-items: center; justify-content: center;
-}
-.vh-cassette-window {
-    width: 74%; height: 44%; border-radius: 4px; background: #08080a;
-    box-shadow: inset 0 2px 5px rgba(0,0,0,.85);
-    display: flex; align-items: center; justify-content: space-around;
-}
-.vh-cassette-reel {
-    width: 15px; height: 15px; border-radius: 50%;
-    background: radial-gradient(circle at 35% 35%, #3a3a40, #141418);
-    box-shadow: 0 0 0 1px rgba(255,255,255,.08), inset 0 0 0 2px rgba(0,0,0,.4);
-}
-.vh-tape-deck.is-playing .vh-cassette-reel { animation: vh-reel-spin 4s linear infinite; }
-@keyframes vh-reel-spin { to { transform: rotate(360deg); } }
-/* VU-метр (две полоски) */
-.vh-vu { grid-area: vu; display: flex; gap: 5px; align-items: flex-end; }
-.vh-vu-bar {
-    width: 9px; height: 36px; border-radius: 4px; position: relative; overflow: hidden;
-    background: linear-gradient(180deg, #2a2a2e, #18181c);
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
-}
-.vh-vu-bar::after {
-    content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 14%;
-    background: linear-gradient(180deg, #ff8a3d, #ff3355);
-    box-shadow: 0 0 7px rgba(255,51,85,.55);
-    transition: height .25s ease;
-}
-.vh-tape-deck.is-playing .vh-vu-bar::after { height: 72%; animation: vh-vu-bounce 1s ease-in-out infinite alternate; }
-@keyframes vh-vu-bounce { from { height: 48%; } to { height: 84%; } }
-/* ручки громкости/тона */
-.vh-knobs { grid-area: knobs; display: flex; gap: 9px; }
-.vh-knob {
-    width: 17px; height: 17px; border-radius: 50%;
-    background: radial-gradient(circle at 35% 30%, #4c4c54, #1a1a1e);
-    box-shadow: 0 2px 5px rgba(0,0,0,.6), inset 0 0 0 1px rgba(255,255,255,.08);
-    position: relative;
-}
-.vh-knob::after {
-    content: ''; position: absolute; top: 2px; left: 50%; width: 2px; height: 6px;
-    margin-left: -1px; border-radius: 2px; background: rgba(255,255,255,.4);
-}
-.vh-deck-brand {
-    grid-area: brand; text-align: center; font-size: 8px; letter-spacing: .2em;
-    color: #5e5e66; font-family: var(--tech-font, ui-monospace, monospace);
 }
 .vh-tt-hint {
     padding: 4px 16px 6px; font-size: 10.5px; color: #9a7f88; text-align: center;
@@ -4102,7 +4054,7 @@ html.is-soma-fs-closing .app-h {
 
 @media (max-width: 640px) {
     .vh-stage { grid-template-columns: 1fr; }
-    .vh-tape-deck { order: -1; }
-    .vh-tt-platter { width: 128px; height: 128px; }
-    .vh-record { width: 94px; height: 94px; }
+    .vh-tt-base { width: 200px; }
+    .vh-tt-platter { width: 160px; height: 76px; }
+    .vh-record { width: 92px; height: 92px; }
 }

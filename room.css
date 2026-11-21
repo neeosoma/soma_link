@@ -376,6 +376,14 @@
     height: 24%;
 }
 
+.station-hit--vinyl {
+    left: 1%;
+    top: 15%;
+    width: 10%;
+    height: 24%;
+    border-radius: 12px;
+}
+
 .station-hit--nightlight {
     left: 11.5%;
     top: 51%;

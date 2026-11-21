@@ -410,6 +410,13 @@
         }
         .diary-record-label .lk { font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase; }
         .diary-record-label .ld { font-size: 8.5px; margin-top: 2px; opacity: 0.8; }
+        .diary-record-tag {
+            position: absolute; left: 50%; bottom: -16px; transform: translateX(-50%);
+            font-family: 'Share Tech Mono', monospace; font-size: 8.5px; letter-spacing: 0.06em;
+            color: #b98b8f; white-space: nowrap; max-width: 108px; overflow: hidden;
+            text-overflow: ellipsis; text-align: center;
+        }
+        .diary-record:hover .diary-record-tag { color: #ff9aa4; }
         .diary-record--entry .diary-record-label { background: radial-gradient(circle, #7a1f2b 0%, #4a1018 100%); color: #ffd9d9; }
         .diary-record--cassette .diary-record-label { background: radial-gradient(circle, #6a5520 0%, #3a2c10 100%); color: #e8c87a; }
         .diary-record--entry .diary-record-disc { box-shadow: 0 8px 18px rgba(0, 0, 0, 0.6), inset 0 0 10px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 72, 94, 0.18); }
@@ -650,40 +657,34 @@
         </div>
     </div>
 
-    <!-- АРХИВ ДНЕВНИКА (СВОИ СИГНАЛЫ + КАССЕТЫ) — полка над магнитофоном -->
-    <div id="diary-archive-modal" class="hidden fixed inset-0 z-[60] bg-black/92 backdrop-blur-[2px] flex items-center justify-center p-3 sm:p-4" onclick="if(event.target===this)closeDiaryArchive()">
-        <div class="diary-shell w-full max-w-md max-h-[92vh] flex flex-col bg-[#0b0608] border border-red-500/45 rounded-2xl shadow-2xl overflow-hidden" role="dialog" aria-label="Архив дневника">
+    <!-- ВИНИЛОВАЯ ПОЛКА СОБСТВЕННЫХ СИГНАЛОВ — отдельное окно (кассетный архив — через магнитофон в комнате) -->
+    <div id="vinyl-archive-modal" class="hidden fixed inset-0 z-[60] bg-black/92 backdrop-blur-[2px] flex items-center justify-center p-3 sm:p-4" onclick="if(event.target===this)closeVinylArchive()">
+        <div class="diary-shell w-full max-w-md max-h-[92vh] flex flex-col bg-[#0b0608] border border-red-500/45 rounded-2xl shadow-2xl overflow-hidden" role="dialog" aria-label="Архив сигналов">
             <!-- ШАПКА: бренд + счётчик -->
             <div class="diary-head">
                 <div class="flex items-center gap-2">
                     <span class="diary-led" aria-hidden="true"></span>
                     <div>
-                        <div class="diary-kicker">NEEOSOMA // ДНЕВНИК · АРХИВ</div>
-                        <div class="diary-sub" id="diary-count">ЗАПИСИ ПОКАЗАНЫ НИЖЕ</div>
+                        <div class="diary-kicker">NEEOSOMA // СИГНАЛЫ · ВИНИЛ</div>
+                        <div class="diary-sub" id="vinyl-count">ПЛАСТИНКИ ПОКАЗАНЫ НИЖЕ</div>
                     </div>
                 </div>
-                <button type="button" onclick="closeDiaryArchive()" class="diary-close" aria-label="Закрыть">✕</button>
+                <button type="button" onclick="closeVinylArchive()" class="diary-close" aria-label="Закрыть">✕</button>
             </div>
-            <!-- ПОЛОСКА ПОИСКА -->
+            <!-- ПОЛОСКА ПОИСКА (по тексту, дате и теме) -->
             <div class="diary-search">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-                <input type="search" id="diary-search-input" placeholder="Найти запись…" autocomplete="off" oninput="renderDiaryArchive()">
-            </div>
-            <!-- ФИЛЬТРЫ -->
-            <div class="diary-filters" role="tablist" aria-label="Фильтр записей">
-                <button type="button" class="diary-chip" data-diary-filter="all" onclick="setDiaryFilter('all')">ВСЕ</button>
-                <button type="button" class="diary-chip" data-diary-filter="entry" onclick="setDiaryFilter('entry')">СИГНАЛЫ</button>
-                <button type="button" class="diary-chip" data-diary-filter="cassette" onclick="setDiaryFilter('cassette')">КАССЕТЫ</button>
+                <input type="search" id="vinyl-search-input" placeholder="По дате, теме или слову…" autocomplete="off" oninput="renderVinylArchive()">
             </div>
             <!-- ПОЛКА С ВИНИЛОВЫМИ ПЛАСТИНКАМИ -->
             <div class="diary-shelf-wrap">
                 <div class="diary-shelf-rail" aria-hidden="true"></div>
-                <div class="diary-shelf" id="diary-body"></div>
+                <div class="diary-shelf" id="vinyl-body"></div>
             </div>
-            <!-- ПАНЕЛЬ ЧТЕНИЯ OPENED-РЕКORD -->
-            <div class="diary-read hidden" id="diary-read"></div>
+            <!-- ПАНЕЛЬ ЧТЕНИЯ ОТКРЫТОЙ ПЛАСТИНКИ -->
+            <div class="diary-read hidden" id="vinyl-read"></div>
             <div class="px-4 py-2 bg-[#080305] border-t border-red-500/15 text-[9.5px] font-mono-tech text-gray-500 text-center">
-                Свои сигналы и сохранённые кассеты · синхронизируются в Supabase
+                Ваши сигналы · синхронизируются в Supabase · кассетный архив — через магнитофон в комнате
             </div>
         </div>
     </div>
@@ -843,7 +844,8 @@
                     <button type="button" class="station-hit station-hit--window" data-obj="window" aria-label="Окно — осмотреть NEEO~CITY" onclick="activateRoomObject('window', event)"></button>
                     <button type="button" id="station-hit-blimp" class="station-hit--blimp hidden" aria-label="Дирижабль над NEEO~CITY" onclick="window.SOMA_BLIMP && window.SOMA_BLIMP.catchActive(event)"></button>
                     <button type="button" class="station-hit station-hit--lamp" data-obj="lamp" aria-label="Висячая лампа — качнуть" onclick="activateRoomObject('lamp', event)"></button>
-                    <button type="button" class="station-hit station-hit--shelf" data-obj="shelf" aria-label="Полка дневника NEEOSOMA — открыть архив своих сигналов и кассет" onclick="activateRoomObject('shelf', event)"></button>
+                    <button type="button" class="station-hit station-hit--vinyl" data-obj="vinyl" aria-label="Проигрыватель винила — открыть архив сигналов" onclick="activateRoomObject('vinyl', event)"></button>
+                    <button type="button" class="station-hit station-hit--shelf" data-obj="shelf" aria-label="Полка NEEOSOMA — открыть кассетный архив VTR-90" onclick="activateRoomObject('shelf', event)"></button>
                     <button type="button" class="station-hit station-hit--nightlight" data-obj="nightlight" aria-label="Ночник у терминала — подсветить" onclick="activateRoomObject('nightlight', event)"></button>
                     <button type="button" id="station-hit-bed" class="station-hit station-hit--bed" data-obj="bed" aria-label="Кушетка — осмотреть" onclick="activateRoomObject('bed', event)"></button>
                     <button type="button" id="station-hit-dog" class="station-hit station-hit--dog hidden" data-obj="dog" aria-label="Погладить пса на коврике у пледа" onclick="activateRoomObject('dog', event)"></button>
@@ -1396,125 +1398,121 @@
         try { window.location.assign('gift.html'); } catch (e) { window.open('gift.html', '_self'); }
     }
 
-    // ===== АРХИВ ДНЕВНИКА (полка над магнитофоном: свои сигналы + кассеты) =====
-    const diaryArchive = { items: [], filter: 'all', loading: false };
+    // ===== ВИНИЛОВАЯ ПОЛКА СОБСТВЕННЫХ СИГНАЛОВ (отдельное окно; кассетный архив — через магнитофон в комнате) =====
+    const vinylArchive = { items: [], loading: false, readingId: '' };
 
-    async function openDiaryArchive() {
-        const modal = document.getElementById('diary-archive-modal');
+    function _vinylTagRaw(it) {
+        const api = window.SOMA_ROOM;
+        return (api && typeof api.getEntryTag === 'function') ? api.getEntryTag(it.id) : '';
+    }
+    function _vinylTagLabel(it) {
+        const raw = _vinylTagRaw(it);
+        if (window.SOMA_SIGNALS && typeof window.SOMA_SIGNALS.tagLabel === 'function') return window.SOMA_SIGNALS.tagLabel(raw);
+        return String(raw || 'Без темы');
+    }
+
+    async function openVinylArchive() {
+        const modal = document.getElementById('vinyl-archive-modal');
         if (!modal) return;
+        closeVinylRead();
         modal.classList.remove('hidden');
-        if (diaryArchive.loading) return;
-        diaryArchive.loading = true;
-        const body = document.getElementById('diary-body');
-        if (body) body.innerHTML = '<div class="diary-empty"><strong>ЗАГРУЗКА АРХИВА…</strong>Читаем ваш дневник.</div>';
+        if (vinylArchive.loading) return;
+        vinylArchive.loading = true;
+        const body = document.getElementById('vinyl-body');
+        if (body) body.innerHTML = '<div class="diary-empty"><strong>ЗАГРУЗКА АРХИВА…</strong>Читаем ваши сигналы.</div>';
         try {
             const api = window.SOMA_ROOM;
-            if (api && typeof api.loadDiaryArchive === 'function') {
-                diaryArchive.items = await api.loadDiaryArchive();
-            } else {
-                diaryArchive.items = [];
-            }
+            const all = (api && typeof api.loadDiaryArchive === 'function') ? await api.loadDiaryArchive() : [];
+            vinylArchive.items = (all || []).filter(it => it && it.kind === 'entry');
         } catch (e) {
-            diaryArchive.items = [];
+            vinylArchive.items = [];
         }
-        diaryArchive.loading = false;
-        setDiaryFilter(diaryArchive.filter);
-        renderDiaryArchive();
+        vinylArchive.loading = false;
+        renderVinylArchive();
     }
 
-    function closeDiaryArchive() {
-        const modal = document.getElementById('diary-archive-modal');
+    function closeVinylArchive() {
+        const modal = document.getElementById('vinyl-archive-modal');
         if (modal) modal.classList.add('hidden');
+        closeVinylRead();
     }
 
-    function setDiaryFilter(f) {
-        diaryArchive.filter = f || 'all';
-        document.querySelectorAll('[data-diary-filter]').forEach(btn => {
-            btn.classList.toggle('is-active', btn.dataset.diaryFilter === diaryArchive.filter);
-        });
-        renderDiaryArchive();
-    }
-
-    function renderDiaryArchive() {
-        const body = document.getElementById('diary-body');
-        const count = document.getElementById('diary-count');
+    function renderVinylArchive() {
+        const body = document.getElementById('vinyl-body');
+        const count = document.getElementById('vinyl-count');
         if (!body) return;
-        const q = (document.getElementById('diary-search-input') ? document.getElementById('diary-search-input').value : '') || '';
+        const q = (document.getElementById('vinyl-search-input') ? document.getElementById('vinyl-search-input').value : '') || '';
         const ql = q.trim().toLowerCase();
-        const items = diaryArchive.items.filter(it => {
-            if (diaryArchive.filter !== 'all' && it.kind !== diaryArchive.filter) return false;
-            if (ql && !(String(it.text || '').toLowerCase().includes(ql) || String(it.date || '').toLowerCase().includes(ql))) return false;
-            return true;
+        const items = vinylArchive.items.filter(it => {
+            if (!ql) return true;
+            const tagLabel = _vinylTagLabel(it);
+            return String(it.text || '').toLowerCase().includes(ql)
+                || String(it.date || '').toLowerCase().includes(ql)
+                || String(tagLabel).toLowerCase().includes(ql);
         });
         if (count) {
-            const all = diaryArchive.items.length;
+            const all = vinylArchive.items.length;
             count.textContent = all ? `${items.length} / ${all} ПЛАСТИНКАХ` : 'АРХИВ ПОКА ПОРОЖН';
         }
         if (!items.length) {
-            body.innerHTML = `<div class="diary-empty"><strong>${diaryArchive.items.length ? 'НИЧЕГО НЕ НАЙДЕНО' : 'В ДНЕВНИКЕ ПОКА ПУСТО'}</strong>${diaryArchive.items.length ? 'Измените запрос или фильтр.' : 'Запишите сигнал в ленте — пластинка появится на полке. Сохранённые кассеты тоже станут пластинками.'}</div>`;
+            body.innerHTML = `<div class="diary-empty"><strong>${vinylArchive.items.length ? 'НИЧЕГО НЕ НАЙДЕНО' : 'В АРХИВЕ СИГНАЛЫ ПОКА ПОРОЖН'}</strong>${vinylArchive.items.length ? 'Измените запрос поиска.' : 'Отправьте сигнал в ленте — пластинка появится здесь. Кассетный архив — через магнитофон в комнате.'}</div>`;
             return;
         }
-        const readingId = diaryArchive.readingId || '';
+        const readingId = vinylArchive.readingId || '';
         body.innerHTML = items.map(it => {
-            const kindLabel = it.kind === 'entry' ? 'СИГНАЛ' : 'КАССЕТА';
-            const kindCls = it.kind === 'entry' ? 'diary-record--entry' : 'diary-record--cassette';
+            const fav = (window.SOMA_ROOM && typeof window.SOMA_ROOM.isEntryFav === 'function')
+                ? window.SOMA_ROOM.isEntryFav(it.id) : !!it.fav;
+            const favCls = fav ? 'diary-fav-dot is-on' : 'diary-fav-dot';
+            const favGlyph = fav ? '★' : '☆';
+            const tagLabel = _vinylTagLabel(it);
             const reading = it.id === readingId ? ' is-reading' : '';
-            const favCls = it.fav ? 'diary-fav-dot is-on' : 'diary-fav-dot';
-            const favGlyph = it.fav ? '★' : '☆';
             return `
-                <div class="diary-record${kindCls}${reading}" data-diary-id="${esc(it.id)}" onclick="openDiaryRecord('${esc(it.id)}')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')openDiaryRecord('${esc(it.id)}')">
+                <div class="diary-record diary-record--entry${reading}" data-vinyl-id="${esc(it.id)}" onclick="openVinylRecord('${esc(it.id)}')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')openVinylRecord('${esc(it.id)}')">
                     <div class="diary-record-disc"></div>
-                    <div class="diary-record-label"><span class="lk">${kindLabel}</span><span class="ld">${esc(it.date || '')}</span></div>
-                    <button type="button" class="${favCls}" onclick="event.stopPropagation(); toggleDiaryFav('${esc(it.id)}')" aria-label="Избранное">${favGlyph}</button>
+                    <div class="diary-record-label"><span class="lk">СИГНАЛ</span><span class="ld">${esc(it.date || '')}</span></div>
+                    <span class="diary-record-tag">${esc(tagLabel)}</span>
+                    <button type="button" class="${favCls}" onclick="event.stopPropagation(); toggleVinylFav('${esc(it.id)}')" aria-label="Избранное">${favGlyph}</button>
                 </div>`;
         }).join('');
     }
 
-    function openDiaryRecord(id) {
-        const it = diaryArchive.items.find(x => x.id === id);
+    function openVinylRecord(id) {
+        const it = vinylArchive.items.find(x => x.id === id);
         if (!it) return;
-        diaryArchive.readingId = id;
-        const read = document.getElementById('diary-read');
+        vinylArchive.readingId = id;
+        const read = document.getElementById('vinyl-read');
         if (read) {
-            const kindLabel = it.kind === 'entry' ? 'СИГНАЛ' : 'КАССЕТА';
-            const kindCls = it.kind === 'entry' ? 'diary-read-kind--entry' : 'diary-read-kind--cassette';
+            const tagLabel = _vinylTagLabel(it);
             read.classList.remove('hidden');
             read.innerHTML = `
                 <div class="diary-read-head">
-                    <span class="diary-read-kind ${kindCls}">${kindLabel}</span>
-                    <span class="diary-read-date">${esc(it.date || '')}</span>
-                    <button type="button" class="diary-read-close" onclick="closeDiaryRead()" aria-label="Закрыть">✕</button>
+                    <span class="diary-read-kind diary-read-kind--entry">СИГНАЛ</span>
+                    <span class="diary-read-date">${esc(it.date || '')} · ${esc(tagLabel)}</span>
+                    <button type="button" class="diary-read-close" onclick="closeVinylRead()" aria-label="Закрыть">✕</button>
                 </div>
                 <p class="diary-read-text">${esc(String(it.text || '').trim())}</p>`;
         }
-        renderDiaryArchive();
-        // Кассета — включаем в магнитофон VTR-90.
-        if (it.kind === 'cassette') {
-            const api = window.SOMA_ROOM;
-            if (api && typeof api.playCassette === 'function') {
-                try { api.playCassette(id, { openDeck: false }); } catch (_) {}
-            }
-        }
+        renderVinylArchive();
     }
 
-    function closeDiaryRead() {
-        diaryArchive.readingId = '';
-        const read = document.getElementById('diary-read');
+    function closeVinylRead() {
+        vinylArchive.readingId = '';
+        const read = document.getElementById('vinyl-read');
         if (read) { read.classList.add('hidden'); read.innerHTML = ''; }
-        renderDiaryArchive();
+        renderVinylArchive();
     }
 
-    function toggleDiaryRow(el) {
-        const id = el.dataset.diaryId || '';
-        if (id) openDiaryRecord(id);
+    function toggleVinylRow(el) {
+        const id = el.dataset.vinylId || '';
+        if (id) openVinylRecord(id);
     }
 
-    async function toggleDiaryFav(id) {
+    async function toggleVinylFav(id) {
         const api = window.SOMA_ROOM;
-        if (!api || typeof api.toggleCassetteFav !== 'function') return;
-        await api.toggleCassetteFav(id);
-        diaryArchive.items = diaryArchive.items.map(it => it.id === id ? { ...it, fav: !it.fav } : it);
-        renderDiaryArchive();
+        if (!api || typeof api.toggleEntryFav !== 'function') return;
+        const fav = api.toggleEntryFav(id);
+        vinylArchive.items = vinylArchive.items.map(it => it.id === id ? { ...it, fav: !!fav } : it);
+        renderVinylArchive();
     }
 
     // ===== ПАСХАЛКА: ПЕРЕХВАЧЕННЫЙ СИГНАЛ (7 нажатий на красный пульс) =====
@@ -2320,7 +2318,7 @@
             if (journalApi && typeof journalApi.saveJournalEntry === 'function') {
                 const d = new Date();
                 const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-                journalApi.saveJournalEntry('e_' + insertRow.id, text, today);
+                journalApi.saveJournalEntry('e_' + insertRow.id, text, today, insertRow.tag);
             }
         } catch (_) {}
         activeFeedTag = 'ВСЕ';

@@ -234,6 +234,10 @@ const ROOM_LINES = {
         'Карман старой деки мягко открылся, показал кассету без подписи и плавно втянул её обратно.',
         'Механика магнитофона тихо вздохнула: кассета выехала на мгновение и вернулась на место.'
     ],
+    vinyl: [
+        'Проигрыватель мягко опустил рычаг: пластинка закружилась, подхватив ваши старые сигналы.',
+        'Винил тихо завертелся под иголкой — запись из архива готова к прослушиванию.'
+    ],
     nightlight: [
         'Решётчатый ночник у терминала плавно разгорелся изнутри, согревая край стола.',
         'Тёплый алый свет мягко наполнил стекло ночника и медленно успокоился.'
@@ -4070,9 +4074,12 @@ async function hydrateJournalFromCloud() {
 }
 
 // Save the player's own diary/journal entry (a signal they published).
-async function saveJournalEntry(id, text, dateLabel) {
+async function saveJournalEntry(id, text, dateLabel, tag) {
     const clean = String(text || '').trim().slice(0, 420);
     if (!clean) return null;
+    // Сохраняем тэг локально (для архива сигналов по тэгу) — не зависит от
+    // применения SQL в Supabase.
+    try { saveEntryTag(id, tag); } catch (_) {}
     if (typeof supabaseClient === 'undefined' || !supabaseClient) return { id, offline: true };
     try {
         const { error } = await supabaseClient.rpc('save_soma_journal_entry', {
@@ -4082,6 +4089,54 @@ async function saveJournalEntry(id, text, dateLabel) {
     } catch (e) {
         return { ok: false, id, offline: false, error: e };
     }
+}
+
+// Локальный каталог тэгов собственных записей: { entryId: packedTag }.
+const ENTRY_TAGS_KEY = 'soma_entry_tags';
+function saveEntryTag(entryId, tag) {
+    if (!entryId) return;
+    try {
+        const map = JSON.parse(lsGet(ENTRY_TAGS_KEY) || '{}');
+        if (tag) map[String(entryId)] = String(tag);
+        else delete map[String(entryId)];
+        lsSet(ENTRY_TAGS_KEY, JSON.stringify(map));
+    } catch (_) {}
+}
+function getEntryTag(entryId) {
+    try {
+        const map = JSON.parse(lsGet(ENTRY_TAGS_KEY) || '{}');
+        return map[String(entryId)] || '';
+    } catch (_) { return ''; }
+}
+
+// Избранное для собственных записей: локально + в облаке (journal.fav).
+const ENTRY_FAVS_KEY = 'soma_entry_favs';
+function isEntryFav(entryId) {
+    try {
+        const arr = JSON.parse(lsGet(ENTRY_FAVS_KEY) || '[]');
+        return Array.isArray(arr) && arr.map(String).includes(String(entryId));
+    } catch (_) { return false; }
+}
+function toggleEntryFav(entryId) {
+    const id = String(entryId || '');
+    if (!id) return false;
+    // Кассета — существующая механика.
+    const list = loadCassettes();
+    if (list.some(c => c.id === id)) return toggleCassetteFav(id);
+    // Запись (entry): локально + cloud.
+    let fav = false;
+    try {
+        const arr = JSON.parse(lsGet(ENTRY_FAVS_KEY) || '[]');
+        const set = new Set(arr.map(String));
+        fav = !set.has(id);
+        if (fav) set.add(id); else set.delete(id);
+        lsSet(ENTRY_FAVS_KEY, JSON.stringify([...set]));
+    } catch (_) {}
+    if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+        supabaseClient.rpc('set_soma_journal_fav', { p_id: id, p_fav: fav })
+            .catch(_ => {});
+    }
+    return fav;
 }
 
 // Combined diary archive: the player's own entries (kind='entry') and saved
@@ -9287,6 +9342,11 @@ function playObjectTone(obj) {
         if (typeof noise === 'function') { noise(0.04, 0.02, 0.02, 1500); noise(0.035, 0.016, 2.32, 1350); }
         tone(210, 0.24, 'sine', 0.015, 0.15, 260);
         tone(250, 0.24, 'sine', 0.014, 1.55, 195);
+    } else if (obj === 'vinyl') {
+        // Тёплый щелчок проигрателя винила + плавное кручение пластинки.
+        if (typeof noise === 'function') noise(0.03, 0.018, 0.02, 1200);
+        tone(176, 0.2, 'sine', 0.015, 0.1, 220);
+        tone(262, 0.26, 'sine', 0.013, 0.16, 330);
     } else if (obj === 'nightlight' || obj === 'nightlightR') {
         tone(294, 0.65, 'sine', 0.02, 0, 330);
         tone(440, 0.75, 'sine', 0.013, 0.12);
@@ -9459,14 +9519,26 @@ function touchRoomObject(obj, event) {
             modeLabel = 'NEEOSOMA // VTR-90 · ДНЕВНИК · АРХИВ';
             line = nextRoomLine('shelf', ROOM_LINES.shelf);
         }
-        // Открываем архив дневника (свои сигналы + кассеты) с поиском —
-        // аутентичное окно прямо поверх сцены (без выхода из Fullscreen!).
+        // Открываем кассетный архив VTR-90 (видеомагнитофон): кассета
+        // вставляется в деку и на ЭЛТ-экране появляются записанные тёплые слова.
         roomAnim.customMode = modeLabel;
         roomAnim.customEntry = line;
         renderRoom();
-        if (typeof window !== 'undefined' && typeof window.openDiaryArchive === 'function') {
-            window.openDiaryArchive();
-            return;
+        if (typeof window !== 'undefined' && typeof window.SOMA_VHS === 'object' && window.SOMA_VHS && typeof window.SOMA_VHS.open === 'function') {
+            window.SOMA_VHS.open(roomAnim.activeCassetteId || (tapes.length ? tapes[0].id : ''));
+        }
+    } else if (obj === 'vinyl') {
+        // Проигрыватель винила: открываем виниловый архив собственных сигналов
+        // (отдельное окно с пластинками, поиск по дате/тексту/теме).
+        if ((now - roomAnim.deckStart) > 2850) {
+            roomAnim.deckStart = now;
+            playObjectTone('vinyl');
+        }
+        roomAnim.customMode = 'NEEOSOMA // ВИНИЛ · АРХИВ СИГНАЛОВ';
+        roomAnim.customEntry = nextRoomLine('vinyl', ROOM_LINES.vinyl);
+        renderRoom();
+        if (typeof window !== 'undefined' && typeof window.openVinylArchive === 'function') {
+            window.openVinylArchive();
         }
     } else if (obj === 'nightlight') {
         roomAnim.contextPanel = '';
@@ -11404,7 +11476,7 @@ const pagerApi = {
     acceptIncomingWhisper, dismissIncomingWhisper, sendWhisperToPost,
     syncPagerWhispers, openPagerModal, closePagerModal, renderPagerModal,
     hydrateJournalFromCloud, saveJournalEntry, deleteCassette, loadDiaryArchive,
-    playCassette, toggleCassetteFav
+    playCassette, toggleCassetteFav, getEntryTag, isEntryFav, toggleEntryFav
 };
 if (typeof window !== 'undefined') window.SOMA_ROOM = Object.assign(window.SOMA_ROOM || {}, pagerApi);
 if (typeof module !== 'undefined' && module.exports) Object.assign(module.exports, pagerApi);

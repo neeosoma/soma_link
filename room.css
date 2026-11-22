@@ -3920,17 +3920,23 @@ html.is-soma-fs-closing .app-h {
     padding: 10px 12px 12px; gap: 10px;
 }
 
-/* При открытой клавиатуре: блок пластинок (шкаф) фиксируется — не сжимается,
-   проигрыватель и панель чтения убираются, чтобы освободить место под клавиатуру. */
-.vinyl-modal.is-kb-open .vh-stage { gap: 8px; padding-bottom: 10px; }
-.vinyl-modal.is-kb-open .vh-cabinet {
-    flex: 0 0 auto;
-    height: 46vh;
-    min-height: 180px;
-    max-height: 62vh;
+/* При открытой клавиатуре: всё стоит неподвижно — ни сжатия полки, ни скрытия или
+   подъёма проигрывателя. Никаких видимых изменений: только сцена становится
+   скроллящейся для навигации по содержимому. */
+.vinyl-modal.is-kb-open .vh-stage {
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,77,109,.4) transparent;
 }
-.vinyl-modal.is-kb-open .vh-turntable,
-.vinyl-modal.is-kb-open .vh-read { display: none; }
+.vinyl-modal.is-kb-open .vh-stage::-webkit-scrollbar { width: 6px; }
+.vinyl-modal.is-kb-open .vh-stage::-webkit-scrollbar-thumb {
+    background: rgba(255,77,109,.4); border-radius: 3px;
+}
+.vinyl-modal.is-kb-open .vh-cabinet { flex: 0 0 auto; }
+.vinyl-modal.is-kb-open .vh-read,
+.vinyl-modal.is-kb-open .vh-turntable { flex: 0 0 auto; }
 
 /* ===== КАБИНЕТ-СТЕНА: плотные ряды обложек, доминирует верх ===== */
 .vh-cabinet {
@@ -4086,100 +4092,170 @@ html.is-soma-fs-closing .app-h {
     box-shadow: 8px 8px 0 rgba(0,0,0,.55), 0 0 22px -2px var(--vh-accent);
 }
 
-/* ===== ПРОИГРЫВАТЕЛЬ — большой светящийся центрпикс (низ) ===== */
+/* ===== ПРОИГРЫВАТЕЛЬ — детализированный аутентичный пиксель-арт (старые pixel-art игры) ===== */
 .vh-turntable {
     flex: none; position: relative;
     display: flex; flex-direction: column; align-items: center;
-    padding: 4px 0 2px;
+    padding: 8px 0 4px;
 }
-/* Теплый ореол света под проигрывателем (янтарь + crimson, как на фото) */
+/* Пиксельный ореол света — hard-edge блик с лёгким свечением для «вау-эффекта» */
 .vh-tt-halo {
-    position: absolute; left: 50%; top: 24%; transform: translateX(-50%);
-    width: 380px; height: 200px; z-index: 0; pointer-events: none;
-    background: radial-gradient(ellipse at 50% 74%, rgba(255,150,70,.32), rgba(255,77,109,.18) 44%, transparent 72%);
-    filter: blur(9px);
-    animation: vh-beam-drift 6s ease-in-out infinite;
-}
-.vh-turntable.is-playing .vh-tt-halo {
-    background: radial-gradient(ellipse at 50% 74%, rgba(255,160,80,.42), rgba(255,90,120,.24) 44%, transparent 72%);
-}
-/* Корпус проигрывателя: тёмно-crimson с янтарным контуром */
-.vh-tt-base {
-    position: relative; width: 330px; height: 58px;
-    border-radius: 13px; z-index: 2; margin-top: 8px;
-    background: linear-gradient(180deg, #4a1a2e 0%, #2c0e1c 60%, #1a0612 100%);
-    border: 2.5px solid #8a5a44;
-    box-shadow: 5px 5px 0 rgba(0,0,0,.65), inset 0 0 0 2px rgba(255,200,160,.09), 0 0 36px -6px rgba(255,140,70,.4);
-}
-.vh-tt-base::before {
-    content: ''; position: absolute; inset: 6px 10px; border-radius: 7px;
+    position: absolute; left: 50%; top: 32%; transform: translateX(-50%);
+    width: 374px; height: 244px; z-index: 0; pointer-events: none;
     background:
-        repeating-linear-gradient(90deg, rgba(0,0,0,.16) 0 2px, transparent 2px 8px),
-        linear-gradient(180deg, #3a1422, #200814);
-    border: 1.5px solid rgba(255,200,160,.14);
+        radial-gradient(ellipse at 50% 76%, rgba(255,150,70,.28) 0 30%, rgba(255,77,109,.14) 31% 52%, transparent 74%),
+        radial-gradient(ellipse at 50% 84%, rgba(255,184,77,.16) 0 16%, transparent 58%);
+    animation: vh-halo-breathe 5s ease-in-out infinite;
 }
+@keyframes vh-halo-breathe { 0%,100% { opacity: .82; } 50% { opacity: 1; } }
+.vh-turntable.is-playing .vh-tt-halo {
+    background:
+        radial-gradient(ellipse at 50% 76%, rgba(255,170,88,.44) 0 32%, rgba(255,90,120,.22) 33% 54%, transparent 76%),
+        radial-gradient(ellipse at 50% 84%, rgba(255,184,77,.24) 0 18%, transparent 60%);
+}
+/* ===== КОРПУС: многослойный пиксельный футляр ===== */
+.vh-tt-base {
+    position: relative; width: 342px; height: 82px;
+    margin-top: 4px; z-index: 2;
+    background:
+        repeating-linear-gradient(90deg, rgba(0,0,0,.14) 0 3px, transparent 3px 14px),
+        #260a18;
+    border: 3px solid #5c2440;
+    border-radius: 6px;
+    box-shadow: 6px 6px 0 rgba(0,0,0,.7), inset 0 0 0 2px rgba(255,200,160,.08);
+}
+/* Верхняя плоскость корпуса (люк под плели) — пиксельный выступ */
+.vh-tt-base::before {
+    content: ''; position: absolute; left: 12px; right: 12px; top: -16px; height: 18px;
+    border-radius: 3px;
+    background: linear-gradient(180deg, #421530 0 40%, #240a16 41% 100%);
+    border: 2.5px solid #5c2440;
+    box-shadow: 3px 3px 0 rgba(0,0,0,.62);
+}
+/* Панель управления: тёмная панель с пиксельной решёткой */
 .vh-tt-base::after {
-    content: ''; position: absolute; left: 28px; right: 28px; top: -9px; height: 14px;
-    border-radius: 4px;
-    background: linear-gradient(180deg, #5c5c64, #24242a);
-    border: 1.5px solid rgba(255,255,255,.12);
-    box-shadow: 3px 3px 0 rgba(0,0,0,.55);
+    content: ''; position: absolute; left: 12px; right: 12px; top: 34px; bottom: 9px;
+    border-radius: 3px;
+    background:
+        repeating-linear-gradient(90deg, rgba(0,0,0,.24) 0 2px, transparent 2px 9px),
+        linear-gradient(180deg, #1a0610, #120309);
+    border: 2px solid rgba(255,200,160,.13);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.65), inset 0 3px 9px rgba(0,0,0,.6), inset 0 -2px 6px rgba(0,0,0,.5);
 }
+/* Бренд + индикатор на панели (слева) */
 .vh-tt-brand {
-    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 2;
+    position: absolute; left: 16px; top: 44px; z-index: 3;
     font-family: 'Share Tech Mono', ui-monospace, monospace;
-    font-size: 9px; letter-spacing: .22em; color: #f5c98a;
-    text-shadow: 0 0 8px rgba(255,170,90,.5);
+    font-size: 8.5px; letter-spacing: .22em; color: #f5c98a;
+    text-shadow: 2px 2px 0 rgba(0,0,0,.8), 0 0 8px rgba(255,170,90,.45);
     white-space: nowrap;
 }
 .vh-tt-led {
-    position: absolute; right: 16px; top: 50%; transform: translateY(-50%); z-index: 2;
+    position: absolute; left: 16px; top: 62px; z-index: 3;
     width: 9px; height: 9px;
     background: #ff7a3d;
-    box-shadow: 1px 1px 0 rgba(0,0,0,.55), 0 0 14px 3px rgba(255,122,61,.7);
-    animation: vh-led-pulse 2.4s ease-in-out infinite;
+    box-shadow: 1px 1px 0 rgba(0,0,0,.6), 0 0 12px 2px rgba(255,122,61,.7);
+    animation: vh-led-pulse 2.4s steps(2) infinite;
 }
-.vh-turntable.is-playing .vh-tt-led { background: #ffb84d; box-shadow: 1px 1px 0 rgba(0,0,0,.55), 0 0 16px 4px rgba(255,184,77,.85); }
-/* Плери: большая круглая поверхность для крутящейся пластинки */
+.vh-turntable.is-playing .vh-tt-led {
+    background: #ffd24d;
+    box-shadow: 1px 1px 0 rgba(0,0,0,.6), 0 0 14px 3px rgba(255,210,77,.9);
+}
+/* ===== ПАНЕЛЬ РЕГУЛИРОВКИ: ручки (knobs) + ползунки (sliders) ===== */
+.vh-tt-panel {
+    position: absolute; left: 12px; right: 12px; top: 34px; bottom: 9px; z-index: 2;
+    display: flex; align-items: center; justify-content: flex-end; gap: 12px;
+    padding-right: 10px;
+    pointer-events: none;
+}
+.vh-tt-knob {
+    position: relative; width: 24px; height: 24px; border-radius: 50%; flex: none;
+    background:
+        radial-gradient(circle at 35% 35%, rgba(255,255,255,.16) 0 18%, transparent 19%),
+        radial-gradient(circle at 35% 35%, #6e6e76 0 55%, #33333a 56% 84%, #19191d 85% 100%);
+    border: 2px solid #17171b;
+    box-shadow: 2px 2px 0 rgba(0,0,0,.6), inset 0 0 0 1px rgba(255,200,160,.1);
+}
+.vh-tt-knob i {
+    position: absolute; left: 50%; top: 50%; width: 2px; height: 9px;
+    margin: -4.5px 0 0 -1px;
+    background: #f0d29c;
+    box-shadow: 0 0 5px rgba(255,200,120,.55);
+    transform-origin: 1px 4.5px;
+}
+.vh-tt-knob--a i { transform: rotate(-38deg); }
+.vh-tt-knob--b i { transform: rotate(46deg); }
+.vh-tt-slider {
+    position: relative; width: 8px; height: 32px; flex: none; border-radius: 2px;
+    background: #0b0405;
+    border: 2px solid #17171b;
+    box-shadow: 2px 2px 0 rgba(0,0,0,.6), inset 0 0 0 1px rgba(255,200,160,.1);
+}
+.vh-tt-slider i {
+    position: absolute; left: -2px; width: 12px; height: 13px;
+    background: linear-gradient(180deg, #ffd24d 0 40%, #ff7a3d 41% 100%);
+    border: 2px solid #17171b;
+    box-shadow: 1px 1px 0 rgba(0,0,0,.6);
+}
+.vh-tt-slider--a i { top: 3px; }
+.vh-tt-slider--b i { top: 15px; }
+/* ===== УЗЕЛ КРЕПЛЕНИЯ ТОНАРМА — кронштейн на корпусе ===== */
+.vh-tt-arm-base {
+    position: absolute; right: 21px; top: -12px; z-index: 3;
+    width: 22px; height: 22px; border-radius: 50%;
+    background:
+        radial-gradient(circle at 35% 35%, rgba(255,255,255,.14) 0 20%, transparent 21%),
+        radial-gradient(circle at 35% 35%, #6a6a72 0 52%, #2a2a30 53% 82%, #15151a 83% 100%);
+    border: 2.5px solid #17171b;
+    box-shadow: 2px 2px 0 rgba(0,0,0,.62), inset 0 0 0 1px rgba(255,200,160,.14);
+}
+.vh-tt-arm-base::after {
+    content: ''; position: absolute; inset: 6px; border-radius: 50%;
+    background: #0c0c0f;
+    border: 1.5px solid rgba(255,200,160,.22);
+}
+/* ===== ПЛОЩАДКА (platter): пиксельное кольцо с фасками + ниша для пластинки ===== */
 .vh-tt-platter {
-    position: relative; width: 248px; height: 248px; margin-top: -30px; z-index: 2;
+    position: relative; width: 250px; height: 250px; margin-top: -50px; z-index: 2;
     border-radius: 50%;
-    background: radial-gradient(circle at 50% 42%, #3c3c44 0 52%, #16161a 56% 100%);
-    border: 2px solid rgba(255,200,160,.12);
-    box-shadow: 6px 6px 0 rgba(0,0,0,.6), 0 0 42px -4px rgba(255,140,70,.32), inset 0 0 34px rgba(0,0,0,.62);
+    background:
+        radial-gradient(circle at 50% 50%, #101014 0 61%, transparent 62%),
+        repeating-conic-gradient(from 0deg, #3c3c46 0deg 13deg, #24242b 13deg 26deg),
+        #2c2c33;
+    border: 2.5px solid #17171b;
+    box-shadow: 8px 8px 0 rgba(0,0,0,.68), 0 0 40px -6px rgba(255,140,70,.3), inset 0 0 0 2px rgba(255,200,160,.08), inset 0 0 28px rgba(0,0,0,.7);
     display: flex; align-items: center; justify-content: center;
-    transition: box-shadow .3s ease, transform .3s ease, border-color .3s ease;
+    transition: box-shadow .3s ease, transform .3s ease;
 }
 .vh-tt-glow {
     position: absolute; inset: 8%; border-radius: 50%; pointer-events: none; opacity: 0;
-    background: radial-gradient(circle, var(--vh-accent, #ff6b7d), transparent 66%);
+    background: radial-gradient(circle, var(--vh-accent, #ff6b7d) 0 42%, transparent 68%);
     transition: opacity .4s ease;
 }
 .vh-turntable.is-playing .vh-tt-glow {
-    opacity: .8;
+    opacity: .85;
     animation: vh-glow-pulse 3.2s ease-in-out infinite;
 }
-@keyframes vh-glow-pulse { 0%,100% { opacity: .55; } 50% { opacity: .92; } }
+@keyframes vh-glow-pulse { 0%,100% { opacity: .55; } 50% { opacity: .95; } }
 .vh-tt-platter.is-drop {
-    border-color: var(--vh-accent, #ff6b7d);
-    box-shadow: 6px 6px 0 rgba(0,0,0,.6), 0 0 34px 3px var(--vh-accent, #ff6b7d), inset 0 0 34px rgba(0,0,0,.62);
     transform: scale(1.04);
+    box-shadow: 8px 8px 0 rgba(0,0,0,.68), 0 0 34px 4px var(--vh-accent, #ff6b7d), inset 0 0 0 2px var(--vh-accent, #ff6b7d), inset 0 0 28px rgba(0,0,0,.7);
 }
-.vh-tt-platter.is-drop .vh-tt-glow { opacity: .65; }
-/* Пластинка: чёрный винил с рифлями, цветная наклейка, отверстие спинделя */
+.vh-tt-platter.is-drop .vh-tt-glow { opacity: .7; }
+/* ===== ПЛАСТИНКА: чёрный винил, рифли, цветная наклейка, отверстие спинделя ===== */
 .vh-record {
-    position: relative; width: 184px; height: 184px; border-radius: 50%;
+    position: relative; width: 186px; height: 186px; border-radius: 50%;
     transform-origin: 50% 50%;
     opacity: 0; visibility: hidden;
     background:
-        conic-gradient(from 0deg, transparent 0deg, rgba(255,255,255,.11) 30deg, transparent 72deg, transparent 180deg, rgba(255,224,200,.09) 212deg, transparent 264deg),
+        conic-gradient(from 0deg, transparent 0deg, rgba(255,255,255,.10) 30deg, transparent 72deg, transparent 180deg, rgba(255,224,200,.08) 212deg, transparent 264deg),
         repeating-radial-gradient(circle at 50% 50%, #1d1d21 0 1px, #0c0c0f 1px 3.4px),
         #141417;
-    border: 1.5px solid rgba(255,255,255,.08);
-    box-shadow: inset 0 0 24px rgba(0,0,0,.7), 0 2px 8px rgba(0,0,0,.5);
+    border: 2px solid rgba(255,255,255,.07);
+    box-shadow: inset 0 0 26px rgba(0,0,0,.75), 0 3px 8px rgba(0,0,0,.55);
     z-index: 2;
 }
-/* Плавное непрерывное крущение + плавный запуск (спин-ап): 0.55s — падение/масштаб, затем вращение из 0 без скачка */
+/* Плавное непрерывное крущение + спин-ап: падение/масштаб, затем вращение из 0 без скачка */
 .vh-record.is-spinning {
     opacity: 1; visibility: visible;
     animation: vh-record-spin 6s linear infinite .55s, vh-record-in .55s ease-out;
@@ -4190,61 +4266,76 @@ html.is-soma-fs-closing .app-h {
     position: absolute; inset: 7%; border-radius: 50%;
     background: repeating-radial-gradient(circle at 50% 50%, rgba(255,255,255,.06) 0 1px, transparent 1px 3.4px);
 }
-/* Лёгкое мерцание рифлей при крущении — бегущий highlight */
+/* Мерцание рифлей при крущении — бегущий пиксельный highlight */
 .vh-record.is-spinning .vh-record-grooves {
-    background: repeating-radial-gradient(circle at 50% 50%, rgba(255,255,255,.05) 0 1px, transparent 1px 3.4px),
+    background:
+        repeating-radial-gradient(circle at 50% 50%, rgba(255,255,255,.05) 0 1px, transparent 1px 3.4px),
         conic-gradient(from 0deg, transparent 0deg, rgba(255,255,255,.10) 60deg, transparent 140deg, transparent 220deg, rgba(255,255,255,.08) 300deg, transparent 360deg);
     animation: vh-groove-shimmer 4s linear infinite;
 }
 @keyframes vh-groove-shimmer { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 .vh-record-label {
     position: absolute; inset: 33%; border-radius: 50%;
-    background: radial-gradient(circle at 40% 35%, var(--vh-accent, #ff6b7d), #2a0a12 92%);
-    border: 1.5px solid rgba(255,234,206,.45);
-    box-shadow: 1px 1px 0 rgba(0,0,0,.45), inset 0 0 10px rgba(0,0,0,.4);
+    background: radial-gradient(circle at 40% 35%, var(--vh-accent, #ff6b7d) 0 55%, #2a0a12 92%);
+    border: 2px solid rgba(255,234,206,.5);
+    box-shadow: 2px 2px 0 rgba(0,0,0,.5), inset 0 0 10px rgba(0,0,0,.45);
+    overflow: hidden;
+}
+.vh-record-label::after {
+    content: ''; position: absolute; inset: 16%; border-radius: 50%;
+    border: 1px solid rgba(0,0,0,.25);
 }
 .vh-tt-spindle {
-    position: absolute; top: 50%; left: 50%; width: 10px; height: 10px;
-    margin: -5px 0 0 -5px; border-radius: 50%; z-index: 3;
-    background: #f0d29c;
-    box-shadow: 1px 1px 0 rgba(0,0,0,.6), 0 0 8px rgba(255,200,120,.5);
+    position: absolute; top: 50%; left: 50%; width: 12px; height: 12px;
+    margin: -6px 0 0 -6px; border-radius: 50%; z-index: 3;
+    background: radial-gradient(circle at 35% 35%, #fff4d6, #d8a85e 70%, #8a6433);
+    border: 1.5px solid rgba(0,0,0,.55);
+    box-shadow: 0 0 8px rgba(255,200,120,.5);
 }
-/* Тонарм: янтарное лезвие, выезжает на пластинку при воспроизведении */
+/* ===== ТОНАРМ С ИГОЛКОЙ — крепление на корпусе (привязан к центру корпуса), читает винил ===== */
 .vh-tt-arm {
-    position: absolute; top: 4px; right: 46px; width: 11px; height: 120px;
-    border-radius: 5px; transform-origin: 5.5px 5.5px; transform: rotate(-34deg);
-    background: linear-gradient(180deg, #5a5a62, #1c1c20);
-    border: 1.5px solid rgba(255,200,160,.14);
-    box-shadow: 3px 3px 0 rgba(0,0,0,.55);
-    pointer-events: none; z-index: 4;
-    transition: transform .6s ease;
+    position: absolute; right: calc(50% - 145px); top: 2px; z-index: 4;
+    width: 13px; height: 128px; pointer-events: none;
+    transform-origin: 6.5px 6.5px;
+    transform: rotate(15deg);
+    background: linear-gradient(180deg, #7a7a82 0 10%, #3a3a42 10% 86%, #8e8e96 86% 100%);
+    border: 2px solid #17171b;
+    border-radius: 2px;
+    box-shadow: 3px 3px 0 rgba(0,0,0,.62);
+    transition: transform .55s ease;
 }
-.vh-turntable.is-playing .vh-tt-arm { transform: rotate(14deg); }
+/* Оправа у основания (у узла крепления на корпусе) */
 .vh-tt-arm::before {
-    content: ''; position: absolute; top: -8px; left: -4.5px; width: 18px; height: 18px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 35% 35%, #6a6a72, #16161a);
-    border: 1.5px solid rgba(255,200,160,.16);
+    content: ''; position: absolute; top: -5px; left: -6px; width: 25px; height: 16px;
+    border-radius: 3px;
+    background: linear-gradient(180deg, #5a5a62, #24242a);
+    border: 2px solid #17171b;
+    box-shadow: 2px 2px 0 rgba(0,0,0,.55);
 }
+/* Иголка-стилус внизу тонарма */
 .vh-tt-arm::after {
-    content: ''; position: absolute; top: 9px; left: 5px; width: 2px; height: 70px;
-    background: linear-gradient(180deg, #f0d29c, #b98a55 78%, #ff6b7d);
-    box-shadow: 0 0 6px rgba(255,200,120,.4);
+    content: ''; position: absolute; left: 5.5px; bottom: -11px; width: 2.5px; height: 28px;
+    background: linear-gradient(180deg, #f0d29c, #ff6b7d);
+    box-shadow: 0 0 6px rgba(255,200,120,.45);
 }
+/* При воспроизведении тонарм плавно выезжает на пластинку (вниз-влево) */
+.vh-turntable.is-playing .vh-tt-arm { transform: rotate(-32deg); }
+/* ===== VU-метры: пиксельные сегментные индикаторы ===== */
 .vh-tt-meters {
-    position: absolute; left: 50%; bottom: 4px; transform: translateX(-50%); z-index: 3;
-    display: flex; gap: 18px;
+    position: absolute; left: 50%; bottom: 3px; transform: translateX(-50%); z-index: 3;
+    display: flex; gap: 16px;
 }
 .vh-meter {
-    width: 11px; height: 30px; overflow: hidden;
-    background: #0a0405;
-    border: 1.5px solid rgba(255,200,160,.16);
-    box-shadow: 2px 2px 0 rgba(0,0,0,.55), inset 0 0 6px rgba(0,0,0,.6);
+    width: 12px; height: 34px; overflow: hidden;
+    background: #080304;
+    border: 2px solid #17171b;
+    box-shadow: 2px 2px 0 rgba(0,0,0,.58), inset 0 0 0 1px rgba(255,200,160,.1);
+    display: flex; align-items: flex-end;
 }
 .vh-meter-fill {
-    display: block; width: 100%; height: 18%;
-    background: linear-gradient(180deg, #ffd24d, #ff7a3d 60%, #ff4d6d);
-    box-shadow: 0 0 12px rgba(255,150,80,.7);
+    display: block; width: 100%; height: 16%;
+    background: repeating-linear-gradient(0deg, #ffd24d 0 3px, #ff7a3d 3px 6px, #ff4d6d 6px 9px);
+    box-shadow: 0 0 10px rgba(255,150,80,.6);
     transition: height .15s;
 }
 .vh-turntable.is-playing .vh-meter-fill {
@@ -4312,11 +4403,20 @@ html.is-soma-fs-closing .app-h {
     .vh-stats { order: 3; width: 100%; justify-content: flex-start; }
     .vh-chips { gap: 4px; }
     .vh-chip { padding: 6px 8px; font-size: 8.5px; }
-    .vh-tt-halo { width: 320px; height: 170px; }
-    .vh-tt-base { width: 280px; }
-    .vh-tt-platter { width: 208px; height: 208px; margin-top: -26px; }
-    .vh-record { width: 154px; height: 154px; }
-    .vh-tt-arm { right: 40px; height: 100px; }
+    .vh-tt-halo { width: 316px; height: 208px; }
+    .vh-tt-base { width: 300px; height: 72px; }
+    .vh-tt-base::before { top: -14px; height: 16px; }
+    .vh-tt-base::after { top: 30px; bottom: 8px; }
+    .vh-tt-brand { left: 14px; top: 40px; font-size: 8px; }
+    .vh-tt-led { left: 14px; top: 58px; }
+    .vh-tt-panel { top: 30px; bottom: 8px; }
+    .vh-tt-knob { width: 22px; height: 22px; }
+    .vh-tt-slider { height: 28px; }
+    .vh-tt-arm-base { right: 18px; top: -10px; width: 20px; height: 20px; }
+    .vh-tt-platter { width: 214px; height: 214px; margin-top: -42px; }
+    .vh-record { width: 158px; height: 158px; }
+    .vh-tt-arm { right: calc(50% - 129px); top: 4px; height: 108px; }
     .vh-tt-meters { gap: 14px; }
+    .vh-meter { height: 30px; }
 }
 

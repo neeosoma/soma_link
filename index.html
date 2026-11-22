@@ -1451,31 +1451,73 @@
         return '#ff4d6d';
     }
 
-    // Фикс: блок пластинок (шкаф) не сжимается при открытии клавиатуры.
-    // Следим за visualViewport (и focus/blur поля поиска) и ставим класс is-kb-open.
+    // Фикс: при открытии клавиатуры проигрыватель не сдвигается вверх,
+    // блок сигналов (шкаф) не сжимается и не закрывается.
+    // Сначала замораживаем текущую высоту шкафа (проигрыватель не сдвинется ни на пиксель),
+    // детекция клавиатуры — по уменьшению visualViewport против базовой высоты (без клавиатуры).
+    function _vinylKbFreeze(modal) {
+        const cabinet = modal.querySelector('.vh-cabinet');
+        if (cabinet && !cabinet.__vinylKbH) {
+            cabinet.__vinylKbH = cabinet.offsetHeight;
+            cabinet.style.height = cabinet.__vinylKbH + 'px';
+            cabinet.style.flex = '0 0 auto';
+        }
+    }
+    function _vinylKbUnfreeze(modal) {
+        const cabinet = modal.querySelector('.vh-cabinet');
+        if (cabinet && cabinet.__vinylKbH) {
+            cabinet.style.height = '';
+            cabinet.style.flex = '';
+            cabinet.__vinylKbH = null;
+        }
+    }
     function _vinylKbUpdate(modal) {
         const vv = window.visualViewport;
-        const kbOpen = vv ? (window.innerHeight - vv.height) > 80 : false;
+        const vh = vv ? vv.height : window.innerHeight;
+        if (modal.__vinylKbBase == null) modal.__vinylKbBase = vh;
+        // клавиатура открыта, если visualViewport уменьшился против базовой
+        // и инпут был в фокусе (armed)
+        const kbOpen = !!modal.__vinylKbArmed && (modal.__vinylKbBase - vh) > 80;
+        if (!kbOpen && vh > modal.__vinylKbBase) modal.__vinylKbBase = vh;
+        const wasOpen = modal.classList.contains('is-kb-open');
         modal.classList.toggle('is-kb-open', !!kbOpen);
+        if (kbOpen) _vinylKbFreeze(modal);
+        if (!kbOpen && wasOpen) _vinylKbUnfreeze(modal);
     }
     function _vinylKbBind(modal) {
         if (modal.__vinylKbBound) return;
         modal.__vinylKbBound = true;
-        const onKb = () => _vinylKbUpdate(modal);
+        const onVv = () => _vinylKbUpdate(modal);
+        const onInputFocus = () => {
+            modal.__vinylKbArmed = true;
+            _vinylKbFreeze(modal);   // заморозка сразу по фокусу — клавиатура не сдвинет контент
+            _vinylKbUpdate(modal);
+        };
+        const onInputBlur = () => {
+            _vinylKbUpdate(modal);   // размораживаем, когда visualViewport вернулся к базовой
+        };
         if (window.visualViewport) {
-            window.visualViewport.addEventListener('resize', onKb);
-            window.visualViewport.addEventListener('scroll', onKb);
+            window.visualViewport.addEventListener('resize', onVv);
+            window.visualViewport.addEventListener('scroll', onVv);
         }
-        window.addEventListener('resize', onKb);
+        window.addEventListener('resize', onVv);
         const input = document.getElementById('vinyl-search-input');
-        if (input) { input.addEventListener('focus', onKb); input.addEventListener('blur', onKb); }
+        if (input) {
+            input.addEventListener('focus', onInputFocus);
+            input.addEventListener('blur', onInputBlur);
+        }
         modal.__vinylKbOff = () => {
             if (window.visualViewport) {
-                window.visualViewport.removeEventListener('resize', onKb);
-                window.visualViewport.removeEventListener('scroll', onKb);
+                window.visualViewport.removeEventListener('resize', onVv);
+                window.visualViewport.removeEventListener('scroll', onVv);
             }
-            window.removeEventListener('resize', onKb);
-            if (input) { input.removeEventListener('focus', onKb); input.removeEventListener('blur', onKb); }
+            window.removeEventListener('resize', onVv);
+            if (input) {
+                input.removeEventListener('focus', onInputFocus);
+                input.removeEventListener('blur', onInputBlur);
+            }
+            modal.__vinylKbArmed = false;
+            _vinylKbUnfreeze(modal);
         };
     }
 

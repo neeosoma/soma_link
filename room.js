@@ -3897,16 +3897,6 @@ function openGreenhouse(opts) {
     return false;
 }
 
-// Удобный вход в Оранжерею прямо из полноэкранного режима (и для игроков с открытым куполом, и в PTS-режиме!)
-function openGreenhouseFromFullscreen(ev) {
-    if (ev && ev.stopPropagation) ev.stopPropagation();
-    const unlocked = isGreenhouseUnlocked();
-    if (!unlocked && !isPtsMode()) return false;
-    const ok = openGreenhouse(unlocked ? {} : { ptsDemo: true });
-    if (typeof bumpFullscreenHud === 'function') bumpFullscreenHud();
-    return ok;
-}
-
 // Видеоархив VHS входящих анонимных «Шёпотов» (полная дата ДД.ММ.ГГГГ, постоянный номер кассеты, избранное)
 function formatCassetteDate(rawDate, fallbackTs) {
     const pickYear = () => {
@@ -4283,14 +4273,6 @@ function playCassette(id, opts) {
 
 function getActiveCassetteId() {
     return (roomAnim && roomAnim.activeCassetteId) ? String(roomAnim.activeCassetteId) : '';
-}
-
-function openVhsArchive(cassetteId) {
-    if (typeof window !== 'undefined' && window.SOMA_VHS && typeof window.SOMA_VHS.open === 'function') {
-        window.SOMA_VHS.open(cassetteId || roomAnim.activeCassetteId || '');
-        return true;
-    }
-    return false;
 }
 
 function togglePtsDemoCassette() {
@@ -10439,10 +10421,6 @@ function pressPagerInfo() {
     try { Telegram.WebApp.HapticFeedback.impactOccurred('soft'); } catch (_) {}
     if (typeof SFX !== 'undefined' && SFX.tap) SFX.tap();
     openPagerModal('feed');
-}
-
-function openWhisper() {
-    openPagerModal();
 }
 
 

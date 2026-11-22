@@ -382,7 +382,7 @@
         return cv;
     }
 
-    function drawFooterBar(g, leftText, dateStr, accent) {
+    function drawFooterBar(g, leftText, dateStr, accent, rightText) {
         const y = CARD_H - 44;
         g.save();
         g.font = `700 12.5px ${MONO}`;
@@ -390,7 +390,7 @@
         g.textBaseline = 'middle';
         g.fillText(leftText, 54, y);
 
-        const right = `${dateStr}  ·  SOMA~LINK`;
+        const right = rightText || `${dateStr}  ·  SOMA~LINK`;
         const rw = g.measureText(right).width;
         g.fillStyle = accent || 'rgba(255, 214, 168, 0.82)';
         g.fillText(right, CARD_W - 54 - rw, y);
@@ -552,7 +552,7 @@
         g.fillText(roomTag, CARD_W - 37 - rtw, 64);
 
         drawSubtleScanlinesAndGrain(g, CARD_W, CARD_H, 0.65);
-        drawFooterBar(g, 'NEEOSOMA // NEEO~CITY', dateStr, fp.edge);
+        drawFooterBar(g, 'NEEOSOMA', dateStr, fp.edge, `${dateStr}  NEEO~CITY // SOMA~LINK`);
     }
 
     // =========================================================================

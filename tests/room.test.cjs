@@ -736,7 +736,7 @@ test('v8: body-portal FLIP fullscreen + 180 flip + rotated pointer mapping, Dawn
         && indexHtml.includes('vhs.js?v=15')
         && indexHtml.includes('greenhouse.js?v=15')
         && indexHtml.includes('blimp.js?v=15')
-        && indexHtml.includes('share.js?v=17')
+        && indexHtml.includes('share.js?v=18')
     );
 
     // 4. Flagship cosmetics + collectible 7" vinyl pressings: equalized peer pricing + 1:1 Edge Function parity

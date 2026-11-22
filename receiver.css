@@ -353,19 +353,24 @@
     }
 }
 
-/* Внутренний вращающийся диск — металлический, с радужной искрой */
+/* Внутренний вращающийся диск — зеркальный серебристый CD с ребристой кромкой */
 .rx-cd-spin {
     position: relative;
     width: 100%;
     height: 100%;
     border-radius: 50%;
     background:
-        conic-gradient(from 0deg, rgba(255, 255, 255, 0.0) 0deg, rgba(255, 255, 255, 0.28) 35deg, rgba(120, 200, 255, 0.18) 90deg, rgba(255, 120, 200, 0.22) 160deg, rgba(180, 255, 200, 0.18) 230deg, rgba(255, 255, 255, 0.0) 320deg),
-        radial-gradient(circle, #2a2a2e 0%, #151517 58%, #0a0a0c 100%);
+        /* едва заметные концентрические дорожки — статичная текстура дорожек CD */
+        repeating-radial-gradient(circle, rgba(255, 255, 255, 0.05) 0 1px, rgba(255, 255, 255, 0) 1px 3.5px),
+        /* зеркальный серебристый поверхность CD с источником света сверху-слева */
+        radial-gradient(circle at 32% 28%, #f2f5f8 0%, #d3d8dc 30%, #a6abb1 64%, #6a7077 100%);
     box-shadow:
         0 6px 16px rgba(0, 0, 0, 0.8),
         0 0 22px rgba(var(--rx-glow-rgb), 0.35),
-        inset 0 0 0 1.5px rgba(255, 255, 255, 0.14);
+        /* ребристая кромка и изгиб диска */
+        inset 0 2px 10px rgba(255, 255, 255, 0.4),
+        inset 0 -10px 22px rgba(0, 0, 0, 0.6),
+        inset 0 0 0 1.5px rgba(255, 255, 255, 0.22);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -376,17 +381,29 @@
 /* При извлечении вращение останавливается — диск «забирают» из привода */
 .rx-cd-tray.is-ejected .rx-cd-spin { animation-play-state: paused; }
 
-/* Радужная искрящаяся полоса, крутится вместе с диском */
+/* Радужный блик CD — дуга-фрагмент (не полный круг), крутится вместе с диском */
 .rx-cd-shine {
     position: absolute;
-    inset: 4%;
+    inset: 0;
     border-radius: 50%;
-    background: conic-gradient(from 20deg, transparent 0deg, rgba(255, 255, 255, 0.35) 30deg, transparent 70deg, rgba(140, 210, 255, 0.25) 130deg, transparent 200deg, rgba(255, 150, 210, 0.25) 260deg, transparent 320deg);
+    background: conic-gradient(from 205deg,
+        transparent 0deg,
+        rgba(255, 90, 130, 0.55) 16deg,
+        rgba(255, 180, 70, 0.6) 38deg,
+        rgba(130, 235, 130, 0.55) 60deg,
+        rgba(95, 185, 255, 0.6) 84deg,
+        rgba(185, 130, 255, 0.55) 104deg,
+        transparent 128deg,
+        transparent 360deg);
+    /* ограничиваем блик дугой шириной ~112° со мягким распадом — как у настоящего компакт-диска */
+    -webkit-mask: conic-gradient(from 205deg, #000 0deg 112deg, rgba(0, 0, 0, 0.55) 126deg, transparent 138deg 360deg);
+    mask: conic-gradient(from 205deg, #000 0deg 112deg, rgba(0, 0, 0, 0.55) 126deg, transparent 138deg 360deg);
     mix-blend-mode: screen;
+    filter: blur(0.4px);
     pointer-events: none;
 }
 
-/* Центр-яблочко (обложка/этикетка диска) */
+/* Центр-яблочко — печатная этикетка (обложка/этикетка диска), ложится в углубление */
 .rx-cd-label {
     position: relative;
     width: 40%;
@@ -396,19 +413,20 @@
     background-size: cover;
     background-position: center;
     border: 1.5px solid rgba(255, 234, 206, 0.5);
-    box-shadow: 0 0 8px rgba(0, 0, 0, 0.7);
+    /* печатная этикетка: мягкая тенёвая ложь по краю + излом света */
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5), 0 0 8px rgba(0, 0, 0, 0.7);
     z-index: 2;
 }
-/* Шпиндель в центре диска */
+/* Отверстие шпинделя в центре диска — как у настоящего CD */
 .rx-cd-label::after {
     content: '';
     position: absolute;
     top: 50%; left: 50%;
-    width: 5px; height: 5px;
-    margin: -2.5px 0 0 -2.5px;
+    width: 6px; height: 6px;
+    margin: -3px 0 0 -3px;
     border-radius: 50%;
-    background: radial-gradient(circle at 35% 35%, #fff2d2, #9e6c38);
-    box-shadow: 0 0 0 1.5px rgba(8, 3, 5, 0.85);
+    background: radial-gradient(circle at 38% 32%, #3a4046 0%, #06080b 72%);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.6);
 }
 
 @keyframes rx-cd-spin {
@@ -931,31 +949,50 @@
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 224, 204, 0.12);
 }
 
+/* Маленький CD в списке треков — зеркальный серебристый диск + цветная этикетка */
 .rx-row-disc {
     width: 28px;
     height: 28px;
     border-radius: 50%;
     flex-shrink: 0;
     position: relative;
-    background: radial-gradient(circle, #2a1118 0%, #0a0406 72%);
-    border: 1px solid rgba(255, 204, 190, 0.22);
+    background: radial-gradient(circle at 32% 28%, #e6eaee 0%, #a6abb1 62%, #646a70 100%);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    box-shadow: inset 0 1px 4px rgba(255, 255, 255, 0.4), inset 0 -3px 7px rgba(0, 0, 0, 0.55), 0 1px 3px rgba(0, 0, 0, 0.5);
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-.rx-row-disc[data-wax="ruby"]     { background: radial-gradient(circle, #7e102c 0%, #24030c 75%); border-color: rgba(255, 132, 160, 0.45); }
-.rx-row-disc[data-wax="gold"]     { background: radial-gradient(circle, #7a4c10 0%, #241303 75%); border-color: rgba(255, 218, 128, 0.55); }
-.rx-row-disc[data-wax="pearl"]    { background: radial-gradient(circle, #523d72 0%, #1b112c 75%); border-color: rgba(232, 214, 255, 0.5); }
-.rx-row-disc[data-wax="amethyst"] { background: radial-gradient(circle, #5e1a4a 0%, #1c0516 75%); border-color: rgba(255, 172, 218, 0.48); }
+/* Варианты wax отражаются только в тон кромки — диск остаётся серебристым */
+.rx-row-disc[data-wax="ruby"]     { border-color: rgba(255, 132, 160, 0.55); }
+.rx-row-disc[data-wax="gold"]     { border-color: rgba(255, 218, 128, 0.65); }
+.rx-row-disc[data-wax="pearl"]    { border-color: rgba(232, 214, 255, 0.6); }
+.rx-row-disc[data-wax="amethyst"] { border-color: rgba(255, 172, 218, 0.55); }
 
+/* Этикетка диска (центр-яблочко) */
 .rx-row-disc::after {
     content: '';
-    width: 10px;
-    height: 10px;
+    position: absolute;
+    width: 42%;
+    height: 42%;
     border-radius: 50%;
-    background: var(--disc-color, #ff6b7d);
-    box-shadow: 0 0 6px var(--disc-color, #ff6b7d);
+    background: radial-gradient(circle at 35% 30%, var(--disc-color, #ff6b7d), rgba(0, 0, 0, 0.55) 92%);
+    border: 1px solid rgba(255, 234, 206, 0.55);
+    box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.4);
+}
+/* Отверстие шпинделя */
+.rx-row-disc::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 2.5px;
+    height: 2.5px;
+    margin: -1.25px 0 0 -1.25px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 38% 32%, #3a4046, #06080b 72%);
+    box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.6);
+    z-index: 1;
 }
 
 .rx-row-main {
@@ -1209,14 +1246,29 @@
     border-color: rgba(255, 198, 146, 0.58);
 }
 
+/* Маленький CD во всплывающем окне — зеркальный серебристый диск с этикеткой */
 .rx-fs-pill-disc {
     width: 18px;
     height: 18px;
     border-radius: 50%;
     flex-shrink: 0;
-    background: radial-gradient(circle, #ffbe78 0 22%, #2a0c14 25% 100%);
-    border: 1px solid rgba(255, 206, 168, 0.45);
+    background: radial-gradient(circle at 32% 28%, #e6eaee 0%, #a6abb1 62%, #646a70 100%);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.45), inset 0 -2px 5px rgba(0, 0, 0, 0.55);
+    position: relative;
     animation: rx-cd-spin 4.8s linear infinite;
+}
+.rx-fs-pill-disc::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 46%;
+    height: 46%;
+    margin: -23% 0 0 -23%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #ffc082, #b86a2c 92%);
+    border: 1px solid rgba(255, 234, 206, 0.6);
+    box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.4);
 }
 
 .rx-fs-pill:not(.is-playing) .rx-fs-pill-disc {

@@ -3963,6 +3963,26 @@ function loadCassettes() {
     try { list = JSON.parse(lsGet('soma_cassettes') || '[]'); } catch (_) { list = []; }
     if (!Array.isArray(list)) return [];
     const valid = list.filter(c => c && typeof c.text === 'string' && c.text.trim()).slice(0, 120);
+    // Стабильная нумерация кассет: записанные номера (num >= 1) сохраняем как есть;
+    // у кассет без номера назначаем следующее свободное по порядку создания (ts).
+    // Номер навеки крепится к кассете — переназначать по позиции нельзя (это
+    // сдвигало номера при добавлении новых кассет). При assigned-номерах
+    // записываем их в кэш разово, чтобы они остались постоянными.
+    let nextNum = 1;
+    let assignedAny = false;
+    for (const c of [...valid].sort((a, b) => (Number(a.ts) || 0) - (Number(b.ts) || 0))) {
+        const storedNum = Number(c.num);
+        if (Number.isInteger(storedNum) && storedNum >= 1) {
+            nextNum = Math.max(nextNum, storedNum + 1);
+        } else {
+            c.num = nextNum++;
+            assignedAny = true;
+        }
+    }
+    // Постоянные номера: assigned разово — сохраняем в кэш (без рефреша UI).
+    if (assignedAny) {
+        try { lsSet('soma_cassettes', JSON.stringify(valid.slice(0, 120))); } catch (_) {}
+    }
     const total = valid.length;
     return valid.map((c, idx) => {
         const idStr = String(c.id || `cas_${idx}`);
@@ -3970,8 +3990,7 @@ function loadCassettes() {
         const rawTs = Number(c.ts) || (idTsMatch ? Number(idTsMatch[1]) : 0);
         const date = formatCassetteDate(c.date, rawTs);
         const ts = rawTs || parseCassetteDateTs(date, total - idx);
-        const storedNum = Number(c.num);
-        const num = (Number.isInteger(storedNum) && storedNum >= 1) ? storedNum : Math.max(1, total - idx);
+        const num = Number(c.num) >= 1 ? Number(c.num) : 1;
         return {
             id: idStr,
             num,
@@ -4243,10 +4262,15 @@ async function loadDiaryArchive() {
                     if (r.kind === 'entry') {
                         items.push({ ...norm, kind: 'entry' });
                     } else {
-                        // cassette: cloud is authoritative on text/date
+                        // cassette: облако авторитетно по тексту/дате, но номер
+                        // сохраняем постоянным — если в облаке его нет, берём
+                        // из локальной кассеты (не перенумеровывать по позиции).
                         const idx = items.findIndex(i => i.id === norm.id);
-                        if (idx >= 0) items[idx] = { ...norm, kind: 'cassette' };
-                        else items.push({ ...norm, kind: 'cassette' });
+                        if (idx >= 0) {
+                            items[idx] = { ...norm, kind: 'cassette', num: (Number.isInteger(norm.num) && norm.num >= 1) ? norm.num : items[idx].num };
+                        } else {
+                            items.push({ ...norm, kind: 'cassette' });
+                        }
                     }
                 });
             }

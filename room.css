@@ -3790,26 +3790,37 @@ html.is-soma-fs-closing .app-h {
 @keyframes vh-beam-drift { from { opacity: .7; } to { opacity: 1; } }
 .vh-dust {
     position: absolute; inset: 0; z-index: 2; pointer-events: none; overflow: hidden;
+    -webkit-mask-image: radial-gradient(120% 90% at 50% 45%, #000 50%, transparent 92%);
+    mask-image: radial-gradient(120% 90% at 50% 45%, #000 50%, transparent 92%);
 }
+/* Пылинки: мягкие светящиеся точки, плавно парящие вверх со свободным качанием —
+   атмосфера магического леса. Их немного, с глубиной (разные размеры/яркости/оттенки). */
 .vh-dust span {
-    position: absolute; width: 3px; height: 3px;
-    background: rgba(255,200,160,.6);
-    box-shadow: 2px 2px 0 rgba(255,170,120,.4);
-    animation: vh-dust-float 14s steps(10) infinite;
+    position: absolute; border-radius: 50%;
+    width: var(--dust-size, 3px); height: var(--dust-size, 3px);
+    background: radial-gradient(circle, var(--dust-core, rgba(255,232,196,.95)) 0 28%, var(--dust-glow, rgba(255,196,130,.4)) 50%, rgba(255,170,90,0) 72%);
+    box-shadow: 0 0 6px 1px var(--dust-halo, rgba(255,200,130,.5)), 0 0 16px 3px rgba(255,150,90,.18);
+    will-change: transform, opacity;
+    opacity: 0;
+    animation: vh-dust-drift var(--dust-dur, 20s) ease-in-out infinite;
+    animation-delay: var(--dust-delay, 0s);
 }
-.vh-dust span:nth-child(1) { left: 8%; top: 84%; animation-delay: 0s; }
-.vh-dust span:nth-child(2) { left: 22%; top: 62%; animation-delay: 2.6s; }
-.vh-dust span:nth-child(3) { left: 36%; top: 90%; animation-delay: 4.4s; }
-.vh-dust span:nth-child(4) { left: 50%; top: 74%; animation-delay: 1.4s; }
-.vh-dust span:nth-child(5) { left: 62%; top: 90%; animation-delay: 5.8s; }
-.vh-dust span:nth-child(6) { left: 74%; top: 60%; animation-delay: 3.1s; }
-.vh-dust span:nth-child(7) { left: 86%; top: 82%; animation-delay: 6.6s; }
-.vh-dust span:nth-child(8) { left: 94%; top: 54%; animation-delay: 8.2s; }
-@keyframes vh-dust-float {
-    0% { transform: translate(0, 0); opacity: 0; }
-    14% { opacity: .9; }
-    86% { opacity: .75; }
-    100% { transform: translate(-6px, -66vh); opacity: 0; }
+/* Разброс пылинок: позиция, размер, темп, качание, яркость, оттенок — каждая уникальна */
+.vh-dust span:nth-child(1) { left: 9%;  top: 86%; --dust-size: 3px; --dust-dur: 22s; --dust-delay: 0s;  --dust-sway: 9px;  --dust-peak: .7;  --dust-core: rgba(255,232,196,.95); --dust-glow: rgba(255,196,130,.4); --dust-halo: rgba(255,200,130,.5); }
+.vh-dust span:nth-child(2) { left: 23%; top: 68%; --dust-size: 2px; --dust-dur: 28s; --dust-delay: 3s;  --dust-sway: 13px; --dust-peak: .55; --dust-core: rgba(255,200,206,.95); --dust-glow: rgba(255,150,160,.4); --dust-halo: rgba(255,170,180,.5); }
+.vh-dust span:nth-child(3) { left: 37%; top: 92%; --dust-size: 5px; --dust-dur: 19s; --dust-delay: 5s;  --dust-sway: 11px; --dust-peak: .85; --dust-core: rgba(255,246,222,.95); --dust-glow: rgba(255,220,160,.4); --dust-halo: rgba(255,210,140,.5); }
+.vh-dust span:nth-child(4) { left: 51%; top: 76%; --dust-size: 2px; --dust-dur: 26s; --dust-delay: 1.5s; --dust-sway: 15px; --dust-peak: .5;  --dust-core: rgba(255,232,196,.95); --dust-glow: rgba(255,196,130,.4); --dust-halo: rgba(255,200,130,.5); }
+.vh-dust span:nth-child(5) { left: 65%; top: 90%; --dust-size: 4px; --dust-dur: 24s; --dust-delay: 6s;  --dust-sway: 8px;  --dust-peak: .78; --dust-core: rgba(255,200,206,.95); --dust-glow: rgba(255,150,160,.4); --dust-halo: rgba(255,170,180,.5); }
+.vh-dust span:nth-child(6) { left: 77%; top: 64%; --dust-size: 2px; --dust-dur: 30s; --dust-delay: 4s;  --dust-sway: 12px; --dust-peak: .55; --dust-core: rgba(255,246,222,.95); --dust-glow: rgba(255,220,160,.4); --dust-halo: rgba(255,210,140,.5); }
+.vh-dust span:nth-child(7) { left: 87%; top: 84%; --dust-size: 5px; --dust-dur: 21s; --dust-delay: 7s;  --dust-sway: 14px; --dust-peak: .8;  --dust-core: rgba(255,232,196,.95); --dust-glow: rgba(255,196,130,.4); --dust-halo: rgba(255,200,130,.5); }
+.vh-dust span:nth-child(8) { left: 95%; top: 56%; --dust-size: 3px; --dust-dur: 27s; --dust-delay: 2.5s; --dust-sway: 7px;  --dust-peak: .6;  --dust-core: rgba(206,226,255,.9);  --dust-glow: rgba(150,190,255,.35); --dust-halo: rgba(160,200,255,.4); }
+/* Плавное парение: подъём вверх со свободным качанием, «дыхание» размера и мягкий раствор */
+@keyframes vh-dust-drift {
+    0%   { transform: translate(0, 0) scale(.5); opacity: 0; }
+    10%  { opacity: var(--dust-peak, .7); }
+    50%  { transform: translate(var(--dust-sway, 10px), -42vh) scale(1); opacity: var(--dust-peak, .7); }
+    90%  { opacity: calc(var(--dust-peak, .7) * .65); }
+    100% { transform: translate(calc(var(--dust-sway, 10px) * -0.7), -78vh) scale(.55); opacity: 0; }
 }
 .vh-vignette {
     position: absolute; inset: 0; z-index: 3; pointer-events: none;

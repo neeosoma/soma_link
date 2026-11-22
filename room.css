@@ -2396,13 +2396,15 @@ html.is-soma-fs-closing .app-h {
 
 
 .app-status-top {
+    display: flex;
+    align-items: center;
     min-height: 23px;
     justify-content: space-between;
     gap: 8px;
     font: 10px 'Share Tech Mono', monospace;
 }
 
-.app-user-line { gap: 7px; min-width: 0; color: #ead8d2; }
+.app-user-line { display: flex; align-items: center; gap: 7px; min-width: 0; color: #ead8d2; }
 /* Ник на панели горит красным светом, как лампочка сигнала */
 .app-user-line #user-badge {
     overflow: hidden;
@@ -2485,6 +2487,12 @@ html.is-soma-fs-closing .app-h {
     color: #a9959b;
     font: 9px 'Share Tech Mono', monospace;
     text-align: left;
+}
+
+.app-tabs button:focus-visible,
+.safety-link:focus-visible {
+    outline: 2px solid #e2c4a2;
+    outline-offset: 2px;
 }
 
 #view-feed.feed-content { padding: 10px 13px 80px; }
@@ -3519,6 +3527,11 @@ html.is-soma-fs-closing .app-h {
     background: linear-gradient(110deg, rgba(71, 41, 28, 0.58), rgba(32, 13, 20, 0.65));
     color: #f4d6a3;
     font: 9.5px/1.4 'Share Tech Mono', monospace;
+}
+
+#first-signal-entry[hidden],
+.station-night-ritual-note[hidden] {
+    display: none !important;
 }
 
 .station[data-first-signal="seen"] .station-light::after {

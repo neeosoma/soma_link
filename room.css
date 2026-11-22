@@ -3862,6 +3862,22 @@ html.is-soma-fs-closing .app-h {
     color: #90707c; border-color: rgba(255,255,255,.1); background: rgba(255,255,255,.03);
     box-shadow: 2px 2px 0 rgba(0,0,0,.4);
 }
+/* Кнопка избранного в шапке: переключение показа всех избранных пластинок */
+.vh-fav-toggle {
+    cursor: pointer; font: inherit; letter-spacing: inherit;
+    transition: all .15s;
+}
+.vh-fav-toggle:hover {
+    color: #ffd24d; border-color: rgba(255,210,77,.6);
+    background: rgba(255,210,77,.08);
+    box-shadow: 2px 2px 0 rgba(0,0,0,.4), 0 0 10px -2px rgba(255,210,77,.5);
+}
+.vh-fav-toggle:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 rgba(0,0,0,.4); }
+.vh-fav-toggle.is-active {
+    color: #fff; border-color: rgba(255,210,77,.9);
+    background: linear-gradient(180deg, rgba(255,210,77,.3), rgba(255,210,77,.12));
+    box-shadow: 2px 2px 0 rgba(255,210,77,.4), 0 0 12px -2px rgba(255,210,77,.6);
+}
 .vh-close {
     flex: none; width: 28px; height: 28px; cursor: pointer; font-size: 12px; line-height: 1;
     background: rgba(255,255,255,.05);
@@ -4297,7 +4313,7 @@ html.is-soma-fs-closing .app-h {
     position: absolute; right: calc(50% - 145px); top: 2px; z-index: 4;
     width: 13px; height: 128px; pointer-events: none;
     transform-origin: 6.5px 6.5px;
-    transform: rotate(15deg);
+    transform: rotate(-32deg);
     background: linear-gradient(180deg, #7a7a82 0 10%, #3a3a42 10% 86%, #8e8e96 86% 100%);
     border: 2px solid #17171b;
     border-radius: 2px;
@@ -4319,7 +4335,7 @@ html.is-soma-fs-closing .app-h {
     box-shadow: 0 0 6px rgba(255,200,120,.45);
 }
 /* При воспроизведении тонарм плавно выезжает на пластинку (вниз-влево) */
-.vh-turntable.is-playing .vh-tt-arm { transform: rotate(-32deg); }
+.vh-turntable.is-playing .vh-tt-arm { transform: rotate(15deg); }
 /* ===== VU-метры: пиксельные сегментные индикаторы ===== */
 .vh-tt-meters {
     position: absolute; left: 50%; bottom: 3px; transform: translateX(-50%); z-index: 3;

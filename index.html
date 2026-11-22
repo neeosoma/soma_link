@@ -705,14 +705,19 @@
                 <div class="vh-turntable" id="vinyl-turntable">
                     <div class="vh-tt-halo" aria-hidden="true"></div>
                     <div class="vh-tt-base">
-                        <div class="vh-tt-led" aria-hidden="true"></div>
                         <div class="vh-tt-panel" aria-hidden="true">
-                            <div class="vh-tt-knob vh-tt-knob--a"><i></i></div>
-                            <div class="vh-tt-knob vh-tt-knob--b"><i></i></div>
-                            <div class="vh-tt-slider vh-tt-slider--a"><i></i></div>
-                            <div class="vh-tt-slider vh-tt-slider--b"><i></i></div>
+                            <div class="vh-tt-led" aria-hidden="true"></div>
+                            <div class="vh-tt-meters">
+                                <div class="vh-meter"><span class="vh-meter-fill" id="vh-meter-l"></span></div>
+                                <div class="vh-meter"><span class="vh-meter-fill" id="vh-meter-r"></span></div>
+                            </div>
+                            <div class="vh-tt-controls">
+                                <div class="vh-tt-knob vh-tt-knob--a"><i></i></div>
+                                <div class="vh-tt-knob vh-tt-knob--b"><i></i></div>
+                                <div class="vh-tt-slider vh-tt-slider--a"><i></i></div>
+                                <div class="vh-tt-slider vh-tt-slider--b"><i></i></div>
+                            </div>
                         </div>
-                        <div class="vh-tt-arm-base" aria-hidden="true"></div>
                     </div>
                     <div class="vh-tt-platter" id="vinyl-platter">
                         <div class="vh-tt-glow" aria-hidden="true"></div>
@@ -723,10 +728,6 @@
                         <div class="vh-tt-spindle" aria-hidden="true"></div>
                     </div>
                     <div class="vh-tt-arm" aria-hidden="true"></div>
-                    <div class="vh-tt-meters">
-                        <div class="vh-meter"><span class="vh-meter-fill" id="vh-meter-l"></span></div>
-                        <div class="vh-meter"><span class="vh-meter-fill" id="vh-meter-r"></span></div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -1646,7 +1647,7 @@
         const favCount = vinylArchive.items.filter(it => _vinylIsFav(it)).length;
         const favActive = vinylArchive.onlyFav ? ' is-active' : '';
         el.innerHTML = `<span class="vh-stat vh-stat-count"><b>${total}</b> пластинок</span>`
-            + `<button type="button" class="vh-stat vh-fav-toggle${favActive}" id="vinyl-fav-toggle" onclick="toggleVinylFavFilter()">★ ${favCount} в избранном</button>`;
+            + `<button type="button" class="vh-stat vh-fav-toggle${favActive}" id="vinyl-fav-toggle" onclick="toggleVinylFavFilter()"><span class="vh-star">★</span> ${favCount} в избранном</button>`;
     }
 
     // Переключатель показа всех избранных пластинок

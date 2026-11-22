@@ -19,8 +19,6 @@ const SOMA_SEAL_CLASS = {
     seal_signal: 'soma-seal--signal'
 };
 
-const THRONE_CROWN_SVG = '<svg viewBox="0 0 18 14" width="14" height="11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M1.5 11.5L3 3.5L6.5 7.2L9 1.8L11.5 7.2L15 3.5L16.5 11.5H1.5Z"/></svg>';
-
 const SOMA_CATALOG = [
     // 1. КОЛЛЕКЦИОННЫЕ РАМКИ ТОПА, ДОСЬЕ И КАРТОЧКИ СВИДЕТЕЛЯ (ЕДИНЫЙ ТИР 150 ⭐ · 6 УНИКАЛЬНЫХ АНИМАЦИЙ)
     { id: 'frame_ember',   tab: 'frames', group: 'frames', slot: 'frame', css: 'soma-frame--ember',   motion: 'ИСКРЫ ГОРНА',    stars: 150, name: 'Тлеющий уголь',   desc: 'Вулканический обсидиан с переливчатой кромкой жара, дыханием горна и всплывающими искрами пепла.' },
@@ -76,7 +74,6 @@ function isOwnableSomaId(id) {
 }
 const SOMA_FRAME_CLASSES = SOMA_CATALOG.filter(it => it.slot === 'frame' && it.css).map(it => it.css);
 const ROOM_FLAG_SLOTS = ['cat', 'dog', 'steam', 'tape', 'garland', 'candles'];
-const ROOM_FLAG_ITEM = { cat: 'room_cat', dog: 'room_dog', steam: 'room_steam', tape: 'room_tape', garland: 'room_garland', candles: 'room_candles' };
 const SHOP_GROUP_META = {
     frames:    { title: '// КОЛЛЕКЦИОННЫЕ РАМКИ',      pill: 'ЕДИНЫЙ ТИР · 150 ⭐' },
     seals:     { title: '// ЖИВЫЕ ПЕЧАТИ СВИДЕТЕЛЯ',   pill: 'ЕДИНЫЙ ТИР · 100 ⭐' },

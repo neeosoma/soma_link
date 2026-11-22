@@ -897,6 +897,28 @@
     text-shadow: 0 0 8px rgba(255, 188, 86, 0.5);
 }
 
+.vhs-del-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 110, 120, 0.16);
+    color: rgba(255, 150, 160, 0.4);
+    font-size: 12px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: color 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+}
+
+.vhs-del-btn:hover {
+    color: #ff8a9a;
+    border-color: rgba(255, 110, 130, 0.48);
+    background: rgba(255, 90, 110, 0.12);
+}
+
 .vhs-list-empty {
     padding: 16px 10px;
     text-align: center;
@@ -1070,13 +1092,7 @@
     border-radius: 9px;
 }
 
-.vhs-overlay.is-in-scene .vhs-tape-num {
-    font-size: 9.5px;
-}
 
-.vhs-overlay.is-in-scene .vhs-tape-date {
-    font-size: 8px;
-}
 
 .vhs-overlay.is-in-scene .vhs-tape-preview {
     font-size: 11px;
@@ -1084,11 +1100,6 @@
     -webkit-line-clamp: 2;
 }
 
-.vhs-overlay.is-in-scene .vhs-tape-fav {
-    width: 24px;
-    height: 24px;
-    font-size: 12px;
-}
 
 @container (max-width: 680px) {
     .vhs-overlay.is-in-scene .vhs-mode-lamp {

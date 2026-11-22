@@ -730,7 +730,7 @@ test('v8: body-portal FLIP fullscreen + 180 flip + rotated pointer mapping, Dawn
     assert.ok(indexHtml.includes('soma-post-cta') && indexHtml.includes('soma-post-beacon') && indexHtml.includes('soma-post-arrow'));
     assert.ok(
         indexHtml.includes('id="station-fs-flip"')
-        && indexHtml.includes('room.js?v=26')
+        && indexHtml.includes('room.js?v=27')
         && indexHtml.includes('cosmetics.css?v=15')
         && indexHtml.includes('receiver.js?v=17')
         && indexHtml.includes('vhs.js?v=15')

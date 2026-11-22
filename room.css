@@ -3839,29 +3839,26 @@ html.is-soma-fs-closing .app-h {
     animation: vh-led-pulse 2.4s steps(2) infinite;
 }
 @keyframes vh-led-pulse { 0%,100% { opacity: .5; } 50% { opacity: 1; } }
-.vh-kicker {
+.vh-title {
     font-family: 'Share Tech Mono', ui-monospace, monospace;
-    font-size: 12px; letter-spacing: .28em; font-weight: 700; color: #ff8da6;
-    text-shadow: 2px 2px 0 rgba(0,0,0,.7);
-}
-.vh-sub {
-    font-family: 'Share Tech Mono', ui-monospace, monospace;
-    font-size: 8.5px; letter-spacing: .24em; color: #a06a84; margin-top: 2px;
+    font-size: 13px; letter-spacing: .26em; font-weight: 700;
+    color: #ffd0db;
+    text-shadow: 2px 2px 0 rgba(0,0,0,.78), 0 0 14px rgba(255,77,109,.5);
+    white-space: nowrap;
 }
 .vh-stats { display: flex; gap: 8px; flex: none; }
 .vh-stat {
     font-family: 'Share Tech Mono', ui-monospace, monospace;
-    font-size: 9.5px; letter-spacing: .06em; color: #e0a8b4;
-    padding: 5px 10px;
+    font-size: 9.5px; letter-spacing: .08em; color: #e0a8b4;
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 6px 11px; min-height: 28px;
     background: rgba(255,77,109,.1);
     border: 1.5px solid rgba(255,77,109,.35);
-    box-shadow: 2px 2px 0 rgba(255,77,109,.15);
+    border-radius: 4px;
+    box-shadow: 2px 2px 0 rgba(255,77,109,.2), inset 0 0 0 1px rgba(255,255,255,.04);
 }
 .vh-stat b { color: #ffb8cc; }
-.vh-stat--dim {
-    color: #90707c; border-color: rgba(255,255,255,.1); background: rgba(255,255,255,.03);
-    box-shadow: 2px 2px 0 rgba(0,0,0,.4);
-}
+.vh-stat-count { color: #e0a8b4; }
 /* Кнопка избранного в шапке: переключение показа всех избранных пластинок */
 .vh-fav-toggle {
     cursor: pointer; font: inherit; letter-spacing: inherit;
@@ -4063,6 +4060,14 @@ html.is-soma-fs-closing .app-h {
     font-size: 7px; letter-spacing: .14em; font-weight: 700; color: #fff;
     text-shadow: 1px 1px 0 rgba(0,0,0,.65);
 }
+.vh-rc-num {
+    position: absolute; left: 5px; top: 4px; z-index: 3;
+    font-family: 'Share Tech Mono', ui-monospace, monospace;
+    font-size: 8px; letter-spacing: .1em; font-weight: 700; color: #fff;
+    text-shadow: 1px 1px 0 rgba(0,0,0,.75);
+}
+.vh-rc-cover--1 .vh-rc-num { color: #b02040; text-shadow: none; }
+.vh-rc-cover--2 .vh-rc-num { color: #3a1200; text-shadow: none; }
 .vh-rc-cover--1 .vh-rc-title { color: #b02040; text-shadow: none; }
 .vh-rc-cover--2 .vh-rc-title { color: #3a1200; text-shadow: none; }
 .vh-rc-vinyl {
@@ -4148,9 +4153,9 @@ html.is-soma-fs-closing .app-h {
     border: 2.5px solid #5c2440;
     box-shadow: 3px 3px 0 rgba(0,0,0,.62);
 }
-/* Панель управления: тёмная панель с пиксельной решёткой */
+/* Панель управления: тёмная панель с пиксельной решёткой — правая часть, выше */
 .vh-tt-base::after {
-    content: ''; position: absolute; left: 12px; right: 12px; top: 34px; bottom: 9px;
+    content: ''; position: absolute; left: 150px; right: 12px; top: 26px; bottom: 9px;
     border-radius: 3px;
     background:
         repeating-linear-gradient(90deg, rgba(0,0,0,.24) 0 2px, transparent 2px 9px),
@@ -4167,7 +4172,7 @@ html.is-soma-fs-closing .app-h {
     white-space: nowrap;
 }
 .vh-tt-led {
-    position: absolute; left: 16px; top: 62px; z-index: 3;
+    position: absolute; left: 16px; top: 14px; z-index: 3;
     width: 9px; height: 9px;
     background: #ff7a3d;
     box-shadow: 1px 1px 0 rgba(0,0,0,.6), 0 0 12px 2px rgba(255,122,61,.7);
@@ -4179,7 +4184,7 @@ html.is-soma-fs-closing .app-h {
 }
 /* ===== ПАНЕЛЬ РЕГУЛИРОВКИ: ручки (knobs) + ползунки (sliders) ===== */
 .vh-tt-panel {
-    position: absolute; left: 12px; right: 12px; top: 34px; bottom: 9px; z-index: 2;
+    position: absolute; left: 150px; right: 12px; top: 26px; bottom: 9px; z-index: 2;
     display: flex; align-items: center; justify-content: flex-end; gap: 12px;
     padding-right: 10px;
     pointer-events: none;
@@ -4217,7 +4222,7 @@ html.is-soma-fs-closing .app-h {
 .vh-tt-slider--b i { top: 15px; }
 /* ===== УЗЕЛ КРЕПЛЕНИЯ ТОНАРМА — кронштейн на корпусе ===== */
 .vh-tt-arm-base {
-    position: absolute; right: 21px; top: -12px; z-index: 3;
+    position: absolute; left: 91px; top: -12px; z-index: 3;
     width: 22px; height: 22px; border-radius: 50%;
     background:
         radial-gradient(circle at 35% 35%, rgba(255,255,255,.14) 0 20%, transparent 21%),
@@ -4308,12 +4313,12 @@ html.is-soma-fs-closing .app-h {
     border: 1.5px solid rgba(0,0,0,.55);
     box-shadow: 0 0 8px rgba(255,200,120,.5);
 }
-/* ===== ТОНАРМ С ИГОЛКОЙ — крепление на корпусе (привязан к центру корпуса), читает винил ===== */
+/* ===== ТОНАРМ С ИГОЛКОЙ — крепление в левой части корпуса, длиннее, читает винил ===== */
 .vh-tt-arm {
-    position: absolute; right: calc(50% - 145px); top: 2px; z-index: 4;
-    width: 13px; height: 128px; pointer-events: none;
+    position: absolute; left: calc(50% - 76px); top: 2px; z-index: 4;
+    width: 13px; height: 150px; pointer-events: none;
     transform-origin: 6.5px 6.5px;
-    transform: rotate(-32deg);
+    transform: rotate(-30deg);
     background: linear-gradient(180deg, #7a7a82 0 10%, #3a3a42 10% 86%, #8e8e96 86% 100%);
     border: 2px solid #17171b;
     border-radius: 2px;
@@ -4330,16 +4335,16 @@ html.is-soma-fs-closing .app-h {
 }
 /* Иголка-стилус внизу тонарма */
 .vh-tt-arm::after {
-    content: ''; position: absolute; left: 5.5px; bottom: -11px; width: 2.5px; height: 28px;
+    content: ''; position: absolute; left: 5.5px; bottom: -11px; width: 2.5px; height: 30px;
     background: linear-gradient(180deg, #f0d29c, #ff6b7d);
     box-shadow: 0 0 6px rgba(255,200,120,.45);
 }
-/* При воспроизведении тонарм плавно выезжает на пластинку (вниз-влево) */
-.vh-turntable.is-playing .vh-tt-arm { transform: rotate(15deg); }
-/* ===== VU-метры: пиксельные сегментные индикаторы ===== */
+/* Вкл/выкл — поворот в разные стороны: выкл → влево (в сторону), вкл → на пластинку */
+.vh-turntable.is-playing .vh-tt-arm { transform: rotate(35deg); }
+/* ===== VU-метры: пиксельные сегментные индикаторы — левая сторона (противоположна панели) ===== */
 .vh-tt-meters {
-    position: absolute; left: 50%; bottom: 3px; transform: translateX(-50%); z-index: 3;
-    display: flex; gap: 16px;
+    position: absolute; left: 12px; top: 46px; z-index: 3;
+    display: flex; gap: 8px;
 }
 .vh-meter {
     width: 12px; height: 34px; overflow: hidden;
@@ -4422,17 +4427,16 @@ html.is-soma-fs-closing .app-h {
     .vh-tt-halo { width: 316px; height: 208px; }
     .vh-tt-base { width: 300px; height: 72px; }
     .vh-tt-base::before { top: -14px; height: 16px; }
-    .vh-tt-base::after { top: 30px; bottom: 8px; }
-    .vh-tt-brand { left: 14px; top: 40px; font-size: 8px; }
-    .vh-tt-led { left: 14px; top: 58px; }
-    .vh-tt-panel { top: 30px; bottom: 8px; }
-    .vh-tt-knob { width: 22px; height: 22px; }
-    .vh-tt-slider { height: 28px; }
-    .vh-tt-arm-base { right: 18px; top: -10px; width: 20px; height: 20px; }
+    .vh-tt-base::after { left: 130px; right: 10px; top: 22px; bottom: 8px; }
+    .vh-tt-led { left: 14px; top: 12px; }
+    .vh-tt-panel { left: 130px; right: 10px; top: 22px; bottom: 8px; }
+    .vh-tt-knob { width: 20px; height: 20px; }
+    .vh-tt-slider { height: 26px; }
+    .vh-tt-arm-base { left: 76px; top: -10px; width: 20px; height: 20px; }
     .vh-tt-platter { width: 214px; height: 214px; margin-top: -42px; }
     .vh-record { width: 158px; height: 158px; }
-    .vh-tt-arm { right: calc(50% - 129px); top: 4px; height: 108px; }
-    .vh-tt-meters { gap: 14px; }
-    .vh-meter { height: 30px; }
+    .vh-tt-arm { left: calc(50% - 71px); top: 4px; height: 128px; }
+    .vh-tt-meters { left: 10px; top: 40px; gap: 6px; }
+    .vh-meter { height: 26px; }
 }
 

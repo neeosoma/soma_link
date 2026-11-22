@@ -674,10 +674,7 @@
             <div class="vh-head">
                 <div class="vh-brand">
                     <span class="vh-led" aria-hidden="true"></span>
-                    <div>
-                        <div class="vh-kicker">NEEOSOMA</div>
-                        <div class="vh-sub">ДНЕВНИК · АРХИВ СИГНАЛОВ</div>
-                    </div>
+                    <div class="vh-title">ДНЕВНИК • АРХИВ СИГНАЛОВ</div>
                 </div>
                 <div class="vh-stats" id="vinyl-stats"></div>
                 <button type="button" onclick="closeVinylArchive()" class="vh-close" aria-label="Закрыть">✕</button>
@@ -1587,11 +1584,12 @@
             if (vinylArchive.onlyFav && !_vinylIsFav(it)) return false;
             if (!ql) return true;
             const tagLabel = _vinylTagLabel(it);
-            if (f === 'id') return String(it.id || '').toLowerCase().includes(ql);
+            if (f === 'id') return String(it.num || '').toLowerCase().includes(ql);
             if (f === 'date') return String(it.date || '').toLowerCase().includes(ql);
             if (f === 'tag') return String(tagLabel).toLowerCase().includes(ql);
             return String(it.text || '').toLowerCase().includes(ql)
                 || String(it.date || '').toLowerCase().includes(ql)
+                || String(it.num || '').toLowerCase().includes(ql)
                 || String(tagLabel).toLowerCase().includes(ql);
         });
         renderVinylStats(items.length, vinylArchive.items.length);
@@ -1624,10 +1622,11 @@
                 <div class="vh-record-card${isPlaced}" data-vinyl-id="${esc(it.id)}" role="button" tabindex="0"
                      aria-label="Сигнал ${esc(it.date || '')} — достать из шкафа и положить на проигрыватель"
                      onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();placeVinylOnTurntable('${esc(it.id)}')}">
-                    <button type="button" class="${favCls}" data-vinyl-fav="${esc(it.id)}" aria-label="Избранное">${favGlyph}</button>
+                    <button type="button" class="${favCls}" data-vinyl-fav="${esc(it.id)}" aria-label="Избранное" onclick="event.stopPropagation(); toggleVinylFav('${esc(it.id)}')">${favGlyph}</button>
                     <div class="vh-rc-sleeve" style="--vh-accent:${esc(_vinylAccent(it))}">
                         <div class="vh-rc-cover vh-rc-cover--${cover}">
                             <div class="vh-rc-motif" aria-hidden="true"></div>
+                            <span class="vh-rc-num">№ ${esc(it.num || '')}</span>
                             <span class="vh-rc-title">СИГНАЛ</span>
                         </div>
                         <div class="vh-rc-vinyl">
@@ -1650,8 +1649,8 @@
         if (!el) return;
         const favCount = vinylArchive.items.filter(it => _vinylIsFav(it)).length;
         const favActive = vinylArchive.onlyFav ? ' is-active' : '';
-        el.innerHTML = `<span class="vh-stat"><b>${total}</b> пластинок</span>`
-            + `<button type="button" class="vh-stat vh-stat--dim vh-fav-toggle${favActive}" id="vinyl-fav-toggle" onclick="toggleVinylFavFilter()">${favCount} в избранном</button>`;
+        el.innerHTML = `<span class="vh-stat vh-stat-count"><b>${total}</b> пластинок</span>`
+            + `<button type="button" class="vh-stat vh-fav-toggle${favActive}" id="vinyl-fav-toggle" onclick="toggleVinylFavFilter()">★ ${favCount} в избранном</button>`;
     }
 
     // Переключатель показа всех избранных пластинок
@@ -1824,15 +1823,16 @@
 
     async function toggleVinylFav(id) {
         const api = window.SOMA_ROOM;
-        let fav;
+        let fav = null;
         if (api && typeof api.toggleEntryFav === 'function') {
             // API переключает избранное (storage + облако) и возвращает новое состояние.
-            fav = api.toggleEntryFav(id);
-        } else {
+            try { fav = !!api.toggleEntryFav(id); } catch (_) { fav = null; }
+        }
+        if (fav === null) {
             // Фолбэк: переключаем в памяти — звездочка загорается даже без API.
             const it = vinylArchive.items.find(x => x.id === id);
             const cur = (it && it.fav !== undefined) ? !!it.fav
-                : (api && typeof api.isEntryFav === 'function' ? api.isEntryFav(id) : false);
+                : (api && typeof api.isEntryFav === 'function' ? !!api.isEntryFav(id) : false);
             fav = !cur;
         }
         vinylArchive.items = vinylArchive.items.map(it => it.id === id ? { ...it, fav: !!fav } : it);

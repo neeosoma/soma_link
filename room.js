@@ -3947,7 +3947,7 @@ function formatCassetteNum(num) {
 function normalizeJournalRow(row) {
     const idStr = String(row.id || `cas_${Date.now()}`);
     const date = formatCassetteDate(row.date_label, Number(row.created_at) ? new Date(row.created_at).getTime() : 0);
-    const num = Number.isInteger(Number(row.num)) && Number(row.num) >= 1 ? Number(row.num) : 1;
+    const num = Number.isInteger(Number(row.num)) && Number(row.num) >= 1 ? Number(row.num) : 0;
     return {
         id: idStr,
         num,
@@ -4113,8 +4113,9 @@ async function hydrateJournalFromCloud() {
             const prev = byId.get(c.id);
             if (!prev || !prev.text) byId.set(c.id, c);
         });
-        const merged = [...byId.values()].sort((a, b) => b.num - a.num);
-        merged.forEach((c, idx) => { c.num = idx + 1; });
+        // Номеры сохраняем как есть (не переназначать по позиции — это
+        // сдвигало номера сигналов). Записанные номера постоянны.
+        const merged = [...byId.values()];
         writeCassetteCache(merged);
         renderRoom();
     } catch (_) {}
@@ -4135,8 +4136,28 @@ async function saveJournalEntry(id, text, dateLabel, tag) {
         return { id: entryId, offline: true };
     }
     try {
+        // Номер сигнала: следующее свободное по порядку (максимум + 1).
+        // Считаем и локальный кэш и облачные записи, чтобы номер не
+        // перекрывался — записываем в облак, номер навеки крепится к сигналу.
+        let maxNum = 0;
+        try {
+            const list = loadCassettes();
+            for (const c of list) {
+                const n = Number(c && c.num);
+                if (Number.isInteger(n) && n > maxNum) maxNum = n;
+            }
+        } catch (_) {}
+        try {
+            const cur = await supabaseClient.rpc('get_my_soma_journal');
+            const rows = Array.isArray(cur && cur.data) ? cur.data : [];
+            for (const r of rows) {
+                const n = Number(r && r.num);
+                if (Number.isInteger(n) && n > maxNum) maxNum = n;
+            }
+        } catch (_) {}
+        const newNum = maxNum + 1;
         const { error } = await supabaseClient.rpc('save_soma_journal_entry', {
-            p_id: entryId, p_kind: 'entry', p_text: clean, p_date: dateLabel, p_num: 0, p_fav: false
+            p_id: entryId, p_kind: 'entry', p_text: clean, p_date: dateLabel, p_num: newNum, p_fav: false
         });
         if (error) {
             const why = error.message || error.code || 'ошибка';
@@ -4230,6 +4251,18 @@ async function loadDiaryArchive() {
                 });
             }
         } catch (_) {}
+    }
+    // Номеры сигналов: порядковые по времени создания, постоянные.
+    // Записанные номера (num >= 1) бережно сохраняем; у записей без номера
+    // (num < 1) назначаем следующее свободное, по порядку создания.
+    const byTs = [...items].sort((a, b) => (a.ts || 0) - (b.ts || 0));
+    let nextNum = 1;
+    for (const it of byTs) {
+        if (Number.isInteger(it.num) && it.num >= 1) {
+            nextNum = Math.max(nextNum, it.num + 1);
+        } else {
+            it.num = nextNum++;
+        }
     }
     return items.sort((a, b) => (b.ts || 0) - (a.ts || 0));
 }

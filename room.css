@@ -4224,14 +4224,14 @@ html.is-soma-fs-closing .app-h {
 /* Делители групп на панели (реальная группировка контролей) */
 .vh-tt-panel::before,
 .vh-tt-panel::after {
-    content: ''; position: absolute; left: 12px; right: 12px; height: 1px;
+    content: ''; position: absolute; left: 14px; right: 14px; height: 1px;
     background: linear-gradient(90deg, transparent, rgba(255,200,160,.18), transparent);
 }
-.vh-tt-panel::before { top: 76px; }
-.vh-tt-panel::after { top: 116px; }
-/* Индикатор питания — центрирован вверху панели */
+.vh-tt-panel::before { top: 56px; }
+.vh-tt-panel::after { top: 100px; }
+/* Индикатор питания — верхний левый угол панели */
 .vh-tt-led {
-    position: absolute; left: 46px; top: 14px; z-index: 4;
+    position: absolute; left: 14px; top: 14px; z-index: 4;
     width: 9px; height: 9px;
     background: #ff7a3d;
     box-shadow: 1px 1px 0 rgba(0,0,0,.6), 0 0 12px 2px rgba(255,122,61,.7);
@@ -4241,9 +4241,9 @@ html.is-soma-fs-closing .app-h {
     background: #ffd24d;
     box-shadow: 1px 1px 0 rgba(0,0,0,.6), 0 0 14px 3px rgba(255,210,77,.9);
 }
-/* ===== VU-метры: два индикатора, центрированный ряд ===== */
+/* ===== VU-метры: два индикатора, верхний правый угол (напротив LED) ===== */
 .vh-tt-meters {
-    position: absolute; left: 33px; top: 38px; z-index: 4;
+    position: absolute; left: 52px; top: 14px; z-index: 4;
     display: flex; gap: 8px;
 }
 .vh-meter {
@@ -4269,9 +4269,9 @@ html.is-soma-fs-closing .app-h {
     50% { height: 46%; }
     75% { height: 92%; }
 }
-/* ===== РУЧКИ — центрированный ряд ===== */
+/* ===== РУЧКИ — центрированный ряд под первым разделителем ===== */
 .vh-tt-knobs {
-    position: absolute; left: 21px; top: 84px; z-index: 4;
+    position: absolute; left: 21px; top: 66px; z-index: 4;
     display: flex; gap: 8px;
 }
 .vh-tt-knob {
@@ -4291,9 +4291,9 @@ html.is-soma-fs-closing .app-h {
 }
 .vh-tt-knob--a i { transform: rotate(-38deg); }
 .vh-tt-knob--b i { transform: rotate(46deg); }
-/* ===== ПОЛЗУНКИ — центрированный ряд ===== */
+/* ===== ПОЛЗУНКИ — центрированный ряд под вторым разделителем ===== */
 .vh-tt-sliders {
-    position: absolute; left: 37px; top: 124px; z-index: 4;
+    position: absolute; left: 37px; top: 110px; z-index: 4;
     display: flex; gap: 8px;
 }
 .vh-tt-slider {
@@ -4487,12 +4487,14 @@ html.is-soma-fs-closing .app-h {
     .vh-tt-base::before { left: 8px; right: 8px; top: 5px; }
     .vh-tt-base::after { left: 11px; right: 11px; bottom: 10px; height: 7px; }
     .vh-tt-panel { left: 16px; top: 19px; width: 82px; height: 134px; }
-    .vh-tt-led { left: 24px; top: 27px; }
-    .vh-tt-meters { left: 42px; top: 40px; gap: 5px; }
-    .vh-tt-knobs { left: 26px; top: 74px; gap: 6px; }
+    .vh-tt-panel::before { top: 50px; }
+    .vh-tt-panel::after { top: 90px; }
+    .vh-tt-led { left: 10px; top: 10px; }
+    .vh-tt-meters { left: 39px; top: 10px; gap: 5px; }
+    .vh-tt-knobs { left: 14px; top: 60px; gap: 6px; }
     .vh-tt-knob { width: 20px; height: 20px; }
     .vh-tt-knob i { height: 8px; margin: -4px 0 0 -1px; }
-    .vh-tt-sliders { left: 38px; top: 107px; gap: 6px; }
+    .vh-tt-sliders { left: 28px; top: 100px; gap: 6px; }
     .vh-tt-slider { height: 26px; }
     .vh-tt-platter { left: 130px; top: 29px; width: 186px; height: 186px; }
     .vh-record { width: 150px; height: 150px; }

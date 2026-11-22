@@ -1443,11 +1443,41 @@
         return '#ff4d6d';
     }
 
+    // Фикс: блок пластинок (шкаф) не сжимается при открытии клавиатуры.
+    // Следим за visualViewport (и focus/blur поля поиска) и ставим класс is-kb-open.
+    function _vinylKbUpdate(modal) {
+        const vv = window.visualViewport;
+        const kbOpen = vv ? (window.innerHeight - vv.height) > 80 : false;
+        modal.classList.toggle('is-kb-open', !!kbOpen);
+    }
+    function _vinylKbBind(modal) {
+        if (modal.__vinylKbBound) return;
+        modal.__vinylKbBound = true;
+        const onKb = () => _vinylKbUpdate(modal);
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', onKb);
+            window.visualViewport.addEventListener('scroll', onKb);
+        }
+        window.addEventListener('resize', onKb);
+        const input = document.getElementById('vinyl-search-input');
+        if (input) { input.addEventListener('focus', onKb); input.addEventListener('blur', onKb); }
+        modal.__vinylKbOff = () => {
+            if (window.visualViewport) {
+                window.visualViewport.removeEventListener('resize', onKb);
+                window.visualViewport.removeEventListener('scroll', onKb);
+            }
+            window.removeEventListener('resize', onKb);
+            if (input) { input.removeEventListener('focus', onKb); input.removeEventListener('blur', onKb); }
+        };
+    }
+
     async function openVinylArchive() {
         const modal = document.getElementById('vinyl-archive-modal');
         if (!modal) return;
         closeVinylRead();
         modal.classList.remove('hidden');
+        _vinylKbBind(modal);
+        _vinylKbUpdate(modal);
         if (!vinylDrag.bound) { vinylDrag.bound = true; initVinylDrag(); }
         if (vinylArchive.loading) return;
         vinylArchive.loading = true;
@@ -1466,7 +1496,11 @@
 
     function closeVinylArchive() {
         const modal = document.getElementById('vinyl-archive-modal');
-        if (modal) modal.classList.add('hidden');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('is-kb-open');
+            if (modal.__vinylKbOff) { modal.__vinylKbOff(); modal.__vinylKbOff = null; modal.__vinylKbBound = false; }
+        }
         closeVinylRead();
         removeVinylFromTurntable(true);
     }

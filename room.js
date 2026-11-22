@@ -10073,6 +10073,7 @@ async function sendWhisperToPostOnce(postObj, rawText, opts) {
                 p_post_preview: wRow.post_preview,
                 p_sender_uid: wRow.sender_uid,
                 p_text: wRow.text,
+                p_reply_to: '',
             });
             if (error) {
                 const ecode = String(error.code || '');

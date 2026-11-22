@@ -10113,6 +10113,7 @@ async function sendWhisperToPostOnce(postObj, rawText, opts) {
                 p_sender_uid: wRow.sender_uid,
                 p_text: wRow.text,
                 p_reply_to: '',
+                p_day_key: o.today || localDayKey(),
             });
             if (error) {
                 const ecode = String(error.code || '');
@@ -10203,6 +10204,7 @@ async function sendWhisperReply(whisper, rawText, opts) {
             p_sender_uid: senderUid,
             p_text: check.value,
             p_reply_to: String(w.id),
+            p_day_key: o.today || localDayKey(),
         });
         if (error) {
             const ecode = String(error.code || '');

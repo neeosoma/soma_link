@@ -19,6 +19,7 @@ begin;
 -- Сначала удаляем старые функции (42P13: cannot change return type)
 drop function if exists public.submit_soma_post(text, text, text, text);
 drop function if exists public.send_soma_whisper(text, text, text, text, text, text);
+drop function if exists public.send_soma_whisper(text, text, text, text, text, text, text);
 drop function if exists public.set_soma_whisper_status(text, text);
 drop function if exists public.get_my_pending_whispers(text[]);
 drop function if exists public.get_my_saved_whispers();
@@ -77,7 +78,7 @@ $$;
 -- ======================================================================
 create or replace function public.send_soma_whisper(
     p_id text, p_post_id text, p_post_tag text, p_post_preview text,
-    p_sender_uid text, p_text text, p_reply_to text
+    p_sender_uid text, p_text text, p_reply_to text, p_day_key text default null
 )
 returns setof public.soma_whispers
 language plpgsql
@@ -120,9 +121,9 @@ begin
         -- Проверки цели и «1 ответ на шёпот» — в trigger guard_soma_whispers (при insert).
         -- Оригинальный шёпот переходит в статус answered.
         insert into public.soma_whispers
-            (id, post_id, post_tag, post_preview, sender_uid, text, status, created_at, reply_to_id)
+            (id, post_id, post_tag, post_preview, sender_uid, text, status, created_at, reply_to_id, day_key)
         values
-            (p_id, p_post_id, p_post_tag, p_post_preview, p_sender_uid, p_text, 'pending', now(), p_reply_to);
+            (p_id, p_post_id, p_post_tag, p_post_preview, p_sender_uid, p_text, 'pending', now(), p_reply_to, p_day_key);
 
         update public.soma_whispers
         set status = 'answered'
@@ -131,9 +132,9 @@ begin
         -- Обычный шёпот: unique (post_id, sender_uid, reply_to_id) физически
         -- запрещает шептать одному человеку дважды — повторная отправка даёт 23505.
         insert into public.soma_whispers
-            (id, post_id, post_tag, post_preview, sender_uid, text, status, created_at, reply_to_id)
+            (id, post_id, post_tag, post_preview, sender_uid, text, status, created_at, reply_to_id, day_key)
         values
-            (p_id, p_post_id, p_post_tag, p_post_preview, p_sender_uid, p_text, 'pending', now(), coalesce(p_reply_to, ''));
+            (p_id, p_post_id, p_post_tag, p_post_preview, p_sender_uid, p_text, 'pending', now(), coalesce(p_reply_to, ''), p_day_key);
     end if;
 
     select * into r_row from public.soma_whispers where id = p_id;
@@ -251,8 +252,8 @@ $$;
 revoke all on function public.submit_soma_post(text, text, text, text) from public;
 grant execute on function public.submit_soma_post(text, text, text, text) to anon, authenticated;
 
-revoke all on function public.send_soma_whisper(text, text, text, text, text, text, text) from public;
-grant execute on function public.send_soma_whisper(text, text, text, text, text, text, text) to anon, authenticated;
+revoke all on function public.send_soma_whisper(text, text, text, text, text, text, text, text) from public;
+grant execute on function public.send_soma_whisper(text, text, text, text, text, text, text, text) to anon, authenticated;
 
 revoke all on function public.set_soma_whisper_status(text, text) from public;
 grant execute on function public.set_soma_whisper_status(text, text) to anon, authenticated;

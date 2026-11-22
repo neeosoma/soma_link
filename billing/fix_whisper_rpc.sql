@@ -22,6 +22,9 @@ drop function if exists public.send_soma_whisper(text, text, text, text, text, t
 -- Унікальные индексы (идемпотентно)
 create unique index if not exists soma_whispers_post_sender_uid_reply_idx
     on public.soma_whispers(post_id, sender_uid, reply_to_id);
+-- Дневной лимит по ЛОКАЛЬному дню игрока: клиент передаёт day_key (YYYY-MM-DD),
+-- trigger default-ит в UTC-день для прямого INSERT. Искореняет расхождение таймзон.
+alter table public.soma_whispers add column if not exists day_key text;
 drop index if exists soma_whispers_auth_post_idx;
 create unique index if not exists soma_whispers_auth_post_idx
     on public.soma_whispers(post_id, sender_auth_id) where reply_to_id = '';
@@ -35,6 +38,9 @@ begin
         perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(auth.uid()::text, 0));
         new.sender_auth_id := auth.uid();
         new.created_at := now();
+        if new.day_key is null or new.day_key = '' then
+            new.day_key := to_char(now() at time zone 'UTC', 'YYYY-MM-DD');
+        end if;
         if new.reply_to_id <> '' then
             if not exists(select 1 from public.soma_whispers t
                 where t.id = new.reply_to_id
@@ -58,7 +64,7 @@ begin
             if public.owns_soma_post(new.post_id) then raise exception 'Cannot whisper to yourself'; end if;
             if (select count(*) from public.soma_whispers where sender_auth_id = auth.uid()
                 and reply_to_id = ''
-                and created_at >= date_trunc('day', now() at time zone 'UTC') at time zone 'UTC') >= 3 then
+                and day_key = new.day_key) >= 3 then
                 raise exception 'Daily whisper limit reached';
             end if;
         end if;
@@ -83,7 +89,7 @@ for each row execute function public.guard_soma_whispers();
 -- клиент обрабатывает 23505 как «уже поддержали»).
 create or replace function public.send_soma_whisper(
     p_id text, p_post_id text, p_post_tag text, p_post_preview text,
-    p_sender_uid text, p_text text, p_reply_to text
+    p_sender_uid text, p_text text, p_reply_to text, p_day_key text default null
 )
 returns setof public.soma_whispers
 language plpgsql
@@ -124,9 +130,9 @@ begin
     if v_is_reply then
         -- Ответ на входящий шёпот: НЕ тратит дневной лимит шёпотов.
         insert into public.soma_whispers
-            (id, post_id, post_tag, post_preview, sender_uid, text, status, created_at, reply_to_id)
+            (id, post_id, post_tag, post_preview, sender_uid, text, status, created_at, reply_to_id, day_key)
         values
-            (p_id, p_post_id, p_post_tag, p_post_preview, p_sender_uid, p_text, 'pending', now(), p_reply_to);
+            (p_id, p_post_id, p_post_tag, p_post_preview, p_sender_uid, p_text, 'pending', now(), p_reply_to, p_day_key);
 
         update public.soma_whispers
         set status = 'answered'
@@ -135,9 +141,9 @@ begin
         -- Обычный шёпот: уникальный индекс (post_id, sender_uid, reply_to_id)
         -- физически запрещает шептать одному человеку дважды — повтор даёт 23505.
         insert into public.soma_whispers
-            (id, post_id, post_tag, post_preview, sender_uid, text, status, created_at, reply_to_id)
+            (id, post_id, post_tag, post_preview, sender_uid, text, status, created_at, reply_to_id, day_key)
         values
-            (p_id, p_post_id, p_post_tag, p_post_preview, p_sender_uid, p_text, 'pending', now(), coalesce(p_reply_to, ''));
+            (p_id, p_post_id, p_post_tag, p_post_preview, p_sender_uid, p_text, 'pending', now(), coalesce(p_reply_to, ''), p_day_key);
     end if;
 
     select * into r_row from public.soma_whispers where id = p_id;
@@ -146,7 +152,7 @@ begin
 end;
 $$;
 
-revoke all on function public.send_soma_whisper(text, text, text, text, text, text, text) from public;
-grant execute on function public.send_soma_whisper(text, text, text, text, text, text, text) to anon, authenticated;
+revoke all on function public.send_soma_whisper(text, text, text, text, text, text, text, text) from public;
+grant execute on function public.send_soma_whisper(text, text, text, text, text, text, text, text) to anon, authenticated;
 
 commit;

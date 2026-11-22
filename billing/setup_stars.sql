@@ -358,6 +358,10 @@ alter table public.soma_whispers add column if not exists sender_auth_id uuid de
 -- Сентинель «нет ответа» — пустая строка (не NULL): так уникальный индекс
 -- (post_id, sender_uid, reply_to_id) работает для всех строк и ON CONFLICT инферится.
 alter table public.soma_whispers add column if not exists reply_to_id text not null default '';
+-- Дневной лимит шёпотов по ЛОКАЛЬНОму дню игрока: клиент передаёт day_key (YYYY-MM-DD),
+-- trigger default-ит в UTC-день для прямого INSERT (тесты/миграции). Искореняет расхождение
+-- таймзон: клиент обнуляет счётчик в локальный midnight, сервер считает по day_key.
+alter table public.soma_whispers add column if not exists day_key text;
 -- Разрешаем статус «answered» (оригинальный шёпот, на который пришёл ответ).
 alter table public.soma_whispers drop constraint if exists soma_whispers_status_check;
 alter table public.soma_whispers add constraint soma_whispers_status_check
@@ -407,6 +411,9 @@ begin
         perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(auth.uid()::text, 0));
         new.sender_auth_id := auth.uid();
         new.created_at := now();
+        if new.day_key is null or new.day_key = '' then
+            new.day_key := to_char(now() at time zone 'UTC', 'YYYY-MM-DD');
+        end if;
         if new.reply_to_id <> '' then
             -- Ответ на входящий шёпот: не тратит дневной лимит шёпотов и не проверяет владение постом.
             -- Целевой шёпот должен быть входящим: его пост принадлежит мне.
@@ -433,9 +440,10 @@ begin
             end if;
             if public.owns_soma_post(new.post_id) then raise exception 'Cannot whisper to yourself'; end if;
             -- Лимит учитывает ТОЛЬКО обычные шёпоты: ответы не тратят дневной лимит и не начисляются в счётчик.
+            -- Считаем по day_key (локальный день игрока, переданный клиентом) — без расхождения таймзон.
             if (select count(*) from public.soma_whispers where sender_auth_id = auth.uid()
                 and reply_to_id = ''
-                and created_at >= date_trunc('day', now() at time zone 'UTC') at time zone 'UTC') >= 3 then
+                and day_key = new.day_key) >= 3 then
                 raise exception 'Daily whisper limit reached';
             end if;
         end if;

@@ -406,6 +406,9 @@ grant insert (id, post_id, post_tag, post_preview, sender_uid, text, status, cre
 on public.soma_whispers to authenticated;
 grant update (status) on public.soma_whispers to authenticated;
 
+-- Дневной лимит по ЛОКАЛЬному дню игрока (day_key передаётся клиентом).
+alter table public.soma_whispers add column if not exists day_key text;
+
 create or replace function public.guard_soma_whispers()
 returns trigger language plpgsql security definer set search_path = '' as $$
 begin
@@ -415,6 +418,9 @@ begin
         perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(auth.uid()::text, 0));
         new.sender_auth_id := auth.uid();
         new.created_at := now();
+        if new.day_key is null or new.day_key = '' then
+            new.day_key := to_char(now() at time zone 'UTC', 'YYYY-MM-DD');
+        end if;
         if new.reply_to_id <> '' then
             -- Ответ на входящий шёпот: не тратит дневной лимит шёпотов и не проверяет владение постом.
             -- Целевой шёпот должен быть входящим: его пост принадлежит мне.
@@ -441,9 +447,10 @@ begin
             end if;
             if public.owns_soma_post(new.post_id) then raise exception 'Cannot whisper to yourself'; end if;
             -- Лимит учитывает ТОЛЬКО обычные шёпоты: ответы не тратят дневной лимит и не начисляются в счётчик.
+            -- Считаем по day_key (локальный день игрока) — без расхождения таймзон.
             if (select count(*) from public.soma_whispers where sender_auth_id = auth.uid()
                 and reply_to_id = ''
-                and created_at >= date_trunc('day', now() at time zone 'UTC') at time zone 'UTC') >= 3 then
+                and day_key = new.day_key) >= 3 then
                 raise exception 'Daily whisper limit reached';
             end if;
         end if;

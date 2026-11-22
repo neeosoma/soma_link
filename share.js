@@ -539,18 +539,6 @@
             g.fillText(wrapLines(g, kLine, 460, 1)[0] || '', 50, curY + 12);
         }
 
-        // Подпись над живой комнатой в правом верхнем углу
-        const roomTag = `ТИХАЯ СТАНЦИЯ · ${snap.warmth} ТЕПЛО`;
-        g.font = `700 12px ${MONO}`;
-        const rtw = g.measureText(roomTag).width + 22;
-        rr(g, CARD_W - 48 - rtw, 46, rtw, 28, 8);
-        g.fillStyle = 'rgba(12, 3, 6, 0.72)';
-        g.fill();
-        g.strokeStyle = 'rgba(255, 196, 152, 0.34)';
-        g.stroke();
-        g.fillStyle = '#ffe8d2';
-        g.fillText(roomTag, CARD_W - 37 - rtw, 64);
-
         drawSubtleScanlinesAndGrain(g, CARD_W, CARD_H, 0.65);
         drawFooterBar(g, 'NEEOSOMA', dateStr, fp.edge, `${dateStr}  NEEO~CITY // SOMA~LINK`);
     }

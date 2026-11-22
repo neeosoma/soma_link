@@ -18,7 +18,7 @@ begin;
 create table if not exists public.soma_journal (
     id text primary key,
     kind text not null default 'cassette' check (kind in ('cassette', 'entry')),
-    text text not null check (char_length(text) between 1 and 500),
+    text text not null check (char_length(text) between 1 and 2000),
     date_label text,
     num integer not null default 0,
     fav boolean not null default false,
@@ -79,8 +79,8 @@ begin
     if char_length(p_id) < 1 or char_length(p_id) > 64 then
         raise exception 'invalid_id';
     end if;
-    if char_length(p_text) < 1 or char_length(p_text) > 500 then
-        raise exception 'invalid_text: 1..500 chars';
+    if char_length(p_text) < 1 or char_length(p_text) > 2000 then
+        raise exception 'invalid_text: 1..2000 chars';
     end if;
     if public.soma_text_blocked(p_text) then
         raise exception 'invalid_text: содержит запрещённую лексику';

@@ -3953,7 +3953,7 @@ function normalizeJournalRow(row) {
         num,
         date,
         ts: Number(row.created_at) ? new Date(row.created_at).getTime() : parseCassetteDateTs(date, Date.now()),
-        text: String(row.text || '').trim().slice(0, 420),
+        text: String(row.text || '').trim().slice(0, 2000), // полный сигнал: до 2000 символов (ранее обрезалось до 420)
         fav: !!row.fav
     };
 }
@@ -3996,7 +3996,7 @@ function loadCassettes() {
             num,
             date,
             ts,
-            text: c.text.trim().slice(0, 420),
+            text: c.text.trim().slice(0, 2000), // полный сигнал: до 2000 символов (ранее обрезалось до 420)
             fav: !!c.fav
         };
     });
@@ -4067,7 +4067,7 @@ function cloudSaveCassette(item) {
 // Save a cassette to the local cache immediately, then persist to the cloud in the
 // background. Returns the item synchronously (backward-compatible with callers).
 function saveWhisperCassette(text, dateLabel, opts) {
-    const clean = String(text || '').trim().slice(0, 420);
+    const clean = String(text || '').trim().slice(0, 2000); // полный сигнал: до 2000 символов (ранее обрезалось до 420)
     if (!clean) return null;
     const list = loadCassettes();
     const maxNum = list.reduce((mx, c) => Math.max(mx, Number(c.num) || 0), 0);
@@ -4144,7 +4144,7 @@ async function hydrateJournalFromCloud() {
 // Записи хранятся ТОЛЬКО в облаке (Supabase journal) — сохранение проходит
 // через RPC, чтобы синхронизация с игрой проверялась на реальном Supabase.
 async function saveJournalEntry(id, text, dateLabel, tag) {
-    const clean = String(text || '').trim().slice(0, 420);
+    const clean = String(text || '').trim().slice(0, 2000); // полный сигнал: до 2000 символов (ранее обрезалось до 420)
     // Диагностика: показываем, что journal-сохранение началось (что функция вызвана).
     if (typeof setCloudStatus === 'function' && clean) setCloudStatus('☁ journal: сохранение…', true);
     if (!clean) return null;

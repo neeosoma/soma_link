@@ -718,7 +718,7 @@
     border-color: #82511f;
     background: linear-gradient(180deg, #2d1808 0%, #160c04 100%);
 }
-.soma-pager[data-skin="pager_amber"].is-ping .pager-led { background: #fcd34d; box-shadow: 0 0 10px rgba(252, 211, 77, 0.95); }
+
 @keyframes soma-pager-amber-led {
     0%, 100% { opacity: 0.65; box-shadow: 0 0 5px rgba(245, 158, 11, 0.55); }
     50%      { opacity: 1; box-shadow: 0 0 10px rgba(251, 191, 36, 0.95); }
@@ -964,20 +964,7 @@
     border: 1px solid #471822;
 }
 
-.dossier-gear {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-}
 
-.dossier-chip {
-    padding: 3px 8px;
-    border-radius: 7px;
-    background: #0a0305;
-    border: 1px solid #441720;
-    font: 9.5px 'Share Tech Mono', monospace;
-    color: #d6aeb5;
-}
 
 /* --- ЖИВЫЕ МИНИ-ВИТРИНЫ БУТИКА И ЗАГОЛОВКИ РАВНЫХ ТИРОВ --- */
 .shop-tier-head {

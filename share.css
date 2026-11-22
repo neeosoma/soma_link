@@ -38,9 +38,6 @@
     border-radius: 15px;
 }
 
-.soma-share-overlay.is-in-scene .soma-share-stage {
-    max-height: 185px;
-}
 
 .soma-share-overlay.is-in-scene .soma-share-primary {
     min-height: 34px;

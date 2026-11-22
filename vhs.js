@@ -492,11 +492,28 @@
                         <div class="vhs-tape-status">${loaded ? '► В ДЕКЕ · НА ЭКРАНЕ' : '▲ НАЖМИТЕ, ЧТОБЫ ВСТАВИТЬ'}</div>
                     </div>
                     <div class="vhs-tape-actions">
+                        <button type="button" class="vhs-del-btn" data-del-id="${escHtml(t.id)}" aria-label="Удалить кассету" title="Удалить кассету">✕</button>
                         <button type="button" class="vhs-star-btn${t.fav ? ' is-fav' : ''}" data-fav-id="${escHtml(t.id)}" aria-label="${t.fav ? 'Убрать из избранного' : 'В избранное'}" title="${t.fav ? 'В избранном' : 'Отметить важной'}">${t.fav ? '★' : '☆'}</button>
                     </div>
                 </div>
             `;
         }).join('');
+
+        listEl.querySelectorAll('[data-del-id]').forEach(del => {
+            del.addEventListener('click', ev => {
+                ev.stopPropagation();
+                const id = del.getAttribute('data-del-id');
+                if (!id) return;
+                if (typeof deleteCassette === 'function' && typeof window !== 'undefined' && typeof window.confirm === 'function') {
+                    const tape = getTapes().find(t => t.id === id);
+                    const label = tape ? `#${padNum(tape.num)}` : '';
+                    if (!window.confirm(`Удалить кассету ${label}?\nЗапись будет удалена из архива без возможности восстановления.`)) return;
+                    playVhsMech('tap');
+                    deleteCassette(id);
+                    renderAll(false);
+                }
+            });
+        });
 
         listEl.querySelectorAll('[data-fav-id]').forEach(star => {
             star.addEventListener('click', ev => {

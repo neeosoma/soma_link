@@ -4015,83 +4015,69 @@ html.is-soma-fs-closing .app-h {
 .vh-record-card:active { cursor: grabbing; }
 .vh-record-card.is-dragging { opacity: .2; }
 .vh-record-card.is-placed { opacity: .28; filter: grayscale(.7); }
+/* контейнер-диск (dark jewel-case) */
 .vh-rc-sleeve {
     position: relative; width: 100%; height: 100%;
-    border-radius: 4px; overflow: hidden;
-    border: 1.5px solid rgba(255,255,255,.12);
-    box-shadow: 3px 3px 0 rgba(0,0,0,.55);
+    border-radius: 7px; overflow: hidden;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 4px;
+    padding: 6px 4px 5px;
+    background: linear-gradient(180deg, #1c0a14, #120409);
+    border: 1.5px solid rgba(255,200,220,.12);
+    box-shadow: 3px 3px 0 rgba(0,0,0,.55), inset 0 0 0 1px rgba(0,0,0,.5);
 }
-.vh-rc-cover {
-    position: relative; height: 58px; overflow: hidden;
-    border-bottom: 2px solid rgba(0,0,0,.55);
-}
-/* обложки: красная / белая / янтарная / пурпурная */
-.vh-rc-cover--0 { background: var(--vh-accent); }
-.vh-rc-cover--1 { background: #e8e0e4; }
-.vh-rc-cover--1::after {
-    content: ''; position: absolute; inset: 0;
-    background: linear-gradient(180deg, rgba(255,77,109,.85), transparent 62%);
-}
-.vh-rc-cover--2 { background: #c97a2a; }
-.vh-rc-cover--2::after {
-    content: ''; position: absolute; inset: 0;
-    background: repeating-linear-gradient(0deg, transparent 0 6px, rgba(0,0,0,.28) 6px 7px, transparent 7px 13px);
-}
-.vh-rc-cover--3 { background: #6a1a4a; }
-.vh-rc-cover--3::after {
-    content: ''; position: absolute; inset: 0;
-    background: repeating-linear-gradient(90deg, transparent 0 6px, rgba(0,0,0,.3) 6px 7px, transparent 7px 13px);
-}
-.vh-rc-motif {
-    position: absolute; inset: 0; opacity: .6;
-    background:
-        radial-gradient(circle at 62% 30%, rgba(255,255,255,.4) 0 4px, transparent 5px),
-        repeating-radial-gradient(circle at 62% 30%, transparent 0 7px, rgba(0,0,0,.22) 7px 8px, transparent 8px 15px);
-}
-.vh-rc-cover--2 .vh-rc-motif {
-    background: repeating-linear-gradient(48deg, transparent 0 5px, rgba(255,255,255,.22) 5px 6px, transparent 6px 11px);
-}
-.vh-rc-cover--3 .vh-rc-motif {
-    background: repeating-linear-gradient(48deg, transparent 0 5px, rgba(255,255,255,.16) 5px 6px, transparent 6px 11px);
-}
-.vh-rc-title {
-    position: absolute; left: 5px; bottom: 4px; z-index: 2;
-    font-family: 'Share Tech Mono', ui-monospace, monospace;
-    font-size: 7px; letter-spacing: .14em; font-weight: 700; color: #fff;
-    text-shadow: 1px 1px 0 rgba(0,0,0,.65);
-}
+/* номер сигнала */
 .vh-rc-num {
-    position: absolute; left: 5px; top: 4px; z-index: 3;
     font-family: 'Share Tech Mono', ui-monospace, monospace;
-    font-size: 8px; letter-spacing: .1em; font-weight: 700; color: #fff;
+    font-size: 8px; letter-spacing: .1em; font-weight: 700; color: #ffc0d2;
     text-shadow: 1px 1px 0 rgba(0,0,0,.75);
+    z-index: 3;
 }
-.vh-rc-cover--1 .vh-rc-num { color: #b02040; text-shadow: none; }
-.vh-rc-cover--2 .vh-rc-num { color: #3a1200; text-shadow: none; }
-.vh-rc-cover--1 .vh-rc-title { color: #b02040; text-shadow: none; }
-.vh-rc-cover--2 .vh-rc-title { color: #3a1200; text-shadow: none; }
-.vh-rc-vinyl {
-    height: 28px; position: relative;
+/* ===== ДИСК (CD-подобный): металлический градиент + радужный отблеск + отверстие ===== */
+.vh-rc-disc {
+    width: 48px; height: 48px; border-radius: 50%;
+    position: relative; overflow: hidden;
+    background: radial-gradient(circle at 38% 32%, var(--disc-hi, #ffc0d0), var(--vh-accent, #ff4d6d) 56%, var(--disc-lo, #5a0a1a) 100%);
+    box-shadow:
+        inset 0 0 10px rgba(0,0,0,.55),
+        0 2px 6px rgba(0,0,0,.55),
+        0 0 0 1.5px rgba(0,0,0,.35);
+    z-index: 1;
+    transition: filter .15s;
+}
+/* радужный отблеск диска + блик */
+.vh-rc-disc-sheen {
+    position: absolute; inset: 0; border-radius: 50%;
     background:
-        repeating-linear-gradient(90deg, #1d1d20 0 2px, #101013 2px 4px),
-        #161619;
-    border-top: 2px solid rgba(0,0,0,.6);
+        linear-gradient(118deg, transparent 30%, rgba(255,255,255,.55) 44%, transparent 58%),
+        conic-gradient(from 200deg, rgba(255,140,190,.45), rgba(150,190,255,.35), rgba(190,255,170,.3), rgba(255,210,140,.35), rgba(255,140,190,.45));
+    opacity: .55;
+    z-index: 1;
+    transition: opacity .2s;
 }
-.vh-rc-grooves {
-    position: absolute; inset: 0;
-    background: repeating-linear-gradient(90deg, rgba(255,255,255,.06) 0 1px, transparent 1px 4px);
+/* отверстие диска (центр) */
+.vh-rc-disc-hole {
+    position: absolute; top: 50%; left: 50%; width: 7px; height: 7px;
+    margin: -3.5px 0 0 -3.5px; border-radius: 50%; z-index: 2;
+    background: radial-gradient(circle, #1c1016, #050203);
+    box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.3);
 }
-.vh-rc-edge {
-    position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
-    background: rgba(255,255,255,.16);
-}
+/* варианты цветов дисков: красный / серебро / янтарь / пурпур */
+.vh-rc-disc--1 { background: radial-gradient(circle at 38% 32%, #f6f9fc, #c8d2dc 56%, #6a7680 100%); }
+.vh-rc-disc--2 { background: radial-gradient(circle at 38% 32%, #ffe0b0, #e09a3a 56%, #6a3a10 100%); }
+.vh-rc-disc--3 { background: radial-gradient(circle at 38% 32%, #e6c0e0, #9a3a8a 56%, #3a0a2a 100%); }
+/* hover — отблеск усиливается */
+.vh-record-card:hover .vh-rc-disc-sheen { opacity: .85; }
+.vh-record-card:hover .vh-rc-disc { filter: saturate(1.15) brightness(1.05); }
+/* тег сигнала под диском */
 .vh-record-tag {
-    position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
     font-family: 'Share Tech Mono', ui-monospace, monospace;
     font-size: 7px; color: #f0d0da; background: rgba(8,3,6,.9);
-    padding: 1px 5px;
+    padding: 2px 6px;
     border: 1px solid rgba(255,77,109,.3);
-    max-width: 44px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    border-radius: 3px;
+    max-width: 50px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    text-align: center;
 }
 .vh-fav-dot {
     position: absolute; top: -6px; right: -6px; z-index: 5;

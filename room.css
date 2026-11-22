@@ -3869,9 +3869,11 @@ html.is-soma-fs-closing .app-h {
     display: inline-block; font-size: 9.5px; line-height: 1;
     color: #ffb8cc; text-shadow: 1px 1px 0 rgba(0,0,0,.55);
 }
-/* Кнопка избранного в шапке: переключение показа всех избранных пластинок */
+/* Кнопка избранного в шапке: переключение показа всех избранных пластинок.
+   Шрифт/размер/letter-spacing берёт от .vh-stat (не наследовать от родителя —
+   это перезаписывало общий шрифт стата). */
 .vh-fav-toggle {
-    cursor: pointer; font: inherit; letter-spacing: inherit;
+    cursor: pointer;
     transition: all .15s;
 }
 .vh-fav-toggle:hover {

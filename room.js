@@ -10818,11 +10818,11 @@ function renderPagerModal() {
                                 <span class="pager-card-meta">${done ? '✓ ОТКЛИК ОТПРАВЛЕН' : 'ГОЛОС СО СТАНЦИИ'}</span>
                             </div>
                             <p class="pager-card-text">${escFn(post.text || '')}</p>
-                            ${!done && !isComposing ? `<div class="pager-card-actions">
-                                <button type="button" class="pager-act-btn pager-act-btn--dismiss" data-act="read" data-post-id="${escFn(pid)}">ПРОСТО ПРОЧИТАТЬ</button>
+                            ${!done && !isComposing ? `<div class="pager-card-actions pager-card-actions--stack">
                                 <button type="button" class="pager-act-btn pager-act-btn--save" data-act="compose" data-post-id="${escFn(pid)}" ${adm.whisperLeftToday <= 0 ? 'disabled' : ''}>
                                     ${adm.whisperLeftToday > 0 ? '✦ ОТВЕТИТЬ ШЁПОТОМ' : 'ЛИМИТ ДНЯ ИСЧЕРПАН (3/3)'}
                                 </button>
+                                <button type="button" class="pager-act-btn pager-act-btn--dismiss" data-act="read" data-post-id="${escFn(pid)}">ПРОСТО ПРОЧИТАТЬ</button>
                             </div>` : ''}
                             ${done
                                 ? `<div class="pager-card-done">✓ Ваш шёпот уже отправлен.</div>`

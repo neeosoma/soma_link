@@ -711,9 +711,11 @@
                                 <div class="vh-meter"><span class="vh-meter-fill" id="vh-meter-l"></span></div>
                                 <div class="vh-meter"><span class="vh-meter-fill" id="vh-meter-r"></span></div>
                             </div>
-                            <div class="vh-tt-controls">
+                            <div class="vh-tt-knobs">
                                 <div class="vh-tt-knob vh-tt-knob--a"><i></i></div>
                                 <div class="vh-tt-knob vh-tt-knob--b"><i></i></div>
+                            </div>
+                            <div class="vh-tt-sliders">
                                 <div class="vh-tt-slider vh-tt-slider--a"><i></i></div>
                                 <div class="vh-tt-slider vh-tt-slider--b"><i></i></div>
                             </div>
@@ -1625,12 +1627,16 @@
                      onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();placeVinylOnTurntable('${esc(it.id)}')}">
                     <button type="button" class="${favCls}" data-vinyl-fav="${esc(it.id)}" aria-label="Избранное" onclick="event.stopPropagation(); toggleVinylFav('${esc(it.id)}')">${favGlyph}</button>
                     <div class="vh-rc-sleeve" style="--vh-accent:${esc(_vinylAccent(it))}">
-                        <span class="vh-rc-num">№ ${esc(it.num || '')}</span>
-                        <div class="vh-rc-disc vh-rc-disc--${cover}">
-                            <div class="vh-rc-disc-sheen" aria-hidden="true"></div>
-                            <div class="vh-rc-disc-hole" aria-hidden="true"></div>
+                        <div class="vh-rc-cover vh-rc-cover--${cover}">
+                            <div class="vh-rc-motif" aria-hidden="true"></div>
+                            <span class="vh-rc-num">№ ${esc(it.num || '')}</span>
+                            <span class="vh-rc-title">СИГНАЛ</span>
                         </div>
-                        <span class="vh-record-tag">${esc(tagLabel)}</span>
+                        <div class="vh-rc-vinyl">
+                            <div class="vh-rc-grooves" aria-hidden="true"></div>
+                            <div class="vh-rc-edge" aria-hidden="true"></div>
+                            <span class="vh-record-tag">${esc(tagLabel)}</span>
+                        </div>
                     </div>
                 </div>`;
             // деревянная полка шкафа между рядами пластинок
@@ -1647,7 +1653,7 @@
         const favCount = vinylArchive.items.filter(it => _vinylIsFav(it)).length;
         const favActive = vinylArchive.onlyFav ? ' is-active' : '';
         el.innerHTML = `<span class="vh-stat vh-stat-count"><b>${total}</b> пластинок</span>`
-            + `<button type="button" class="vh-stat vh-fav-toggle${favActive}" id="vinyl-fav-toggle" onclick="toggleVinylFavFilter()"><span class="vh-star">★</span> ${favCount} в избранном</button>`;
+            + `<button type="button" class="vh-stat vh-fav-toggle${favActive}" id="vinyl-fav-toggle" onclick="toggleVinylFavFilter()"><span class="vh-star">★</span> <b>${favCount}</b> в избранном</button>`;
     }
 
     // Переключатель показа всех избранных пластинок

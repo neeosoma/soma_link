@@ -3828,36 +3828,31 @@ html.is-soma-fs-closing .app-h {
 .vh-head {
     flex: none; display: flex; align-items: center; justify-content: space-between; gap: 10px;
     padding: 11px 14px 9px;
-    background: linear-gradient(180deg, rgba(22,4,18,.82), rgba(22,4,18,.35));
-    border-bottom: 1.5px solid rgba(255,77,109,.25);
+    background: linear-gradient(180deg, rgba(36,12,17,.82), rgba(14,5,8,.5));
+    border-bottom: 1px solid rgba(255,152,134,.18);
 }
 .vh-led {
-    width: 9px; height: 9px; flex: none;
-    background: #ff3355;
-    box-shadow: 2px 2px 0 rgba(255,51,85,.3), 0 0 10px 2px rgba(255,51,85,.5);
+    width: 7px; height: 7px; border-radius: 50%; flex: none;
+    background: #ffc874;
+    box-shadow: 0 0 8px #ffa64c, 0 0 16px rgba(255,96,92,.55);
     animation: vh-led-pulse 2.4s steps(2) infinite;
 }
-@keyframes vh-led-pulse { 0%,100% { opacity: .5; } 50% { opacity: 1; } }
+@keyframes vh-led-pulse { 0%,100% { opacity: .65; } 50% { opacity: 1; } }
 .vh-brand {
-    display: flex; align-items: center; gap: 9px; min-width: 0;
-    padding: 5px 12px 5px 9px;
-    border-radius: 5px;
-    background: linear-gradient(180deg, rgba(255,77,109,.16), rgba(255,77,109,.05));
-    border: 1.5px solid rgba(255,77,109,.4);
-    box-shadow: 2px 2px 0 rgba(0,0,0,.5), inset 0 1px 0 rgba(255,200,220,.08);
+    display: flex; align-items: center; gap: 7px; min-width: 0;
 }
 .vh-title {
-    font-family: 'Share Tech Mono', ui-monospace, monospace;
-    font-size: 14px; font-weight: 700; letter-spacing: .28em;
-    color: #ffdce6;
+    font: 700 10.5px/1 'Share Tech Mono', ui-monospace, monospace;
+    letter-spacing: .16em;
+    color: rgba(255,228,214,.94);
+    text-transform: uppercase;
     white-space: nowrap;
-    text-shadow: 2px 2px 0 #170309, 0 0 16px rgba(255,77,109,.5);
 }
-.vh-stats { display: flex; gap: 8px; flex: none; }
+.vh-stats { display: flex; gap: 8px; flex: none; align-items: center; }
 /* Единый стиль для обеих статов: один шрифт, размер, пиксель-пилюля */
 .vh-stat {
-    font-family: 'Share Tech Mono', ui-monospace, monospace;
-    font-size: 9.5px; letter-spacing: .08em; color: #e8b8c6;
+    font: 700 9.5px/1 'Share Tech Mono', ui-monospace, monospace;
+    letter-spacing: .08em; color: #e8b8c6;
     display: inline-flex; align-items: center; gap: 6px;
     padding: 7px 12px; min-height: 30px;
     white-space: nowrap;
@@ -3868,8 +3863,11 @@ html.is-soma-fs-closing .app-h {
 }
 .vh-stat b { font-weight: 700; color: #fff; text-shadow: 1px 1px 0 rgba(0,0,0,.6); }
 .vh-stat-count { color: #e8b8c6; }
-/* Звёздочка избранного — часть единой эстетики стата */
-.vh-star { color: #ffb8cc; text-shadow: 1px 1px 0 rgba(0,0,0,.55); }
+/* Звёздочка избранного — та же высота/размер шрифта, что у текста стата */
+.vh-star {
+    display: inline-block; font-size: 9.5px; line-height: 1;
+    color: #ffb8cc; text-shadow: 1px 1px 0 rgba(0,0,0,.55);
+}
 /* Кнопка избранного в шапке: переключение показа всех избранных пластинок */
 .vh-fav-toggle {
     cursor: pointer; font: inherit; letter-spacing: inherit;
@@ -4037,66 +4035,81 @@ html.is-soma-fs-closing .app-h {
 /* контейнер-диск (dark jewel-case) */
 .vh-rc-sleeve {
     position: relative; width: 100%; height: 100%;
-    border-radius: 7px; overflow: hidden;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 4px;
-    padding: 6px 4px 5px;
-    background: linear-gradient(180deg, #1c0a14, #120409);
-    border: 1.5px solid rgba(255,200,220,.12);
-    box-shadow: 3px 3px 0 rgba(0,0,0,.55), inset 0 0 0 1px rgba(0,0,0,.5);
+    border-radius: 4px; overflow: hidden;
+    border: 1.5px solid rgba(255,255,255,.12);
+    box-shadow: 3px 3px 0 rgba(0,0,0,.55);
 }
-/* номер сигнала */
-.vh-rc-num {
-    font-family: 'Share Tech Mono', ui-monospace, monospace;
-    font-size: 8px; letter-spacing: .1em; font-weight: 700; color: #ffc0d2;
-    text-shadow: 1px 1px 0 rgba(0,0,0,.75);
-    z-index: 3;
+.vh-rc-cover {
+    position: relative; height: 58px; overflow: hidden;
+    border-bottom: 2px solid rgba(0,0,0,.55);
 }
-/* ===== ДИСК (CD-подобный): металлический градиент + радужный отблеск + отверстие ===== */
-.vh-rc-disc {
-    width: 48px; height: 48px; border-radius: 50%;
-    position: relative; overflow: hidden;
-    background: radial-gradient(circle at 38% 32%, var(--disc-hi, #ffc0d0), var(--vh-accent, #ff4d6d) 56%, var(--disc-lo, #5a0a1a) 100%);
-    box-shadow:
-        inset 0 0 10px rgba(0,0,0,.55),
-        0 2px 6px rgba(0,0,0,.55),
-        0 0 0 1.5px rgba(0,0,0,.35);
-    z-index: 1;
-    transition: filter .15s;
+/* обложки: красная / белая / янтарная / пурпурная */
+.vh-rc-cover--0 { background: var(--vh-accent); }
+.vh-rc-cover--1 { background: #e8e0e4; }
+.vh-rc-cover--1::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(255,77,109,.85), transparent 62%);
 }
-/* радужный отблеск диска + блик */
-.vh-rc-disc-sheen {
-    position: absolute; inset: 0; border-radius: 50%;
+.vh-rc-cover--2 { background: #c97a2a; }
+.vh-rc-cover--2::after {
+    content: ''; position: absolute; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent 0 6px, rgba(0,0,0,.28) 6px 7px, transparent 7px 13px);
+}
+.vh-rc-cover--3 { background: #6a1a4a; }
+.vh-rc-cover--3::after {
+    content: ''; position: absolute; inset: 0;
+    background: repeating-linear-gradient(90deg, transparent 0 6px, rgba(0,0,0,.3) 6px 7px, transparent 7px 13px);
+}
+.vh-rc-motif {
+    position: absolute; inset: 0; opacity: .6;
     background:
-        linear-gradient(118deg, transparent 30%, rgba(255,255,255,.55) 44%, transparent 58%),
-        conic-gradient(from 200deg, rgba(255,140,190,.45), rgba(150,190,255,.35), rgba(190,255,170,.3), rgba(255,210,140,.35), rgba(255,140,190,.45));
-    opacity: .55;
-    z-index: 1;
-    transition: opacity .2s;
+        radial-gradient(circle at 62% 30%, rgba(255,255,255,.4) 0 4px, transparent 5px),
+        repeating-radial-gradient(circle at 62% 30%, transparent 0 7px, rgba(0,0,0,.22) 7px 8px, transparent 8px 15px);
 }
-/* отверстие диска (центр) */
-.vh-rc-disc-hole {
-    position: absolute; top: 50%; left: 50%; width: 7px; height: 7px;
-    margin: -3.5px 0 0 -3.5px; border-radius: 50%; z-index: 2;
-    background: radial-gradient(circle, #1c1016, #050203);
-    box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.3);
+.vh-rc-cover--2 .vh-rc-motif {
+    background: repeating-linear-gradient(48deg, transparent 0 5px, rgba(255,255,255,.22) 5px 6px, transparent 6px 11px);
 }
-/* варианты цветов дисков: красный / серебро / янтарь / пурпур */
-.vh-rc-disc--1 { background: radial-gradient(circle at 38% 32%, #f6f9fc, #c8d2dc 56%, #6a7680 100%); }
-.vh-rc-disc--2 { background: radial-gradient(circle at 38% 32%, #ffe0b0, #e09a3a 56%, #6a3a10 100%); }
-.vh-rc-disc--3 { background: radial-gradient(circle at 38% 32%, #e6c0e0, #9a3a8a 56%, #3a0a2a 100%); }
-/* hover — отблеск усиливается */
-.vh-record-card:hover .vh-rc-disc-sheen { opacity: .85; }
-.vh-record-card:hover .vh-rc-disc { filter: saturate(1.15) brightness(1.05); }
-/* тег сигнала под диском */
+.vh-rc-cover--3 .vh-rc-motif {
+    background: repeating-linear-gradient(48deg, transparent 0 5px, rgba(255,255,255,.16) 5px 6px, transparent 6px 11px);
+}
+.vh-rc-title {
+    position: absolute; left: 5px; bottom: 4px; z-index: 2;
+    font-family: 'Share Tech Mono', ui-monospace, monospace;
+    font-size: 7px; letter-spacing: .14em; font-weight: 700; color: #fff;
+    text-shadow: 1px 1px 0 rgba(0,0,0,.65);
+}
+.vh-rc-num {
+    position: absolute; left: 5px; top: 4px; z-index: 3;
+    font-family: 'Share Tech Mono', ui-monospace, monospace;
+    font-size: 8px; letter-spacing: .1em; font-weight: 700; color: #fff;
+    text-shadow: 1px 1px 0 rgba(0,0,0,.75);
+}
+.vh-rc-cover--1 .vh-rc-num { color: #b02040; text-shadow: none; }
+.vh-rc-cover--2 .vh-rc-num { color: #3a1200; text-shadow: none; }
+.vh-rc-cover--1 .vh-rc-title { color: #b02040; text-shadow: none; }
+.vh-rc-cover--2 .vh-rc-title { color: #3a1200; text-shadow: none; }
+.vh-rc-vinyl {
+    height: 28px; position: relative;
+    background:
+        repeating-linear-gradient(90deg, #1d1d20 0 2px, #101013 2px 4px),
+        #161619;
+    border-top: 2px solid rgba(0,0,0,.6);
+}
+.vh-rc-grooves {
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(90deg, rgba(255,255,255,.06) 0 1px, transparent 1px 4px);
+}
+.vh-rc-edge {
+    position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    background: rgba(255,255,255,.16);
+}
 .vh-record-tag {
+    position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
     font-family: 'Share Tech Mono', ui-monospace, monospace;
     font-size: 7px; color: #f0d0da; background: rgba(8,3,6,.9);
-    padding: 2px 6px;
+    padding: 1px 5px;
     border: 1px solid rgba(255,77,109,.3);
-    border-radius: 3px;
-    max-width: 50px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    text-align: center;
+    max-width: 44px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .vh-fav-dot {
     position: absolute; top: -6px; right: -6px; z-index: 5;
@@ -4160,28 +4173,28 @@ html.is-soma-fs-closing .app-h {
 }
 /* Подиум слева — платформа под панель управления */
 .vh-tt-base::after {
-    content: ''; position: absolute; left: 12px; width: 150px; top: -17px; height: 19px;
+    content: ''; position: absolute; left: 12px; width: 96px; top: -17px; height: 19px;
     border-radius: 3px;
     background: linear-gradient(180deg, #34102a 0 45%, #240a16 46% 100%);
     border: 2.5px solid #5c2440;
     box-shadow: 3px 3px 0 rgba(0,0,0,.62);
 }
-/* ===== ПАНЕЛЬ УПРАВЛЕНИЯ — левая часть: LED + VU-метры + ручки ===== */
+/* ===== ПАНЕЛЬ УПРАВЛЕНИЯ — вертикальный прямоугольник слева ===== */
 .vh-tt-panel {
-    position: absolute; left: 12px; top: 20px; z-index: 2;
-    width: 150px; height: 127px;
-    border-radius: 5px;
+    position: absolute; left: 12px; top: 18px; z-index: 2;
+    width: 96px; height: 129px;
+    border-radius: 6px;
     background:
-        repeating-linear-gradient(90deg, rgba(0,0,0,.24) 0 2px, transparent 2px 9px),
+        repeating-linear-gradient(0deg, rgba(0,0,0,.22) 0 2px, transparent 2px 9px),
         linear-gradient(180deg, #1a0610, #120309);
-    border: 2.5px solid rgba(255,200,160,.18);
+    border: 2.5px solid rgba(255,200,160,.2);
     box-shadow: 3px 3px 0 rgba(0,0,0,.62), inset 0 0 0 1px rgba(0,0,0,.6),
         inset 0 3px 9px rgba(0,0,0,.6), inset 0 -2px 6px rgba(0,0,0,.5);
     pointer-events: none;
 }
-/* Индикатор питания на панели */
+/* Индикатор питания вверху панели */
 .vh-tt-led {
-    position: absolute; left: 12px; top: 12px; z-index: 3;
+    position: absolute; left: 10px; top: 10px; z-index: 3;
     width: 9px; height: 9px;
     background: #ff7a3d;
     box-shadow: 1px 1px 0 rgba(0,0,0,.6), 0 0 12px 2px rgba(255,122,61,.7);
@@ -4191,10 +4204,10 @@ html.is-soma-fs-closing .app-h {
     background: #ffd24d;
     box-shadow: 1px 1px 0 rgba(0,0,0,.6), 0 0 14px 3px rgba(255,210,77,.9);
 }
-/* ===== VU-метры: сегментные индикаторы — левая колонка панели ===== */
+/* ===== VU-метры: два индикатора рядком под LED ===== */
 .vh-tt-meters {
-    position: absolute; left: 12px; top: 42px; z-index: 3;
-    display: flex; flex-direction: column; gap: 6px;
+    position: absolute; left: 33px; top: 30px; z-index: 3;
+    display: flex; gap: 6px;
 }
 .vh-meter {
     width: 12px; height: 34px; overflow: hidden;
@@ -4219,10 +4232,10 @@ html.is-soma-fs-closing .app-h {
     50% { height: 46%; }
     75% { height: 92%; }
 }
-/* ===== РУЧКИ + ПОЛЗУНКИ — правая колонка панели ===== */
-.vh-tt-controls {
-    position: absolute; right: 10px; top: 34px; z-index: 3;
-    display: flex; align-items: center; gap: 8px;
+/* ===== РУЧКИ — ряд в панели ===== */
+.vh-tt-knobs {
+    position: absolute; left: 20px; top: 66px; z-index: 3;
+    display: flex; gap: 8px;
 }
 .vh-tt-knob {
     position: relative; width: 24px; height: 24px; border-radius: 50%; flex: none;
@@ -4241,6 +4254,11 @@ html.is-soma-fs-closing .app-h {
 }
 .vh-tt-knob--a i { transform: rotate(-38deg); }
 .vh-tt-knob--b i { transform: rotate(46deg); }
+/* ===== ПОЛЗУНКИ — ряд в панели ===== */
+.vh-tt-sliders {
+    position: absolute; left: 36px; top: 92px; z-index: 3;
+    display: flex; gap: 8px;
+}
 .vh-tt-slider {
     position: relative; width: 8px; height: 32px; flex: none; border-radius: 2px;
     background: #0b0405;
@@ -4336,7 +4354,7 @@ html.is-soma-fs-closing .app-h {
 }
 /* ===== ТОНАРМ С ИГОЛКОЙ — крепление на панели (верх правого края), читает пластинку справа ===== */
 .vh-tt-arm {
-    position: absolute; left: 154px; top: 26px; z-index: 4;
+    position: absolute; left: 101px; top: 24px; z-index: 4;
     width: 13px; height: 150px; pointer-events: none;
     transform-origin: 6.5px 6.5px;
     transform: rotate(-28deg);
@@ -4346,7 +4364,7 @@ html.is-soma-fs-closing .app-h {
     box-shadow: 3px 3px 0 rgba(0,0,0,.62);
     transition: transform .55s ease;
 }
-/* Кронштейн-оправа у крепления на панели */
+/* Кронштейн-оправа у крепления на панели (верх правого края) */
 .vh-tt-arm::before {
     content: ''; position: absolute; top: -6px; left: -7px; width: 27px; height: 18px;
     border-radius: 4px;
@@ -4361,7 +4379,7 @@ html.is-soma-fs-closing .app-h {
     box-shadow: 0 0 6px rgba(255,200,120,.45);
 }
 /* Вкл/выкл — поворот в разные стороны: выкл → влево (от пластинки), вкл → на пластинку */
-.vh-turntable.is-playing .vh-tt-arm { transform: rotate(40deg); }
+.vh-turntable.is-playing .vh-tt-arm { transform: rotate(50deg); }
 
 /* ===== ПАНЕЛЬ ЧТЕНИЯ (лайнер-нотыс) ===== */
 .vh-read {
@@ -4421,17 +4439,18 @@ html.is-soma-fs-closing .app-h {
     .vh-tt-halo { width: 264px; height: 264px; left: 108px; top: -30px; }
     .vh-tt-base { height: 72px; }
     .vh-tt-base::before { left: 152px; top: -14px; height: 16px; }
-    .vh-tt-base::after { left: 10px; width: 126px; top: -14px; height: 16px; }
-    .vh-tt-panel { left: 10px; top: 16px; width: 126px; height: 108px; }
-    .vh-tt-led { left: 10px; top: 10px; }
-    .vh-tt-meters { left: 10px; top: 36px; gap: 5px; }
-    .vh-tt-controls { right: 8px; top: 30px; gap: 6px; }
+    .vh-tt-base::after { left: 10px; width: 80px; top: -14px; height: 16px; }
+    .vh-tt-panel { left: 10px; top: 14px; width: 80px; height: 110px; }
+    .vh-tt-led { left: 8px; top: 8px; }
+    .vh-tt-meters { left: 26px; top: 24px; gap: 5px; }
+    .vh-tt-knobs { left: 17px; top: 52px; gap: 6px; }
     .vh-tt-knob { width: 20px; height: 20px; }
     .vh-tt-knob i { height: 8px; margin: -4px 0 0 -1px; }
+    .vh-tt-sliders { left: 29px; top: 76px; gap: 6px; }
     .vh-tt-slider { height: 26px; }
     .vh-tt-platter { left: 138px; top: -28px; width: 200px; height: 200px; }
     .vh-record { width: 154px; height: 154px; }
-    .vh-tt-arm { left: 130px; top: 22px; height: 124px; }
+    .vh-tt-arm { left: 83px; top: 20px; height: 124px; }
     .vh-meter { height: 26px; }
 }
 

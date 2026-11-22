@@ -106,6 +106,8 @@
             callsign: callsign.slice(0, 26),
             warmth,
             trained: Math.max(0, Number(p.trained) || 0),
+            whispersSent: Math.max(0, Number(p.whispersSent) || 0),
+            signals: (typeof getMyPostIds === 'function') ? Math.max(0, getMyPostIds().length || 0) : 0,
             phaseIdx,
             phaseName,
             cosm,
@@ -463,11 +465,11 @@
         const nameLines = wrapLines(g, snap.callsign, 430, 1);
         g.fillText(nameLines[0] || 'Свидетель', 50, 162);
 
-        // Бейдж ранга и авторского титула
+        // Бейдж ранга и авторского титула (тепло уже есть в отдельном блоке)
         let curY = 184;
         const badgeText = snap.title
-            ? `${snap.titleGlyph} ${snap.title}  ·  ${snap.warmth} ТЕПЛО`
-            : `ХРАНИТЕЛЬ СТАНЦИИ  ·  ${snap.warmth} ТЕПЛО`;
+            ? `${snap.titleGlyph} ${snap.title}`
+            : `ХРАНИТЕЛЬ СТАНЦИИ`;
         g.font = `700 13px ${MONO}`;
         const bw = Math.min(440, g.measureText(badgeText).width + 24);
         rr(g, 50, curY, bw, 30, 8);
@@ -493,11 +495,11 @@
         });
         curY += qLines.length * qLh + (qLines.length > 2 ? 18 : 26);
 
-        // Atmosphere and consent, not counts of stories or replies.
+        // Atmosphere and player's own activity counts.
         const stats = [
-            { k: 'ТИХИЙ ЗНАК', v: 'АНОНИМНО', col: '#fff2f4' },
+            { k: 'СИГНАЛОВ СДЕЛАНО', v: String(snap.signals), col: '#fff2f4' },
             { k: 'ТЕПЛО СТАНЦИИ', v: String(snap.warmth), col: '#ffd58e' },
-            { k: 'ЛИЧНЫЙ ОТВЕТ', v: 'ПО ЖЕЛАНИЮ', col: '#ff8597' },
+            { k: 'ШЁПОТОВ ОТПРАВЛЕНО', v: String(snap.whispersSent), col: '#ff8597' },
             { k: 'АТМОСФЕРА', v: String(snap.phaseName || 'Ночь').toUpperCase(), col: '#ff5c74' }
         ];
         const boxW = 196, boxH = 74, gap = 12;
@@ -550,7 +552,7 @@
         g.fillText(roomTag, CARD_W - 37 - rtw, 64);
 
         drawSubtleScanlinesAndGrain(g, CARD_W, CARD_H, 0.65);
-        drawFooterBar(g, 'NEEOSOMA // SOMA~LINK · NEEO~CITY', dateStr, fp.edge);
+        drawFooterBar(g, 'NEEOSOMA // NEEO~CITY', dateStr, fp.edge);
     }
 
     // =========================================================================
@@ -710,7 +712,7 @@
         g.fillText('КАК ОТКРЫТЬ — ЗАСЕКРЕЧЕНО. ПОПРОБУЙ САМ.', 54, 536);
 
         drawSubtleScanlinesAndGrain(g, CARD_W, CARD_H, 0.85);
-        drawFooterBar(g, 'СБОЙ ПРОТОКОЛА // SOMA~LINK', dateStr, '#ffca68');
+        drawFooterBar(g, 'СБОЙ ПРОТОКОЛА', dateStr, '#ffca68');
     }
 
     // =========================================================================
@@ -1066,7 +1068,7 @@
         g.fillText(`${snap.callsign} · ${snap.phaseName}`, 72, 476);
 
         drawSubtleScanlinesAndGrain(g, CARD_W, CARD_H, 0.65);
-        drawFooterBar(g, 'NEEOSOMA // ОРАНЖЕРЕЯ SOMA~LINK · NEEO~CITY', dateStr, frameAccent);
+        drawFooterBar(g, 'NEEOSOMA // ОРАНЖЕРЕЯ · NEEO~CITY', dateStr, frameAccent);
     }
 
     // =========================================================================
@@ -1135,7 +1137,7 @@
         g.fillStyle = '#ffffff';
         g.fillText(`@${String(snap.callsign).replace(/^@/, '')}`, 48, CARD_H - 64);
 
-        drawFooterBar(g, 'NEEOSOMA // SOMA~LINK · NEEO~CITY', dateStr, accent);
+        drawFooterBar(g, 'NEEOSOMA // NEEO~CITY', dateStr, accent);
     }
 
     // ---- ЭКСПОРТ CANVAS -> BLOB & DATA URL ----

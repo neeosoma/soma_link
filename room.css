@@ -4134,70 +4134,85 @@ html.is-soma-fs-closing .app-h {
     box-shadow: 8px 8px 0 rgba(0,0,0,.55), 0 0 22px -2px var(--vh-accent);
 }
 
-/* ===== ПРОИГРЫВАТЕЛЬ — детализированный аутентичный пиксель-арт (старые pixel-art игры) ===== */
+/* ===== ПРОИГРЫВАТЕЛЬ — самодостаточный консольный корпус, пиксель-арт ===== */
 .vh-turntable {
     flex: none; position: relative;
-    width: 412px; height: 252px;
-    margin: 4px auto 0;
-}
-/* Пиксельный ореол света — hard-edge блик с лёгким свечением за пластинкой (правая часть) */
-.vh-tt-halo {
-    position: absolute; left: 77px; top: -70px;
-    width: 320px; height: 320px; z-index: 0; pointer-events: none;
+    width: 420px; height: 284px;
+    margin: 6px auto 0;
+    border-radius: 12px;
     background:
-        radial-gradient(ellipse at 50% 76%, rgba(255,150,70,.28) 0 30%, rgba(255,77,109,.14) 31% 52%, transparent 74%),
-        radial-gradient(ellipse at 50% 84%, rgba(255,184,77,.16) 0 16%, transparent 58%);
+        repeating-linear-gradient(0deg, rgba(0,0,0,.16) 0 3px, transparent 3px 16px),
+        repeating-linear-gradient(90deg, rgba(255,200,160,.03) 0 2px, transparent 2px 22px),
+        linear-gradient(180deg, #2c1120 0%, #1c0913 52%, #120509 100%);
+    border: 3px solid #4a1a30;
+    box-shadow: 6px 6px 0 rgba(0,0,0,.66), inset 0 2px 0 rgba(255,200,180,.08),
+        inset 0 -3px 0 rgba(0,0,0,.5), inset 0 0 22px rgba(0,0,0,.4);
+}
+/* Акцентная светящаяся полоса вверху корпуса (омаивает консоль) */
+.vh-turntable::before {
+    content: ''; position: absolute; left: 18px; right: 18px; top: 8px; height: 3px;
+    border-radius: 2px; z-index: 5; pointer-events: none;
+    background: linear-gradient(90deg, transparent, var(--vh-accent, #ff6b7d) 50%, transparent);
+    box-shadow: 0 0 10px -1px var(--vh-accent, #ff6b7d);
+    opacity: .7;
+}
+/* ===== ОРЕОЛ СВЕТА — мягкое свечение за пластинкой (внутри корпуса) ===== */
+.vh-tt-halo {
+    position: absolute; left: 138px; top: 8px;
+    width: 278px; height: 252px; z-index: 0; pointer-events: none;
+    background:
+        radial-gradient(ellipse at 50% 72%, rgba(255,150,70,.30) 0 28%, rgba(255,77,109,.16) 29% 52%, transparent 76%),
+        radial-gradient(ellipse at 50% 82%, rgba(255,184,77,.16) 0 15%, transparent 56%);
     animation: vh-halo-breathe 5s ease-in-out infinite;
 }
 @keyframes vh-halo-breathe { 0%,100% { opacity: .82; } 50% { opacity: 1; } }
 .vh-turntable.is-playing .vh-tt-halo {
     background:
-        radial-gradient(ellipse at 50% 76%, rgba(255,170,88,.44) 0 32%, rgba(255,90,120,.22) 33% 54%, transparent 76%),
-        radial-gradient(ellipse at 50% 84%, rgba(255,184,77,.24) 0 18%, transparent 60%);
+        radial-gradient(ellipse at 50% 72%, rgba(255,170,88,.46) 0 30%, rgba(255,90,120,.24) 31% 54%, transparent 78%),
+        radial-gradient(ellipse at 50% 82%, rgba(255,184,77,.26) 0 17%, transparent 58%);
 }
-/* ===== КОРПУС: вертикальный прямоугольник слева (блок, на котором стоит панель) ===== */
+/* ===== ЛЕВЫЙ УПРАВЛЯЮЩИЙ НАДВОР (корпус): поднятая панель ===== */
 .vh-tt-base {
-    position: absolute; left: 0; top: 0;
-    width: 128px; height: 252px; z-index: 2;
+    position: absolute; left: 14px; top: 16px;
+    width: 138px; height: 252px; z-index: 2;
+    border-radius: 9px;
     background:
-        repeating-linear-gradient(0deg, rgba(0,0,0,.14) 0 3px, transparent 3px 14px),
-        #260a18;
-    border: 3px solid #5c2440;
-    border-radius: 8px;
-    box-shadow: 6px 6px 0 rgba(0,0,0,.7), inset 0 0 0 2px rgba(255,200,160,.08);
+        repeating-linear-gradient(0deg, rgba(0,0,0,.16) 0 3px, transparent 3px 15px),
+        linear-gradient(180deg, #241019 0%, #160811 100%);
+    border: 2.5px solid #4a1a30;
+    box-shadow: 4px 4px 0 rgba(0,0,0,.6), inset 0 2px 0 rgba(255,200,180,.1),
+        inset 0 0 0 1px rgba(0,0,0,.5);
 }
-/* Подставка-лип под плели (на правой стороне корпуса — к корпусу крепится круг) */
+/* Верхний световой брезент на корпусе */
 .vh-tt-base::before {
-    content: ''; position: absolute; right: -4px; top: 92px; width: 12px; height: 100px;
-    border-radius: 3px;
-    background: linear-gradient(180deg, #421530 0 40%, #240a16 41% 100%);
-    border: 2.5px solid #5c2440;
-    box-shadow: 3px 3px 0 rgba(0,0,0,.62);
+    content: ''; position: absolute; left: 10px; right: 10px; top: 7px; height: 2px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, transparent, rgba(255,200,180,.22), transparent);
 }
 /* Акцентная полоса внизу корпуса */
 .vh-tt-base::after {
-    content: ''; position: absolute; left: 12px; right: 12px; bottom: 12px; height: 10px;
+    content: ''; position: absolute; left: 14px; right: 14px; bottom: 12px; height: 8px;
     border-radius: 3px;
-    background: linear-gradient(180deg, #34102a 0 45%, #240a16 46% 100%);
-    border: 2.5px solid #5c2440;
+    background: linear-gradient(180deg, #3a1228 0 45%, #240a16 46% 100%);
+    border: 2px solid #4a1a30;
     box-shadow: 2px 2px 0 rgba(0,0,0,.5);
 }
-/* ===== ПАНЕЛЬ УПРАВЛЕНИЯ — на корпусе (верхняя часть) ===== */
+/* ===== ПАНЕЛЬ УПРАВЛЕНИЯ — утопленная плоскость на корпусе ===== */
 .vh-tt-panel {
-    position: absolute; left: 14px; top: 18px; z-index: 2;
-    width: 100px; height: 120px;
-    border-radius: 6px;
+    position: absolute; left: 20px; top: 24px; z-index: 3;
+    width: 102px; height: 168px;
+    border-radius: 7px;
     background:
         repeating-linear-gradient(0deg, rgba(0,0,0,.22) 0 2px, transparent 2px 9px),
-        linear-gradient(180deg, #1a0610, #120309);
-    border: 2.5px solid rgba(255,200,160,.2);
-    box-shadow: 3px 3px 0 rgba(0,0,0,.62), inset 0 0 0 1px rgba(0,0,0,.6),
-        inset 0 3px 9px rgba(0,0,0,.6), inset 0 -2px 6px rgba(0,0,0,.5);
+        linear-gradient(180deg, #150610, #0c0308);
+    border: 2px solid rgba(255,200,160,.18);
+    box-shadow: inset 0 2px 8px rgba(0,0,0,.7), inset 0 -2px 6px rgba(0,0,0,.55),
+        inset 0 0 0 1px rgba(0,0,0,.55);
     pointer-events: none;
 }
 /* Индикатор питания вверху панели */
 .vh-tt-led {
-    position: absolute; left: 10px; top: 10px; z-index: 3;
+    position: absolute; left: 30px; top: 34px; z-index: 4;
     width: 9px; height: 9px;
     background: #ff7a3d;
     box-shadow: 1px 1px 0 rgba(0,0,0,.6), 0 0 12px 2px rgba(255,122,61,.7);
@@ -4209,7 +4224,7 @@ html.is-soma-fs-closing .app-h {
 }
 /* ===== VU-метры: два индикатора рядком под LED ===== */
 .vh-tt-meters {
-    position: absolute; left: 35px; top: 30px; z-index: 3;
+    position: absolute; left: 52px; top: 50px; z-index: 4;
     display: flex; gap: 6px;
 }
 .vh-meter {
@@ -4237,7 +4252,7 @@ html.is-soma-fs-closing .app-h {
 }
 /* ===== РУЧКИ — ряд в панели ===== */
 .vh-tt-knobs {
-    position: absolute; left: 22px; top: 62px; z-index: 3;
+    position: absolute; left: 32px; top: 92px; z-index: 4;
     display: flex; gap: 8px;
 }
 .vh-tt-knob {
@@ -4259,7 +4274,7 @@ html.is-soma-fs-closing .app-h {
 .vh-tt-knob--b i { transform: rotate(46deg); }
 /* ===== ПОЛЗУНКИ — ряд в панели ===== */
 .vh-tt-sliders {
-    position: absolute; left: 38px; top: 88px; z-index: 3;
+    position: absolute; left: 48px; top: 134px; z-index: 4;
     display: flex; gap: 8px;
 }
 .vh-tt-slider {
@@ -4276,19 +4291,27 @@ html.is-soma-fs-closing .app-h {
 }
 .vh-tt-slider--a i { top: 3px; }
 .vh-tt-slider--b i { top: 15px; }
-/* ===== ПЛОЩАДКА (platter): круг справа, прикреплён к корпусу ===== */
+/* ===== ПЛОЩАДКА (platter): круг справа, на платформе, в границах корпуса ===== */
 .vh-tt-platter {
-    position: absolute; left: 122px; top: -30px; z-index: 2;
-    width: 230px; height: 230px;
+    position: absolute; left: 162px; top: 36px; z-index: 2;
+    width: 232px; height: 232px;
     border-radius: 50%;
     background:
         radial-gradient(circle at 50% 50%, #101014 0 61%, transparent 62%),
         repeating-conic-gradient(from 0deg, #3c3c46 0deg 13deg, #24242b 13deg 26deg),
         #2c2c33;
     border: 2.5px solid #17171b;
-    box-shadow: 8px 8px 0 rgba(0,0,0,.68), 0 0 40px -6px rgba(255,140,70,.3), inset 0 0 0 2px rgba(255,200,160,.08), inset 0 0 28px rgba(0,0,0,.7);
+    box-shadow: 8px 8px 0 rgba(0,0,0,.68), 0 0 40px -6px rgba(255,140,70,.3),
+        inset 0 0 0 2px rgba(255,200,160,.08), inset 0 0 28px rgba(0,0,0,.7);
     display: flex; align-items: center; justify-content: center;
     transition: box-shadow .3s ease, transform .3s ease;
+}
+/* Тень-пьедестал под пластинкой — «лежит на поверхности» */
+.vh-tt-platter::before {
+    content: ''; position: absolute; left: 4%; right: 4%; bottom: -14px; height: 22px;
+    border-radius: 50%; z-index: -1; pointer-events: none;
+    background: radial-gradient(50% 50% at 50% 50%, rgba(0,0,0,.72) 0 60%, transparent 82%);
+    filter: blur(2px);
 }
 .vh-tt-glow {
     position: absolute; inset: 8%; border-radius: 50%; pointer-events: none; opacity: 0;
@@ -4302,7 +4325,8 @@ html.is-soma-fs-closing .app-h {
 @keyframes vh-glow-pulse { 0%,100% { opacity: .55; } 50% { opacity: .95; } }
 .vh-tt-platter.is-drop {
     transform: scale(1.04);
-    box-shadow: 8px 8px 0 rgba(0,0,0,.68), 0 0 34px 4px var(--vh-accent, #ff6b7d), inset 0 0 0 2px var(--vh-accent, #ff6b7d), inset 0 0 28px rgba(0,0,0,.7);
+    box-shadow: 8px 8px 0 rgba(0,0,0,.68), 0 0 34px 4px var(--vh-accent, #ff6b7d),
+        inset 0 0 0 2px var(--vh-accent, #ff6b7d), inset 0 0 28px rgba(0,0,0,.7);
 }
 .vh-tt-platter.is-drop .vh-tt-glow { opacity: .7; }
 /* ===== ПЛАСТИНКА: чёрный винил, рифли, цветная наклейка, отверстие спинделя ===== */
@@ -4355,21 +4379,21 @@ html.is-soma-fs-closing .app-h {
     border: 1.5px solid rgba(0,0,0,.55);
     box-shadow: 0 0 8px rgba(255,200,120,.5);
 }
-/* ===== ТОНАРМ С ИГОЛКОЙ — крепится к панели (верх правого края), читает пластинку ===== */
+/* ===== ТОНАРМ С ИГОЛКОЙ — крепится к корпусу (верх стыка корпус/площадка), читает пластинку ===== */
 .vh-tt-arm {
-    position: absolute; left: 107px; top: 22px; z-index: 4;
-    width: 13px; height: 140px; pointer-events: none;
-    transform-origin: 6.5px 6.5px;
-    transform: rotate(-120deg);
+    position: absolute; left: 150px; top: 40px; z-index: 4;
+    width: 14px; height: 138px; pointer-events: none;
+    transform-origin: 7px 7px;
+    transform: rotate(-95deg);
     background: linear-gradient(180deg, #7a7a82 0 10%, #3a3a42 10% 86%, #8e8e96 86% 100%);
     border: 2px solid #17171b;
     border-radius: 2px;
     box-shadow: 3px 3px 0 rgba(0,0,0,.62);
     transition: transform .55s ease;
 }
-/* Кронштейн-оправа у крепления на панели (верх правого края) */
+/* Кронштейн-оправа у крепления (верх стыка корпус/площадка) */
 .vh-tt-arm::before {
-    content: ''; position: absolute; top: -6px; left: -7px; width: 27px; height: 18px;
+    content: ''; position: absolute; top: -7px; left: -8px; width: 30px; height: 20px;
     border-radius: 4px;
     background: linear-gradient(180deg, #5a5a62, #24242a);
     border: 2px solid #17171b;
@@ -4381,8 +4405,8 @@ html.is-soma-fs-closing .app-h {
     background: linear-gradient(180deg, #f0d29c, #ff6b7d);
     box-shadow: 0 0 6px rgba(255,200,120,.45);
 }
-/* Вкл/выкл: выкл — поднят вверх-вправо (от пластинки), вкл — опущен на пластинку */
-.vh-turntable.is-playing .vh-tt-arm { transform: rotate(-55deg); }
+/* Вкл/выкл: выкл — поднят (от пластинки), вкл — опущен на пластинку */
+.vh-turntable.is-playing .vh-tt-arm { transform: rotate(-50deg); }
 
 /* ===== ПАНЕЛЬ ЧТЕНИЯ (лайнер-нотыс) ===== */
 .vh-read {
@@ -4438,22 +4462,22 @@ html.is-soma-fs-closing .app-h {
     .vh-stats { order: 3; width: 100%; justify-content: flex-start; }
     .vh-chips { gap: 4px; }
     .vh-chip { padding: 6px 8px; font-size: 8.5px; }
-    .vh-turntable { width: 340px; height: 210px; }
-    .vh-tt-halo { width: 264px; height: 264px; left: 62px; top: -66px; }
-    .vh-tt-base { width: 108px; height: 210px; }
-    .vh-tt-base::before { right: -4px; top: 80px; width: 10px; height: 84px; }
-    .vh-tt-base::after { left: 10px; right: 10px; bottom: 10px; height: 8px; }
-    .vh-tt-panel { left: 10px; top: 14px; width: 84px; height: 100px; }
-    .vh-tt-led { left: 8px; top: 8px; }
-    .vh-tt-meters { left: 28px; top: 22px; gap: 5px; }
-    .vh-tt-knobs { left: 19px; top: 48px; gap: 6px; }
+    .vh-turntable { width: 336px; height: 228px; }
+    .vh-tt-halo { width: 222px; height: 202px; left: 110px; top: 6px; }
+    .vh-tt-base { left: 11px; top: 13px; width: 110px; height: 202px; }
+    .vh-tt-base::before { left: 8px; right: 8px; top: 5px; }
+    .vh-tt-base::after { left: 11px; right: 11px; bottom: 10px; height: 7px; }
+    .vh-tt-panel { left: 16px; top: 19px; width: 82px; height: 134px; }
+    .vh-tt-led { left: 24px; top: 27px; }
+    .vh-tt-meters { left: 42px; top: 40px; gap: 5px; }
+    .vh-tt-knobs { left: 26px; top: 74px; gap: 6px; }
     .vh-tt-knob { width: 20px; height: 20px; }
     .vh-tt-knob i { height: 8px; margin: -4px 0 0 -1px; }
-    .vh-tt-sliders { left: 31px; top: 68px; gap: 6px; }
+    .vh-tt-sliders { left: 38px; top: 107px; gap: 6px; }
     .vh-tt-slider { height: 26px; }
-    .vh-tt-platter { left: 104px; top: -24px; width: 180px; height: 180px; }
-    .vh-record { width: 138px; height: 138px; }
-    .vh-tt-arm { left: 87px; top: 18px; height: 116px; }
+    .vh-tt-platter { left: 130px; top: 29px; width: 186px; height: 186px; }
+    .vh-record { width: 150px; height: 150px; }
+    .vh-tt-arm { left: 120px; top: 32px; height: 110px; }
     .vh-meter { height: 26px; }
 }
 

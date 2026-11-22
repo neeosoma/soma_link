@@ -1624,16 +1624,12 @@
                      onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();placeVinylOnTurntable('${esc(it.id)}')}">
                     <button type="button" class="${favCls}" data-vinyl-fav="${esc(it.id)}" aria-label="Избранное" onclick="event.stopPropagation(); toggleVinylFav('${esc(it.id)}')">${favGlyph}</button>
                     <div class="vh-rc-sleeve" style="--vh-accent:${esc(_vinylAccent(it))}">
-                        <div class="vh-rc-cover vh-rc-cover--${cover}">
-                            <div class="vh-rc-motif" aria-hidden="true"></div>
-                            <span class="vh-rc-num">№ ${esc(it.num || '')}</span>
-                            <span class="vh-rc-title">СИГНАЛ</span>
+                        <span class="vh-rc-num">№ ${esc(it.num || '')}</span>
+                        <div class="vh-rc-disc vh-rc-disc--${cover}">
+                            <div class="vh-rc-disc-sheen" aria-hidden="true"></div>
+                            <div class="vh-rc-disc-hole" aria-hidden="true"></div>
                         </div>
-                        <div class="vh-rc-vinyl">
-                            <div class="vh-rc-grooves" aria-hidden="true"></div>
-                            <div class="vh-rc-edge" aria-hidden="true"></div>
-                            <span class="vh-record-tag">${esc(tagLabel)}</span>
-                        </div>
+                        <span class="vh-record-tag">${esc(tagLabel)}</span>
                     </div>
                 </div>`;
             // деревянная полка шкафа между рядами пластинок

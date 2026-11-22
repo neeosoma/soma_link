@@ -10818,7 +10818,7 @@ function renderPagerModal() {
                                 <span class="pager-card-meta">${done ? '✓ ОТКЛИК ОТПРАВЛЕН' : 'ГОЛОС СО СТАНЦИИ'}</span>
                             </div>
                             <p class="pager-card-text">${escFn(post.text || '')}</p>
-                            ${adm.firstAvailable && !isComposing ? `<div class="pager-card-actions">
+                            ${!done && !isComposing ? `<div class="pager-card-actions">
                                 <button type="button" class="pager-act-btn pager-act-btn--dismiss" data-act="read" data-post-id="${escFn(pid)}">ПРОСТО ПРОЧИТАТЬ</button>
                                 <button type="button" class="pager-act-btn pager-act-btn--dismiss" data-act="skip" data-post-id="${escFn(pid)}">ПРОПУСТИТЬ</button>
                             </div>` : ''}

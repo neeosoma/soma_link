@@ -676,7 +676,7 @@
                     <span class="vh-led" aria-hidden="true"></span>
                     <div>
                         <div class="vh-kicker">NEEOSOMA</div>
-                        <div class="vh-sub">ФОНОТЕКА · ДНЕВНИК СИГНАЛОВ</div>
+                        <div class="vh-sub">ДНЕВНИК · АРХИВ СИГНАЛОВ</div>
                     </div>
                 </div>
                 <div class="vh-stats" id="vinyl-stats"></div>
@@ -700,7 +700,6 @@
                     <div class="vh-cab-glass" aria-hidden="true"></div>
                     <div class="vh-cab-interior" id="vinyl-body"></div>
                     <div class="vh-cab-frame" aria-hidden="true"></div>
-                    <div class="vh-cab-label" aria-hidden="true">СИГНАЛЬНАЯ ПОДКЛИКА</div>
                 </div>
                 <!-- ПАНЕЛЬ ЧТЕНИЯ ПОМЕЩЕННОЙ ПЛАСТИНКИ (лайнер-нотыс) -->
                 <div class="vh-read hidden" id="vinyl-read"></div>
@@ -709,7 +708,6 @@
                 <div class="vh-turntable" id="vinyl-turntable">
                     <div class="vh-tt-halo" aria-hidden="true"></div>
                     <div class="vh-tt-base">
-                        <div class="vh-tt-brand" aria-hidden="true">NEEOSOMA // AV-88</div>
                         <div class="vh-tt-led" aria-hidden="true"></div>
                         <div class="vh-tt-panel" aria-hidden="true">
                             <div class="vh-tt-knob vh-tt-knob--a"><i></i></div>
@@ -1431,7 +1429,7 @@
     }
 
     // ===== ВИНИЛОВАЯ ПОЛКА СОБСТВЕННЫХ СИГНАЛОВ (полка → вытаскивание на проигрыватель → боковой вид → крутящаяся пластинка; кассетный архив — через магнитофон в комнате) =====
-    const vinylArchive = { items: [], loading: false, readingId: '', placedId: '', spinning: false, filter: 'all' };
+    const vinylArchive = { items: [], loading: false, readingId: '', placedId: '', spinning: false, filter: 'all', onlyFav: false };
     const vinylDrag = { id: '', ghost: null, sx: 0, sy: 0, dx: 0, dy: 0, moved: false, suppress: false, bound: false };
 
     function _vinylTagRaw(it) {
@@ -1449,6 +1447,13 @@
             if (c) return c;
         }
         return '#ff4d6d';
+    }
+
+    // Избранное пластинки: из merged-архива (it.fav) или из API (isEntryFav).
+    function _vinylIsFav(it) {
+        if (it.fav !== undefined) return !!it.fav;
+        return !!(window.SOMA_ROOM && typeof window.SOMA_ROOM.isEntryFav === 'function'
+            && window.SOMA_ROOM.isEntryFav(it.id));
     }
 
     // Фикс: при открытии клавиатуры проигрыватель не сдвигается вверх,
@@ -1579,6 +1584,7 @@
         const ql = q.trim().toLowerCase();
         const f = vinylArchive.filter || 'all';
         const items = vinylArchive.items.filter(it => {
+            if (vinylArchive.onlyFav && !_vinylIsFav(it)) return false;
             if (!ql) return true;
             const tagLabel = _vinylTagLabel(it);
             if (f === 'id') return String(it.id || '').toLowerCase().includes(ql);
@@ -1590,17 +1596,25 @@
         });
         renderVinylStats(items.length, vinylArchive.items.length);
         if (!items.length) {
-            body.innerHTML = `<div class="vh-empty"><strong>${vinylArchive.items.length ? 'НИЧЕГО НЕ НАЙДЕНО В ШКАФУ' : 'В архиве пока сигналов нет'}</strong>${vinylArchive.items.length ? 'Измените запрос поиска.' : 'Отправьте сигнал в эфир — он станет пластинкой в вашей фонотеке.'}</div>`;
+            let title, sub;
+            if (vinylArchive.onlyFav && vinylArchive.items.length) {
+                title = 'В избранном пока нет пластинок';
+                sub = 'Добавьте пластинку в избранное — она появится здесь.';
+            } else if (vinylArchive.items.length) {
+                title = 'НИЧЕГО НЕ НАЙДЕНО В ШКАФУ';
+                sub = 'Измените запрос поиска.';
+            } else {
+                title = 'В архиве пока сигналов нет';
+                sub = 'Отправьте сигнал в эфир — он станет пластинкой в вашей фонотеке.';
+            }
+            body.innerHTML = `<div class="vh-empty"><strong>${title}</strong>${sub}</div>`;
             return;
         }
         const placedId = vinylArchive.placedId || '';
         const ROW = 6; // пластинок в ряд на одной полке шкафа
         let html = '';
         items.forEach((it, i) => {
-            // fav приходит из merged-архива (локальный кеш + облако); isEntryFav — фолбэк.
-            const fav = (it.fav !== undefined) ? !!it.fav
-                : (window.SOMA_ROOM && typeof window.SOMA_ROOM.isEntryFav === 'function'
-                    ? window.SOMA_ROOM.isEntryFav(it.id) : false);
+            const fav = _vinylIsFav(it);
             const favCls = fav ? 'vh-fav-dot is-on' : 'vh-fav-dot';
             const favGlyph = fav ? '★' : '☆';
             const tagLabel = _vinylTagLabel(it);
@@ -1634,7 +1648,16 @@
     function renderVinylStats(visible, total) {
         const el = document.getElementById('vinyl-stats');
         if (!el) return;
-        el.innerHTML = `<span class="vh-stat"><b>${total}</b> пластинок</span><span class="vh-stat vh-stat--dim">${visible} в подклике</span>`;
+        const favCount = vinylArchive.items.filter(it => _vinylIsFav(it)).length;
+        const favActive = vinylArchive.onlyFav ? ' is-active' : '';
+        el.innerHTML = `<span class="vh-stat"><b>${total}</b> пластинок</span>`
+            + `<button type="button" class="vh-stat vh-stat--dim vh-fav-toggle${favActive}" id="vinyl-fav-toggle" onclick="toggleVinylFavFilter()">${favCount} в избранном</button>`;
+    }
+
+    // Переключатель показа всех избранных пластинок
+    function toggleVinylFavFilter() {
+        vinylArchive.onlyFav = !vinylArchive.onlyFav;
+        renderVinylArchive();
     }
 
     // ===== Drag-and-drop: полка → проигрыватель (pointer-events: мышь + тач + Telegram WebView) =====
@@ -1713,13 +1736,14 @@
             setTimeout(() => { vinylDrag.suppress = false; }, 120);
         });
         modal.addEventListener('click', e => {
-            if (vinylDrag.suppress) { e.stopPropagation(); e.preventDefault(); return; }
             const favBtn = e.target.closest('[data-vinyl-fav]');
             if (favBtn) {
                 e.stopPropagation();
+                e.preventDefault();
                 toggleVinylFav(favBtn.dataset.vinylFav);
                 return;
             }
+            if (vinylDrag.suppress) { e.stopPropagation(); e.preventDefault(); return; }
             const card = e.target.closest('.vh-record-card');
             if (card) {
                 const id = card.dataset.vinylId || '';
@@ -1800,8 +1824,17 @@
 
     async function toggleVinylFav(id) {
         const api = window.SOMA_ROOM;
-        if (!api || typeof api.toggleEntryFav !== 'function') return;
-        const fav = api.toggleEntryFav(id);
+        let fav;
+        if (api && typeof api.toggleEntryFav === 'function') {
+            // API переключает избранное (storage + облако) и возвращает новое состояние.
+            fav = api.toggleEntryFav(id);
+        } else {
+            // Фолбэк: переключаем в памяти — звездочка загорается даже без API.
+            const it = vinylArchive.items.find(x => x.id === id);
+            const cur = (it && it.fav !== undefined) ? !!it.fav
+                : (api && typeof api.isEntryFav === 'function' ? api.isEntryFav(id) : false);
+            fav = !cur;
+        }
         vinylArchive.items = vinylArchive.items.map(it => it.id === id ? { ...it, fav: !!fav } : it);
         renderVinylArchive();
     }

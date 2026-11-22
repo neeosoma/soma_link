@@ -1692,17 +1692,26 @@
     gap: 6px;
 }
 
-/* Модалка пейджера: акцентный «Ответить шёпотом» — сверху, «Просто прочитать» — снизу по ширине блока */
+/* Модалка пейджера: акцентный «Ответить шёпотом» — сверху, «Просто прочитать» — снизу; обе — одинакового размера на ширину блока */
 .pager-card-actions--stack {
     flex-direction: column;
     align-items: stretch;
 }
 .pager-card-actions--stack .pager-act-btn--save {
-    flex: 0 1 auto;
-    align-self: flex-start;
+    flex: 1 1 100%;
+    align-self: stretch;
 }
 .pager-card-actions--stack .pager-act-btn--dismiss {
     flex: 1 1 100%;
+}
+
+/* Легкое «дыхание» свечения для акцентной кнопки «Ответить шёпотом» */
+@keyframes pagerSaveGlow {
+    0%, 100% { box-shadow: 0 1px 0 rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 210, 160, 0.25), 0 0 14px rgba(255, 130, 80, 0.18); }
+    50%      { box-shadow: 0 1px 0 rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 220, 170, 0.32), 0 0 24px rgba(255, 145, 85, 0.34); }
+}
+.pager-card-actions--stack .pager-act-btn--save:not(:disabled) {
+    animation: pagerSaveGlow 2.8s ease-in-out infinite;
 }
 
 /* Меню вторичных действий — ответ + жалоба/блок: separated dashed strip, compact buttons */
@@ -1760,6 +1769,27 @@
 .pager-act-btn--dismiss:hover {
     border-color: rgba(200, 150, 160, 0.5);
     color: #e4bcc3;
+}
+
+/* Кнопка «ОТВЕТИТЬ ШЁПОТОМ» — яркий тёплый акцент: янтарно-розовый градиент, мягкое свечение, плавный transition */
+.pager-act-btn--save {
+    border-color: rgba(255, 168, 110, 0.6);
+    background: linear-gradient(180deg, rgba(168, 72, 44, 0.96), rgba(110, 34, 30, 0.98));
+    color: #ffe0bf;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 210, 160, 0.25), 0 0 16px rgba(255, 130, 80, 0.2);
+    text-shadow: 0 0 12px rgba(255, 170, 110, 0.4);
+    transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease, transform 0.12s ease;
+}
+
+.pager-act-btn--save:hover {
+    border-color: rgba(255, 190, 120, 0.85);
+    background: linear-gradient(180deg, rgba(192, 88, 56, 1), rgba(134, 46, 38, 1));
+    color: #fff0db;
+    box-shadow: 0 2px 12px rgba(255, 120, 70, 0.32), inset 0 1px 0 rgba(255, 225, 175, 0.32), 0 0 26px rgba(255, 145, 85, 0.38);
+}
+
+.pager-act-btn--save:active {
+    transform: translateY(1px);
 }
 
 /* Кнопка «Ответить» — мягкий тёплый акцент (ответ на входящий шёпот, без дневного лимита) */

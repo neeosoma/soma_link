@@ -3765,20 +3765,42 @@ html.is-soma-fs-closing .app-h {
 /* ===== ФОНОТЕКА — ПИКСЕЛЬНАЯ СЛУШАЛЬНАЯ (Vinyl vault · fullscreen pixel-art · as concept v2) ===== */
 #vinyl-archive-modal { --vh-accent: #ff4d6d; }
 
+/* ===== Плёночная зернистость по всему архиву — тонкая плёночная текстура (только декор) ===== */
+.vinyl-modal::after {
+    content: ''; position: absolute; inset: 0; z-index: 50; pointer-events: none;
+    background:
+        repeating-linear-gradient(120deg, rgba(255,255,255,.016) 0 1px, transparent 1px 3px),
+        repeating-linear-gradient(48deg, rgba(255,220,200,.012) 0 1px, transparent 1px 4px);
+    mix-blend-mode: overlay;
+    opacity: .55;
+    border-radius: inherit;
+}
+
 /* ===== Атмосфера: винная/пурпурная слушальная ===== */
 .vh-scene {
     position: absolute; inset: 0; z-index: 0; pointer-events: none;
     background:
+        /* тёплый свет от проигрывателя, отражающийся от «пола» */
+        radial-gradient(58% 26% at 50% 112%, rgba(255,150,70,.18), transparent 72%),
+        /* холодный верхний луч */
         radial-gradient(85% 46% at 50% -10%, rgba(150,30,110,.28), transparent 72%),
+        /* боковой пурпурный залив */
         radial-gradient(56% 40% at 88% 98%, rgba(255,90,60,.07), transparent 70%),
+        /* глубина фона */
         linear-gradient(180deg, #160412 0%, #1d0618 48%, #10030e 100%);
 }
 .vh-scene::after {
     content: ''; position: absolute; inset: 0;
     background:
+        /* мелкая плёночная зернистость */
+        repeating-linear-gradient(115deg, rgba(255,255,255,.02) 0 1px, transparent 1px 3px),
+        repeating-linear-gradient(62deg, rgba(255,200,220,.015) 0 1px, transparent 1px 4px),
+        /* пиксельные решётки */
         repeating-linear-gradient(90deg, rgba(255,77,109,.03) 0 1px, transparent 1px 4px),
         repeating-linear-gradient(0deg, rgba(255,77,109,.03) 0 1px, transparent 1px 4px);
     image-rendering: pixelated;
+    mix-blend-mode: soft-light;
+    opacity: .9;
 }
 .vh-beam {
     position: absolute; inset: 0; z-index: 1; pointer-events: none;
@@ -3788,6 +3810,28 @@ html.is-soma-fs-closing .app-h {
     animation: vh-beam-drift 8s steps(4) infinite;
 }
 @keyframes vh-beam-drift { from { opacity: .7; } to { opacity: 1; } }
+/* Мягкие парящие световые блики — плавное «дыхание» освещённости (как пылинки света) */
+.vh-beam::before,
+.vh-beam::after {
+    content: ''; position: absolute; border-radius: 50%;
+    filter: blur(26px);
+    will-change: transform, opacity;
+    pointer-events: none;
+}
+.vh-beam::before {
+    width: 240px; height: 240px; left: 6%; top: 12%;
+    background: radial-gradient(circle, rgba(255,120,90,.16), transparent 70%);
+    animation: vh-orb-drift 11s ease-in-out infinite;
+}
+.vh-beam::after {
+    width: 190px; height: 190px; right: 8%; bottom: 8%;
+    background: radial-gradient(circle, rgba(170,70,160,.16), transparent 70%);
+    animation: vh-orb-drift 14s ease-in-out infinite reverse;
+}
+@keyframes vh-orb-drift {
+    0%,100% { transform: translate(0, 0) scale(1); opacity: .8; }
+    50%     { transform: translate(26px, -22px) scale(1.12); opacity: 1; }
+}
 .vh-dust {
     position: absolute; inset: 0; z-index: 2; pointer-events: none; overflow: hidden;
     -webkit-mask-image: radial-gradient(120% 90% at 50% 45%, #000 50%, transparent 92%);
@@ -3824,7 +3868,10 @@ html.is-soma-fs-closing .app-h {
 }
 .vh-vignette {
     position: absolute; inset: 0; z-index: 3; pointer-events: none;
-    background: radial-gradient(120% 96% at 50% 40%, transparent 44%, rgba(10,2,10,.8) 82%, rgba(6,1,8,.96) 100%);
+    background:
+        /* мягкая подсветка сверху (как верхний свет в комнате) */
+        radial-gradient(80% 30% at 50% 0%, rgba(255,120,80,.06), transparent 70%),
+        radial-gradient(120% 96% at 50% 40%, transparent 44%, rgba(10,2,10,.8) 82%, rgba(6,1,8,.96) 100%);
 }
 
 /* ===== Полный экран ===== */
@@ -3987,20 +4034,40 @@ html.is-soma-fs-closing .app-h {
     position: relative; flex: 1; min-height: 0;
     display: flex; flex-direction: column;
     border-radius: 8px;
-    background: linear-gradient(180deg, #2a1220, #160814);
+    background:
+        /* древесная текстура корпуса шкафа */
+        repeating-linear-gradient(92deg, rgba(0,0,0,.06) 0 2px, transparent 2px 9px),
+        linear-gradient(180deg, #2a1220, #160814);
     border: 2px solid #5a2440;
     box-shadow: 4px 4px 0 rgba(0,0,0,.6), inset 0 0 0 2px rgba(255,200,220,.05);
     overflow: hidden;
 }
+/* Тёплое свечение на «поле» под шкафом */
+.vh-cabinet::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 30px;
+    z-index: 0; pointer-events: none;
+    background: radial-gradient(50% 100% at 50% 100%, rgba(255,140,70,.14), transparent 72%);
+    filter: blur(2px);
+}
 .vh-cab-back {
     position: absolute; inset: 8px; border-radius: 5px; z-index: 0;
     background:
+        /* тёплый свет внутри шкафа снизу */
+        radial-gradient(70% 50% at 50% 100%, rgba(255,120,60,.12), transparent 72%),
         radial-gradient(140% 100% at 50% -10%, #2c1020 0%, #180712 62%, #0d030c 100%);
     box-shadow: inset 0 8px 22px rgba(0,0,0,.7), inset 0 -6px 14px rgba(0,0,0,.5);
 }
 .vh-cab-glass {
     position: absolute; inset: 8px; border-radius: 5px; z-index: 4; pointer-events: none;
     background: linear-gradient(118deg, transparent 36%, rgba(255,200,220,.05) 48%, transparent 60%);
+    background-size: 220% 220%;
+    box-shadow: inset 0 0 18px rgba(255,150,180,.04);
+    /* медленный сканирующий блик по стеклу шкафа */
+    animation: vh-glass-sweep 9s ease-in-out infinite;
+}
+@keyframes vh-glass-sweep {
+    0%,100% { background-position: 0% 0%; }
+    50%     { background-position: 100% 100%; }
 }
 .vh-cab-interior {
     position: relative; z-index: 1; flex: 1;
@@ -4051,7 +4118,9 @@ html.is-soma-fs-closing .app-h {
     position: relative; width: 100%; height: 100%;
     border-radius: 4px; overflow: hidden;
     border: 1.5px solid rgba(255,255,255,.12);
-    box-shadow: 3px 3px 0 rgba(0,0,0,.55);
+    box-shadow: 3px 3px 0 rgba(0,0,0,.55), inset 0 0 0 1px rgba(255,255,255,.04);
+    /* глянцевый jewel-case: блик + лёгкая глубина */
+    background: linear-gradient(135deg, rgba(255,255,255,.05), transparent 40%, rgba(0,0,0,.12));
 }
 .vh-rc-cover {
     position: relative; height: 58px; overflow: hidden;
@@ -4106,6 +4175,7 @@ html.is-soma-fs-closing .app-h {
     height: 28px; position: relative;
     background:
         repeating-linear-gradient(90deg, #1d1d20 0 2px, #101013 2px 4px),
+        radial-gradient(circle at 30% 30%, rgba(255,255,255,.1), transparent 60%),
         #161619;
     border-top: 2px solid rgba(0,0,0,.6);
 }
@@ -4157,7 +4227,9 @@ html.is-soma-fs-closing .app-h {
         linear-gradient(180deg, #2c1120 0%, #1c0913 52%, #120509 100%);
     border: 3px solid #4a1a30;
     box-shadow: 6px 6px 0 rgba(0,0,0,.66), inset 0 2px 0 rgba(255,200,180,.08),
-        inset 0 -3px 0 rgba(0,0,0,.5), inset 0 0 22px rgba(0,0,0,.4);
+        inset 0 -3px 0 rgba(0,0,0,.5), inset 0 0 22px rgba(0,0,0,.4),
+        /* тёплое свечение на «поле» под корпусом проигрывателя */
+        0 34px 44px -16px rgba(255,150,70,.22);
 }
 /* Акцентная светящаяся полоса вверху корпуса (омаивает консоль) */
 .vh-turntable::before {

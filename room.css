@@ -1841,21 +1841,28 @@
 }
 
 .pager-compose-bar {
-    display: flex;
-    justify-content: space-between;
+    /* grid: счётчик в гибкой колонке (с ellipsis, если длинный),
+       кнопки зафиксированы справа — не «скачут» при изменении счётчика */
+    display: grid;
+    grid-template-columns: 1fr auto;
     align-items: center;
-    flex-wrap: wrap;
     gap: 6px;
 }
 
 .pager-compose-count {
     font-size: 9.5px;
     color: #fda4af;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
 }
 
 .pager-compose-btns {
     display: flex;
     gap: 6px;
+    flex: 0 0 auto;
+    white-space: nowrap;
 }
 
 /* ===== Empty / Gate boxes ===== */

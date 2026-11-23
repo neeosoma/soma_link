@@ -374,7 +374,7 @@ test('release UI hides spoilers, pager replaces NEEO_PHONE, window picks unlocke
     const ls = makeStorage();
     const {
         activateRoomObject, inspectPlantStage, togglePlantGallery, inspectPlantKind,
-        pressPagerScan, pressPagerInfo, equipStationPhase, renderRoom, roomAnim, PLANT_KINDS, CITY_WINDOWS
+        pressPagerScan, pressPagerInfo, equipStationPhase, renderRoom, roomAnim, PLANT_KINDS, CITY_WINDOWS, loadWarmthLedger
     } = loadRoom({
         localStorage: ls,
         player: { uid: 'u_0123456789abcdef', name: 'AGENT_1001', warmth: 20 },
@@ -408,6 +408,20 @@ test('release UI hides spoilers, pager replaces NEEO_PHONE, window picks unlocke
     renderRoom();
     assert.equal(roomAnim.liveStage, 0);
     assert.ok(infoEl.textContent.startsWith('НЕИЗВЕСТНЫЙ РОСТОК'), 'species must stay a mystery at stage 1/6');
+
+    // Daily warmth tag must break the count down by source, so a missing trainer warmth
+    // (e.g. sessions played on a previous local day) is visible at a glance:
+    // "сегодня +4/6 · тренажёр 0/2 · кассета 1/1 тепла"
+    assert.ok(subEl.textContent.includes('тренажёр 0/2'), 'warmth tag shows trainer source: ' + subEl.textContent);
+    assert.ok(subEl.textContent.includes('кассета 0/1'), 'warmth tag shows cassette source: ' + subEl.textContent);
+    const todayKey = loadWarmthLedger().day;
+    ls.setItem('soma_warmth_ledger', JSON.stringify({
+        day: todayKey, trainer: 2, total: 6, whisperAckDay: todayKey, warmDays: 1, lastWarmDay: todayKey
+    }));
+    renderRoom();
+    assert.ok(subEl.textContent.includes('тренажёр 2/2'), 'warmth tag shows full trainer source: ' + subEl.textContent);
+    assert.ok(subEl.textContent.includes('кассета 1/1'), 'warmth tag shows claimed cassette source: ' + subEl.textContent);
+    assert.ok(subEl.textContent.includes('+6/6'), 'warmth tag shows full daily cap: ' + subEl.textContent);
 
     // PTS inspection covers empty pot (-1) + all 6 stages (0..5) + all 7 species without altering ID binding
     for (let s = -1; s < 6; s++) {

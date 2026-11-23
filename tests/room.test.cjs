@@ -2164,6 +2164,44 @@ test('cassette echoes grant +4 plant warmth and no XP at most once daily and nev
     assert.equal(player.xp, undefined, 'XP removed — player.xp must not exist');
 });
 
+test('every cassette save drops an incoming pager notice, even when the daily warmth bonus is spent', () => {
+    const player = { uid: 'u_0123456789abcdef', warmth: 0 };
+    const r = loadRoom({ player });
+
+    // First save today: +4 warmth AND an incoming ack notice
+    const a1 = r.claimWhisperCassetteAck('echo_1', '2026-11-18');
+    assert.equal(a1.grantedWarmth, 4);
+    let inbox = r.getPendingInboxWhispers();
+    assert.equal(inbox.length, 1, 'first save adds one incoming notice');
+    const notice1 = inbox[0];
+    assert.equal(notice1.is_ack, true, 'notice is an ack type');
+    assert.ok(notice1.text.includes('согрели человека'), 'notice text mentions the warmed person: ' + notice1.text);
+    assert.ok(notice1.text.includes('сохранил их себе на кассету'), 'notice text mentions cassette save');
+    assert.ok(notice1.text.includes('+4'), 'notice mentions granted warmth');
+    assert.ok(notice1.id.startsWith('ack_'), 'notice id is ack-prefixed');
+
+    // Second save today: bonus already spent (+0), but the incoming notice still arrives
+    const a2 = r.claimWhisperCassetteAck('echo_2', '2026-11-18');
+    assert.equal(a2.grantedWarmth, 0, 'daily bonus already claimed');
+    inbox = r.getPendingInboxWhispers();
+    assert.equal(inbox.length, 2, 'second save also adds an incoming notice');
+    assert.ok(inbox.some(x => x.id === 'ack_echo_2' && x.text.includes('уже впитался')), 'second notice notes the spent bonus');
+
+    // Same saved Whisper ID claimed twice: no duplicate notice
+    const dup = r.claimWhisperCassetteAck('echo_1', '2026-11-18');
+    assert.equal(dup.duplicate, true);
+    assert.equal(r.getPendingInboxWhispers().length, 2, 'duplicate ack adds no notice');
+
+    // Marking the notice read removes it from the inbox
+    r.markWhisperHandled('ack_echo_1', 'ack_read');
+    inbox = r.getPendingInboxWhispers();
+    assert.equal(inbox.length, 1, 'read notice leaves the inbox');
+    assert.ok(!inbox.some(x => x.id === 'ack_echo_1'));
+    // Re-saving the same whisper never re-adds the notice
+    r.claimWhisperCassetteAck('echo_1', '2026-11-18');
+    assert.equal(r.getPendingInboxWhispers().length, 1, 'duplicate save keeps the inbox clean');
+});
+
 test('failed cloud cassette acknowledgement leaves the inbox retryable', async () => {
     const supabaseClient = { from: () => ({ update: () => ({ eq: () => ({ select: async () => ({ data: null, error: { message: 'offline' } }) }) }) }) };
     const r = loadRoom({ supabaseClient });

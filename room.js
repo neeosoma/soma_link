@@ -3647,6 +3647,11 @@ function claimWhisperCassetteAck(whisperId, todayOverride) {
         roomAnim.customMode = 'ПЕЙДЖЕР // ОТКЛИК С КАССЕТЫ';
         roomAnim.customEntry = notice;
     }
+    // Во входящие пейджера — сообщение, что ваши тёплые слова согрели человека,
+    // и он сохранил их себе на кассету (даже если бонус тепла за день уже потрачен).
+    if (typeof receiveCassetteAckNotice === 'function') {
+        try { receiveCassetteAckNotice(wid, grantedWarmth); } catch (_) {}
+    }
     if (typeof playObjectTone === 'function') playObjectTone('pager');
     trackFirstSignalEvent('echo_received');
     renderRoom();
@@ -9920,6 +9925,38 @@ function receiveIncomingWhisperLocal(whisperObj) {
     return item;
 }
 
+// Сообщение во входящие пейджера: человек принял ваш «Шёпот» и сохранил его себе на кассету.
+// Показывается каждый раз при сохранении — даже если дневной бонус тепла уже потрачен,
+// чтобы отклик не «пропадался» незаметно.
+function receiveCassetteAckNotice(whisperId, grantedWarmth) {
+    const wid = String(whisperId || '').trim();
+    if (!wid) return null;
+    const id = 'ack_' + wid;
+    if (getHandledWhispers()[id]) return null;
+    const warmthPart = Number(grantedWarmth) > 0
+        ? ` +${grantedWarmth} Тепла пошли на рост растения.`
+        : ' (бонус тепла за сегодня уже впитался).';
+    const item = {
+        id,
+        post_id: '',
+        post_tag: 'ОТКЛИК КАССЕТЫ',
+        post_preview: '',
+        text: `Ваши тёплые слова согрели человека — он сохранил их себе на кассету.${warmthPart}`,
+        created_at: new Date().toISOString(),
+        status: 'pending',
+        is_ack: true
+    };
+    const existing = loadRawInboxWhispers();
+    if (!existing.some(x => x.id === id)) {
+        saveRawInboxWhispers([item, ...existing]);
+        if (typeof playObjectTone === 'function') playObjectTone('pager');
+    }
+    if (typeof roomAnim !== 'undefined' && roomAnim && roomAnim.pagerModalOpen && typeof renderPagerModal === 'function') {
+        renderPagerModal();
+    }
+    return item;
+}
+
 // Игрок выбирает «📼 ЗАПИСАТЬ НА КАССЕТУ» для пришедшего ему «Шёпота»
 async function persistWhisperStatus(id, status) {
     if (typeof supabaseClient === 'undefined' || !supabaseClient) return { ok: true };
@@ -10716,8 +10753,24 @@ function renderPagerModal() {
 
             bodyEl.innerHTML = inbox.map(w => {
                 const isReply = w.is_reply === true;
+                const isAck = w.is_ack === true;
                 const isComposing = roomAnim.pagerReplyingTo && String(roomAnim.pagerReplyingTo) === String(w.id);
                 const draft = isComposing ? (roomAnim.pagerReplyDraft || '') : '';
+                if (isAck) {
+                    // Отклик кассеты: не шёпот, а уведомление, что человека согрели ваши слова
+                    // и он сохранил их себе на кассету. Кнопка «прочитано» убирает карточку.
+                    return `
+                    <div class="pager-card pager-card--ack" data-whisper-id="${escFn(w.id)}">
+                        <div class="pager-card-head">
+                            <span class="pager-card-tag">✦ ОТКЛИК КАССЕТЫ · ВАШ ШЁПОТ СОХРАНЁН</span>
+                            <span class="pager-card-meta">CH·04 // АНОНИМНЫЙ СЛУШАТЕЛЬ</span>
+                        </div>
+                        <p class="pager-card-text">«${escFn(w.text)}»</p>
+                        <div class="pager-card-actions">
+                            <button type="button" class="pager-act-btn" data-act="ack-read" data-id="${escFn(w.id)}">ПРОЧИТАНО</button>
+                        </div>
+                    </div>`;
+                }
                 return `
                 <div class="pager-card pager-card--inbox" data-whisper-id="${escFn(w.id)}">
                     <div class="pager-card-head">
@@ -10772,6 +10825,13 @@ function renderPagerModal() {
             });
             bodyEl.querySelectorAll('[data-act="save"]').forEach(btn => {
                 btn.onclick = () => acceptIncomingWhisper(btn.dataset.id);
+            });
+            bodyEl.querySelectorAll('[data-act="ack-read"]').forEach(btn => {
+                btn.onclick = () => {
+                    markWhisperHandled(btn.dataset.id, 'ack_read');
+                    roomAnim.pagerModalNotice = '';
+                    renderPagerModal();
+                };
             });
             bodyEl.querySelectorAll('[data-act="dismiss"]').forEach(btn => {
                 btn.onclick = () => dismissIncomingWhisper(btn.dataset.id);
@@ -11862,7 +11922,8 @@ const pagerApi = {
     acceptFirstSignalRules, completeFirstSession, updateFirstSignalRoom, trackFirstSignalEvent,
     renderFirstSignalEntry, getFirstSignalCandidates, getVisibleFirstSignalCandidates,
     validateWhisperText, somaTextBlocked, hasWhisperedToPost, rememberWhisperedPost,
-    claimWhisperCassetteAck, getPendingInboxWhispers, receiveIncomingWhisperLocal,
+    claimWhisperCassetteAck, getPendingInboxWhispers, receiveIncomingWhisperLocal, receiveCassetteAckNotice,
+    markWhisperHandled,
     acceptIncomingWhisper, dismissIncomingWhisper, sendWhisperToPost, sendWhisperReply,
     syncPagerWhispers, openPagerModal, closePagerModal, renderPagerModal,
     hydrateJournalFromCloud, saveJournalEntry, deleteCassette, loadDiaryArchive,

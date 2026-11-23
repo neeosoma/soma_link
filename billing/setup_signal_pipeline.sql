@@ -117,7 +117,7 @@ begin
     end if;
 
     if v_is_reply then
-        -- Ответ на входящий шёпот: НЕ тратит дневной лимит шёпотов.
+        -- Ответ на входящий шёпот.
         -- Проверки цели и «1 ответ на шёпот» — в trigger guard_soma_whispers (при insert).
         -- Оригинальный шёпот переходит в статус answered.
         insert into public.soma_whispers

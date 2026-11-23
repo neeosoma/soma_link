@@ -42,7 +42,7 @@ const C = '33333333-3333-4333-8333-333333333333';
         await asUser(A);
         assert.equal(await whisperStatus('whisper_w1'), 'pending');
 
-        // 2) A отвечает на шёпот — RPC с p_reply_to. Ответ НЕ тратит дневной лимит.
+        // 2) A отвечает на шёпот — RPC с p_reply_to. Ответ: 1 на шёпот, без дневного лимита.
         const replyRows = (await db.query(
             "select * from public.send_soma_whisper('w_reply1','post_a1','ЛИЧНАЯ БОЛЬ','Пусть сегодня станет немного легче.','u_aaaa','Тёплый ответ на ваше сообщение.','whisper_w1')")).rows;
         assert.equal(replyRows.length, 1);
@@ -92,15 +92,16 @@ const C = '33333333-3333-4333-8333-333333333333';
             "select * from public.send_soma_whisper('w_norm2','post_b1','ЛИЧНАЯ БОЛЬ','Просто проверка','u_aaaa','Обновлённое тёплое слово этому человеку.', null)"),
             /duplicate key/i);
 
-        // 8) Дневной лимит: 3 обычных шёпота — пошли (включая w_norm1), 4-й — обрывается.
+        // 8) Дневного лимита на шёпоты нет: обычные шёпоты приходят в неограниченном количестве.
         await asUser(A);
         await db.query("select * from public.send_soma_whisper('w_n1','post_b2','ЛИЧНАЯ БОЛЬ','Просто проверка','u_aaaa','Первое тёплое слово этому человеку.', null)");
         await db.query("select * from public.send_soma_whisper('w_n2','post_b3','ЛИЧНАЯ БОЛЬ','Просто проверка','u_aaaa','Второе тёплое слово этому человеку.', null)");
-        await assert.rejects(db.query(
-            "select * from public.send_soma_whisper('w_n3','post_b1','ЛИЧНАЯ БОЛЬ','Просто проверка','u_aaaa','Третье тёплое слово этому человеку.', null)"),
-            /Daily whisper limit reached/);
+        await asUser(B); await post('post_b4');
+        await asUser(A);
+        const n3 = (await db.query("select * from public.send_soma_whisper('w_n3','post_b4','ЛИЧНАЯ БОЛЬ','Просто проверка','u_aaaa','Третье тёплое слово этому человеку.', null)")).rows;
+        assert.equal(n3.length, 1, 'a third regular whisper in the same day passes — no daily cap');
 
-        // 9) Ответ НЕ тратит лимит: даже при полном лимите ответ на новый входящий шёпот проходит.
+        // 9) Ответ на входящий шёпот: 1 ответ на шёпот, независимо от числа отправленных шёпотов.
         await asUser(B); await send('whisper_w3', 'post_a3', 'u_bbbb');
         await asUser(A);
         const reply2 = (await db.query(
@@ -118,10 +119,10 @@ const C = '33333333-3333-4333-8333-333333333333';
 
         // 11) Ответ не виден в get_my_pending_whispers отправителя (не на его пост).
         await asUser(B);
-        const bInbox = (await db.query("select * from public.get_my_pending_whispers(ARRAY['post_b1','post_b2','post_b3'])")).rows;
-        // B видит три обычных шёпота от A на своих постах (w_norm1/w_n1/w_n2);
+        const bInbox = (await db.query("select * from public.get_my_pending_whispers(ARRAY['post_b1','post_b2','post_b3','post_b4'])")).rows;
+        // B видит четыре обычных шёпота от A на своих постах (w_norm1/w_n1/w_n2/w_n3);
         // ответы w_reply1/w_reply4 находятся на постах A — не входят в список B.
-        assert.equal(bInbox.length, 3, 'sender must see all three whispers on own posts');
+        assert.equal(bInbox.length, 4, 'sender must see all whispers on own posts');
         assert.ok(!bInbox.some(r => r.id === 'w_reply1' || r.id === 'w_reply4'), 'replies must not appear in sender inbox by post id');
 
         console.log('Whisper reply integration passed: 1 answer per whisper, free of daily cap, answered status, reply delivery to sender.');

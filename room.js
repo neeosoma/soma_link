@@ -11504,9 +11504,12 @@ function renderRoom() {
     }
 
     const plantSub = document.getElementById('station-plant-sub');
+    // Разбор дневного тепла по источникам — сразу видно, что не вошло в сегодняшний день
+    // (например, тренировочные сеансы прошли вчера: тренажёр 0/2, а кассета 1/1 дали +4).
+    const cassetteToday = ledger.whisperAckDay === ledger.day ? 1 : 0;
     const rhythmTag = ledger.warmDays > 0
-        ? `сегодня +${ledger.total}/${PROGRESSION_RULES.DAILY_WARMTH_CAP} · тёплых дней: ${ledger.warmDays}`
-        : `сегодня +${ledger.total}/${PROGRESSION_RULES.DAILY_WARMTH_CAP} тепла`;
+        ? `сегодня +${ledger.total}/${PROGRESSION_RULES.DAILY_WARMTH_CAP} · тренажёр ${ledger.trainer}/${PROGRESSION_RULES.DAILY_TRAINER_CAP} · кассета ${cassetteToday}/${PROGRESSION_RULES.DAILY_WHISPER_ACK_CAP} · тёплых дней: ${ledger.warmDays}`
+        : `сегодня +${ledger.total}/${PROGRESSION_RULES.DAILY_WARMTH_CAP} · тренажёр ${ledger.trainer}/${PROGRESSION_RULES.DAILY_TRAINER_CAP} · кассета ${cassetteToday}/${PROGRESSION_RULES.DAILY_WHISPER_ACK_CAP} тепла`;
     if (plantSub) {
         if (otherKind) {
             plantSub.textContent = `PTS-осмотр вида · ваш родной по ID: ${ownSpec.kindName.toLowerCase()}`;

@@ -11,7 +11,7 @@
     <!-- supabase-js vendored locally (avoids CDN dependence). Fallback to CDN only if local bundle is unavailable. -->
     <script src="assets/lib/supabase.umd.js"></script>
     <script>window.supabase || document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"><\/script>');</script>
-    <link rel="stylesheet" href="room.css?v=33">
+    <link rel="stylesheet" href="room.css?v=34">
     <link rel="stylesheet" href="cosmetics.css?v=15">
     <link rel="stylesheet" href="receiver.css?v=19">
     <link rel="stylesheet" href="vhs.css?v=15">
@@ -831,19 +831,19 @@
                     <div class="witness-card-stats">
                         <div class="witness-stat">
                             <div class="witness-stat-label">СИГНАЛОВ СДЕЛАНО</div>
-                            <div id="stat-signals" class="witness-stat-value witness-stat-big">0</div>
+                            <div id="stat-signals" class="witness-stat-value witness-stat-big witness-stat--signals">0</div>
                         </div>
                         <div class="witness-stat">
                             <div class="witness-stat-label">ТЕПЛО СТАНЦИИ</div>
-                            <div id="stat-warmth" class="witness-stat-value witness-stat-big">0</div>
+                            <div id="stat-warmth" class="witness-stat-value witness-stat-big witness-stat--warmth">0</div>
                         </div>
                         <div class="witness-stat">
                             <div class="witness-stat-label">ШЁПОТОВ ОТПРАВЛЕНО</div>
-                            <div id="stat-attempts" class="witness-stat-value witness-stat-big">0</div>
+                            <div id="stat-attempts" class="witness-stat-value witness-stat-big witness-stat--whispers">0</div>
                         </div>
                         <div class="witness-stat">
                             <div class="witness-stat-label">ПРИСУТСТВИЕ</div>
-                            <div id="stat-presence" class="witness-stat-value witness-stat-big">—</div>
+                            <div id="stat-presence" class="witness-stat-value witness-stat-big witness-stat--presence">—</div>
                         </div>
                     </div>
                 </div>
@@ -2241,10 +2241,10 @@
         document.getElementById('stat-signals').innerText =
             (typeof getMyPostIds === 'function' && getMyPostIds()) ? getMyPostIds().length : 0;
         document.getElementById('stat-warmth').innerText = (player.warmth || lsNum('soma_warmth') || 0);
-        // Присутствие: N ДНЕЙ (дефис, если RPC не дошёл) — строго по логике share.js:
-        // проверка != null, так что 0 человек-дней рендерится как «0 ДНЕЙ», а не дефис.
+        // Срок жизни моего аккаунта: N ДНЕЙ с первого входа в игру (per-account RPC).
+        // Дефис, если RPC не дошёл — по логике share.js: проверка != null.
         if (supabaseClient && typeof supabaseClient.rpc === 'function') {
-            supabaseClient.rpc('station_days_in_app_total').then(function (r) {
+            supabaseClient.rpc('my_soma_account_days').then(function (r) {
                 const el = document.getElementById('stat-presence');
                 if (!el) return;
                 if (r && !r.error && r.data != null) {

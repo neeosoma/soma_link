@@ -25,6 +25,10 @@ will fail after the legacy counter columns are hidden.
    Editor as the project owner.
 3. Apply [`setup_station_presence.sql`](./setup_station_presence.sql). It adds a
    boolean-only atmosphere RPC; it returns no count, post ID, or reader data.
+   It also provides the person-days aggregate (`station_days_in_app_total`,
+   global sum, callable by anon) and the per-account lifetime
+   (`my_soma_account_days`, full days since this identity's profile first
+   entered the game — each account sees only its own stat).
 4. Confirm Anonymous Auth is enabled. Reading, filtering, and skipping do not
    require it; the server-backed mark does.
 

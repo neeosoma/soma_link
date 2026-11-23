@@ -136,11 +136,12 @@ test('the witness room snapshot shows a concise presence counter instead of atmo
 });
 
 test('the witness card shows four equally-sized stat counters and carries the friend cassette button below the card', () => {
-    // Four counters in the witness-card stats grid, all sized like «ШЁПОТОВ ОТПРАВЛЕНО».
-    assert.match(indexHtml, /<div id="stat-signals" class="witness-stat-value witness-stat-big">0<\/div>/);
-    assert.match(indexHtml, /<div id="stat-warmth" class="witness-stat-value witness-stat-big">0<\/div>/);
-    assert.match(indexHtml, /<div id="stat-attempts" class="witness-stat-value witness-stat-big">0<\/div>/);
-    assert.match(indexHtml, /<div id="stat-presence" class="witness-stat-value witness-stat-big">—<\/div>/);
+    // Four counters in the witness-card stats grid, all sized like «ШЁПОТОВ ОТПРАВЛЕНО»,
+    // each with its own digit color from the room snapshot palette.
+    assert.match(indexHtml, /<div id="stat-signals" class="witness-stat-value witness-stat-big witness-stat--signals">0<\/div>/);
+    assert.match(indexHtml, /<div id="stat-warmth" class="witness-stat-value witness-stat-big witness-stat--warmth">0<\/div>/);
+    assert.match(indexHtml, /<div id="stat-attempts" class="witness-stat-value witness-stat-big witness-stat--whispers">0<\/div>/);
+    assert.match(indexHtml, /<div id="stat-presence" class="witness-stat-value witness-stat-big witness-stat--presence">—<\/div>/);
     assert.match(indexHtml, /СИГНАЛОВ СДЕЛАНО/);
     assert.match(indexHtml, /ТЕПЛО СТАНЦИИ/);
     assert.match(indexHtml, /ШЁПОТОВ ОТПРАВЛЕНО/);
@@ -148,12 +149,19 @@ test('the witness card shows four equally-sized stat counters and carries the fr
     // The counters are populated by updateHeader — signals, warmth, and the presence RPC.
     assert.match(indexHtml, /document\.getElementById\('stat-signals'\)\.innerText/);
     assert.match(indexHtml, /document\.getElementById\('stat-warmth'\)\.innerText/);
-    // Presence mirrors share.js exactly: check is != null so a 0 aggregate
-    // renders as «0 ДНЕЙ» (a digit), and errors fall back to a dash.
-    assert.match(indexHtml, /station_days_in_app_total/);
+    // Presence shows the per-account lifetime (my_soma_account_days), mirroring
+    // share.js rendering: check is != null so a 0 renders as «0 ДНЕЙ» (a digit),
+    // and errors fall back to a dash.
+    assert.match(indexHtml, /my_soma_account_days/);
+    assert.doesNotMatch(indexHtml, /rpc\('station_days_in_app_total'\)\.then/);
     assert.match(indexHtml, /!r\.error && r\.data != null/);
     assert.match(indexHtml, /Math\.max\(0, Math\.round\(Number\(r\.data\) \|\| 0\)\)/);
     assert.match(indexHtml, /\$\{days\} ДНЕЙ/);
+    // Each digit is colored like the room snapshot (share.js palette).
+    assert.match(indexHtml, /witness-stat--signals/);
+    assert.match(indexHtml, /witness-stat--warmth/);
+    assert.match(indexHtml, /witness-stat--whispers/);
+    assert.match(indexHtml, /witness-stat--presence/);
     // The cassette button lives BELOW the witness card, wired to openFriendCassette.
     assert.match(indexHtml, /<button type="button" onclick="openFriendCassette\(\)" class="witness-friend-btn"/);
     assert.match(indexHtml, /ЗАПИСАТЬ КАССЕТУ БЛИЗКОМУ/);
@@ -166,14 +174,26 @@ test('the witness card shows four equally-sized stat counters and carries the fr
     assert.doesNotMatch(roomJs, /pager-foot-friend/);
 });
 
-test('the person-days RPC is a public aggregate over registration dates only', () => {
+test('the person-days aggregate uses epoch math and the per-account lifetime is auth-only', () => {
     const presence = readFileSync(require.resolve('../billing/setup_station_presence.sql'), 'utf8');
     assert.match(presence, /create or replace function public\.station_days_in_app_total\(\)/);
     assert.match(presence, /returns integer/);
     assert.match(presence, /security definer/);
-    assert.match(presence, /sum\(extract\(day from now\(\) - u\.created_at\)\)/);
+    // Epoch-based total: extract(day from interval) read the interval's day FIELD
+    // and returned 0 for any account younger than a day — that was the «0 ДНЕЙ» bug.
+    assert.match(presence, /floor\(extract\(epoch from sum\(now\(\) - u\.created_at\)\) \/ 86400\)/);
     assert.match(presence, /from public\.soma_users u/);
     assert.match(presence, /grant execute on function public\.station_days_in_app_total\(\) to anon, authenticated/);
     // A global aggregate: no per-user column, no identity, no per-user exposure.
     assert.doesNotMatch(presence, /station_days_in_app_total[\s\S]{0,400}username/);
+
+    // Per-account lifetime: full days since THIS identity's profile first entered.
+    // floor keeps exact day boundaries; greatest(1, ...) counts the day of first
+    // entry for accounts younger than a day; unbound identities get 0.
+    assert.match(presence, /create or replace function public\.my_soma_account_days\(\)/);
+    assert.match(presence, /greatest\(1, floor\(extract\(epoch from now\(\) - u\.created_at\) \/ 86400\)::integer\)/);
+    assert.match(presence, /from soma_private\.user_profile_bindings b/);
+    assert.match(presence, /where b\.auth_id = auth\.uid\(\)/);
+    assert.match(presence, /grant execute on function public\.my_soma_account_days\(\) to authenticated/);
+    assert.doesNotMatch(presence, /my_soma_account_days\([\s\S]{0,200}grant execute on function public\.my_soma_account_days\(\) to anon/, 'the per-account lifetime never leaks to anon');
 });

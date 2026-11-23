@@ -730,7 +730,7 @@ test('v8: body-portal FLIP fullscreen + 180 flip + rotated pointer mapping, Dawn
     assert.ok(indexHtml.includes('soma-post-cta') && indexHtml.includes('soma-post-beacon') && indexHtml.includes('soma-post-arrow'));
     assert.ok(
         indexHtml.includes('id="station-fs-flip"')
-        && indexHtml.includes('room.js?v=29')
+        && indexHtml.includes('room.js?v=30')
         && indexHtml.includes('cosmetics.css?v=15')
         && indexHtml.includes('receiver.js?v=17')
         && indexHtml.includes('vhs.js?v=15')
@@ -2433,4 +2433,21 @@ test('the whisper reply composer keeps focus through the periodic feed refresh',
     assert.match(roomCode, /if \(replyInp && replyFocus && roomAnim\.pagerReplyingTo\)/);
     assert.match(roomCode, /replyInp\.focus\(\)/);
     assert.match(roomCode, /replyInp\.setSelectionRange\(s, e\)/);
+});
+
+test('the pager footer offers a «Записать кассету близкому» button wired to the friend cassette page', () => {
+    // The footer of the pager modal mirrors the room-tab «Отправить снимок комнаты»
+    // button: a right-aligned cassette CTA above the block-management control.
+    assert.match(roomCode, /id="pager-friend-cassette"/);
+    assert.match(roomCode, /ЗАПИСАТЬ КАССЕТУ БЛИЗКОМУ/);
+    assert.match(roomCode, /class="pager-foot-friend pager-foot-right"/);
+    // It opens the friend cassette flow, falling back to gift.html when the
+    // index.html handler is not loaded yet.
+    assert.match(roomCode, /if \(typeof openFriendCassette === 'function'\) openFriendCassette\(\)/);
+    assert.match(roomCode, /else window\.location\.assign\('gift\.html'\)/);
+    // The button is always rendered, not gated by the whisper-safety flag.
+    assert.ok(roomCode.indexOf('id="pager-friend-cassette"') < roomCode.indexOf('id="pager-manage-blocks"'), 'friend cassette button renders in the footer next to the block button');
+    // Styling follows the room-tab share-station button palette.
+    assert.match(roomCss, /\.pager-foot-friend \{/);
+    assert.match(roomCss, /\.pager-foot-friend:hover \{/);
 });

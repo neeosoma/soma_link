@@ -1947,6 +1947,30 @@
     box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
+/* Кнопка «Записать кассету близкому» в футере пейджера — по подобию share-station-btn */
+.pager-foot-friend {
+    padding: 5px 9px;
+    border-radius: 7px;
+    border: 1px solid rgba(255, 72, 94, 0.3);
+    background: linear-gradient(180deg, #2a0d14 0%, #1a070c 100%);
+    color: #ffb8c2;
+    font: 700 9.5px 'Share Tech Mono', monospace;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: border-color 0.2s ease, color 0.2s ease;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 200, 120, 0.08);
+}
+
+.pager-foot-friend:hover {
+    border-color: rgba(255, 72, 94, 0.6);
+    color: #ffe1e6;
+}
+
+.pager-foot-friend:active {
+    transform: translateY(1px);
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
 .pager-foot-right {
     margin-left: auto;
 }
@@ -3700,47 +3724,6 @@ html.is-soma-fs-closing .app-h {
 }
 
 
-
-/* Блок «Своему человеку» с встроенной кнопкой записи кассеты — пиксель-перфектная сетка */
-.witness-stat--friend {
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-}
-.witness-stat--friend .witness-stat-label {
-    margin-bottom: 0;
-}
-.witness-cassette-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    width: 100%;
-    font: 9px 'Share Tech Mono', monospace;
-    letter-spacing: 0.12em;
-    color: #ffd9d9;
-    background: linear-gradient(180deg, rgba(255, 72, 94, 0.14) 0%, rgba(120, 20, 36, 0.24) 100%);
-    border: 1px solid rgba(255, 72, 94, 0.42);
-    border-radius: 9px;
-    padding: 8px 10px;
-    cursor: pointer;
-    text-transform: uppercase;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 180, 190, 0.08);
-    transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease, border-color 0.2s ease;
-}
-.witness-cassette-btn svg {
-    color: #ff7c8d;
-    flex: 0 0 auto;
-    filter: drop-shadow(0 0 4px rgba(255, 72, 94, 0.5));
-}
-.witness-cassette-btn:hover {
-    background: linear-gradient(180deg, rgba(255, 72, 94, 0.24) 0%, rgba(150, 30, 48, 0.32) 100%);
-    border-color: rgba(255, 124, 141, 0.75);
-    box-shadow: 0 0 16px rgba(255, 72, 94, 0.3), 0 3px 10px rgba(0, 0, 0, 0.4);
-}
-.witness-cassette-btn:active {
-    transform: scale(0.97);
-}
 
 /* ===== Вкладка Оранжерея ===== */
 .gh-tab-head { margin-bottom: 10px; }

@@ -135,6 +135,27 @@ test('the witness room snapshot shows a concise presence counter instead of atmo
     assert.doesNotMatch(shareJs, /АТМОСФЕРА: \$\{snap\.phaseName/);
 });
 
+test('the witness card shows four stat counters like the room snapshot and drops the inline cassette button', () => {
+    // Four counters in the witness-card stats grid, mirroring the share-screen counters.
+    assert.match(indexHtml, /<div id="stat-signals" class="witness-stat-value">0<\/div>/);
+    assert.match(indexHtml, /<div id="stat-warmth" class="witness-stat-value">0<\/div>/);
+    assert.match(indexHtml, /<div id="stat-attempts" class="witness-stat-value witness-stat-big">0<\/div>/);
+    assert.match(indexHtml, /<div id="stat-presence" class="witness-stat-value">—<\/div>/);
+    assert.match(indexHtml, /СИГНАЛОВ СДЕЛАНО/);
+    assert.match(indexHtml, /ТЕПЛО СТАНЦИИ/);
+    assert.match(indexHtml, /ШЁПОТОВ ОТПРАВЛЕНО/);
+    assert.match(indexHtml, /ПРИСУТСТВИЕ/);
+    // The counters are populated by updateHeader — signals, warmth, and the presence RPC.
+    assert.match(indexHtml, /document\.getElementById\('stat-signals'\)\.innerText/);
+    assert.match(indexHtml, /document\.getElementById\('stat-warmth'\)\.innerText/);
+    assert.match(indexHtml, /station_days_in_app_total/);
+    assert.match(indexHtml, /\$\{days\} ДНЕЙ/);
+    // The old inline «Записать кассету» button is gone from the witness card.
+    assert.doesNotMatch(indexHtml, /witness-cassette-btn/);
+    assert.doesNotMatch(indexHtml, /witness-stat--friend/);
+    assert.doesNotMatch(indexHtml, /СВОЕМУ ЧЕЛОВЕКУ/);
+});
+
 test('the person-days RPC is a public aggregate over registration dates only', () => {
     const presence = readFileSync(require.resolve('../billing/setup_station_presence.sql'), 'utf8');
     assert.match(presence, /create or replace function public\.station_days_in_app_total\(\)/);

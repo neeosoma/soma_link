@@ -32,6 +32,15 @@ const A = '11111111-1111-4111-8111-111111111111';
         assert.equal(await scalar("select public.soma_text_blocked('просто хороший день')"), false);
         assert.equal(await scalar("select public.soma_text_blocked(null)"), false);
 
+        // 1b) короткие термины блокируются только как самостоятельные слова
+        assert.equal(await scalar("select public.soma_text_blocked('дурачишься')"), false);
+        assert.equal(await scalar("select public.soma_text_blocked('расслаблять тело')"), false);
+        assert.equal(await scalar("select public.soma_text_blocked('геймер играет')"), false);
+        assert.equal(await scalar("select public.soma_text_blocked('д-ура')"), true);
+        assert.equal(await scalar("select public.soma_text_blocked('блять, давай')"), true);
+        assert.equal(await scalar("select public.soma_text_blocked('дура!')"), true);
+        assert.equal(await scalar("select public.soma_text_blocked('гей')"), true);
+
         // 2) submit_soma_post rejects blocked text.
         await assert.rejects(
             db.query("select * from public.submit_soma_post('p_f1','Аноним','ТЕМА','Ты хуй ке го, давай поговорим.')"),

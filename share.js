@@ -491,24 +491,25 @@
         });
         curY += qLines.length * qLh + (qLines.length > 2 ? 18 : 26);
 
-        // Счётчик человек-дней в приложении: сумма полных дней с момента
+        // Счётчик присутствия: сумма человек-дней в приложении с момента
         // регистрации каждого пользователя (серверный агрегатор).
-        let daysInApp = '—';
+        let presenceDays = '—';
         try {
             if (typeof supabaseClient !== 'undefined' && supabaseClient) {
                 const res = await supabaseClient.rpc('station_days_in_app_total');
                 if (!res.error && res.data != null) {
-                    daysInApp = String(Math.max(0, Math.round(Number(res.data) || 0)));
+                    presenceDays = String(Math.max(0, Math.round(Number(res.data) || 0)));
                 }
             }
         } catch (_) {}
+        const presenceValue = presenceDays === '—' ? '—' : `${presenceDays}# ДНЕЙ`;
 
         // Player's own activity counts.
         const stats = [
             { k: 'СИГНАЛОВ СДЕЛАНО', v: String(snap.signals), col: '#fff2f4' },
             { k: 'ТЕПЛО СТАНЦИИ', v: String(snap.warmth), col: '#ffd58e' },
             { k: 'ШЁПОТОВ ОТПРАВЛЕНО', v: String(snap.whispersSent), col: '#ff8597' },
-            { k: 'ДНИ В ПРИЛОЖЕНИИ', v: daysInApp, col: '#ff5c74' }
+            { k: 'ПРИСУТСТВИЕ', v: presenceValue, col: '#ff5c74' }
         ];
         const boxW = 196, boxH = 74, gap = 12;
         stats.forEach((st, i) => {

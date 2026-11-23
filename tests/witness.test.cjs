@@ -123,12 +123,14 @@ test('SQL mark storage is private, Auth-only, duplicate-safe, and rewards author
     assert.doesNotMatch(statusSignature, /reader_id|owner_id|mark_count|witness_count/i);
 });
 
-test('the witness room snapshot shows a concise person-days counter instead of atmosphere', () => {
+test('the witness room snapshot shows a concise presence counter instead of atmosphere', () => {
     // The 4th stats block replaced АТМОСФЕРА with the server-side person-days aggregate.
-    assert.match(shareJs, /ДНИ В ПРИЛОЖЕНИИ/);
+    assert.match(shareJs, /ПРИСУТСТВИЕ/);
     assert.doesNotMatch(shareJs, /k: 'АТМОСФЕРА'/);
     assert.match(shareJs, /supabaseClient\.rpc\('station_days_in_app_total'\)/);
     assert.match(shareJs, /typeof supabaseClient !== 'undefined' && supabaseClient/);
+    // The value renders as «N# ДНЕЙ» with a dash fallback when the RPC is unavailable.
+    assert.match(shareJs, /\$\{presenceDays\}# ДНЕЙ/);
     // The old atmosphere subtitle above the callsign is gone from the witness card.
     assert.doesNotMatch(shareJs, /АТМОСФЕРА: \$\{snap\.phaseName/);
 });

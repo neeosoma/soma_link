@@ -10655,6 +10655,57 @@ function closePagerModal() {
     }
 }
 
+// Кнопки добавления атрибутов в окне отправки сигнала («ОТПРАВИТЬ В ЭФИР»).
+// Показываются только для активированных (купленных и надетых) атрибутов.
+// «is-on» — выбрано для отражения. btnClass/rowClass — CSS-классы для контекста.
+function renderAttrToggleRow(cosm, sel, escFn, btnClass, rowClass) {
+    const esc = escFn || (s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])));
+    const defs = [
+        { slot: 'seal', label: 'ПЕЧАТЬ' },
+        { slot: 'title', label: 'ТИТУЛ' },
+        { slot: 'frame', label: 'РАМКА' }
+    ];
+    const btns = defs
+        .filter(d => cosm && cosm[d.slot])
+        .map(d => {
+            const on = !!sel[d.slot];
+            return `<button type="button" class="${btnClass} ${on ? 'is-on' : ''}" data-attr="${d.slot}" data-label="${esc(d.label)}">＋ ${esc(d.label)}</button>`;
+        })
+        .join('');
+    if (!btns) return '';
+    return `<div class="${rowClass}" role="group" aria-label="Отражаемые атрибуты">${btns}</div>`;
+}
+
+// Красная рамка в стиле шаси модалки для отражённых атрибутов сигнала.
+// Тема всегда. Печать, титул и рамка отражаются НЕЗАВИСИМО друг от друга
+// (каждый — если выбран и у игрока активирован). Комбинацию выбирает игрок
+// при отправке сигнала.
+function renderSignalFrameHtml(topic, attrs, escFn) {
+    try {
+        const esc = escFn || (s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])));
+        const label = esc(signalTagLabel(topic));
+        const right = `<div class="pager-sig-topic"><span class="pager-sig-topic-label">${label}</span></div>`;
+        let left = '';
+        let frameClass = '';
+        const a = attrs || {};
+        // Атрибуты рендеряются по id из данных сигнала (отправителя), независимо
+        // от косметики получателя: каждый отражается отдельно, если есть id.
+        if (a.frame && typeof frameClassOf === 'function') {
+            frameClass = frameClassOf({ frame: a.frame });
+        }
+        if (a.seal && typeof sealHtmlOf === 'function') {
+            left += `<div class="pager-sig-stamp">${sealHtmlOf(a.seal)}</div>`;
+        }
+        if (a.title && typeof titleSpanOf === 'function') {
+            left += `<div class="pager-sig-status">${titleSpanOf(a.title)}</div>`;
+        }
+        const inner = left ? `<div class="pager-sig-side">${left}</div>` + right : right;
+        return `<div class="pager-sig-frame ${frameClass}" role="group" aria-label="Тема сигнала">${inner}</div>`;
+    } catch (_) {
+        return '';
+    }
+}
+
 function renderPagerModal() {
     const ov = mountPagerModalForCurrentMode();
     if (!ov || !roomAnim.pagerModalOpen) return;
@@ -10686,13 +10737,25 @@ function renderPagerModal() {
         badgeEl.classList.toggle('hidden', inbox.length === 0);
     }
 
+    let sigTopic = '';
+    let sigAttrs = null;
+    if (activeTab === 'inbox' && inbox && inbox[0] && inbox[0].post_tag) {
+        // Вкладка «Входящие» — шёпот (атрибуты не трогаем).
+        sigTopic = String(inbox[0].post_tag);
+    } else {
+        // Вкладка «Поймать сигнал» — сигнал из эфира (soma_post): тема всегда,
+        // отражаемые атрибуты читаются из данных сигнала.
+        try {
+            const cs = getVisibleFirstSignalCandidates();
+            if (cs && cs[0]) {
+                if (cs[0].tag) sigTopic = String(cs[0].tag);
+                sigAttrs = cs[0].cosmetics || null;
+            }
+        } catch (_) {}
+    }
     if (metaEl) {
-        const bonusTxt = adm.ackBonusClaimedToday
-            ? 'ТЕПЛО ОТ КАССЕТЫ СЕГОДНЯ: ✓ ПОЛУЧЕНО (1/1)'
-            : `КАССЕТА ДАЁТ +${PROGRESSION_RULES.WHISPER_ACK_WARMTH} ТЕПЛА ДЛЯ РАСТЕНИЯ (1/ДЕНЬ)`;
-        metaEl.innerHTML = `
-            <span>${bonusTxt}</span>
-        `;
+        // Атрибуты рендерятся по id из данных сигнала — без косметики получателя.
+        metaEl.innerHTML = renderSignalFrameHtml(sigTopic, sigAttrs, escFn);
     }
 
     if (noticeEl) {
@@ -10941,10 +11004,6 @@ function renderPagerModal() {
                     const trimLen = draft.trim().length;
                     return `
                         <div class="pager-card ${done ? 'is-whispered' : ''}" data-post-id="${escFn(pid)}">
-                            <div class="pager-card-head">
-                                <span class="pager-card-tag">${escFn(post.author || 'Аноним')} · #${escFn(signalTagLabel(post.tag))}</span>
-                                <span class="pager-card-meta">${done ? '✓ ОТКЛИК ОТПРАВЛЕН' : 'ГОЛОС СО СТАНЦИИ'}</span>
-                            </div>
                             <p class="pager-card-text">${escFn(post.text || '')}</p>
                             ${!done && !isComposing ? `<div class="pager-card-actions pager-card-actions--stack">
                                 <button type="button" class="pager-act-btn pager-act-btn--save" data-act="compose" data-post-id="${escFn(pid)}">✦ ОТВЕТИТЬ ШЁПОТОМ</button>
@@ -11022,6 +11081,8 @@ function renderPagerModal() {
                         if (inp && inp.focus) setTimeout(() => { try { inp.focus(); } catch (_) {} }, 30);
                     };
                 });
+
+                // Переключатели отражаемых атрибутов — перенесены в окно «ОТПРАВИТЬ В ЭФИР» (index.html).
 
                 const inp = bodyEl.querySelector('#pager-compose-input');
                 const cnt = bodyEl.querySelector('#pager-compose-count');

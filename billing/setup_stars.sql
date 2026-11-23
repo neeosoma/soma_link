@@ -41,14 +41,20 @@ create index if not exists soma_users_weekly_idx
     on public.soma_users (weekly_key, weekly_xp desc);
 
 -- 2. Таблица «Ленты боли» (ФИЗИЧЕСКИ БЕЗ ID АВТОРА — 100% анонимность!)
+-- cosmetics: выбранные отправителем отражаемые атрибуты сигнала
+-- ({"seal":true,"title":false,"frame":true}) — приходят получателям на пейджер.
 create table if not exists public.soma_posts (
     id text primary key check (char_length(id) between 4 and 48),
     author text not null default 'Аноним' check (char_length(author) <= 32),
     tag text not null default 'ЛИЧНАЯ БОЛЬ' check (char_length(tag) <= 32),
     text text not null check (char_length(text) between 13 and 666),
     likes integer not null default 0 check (likes >= 0),
+    cosmetics jsonb not null default '{}'::jsonb,
     created_at timestamptz not null default now()
 );
+
+-- Идемпотентная миграция: добавляем колонку, если таблица уже существовала без неё.
+alter table public.soma_posts add column if not exists cosmetics jsonb not null default '{}'::jsonb;
 
 create index if not exists soma_posts_created_idx
     on public.soma_posts (created_at desc);
@@ -105,6 +111,7 @@ begin
         new.author := old.author;
         new.tag := old.tag;
         new.text := old.text;
+        new.cosmetics := old.cosmetics;
         new.created_at := old.created_at;
         new.likes := least(old.likes + 1, greatest(old.likes, coalesce(new.likes, old.likes)));
     end if;

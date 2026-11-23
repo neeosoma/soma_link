@@ -502,7 +502,7 @@
                 }
             }
         } catch (_) {}
-        const presenceValue = presenceDays === '—' ? '—' : `${presenceDays}# ДНЕЙ`;
+        const presenceValue = presenceDays === '—' ? '—' : `${presenceDays} ДНЕЙ`;
 
         // Player's own activity counts.
         const stats = [
@@ -1388,12 +1388,6 @@
         if (primLbl) {
             primLbl.textContent = nativeOk ? 'ОТПРАВИТЬ СНИМОК В TELEGRAM' : 'ПОДЕЛИТЬСЯ СНИМКОМ';
         }
-        setStatus(
-            nativeOk
-                ? 'Готово · выберите Telegram, чтобы отправить открытку картинкой'
-                : 'Готово · отправьте, скопируйте в буфер (для Ctrl+V в TG) или скачайте PNG',
-            false
-        );
         return cv;
     }
 

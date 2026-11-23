@@ -129,8 +129,8 @@ test('the witness room snapshot shows a concise presence counter instead of atmo
     assert.doesNotMatch(shareJs, /k: 'АТМОСФЕРА'/);
     assert.match(shareJs, /supabaseClient\.rpc\('station_days_in_app_total'\)/);
     assert.match(shareJs, /typeof supabaseClient !== 'undefined' && supabaseClient/);
-    // The value renders as «N# ДНЕЙ» with a dash fallback when the RPC is unavailable.
-    assert.match(shareJs, /\$\{presenceDays\}# ДНЕЙ/);
+    // The value renders as «N ДНЕЙ» with a dash fallback when the RPC is unavailable.
+    assert.match(shareJs, /\$\{presenceDays\} ДНЕЙ/);
     // The old atmosphere subtitle above the callsign is gone from the witness card.
     assert.doesNotMatch(shareJs, /АТМОСФЕРА: \$\{snap\.phaseName/);
 });

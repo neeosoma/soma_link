@@ -3699,6 +3699,12 @@ html.is-soma-fs-closing .app-h {
     font: 700 31px/1 'Share Tech Mono', monospace;
 }
 
+/* Цвета цифр по подобию снимка комнаты (share.js): каждый счётчик — свой цвет */
+.witness-stat--signals { color: #fff2f4; }
+.witness-stat--warmth { color: #ffd58e; }
+.witness-stat--whispers { color: #ff8597; }
+.witness-stat--presence { color: #ff5c74; }
+
 /* Кнопка «Записать кассету близкому» под карточкой свидетеля — по подобию share-station-btn */
 .witness-friend-btn {
     display: flex;

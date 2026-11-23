@@ -151,6 +151,27 @@ const D = '44444444-4444-4444-8444-444444444444';
         await assert.rejects(db.query("insert into public.soma_users(username,xp,help_attempts,created_at) values('u_days3',0,0, now())"), /permission denied/i,
             'clients still cannot insert rows with a custom created_at');
 
+        // Per-account lifetime: every Auth identity sees its own real stat from
+        // the moment its profile first entered the game — never anyone else's.
+        const accountDays = async () => (await db.query('select * from public.my_soma_account_days()')).rows[0].my_soma_account_days;
+        await asRole('authenticated', '55555555-5555-4555-8555-555555555555');
+        assert.equal(await accountDays(), 0, 'an authenticated identity without a profile sees zero days');
+
+        await db.exec('reset role');
+        await db.query("insert into public.soma_users(username,xp,help_attempts,created_at) values('u_cafe',0,0, now() - interval '3 days')");
+        await asRole('authenticated', '55555555-5555-4555-8555-555555555555');
+        assert.equal(await scalar('select public.bind_my_soma_profile($1)', ['u_cafe']), true, 'bind the three-day-old profile');
+        assert.equal(await accountDays(), 3, 'the profile lifetime counts full days since first entry');
+
+        await db.exec('reset role');
+        await db.query("insert into public.soma_users(username,xp,help_attempts,created_at) values('u_beef2',0,0, now() - interval '5 hours')");
+        await asRole('authenticated', '66666666-6666-4666-8666-666666666666');
+        assert.equal(await scalar('select public.bind_my_soma_profile($1)', ['u_beef2']), true, 'bind the sub-day profile');
+        assert.equal(await accountDays(), 1, 'a fresh account shows 1 день from first entry, not the old «0 ДНЕЙ»');
+
+        await asRole('anon');
+        await assert.rejects(accountDays(), /permission denied/i, 'the per-account lifetime RPC requires authentication');
+
         // Regression: a production DB created before created_at existed must
         // still get the column from the idempotent base schema migration.
         await db.exec('reset role');

@@ -40,4 +40,23 @@ grant execute on function public.station_presence_atmosphere_status() to authent
 comment on function public.station_presence_atmosphere_status() is
     'Returns one boolean for soft station ambience when a privacy floor of recent presence marks is reached; never returns counts or story IDs.';
 
+-- Public aggregate: total person-days spent in the app since registration.
+-- Counted as the sum of each user's full days since soma_users.created_at;
+-- a global aggregate only, no per-user data is exposed.
+create or replace function public.station_days_in_app_total()
+returns integer
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+    select coalesce(sum(extract(day from now() - u.created_at)), 0)::integer
+      from public.soma_users u
+$$;
+
+revoke all on function public.station_days_in_app_total() from public, anon, authenticated;
+grant execute on function public.station_days_in_app_total() to anon, authenticated;
+comment on function public.station_days_in_app_total() is
+    'Total person-days spent in the app since registration, counted from each user registration time; a global aggregate with no per-user data.';
+
 commit;

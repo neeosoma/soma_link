@@ -455,10 +455,6 @@
         g.fillStyle = fp.edge;
         g.textBaseline = 'alphabetic';
         g.fillText('// ОТЧЁТ СОУЧАСТИЯ', 112, 73);
-        g.font = `400 12px ${MONO}`;
-        g.fillStyle = 'rgba(255, 204, 198, 0.68)';
-        g.fillText(`АТМОСФЕРА: ${snap.phaseName.toUpperCase()}`, 112, 92);
-
         // Крупный позывной Свидетеля
         g.font = `700 40px ${SANS}`;
         g.fillStyle = '#fff5f3';
@@ -495,12 +491,24 @@
         });
         curY += qLines.length * qLh + (qLines.length > 2 ? 18 : 26);
 
-        // Atmosphere and player's own activity counts.
+        // Счётчик человек-дней в приложении: сумма полных дней с момента
+        // регистрации каждого пользователя (серверный агрегатор).
+        let daysInApp = '—';
+        try {
+            if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+                const res = await supabaseClient.rpc('station_days_in_app_total');
+                if (!res.error && res.data != null) {
+                    daysInApp = String(Math.max(0, Math.round(Number(res.data) || 0)));
+                }
+            }
+        } catch (_) {}
+
+        // Player's own activity counts.
         const stats = [
             { k: 'СИГНАЛОВ СДЕЛАНО', v: String(snap.signals), col: '#fff2f4' },
             { k: 'ТЕПЛО СТАНЦИИ', v: String(snap.warmth), col: '#ffd58e' },
             { k: 'ШЁПОТОВ ОТПРАВЛЕНО', v: String(snap.whispersSent), col: '#ff8597' },
-            { k: 'АТМОСФЕРА', v: String(snap.phaseName || 'Ночь').toUpperCase(), col: '#ff5c74' }
+            { k: 'ДНИ В ПРИЛОЖЕНИИ', v: daysInApp, col: '#ff5c74' }
         ];
         const boxW = 196, boxH = 74, gap = 12;
         stats.forEach((st, i) => {

@@ -137,6 +137,20 @@ const D = '44444444-4444-4444-8444-444444444444';
         for (let i = 5; i < 30; i++) assert.equal(await mark(targetIds[i]), true);
         await assert.rejects(mark(targetIds[30]), /Daily witness mark limit reached/);
 
-        console.log('Presence integration passed: repeatable migrations, restricted legacy counter ACLs, Auth-only RPCs, private RLS tables, +2 author warmth with duplicate safety and offline delivery, author-only status, reader isolation, unverified-post handling, no public counts/story targets, and daily abuse cap.');
+        // Person-days aggregate: global sum of full days since each user's created_at.
+        const daysTotal = async () => (await db.query('select * from public.station_days_in_app_total()')).rows[0].station_days_in_app_total;
+        await asUser(A);
+        assert.equal(await daysTotal(), 0, 'no users means zero person-days');
+        await db.exec('reset role');
+        await db.query("insert into public.soma_users(username,xp,help_attempts,created_at) values('u_dea1',0,0, now() - interval '3 days')");
+        await db.query("insert into public.soma_users(username,xp,help_attempts,created_at) values('u_beef',0,0, now() - interval '5 days')");
+        await asUser(A);
+        assert.equal(await daysTotal(), 8, 'three-day and five-day users sum to eight person-days');
+        await asRole('anon');
+        assert.equal(await daysTotal(), 8, 'the public aggregate is callable without authentication');
+        await assert.rejects(db.query("insert into public.soma_users(username,xp,help_attempts,created_at) values('u_days3',0,0, now())"), /permission denied/i,
+            'clients still cannot insert rows with a custom created_at');
+
+        console.log('Presence integration passed: repeatable migrations, restricted legacy counter ACLs, Auth-only RPCs, private RLS tables, +2 author warmth with duplicate safety and offline delivery, author-only status, reader isolation, unverified-post handling, no public counts/story targets, daily abuse cap, and the public person-days aggregate.');
     } finally { await db.close(); }
 })().catch(error => { console.error(error); process.exit(1); });

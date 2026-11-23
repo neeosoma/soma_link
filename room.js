@@ -10689,6 +10689,18 @@ function renderPagerModal() {
                 </div>
             `;
         } else {
+            // Удерживаем фокус textarea «Ответ на шёпот» перед перерисовкой bodyEl.innerHTML.
+            // Периодический syncPagerWhispers (каждые 8 сек.) вызывает renderPagerModal и
+            // пересоздаёт DOM — без этого фокус терялся и клавиатура складывалась.
+            let replyFocus = null;
+            const activeReply = document.activeElement && document.activeElement.id === 'pager-reply-input';
+            if (activeReply && roomAnim.pagerReplyingTo) {
+                replyFocus = {
+                    start: document.activeElement.selectionStart,
+                    end: document.activeElement.selectionEnd
+                };
+            }
+
             bodyEl.innerHTML = inbox.map(w => {
                 const isReply = w.is_reply === true;
                 const isComposing = roomAnim.pagerReplyingTo && String(roomAnim.pagerReplyingTo) === String(w.id);
@@ -10806,6 +10818,19 @@ function renderPagerModal() {
                         renderPagerModal();
                     }
                 };
+            }
+
+            // Восстанавливаем фокус в textarea «Ответа» после перерисовки
+            // (syncPagerWhispers каждые 8 сек. вызывает renderPagerModal, который
+            // пересоздаёт DOM и без этого сбрасывал фокус → клавиатура закрывалась).
+            if (replyInp && replyFocus && roomAnim.pagerReplyingTo) {
+                try {
+                    replyInp.focus();
+                    const len = String(replyInp.value || '').length;
+                    const s = Math.max(0, Math.min(replyFocus.start ?? len, len));
+                    const e = Math.max(s, Math.min(replyFocus.end ?? len, len));
+                    if (typeof replyInp.setSelectionRange === 'function') replyInp.setSelectionRange(s, e);
+                } catch (_) {}
             }
         }
     } else {

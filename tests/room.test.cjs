@@ -2419,3 +2419,18 @@ test('block management keeps only safe anchor/date fields, and validates RPC pay
     assert.equal((await r.blockIncomingWhisper('in_anchor')).ok, false);
     assert.equal((await r.reportIncomingWhisper('in_anchor', 'other')).ok, false);
 });
+
+test('the whisper reply composer keeps focus through the periodic feed refresh', () => {
+    // The 8-second syncPagerWhispers -> renderPagerModal re-creates bodyEl.innerHTML.
+    // Without capture/restore the focused #pager-reply-input loses focus and the
+    // mobile keyboard collapses while the player is typing an answer.
+    assert.match(roomCode, /document\.activeElement && document\.activeElement\.id === 'pager-reply-input'/);
+    assert.match(roomCode, /let replyFocus = null/);
+    assert.match(roomCode, /replyFocus = \{\s*\n\s*start: document\.activeElement\.selectionStart,\s*\n\s*end: document\.activeElement\.selectionEnd\s*\n\s*\}/);
+    // The capture happens before bodyEl.innerHTML is rebuilt.
+    assert.ok(roomCode.indexOf('let replyFocus = null') < roomCode.indexOf('bodyEl.innerHTML = inbox.map'), 'reply focus is captured before the inbox DOM rebuild');
+    // The restore happens after the reply handlers are bound, guarded by pagerReplyingTo.
+    assert.match(roomCode, /if \(replyInp && replyFocus && roomAnim\.pagerReplyingTo\)/);
+    assert.match(roomCode, /replyInp\.focus\(\)/);
+    assert.match(roomCode, /replyInp\.setSelectionRange\(s, e\)/);
+});

@@ -31,7 +31,8 @@ alter table public.soma_users
     add column if not exists weekly_xp integer not null default 0,
     add column if not exists weekly_key text not null default '',
     add column if not exists cosmetics jsonb not null default '{}'::jsonb,
-    add column if not exists owned_cosmetics text[] not null default '{}'::text[];
+    add column if not exists owned_cosmetics text[] not null default '{}'::text[],
+    add column if not exists created_at timestamptz not null default now();
 
 create index if not exists soma_users_xp_idx
     on public.soma_users (xp desc);

@@ -2450,6 +2450,27 @@ test('the whisper reply composer keeps focus through the periodic feed refresh',
     assert.match(roomCode, /replyInp\.setSelectionRange\(s, e\)/);
 });
 
+test('the pager compose bar pins the cancel/send buttons while the counter changes', () => {
+    // The compose bar used flex+space-between+wrap: the counter text grows on
+    // every keystroke (0/333 -> 10/333 -> … (мин. 13)) and at some length the
+    // cancel/send buttons wrapped to the next line and "jumped" on each input.
+    // Grid with a flexible counter column + fixed buttons column keeps the
+    // buttons anchored regardless of the counter length.
+    // CSS blocks may start with comments — allow them before the declarations.
+    const barBlock = roomCss.match(/\.pager-compose-bar\s*\{([\s\S]*?)\}/)[1];
+    assert.match(barBlock, /display:\s*grid;/);
+    assert.match(barBlock, /grid-template-columns:\s*1fr auto;/);
+    assert.doesNotMatch(barBlock, /flex-wrap:\s*wrap;/);
+    // Counter: truncates cleanly instead of pushing the buttons.
+    const countBlock = roomCss.match(/\.pager-compose-count\s*\{([\s\S]*?)\}/)[1];
+    assert.match(countBlock, /white-space:\s*nowrap;/);
+    assert.match(countBlock, /text-overflow:\s*ellipsis;/);
+    // Buttons: fixed width, never wrap.
+    const btnsBlock = roomCss.match(/\.pager-compose-btns\s*\{([\s\S]*?)\}/)[1];
+    assert.match(btnsBlock, /flex:\s*0 0 auto;/);
+    assert.match(btnsBlock, /white-space:\s*nowrap;/);
+});
+
 test('the pager footer keeps only the block-management control — the friend cassette button moved under the witness card', () => {
     // The «Записать кассету близкому» button was moved OUT of the pager modal
     // footer (index.html, under #witness-card) — the footer must be clean.

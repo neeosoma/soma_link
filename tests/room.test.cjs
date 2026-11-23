@@ -2202,6 +2202,20 @@ test('every cassette save drops an incoming pager notice, even when the daily wa
     assert.equal(r.getPendingInboxWhispers().length, 1, 'duplicate save keeps the inbox clean');
 });
 
+test('cassette ack does not duplicate the notice as a modal banner — only the inbox message', () => {
+    const player = { uid: 'u_0123456789abcdef', warmth: 0 };
+    const r = loadRoom({ player });
+
+    // The ack must add the incoming message, but must NOT raise a modal
+    // banner about the same cassette save (PR: modal duplicate removed).
+    r.claimWhisperCassetteAck('echo_1', '2026-11-18');
+    assert.equal(r.getPendingInboxWhispers().length, 1, 'inbox still receives the ack notice');
+    assert.ok(!r.roomAnim.pagerModalNotice, 'no modal notice duplicates the incoming ack message');
+    assert.ok(!r.roomAnim.pagerNotice, 'no room notice duplicates the incoming ack message');
+    assert.ok(!r.roomAnim.customMode, 'no custom mode banner duplicates the incoming ack message');
+    assert.ok(!r.roomAnim.customEntry, 'no custom entry duplicates the incoming ack message');
+});
+
 test('failed cloud cassette acknowledgement leaves the inbox retryable', async () => {
     const supabaseClient = { from: () => ({ update: () => ({ eq: () => ({ select: async () => ({ data: null, error: { message: 'offline' } }) }) }) }) };
     const r = loadRoom({ supabaseClient });

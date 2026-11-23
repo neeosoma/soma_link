@@ -3637,16 +3637,9 @@ function claimWhisperCassetteAck(whisperId, todayOverride) {
         }
     }
 
-    if (typeof roomAnim !== 'undefined' && roomAnim) {
-        const notice = grantedWarmth > 0
-            ? `✦ Человек сохранил ваш «Шёпот» на кассету! +${grantedWarmth} Тепла пошли на рост растения.`
-            : '✦ Ещё один ваш «Шёпот» бережно сохранён на кассету (бонус тепла 1/1 за сегодня уже впитался).';
-        roomAnim.pagerNotice = notice;
-        roomAnim.pagerModalNotice = notice;
-        roomAnim.pagerSavedAlert = true;
-        roomAnim.customMode = 'ПЕЙДЖЕР // ОТКЛИК С КАССЕТЫ';
-        roomAnim.customEntry = notice;
-    }
+    // Уведомление в модалке НЕ дублируем: о поступлении отклика
+    // (сохранении шёпота на кассету) сообщается только через входящее
+    // сообщение, которое ниже добавляет receiveCassetteAckNotice.
     // Во входящие пейджера — сообщение, что ваши тёплые слова согрели человека,
     // и он сохранил их себе на кассету (даже если бонус тепла за день уже потрачен).
     if (typeof receiveCassetteAckNotice === 'function') {

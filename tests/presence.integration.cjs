@@ -151,6 +151,18 @@ const D = '44444444-4444-4444-8444-444444444444';
         await assert.rejects(db.query("insert into public.soma_users(username,xp,help_attempts,created_at) values('u_days3',0,0, now())"), /permission denied/i,
             'clients still cannot insert rows with a custom created_at');
 
-        console.log('Presence integration passed: repeatable migrations, restricted legacy counter ACLs, Auth-only RPCs, private RLS tables, +2 author warmth with duplicate safety and offline delivery, author-only status, reader isolation, unverified-post handling, no public counts/story targets, daily abuse cap, and the public person-days aggregate.');
+        // Regression: a production DB created before created_at existed must
+        // still get the column from the idempotent base schema migration.
+        await db.exec('reset role');
+        await db.query('alter table public.soma_users drop column created_at');
+        const colBefore = await scalar("select count(*) from information_schema.columns where table_name='soma_users' and column_name='created_at'");
+        assert.equal(colBefore, 0, 'simulated old DB has no soma_users.created_at');
+        await db.exec(readFileSync(require.resolve('../billing/setup_stars.sql'), 'utf8'));
+        const colAfter = await scalar("select count(*) from information_schema.columns where table_name='soma_users' and column_name='created_at'");
+        assert.equal(colAfter, 1, 'the idempotent base schema adds soma_users.created_at to legacy databases');
+        await db.query("insert into public.soma_users(username,xp,help_attempts,created_at) values('u_f00d',0,0, now() - interval '4 days')");
+        assert.equal(await daysTotal(), 4, 'the presence aggregate works again after the legacy backfill');
+
+        console.log('Presence integration passed: repeatable migrations, restricted legacy counter ACLs, Auth-only RPCs, private RLS tables, +2 author warmth with duplicate safety and offline delivery, author-only status, reader isolation, unverified-post handling, no public counts/story targets, daily abuse cap, public person-days aggregate, and legacy created_at backfill.');
     } finally { await db.close(); }
 })().catch(error => { console.error(error); process.exit(1); });

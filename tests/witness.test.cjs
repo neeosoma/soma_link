@@ -96,7 +96,8 @@ test('feed presents a real anonymous sign separately from private Whisper and si
 
     const holdDone = indexHtml.match(/function holdDone\(id\)\s*\{[\s\S]*?\n    \}/)[0];
     assert.doesNotMatch(holdDone, /player\.xp|addWeeklyXp|updateCloudProfile/);
-    assert.match(holdDone, /addWarmth\(res\.granted, false\)/);
+    assert.doesNotMatch(holdDone, /addWarmth/, 'silent reading must never grant warmth');
+    assert.match(holdDone, /claimDailyWarmth\('hold'\)/);
     assert.match(indexHtml, /function addWarmth\(n, syncCloud = true\)/);
     assert.match(indexHtml, /if \(syncCloud && typeof supabaseClient !== 'undefined' && supabaseClient\)/);
     assert.match(indexHtml, /soma_server_warmth_seen/);
@@ -104,7 +105,7 @@ test('feed presents a real anonymous sign separately from private Whisper and si
     assert.doesNotMatch(indexHtml, /Автор её не увидит/);
 });
 
-test('SQL mark storage is private, Auth-only, duplicate-safe, and rewards authors without returning mark counts', () => {
+test('SQL mark storage is private, Auth-only, duplicate-safe, and unrewarded for authors without returning mark counts', () => {
     assert.match(migration, /create table if not exists soma_private\.post_witness_marks/);
     assert.match(migration, /revoke select on table public\.soma_posts from public, anon, authenticated/);
     assert.match(migration, /grant select \(id, author, tag, text, created_at\)/);
@@ -118,7 +119,10 @@ test('SQL mark storage is private, Auth-only, duplicate-safe, and rewards author
     assert.match(migration, /on conflict \(post_id, reader_id\) do nothing/);
     const statusSignature = migration.match(/returns table\s*\(([^)]*)\)/i)?.[1] || '';
     assert.match(statusSignature, /is_author boolean[\s\S]*can_mark boolean[\s\S]*has_witness boolean[\s\S]*i_marked boolean[\s\S]*author_warmth integer/i);
-    assert.match(migration, /set warmth = warmth \+ 2/);
+    // The mark function must carry NO warmth reward for the author.
+    const markFn = migration.match(/create or replace function public\.mark_soma_post_witness[\s\S]*?\$\$;/i)?.[0] || '';
+    assert.ok(markFn.length > 0, 'mark_soma_post_witness must be defined');
+    assert.doesNotMatch(markFn, /set warmth|warmth \+|insert into soma_private\.witness_author_warmth/i, 'presence marks must never award author warmth');
     assert.match(migration, /create or replace function public\.bind_my_soma_profile/);
     assert.doesNotMatch(statusSignature, /reader_id|owner_id|mark_count|witness_count/i);
 });

@@ -46,7 +46,7 @@ const D = '44444444-4444-4444-8444-444444444444';
         await db.query("insert into public.soma_users(username,xp,help_attempts) values('u_abcd',0,0)");
         await db.query("update public.soma_users set warmth = 0 where username = 'u_abcd'");
         assert.equal(await scalar('select public.bind_my_soma_profile($1)', ['u_abcd']), true,
-            'the authenticated app binds its private player profile for warmth delivery');
+            'the authenticated app binds its private player profile');
         await assert.rejects(db.query("insert into public.soma_users(username,reacts) values('u_efaa',1)"), /permission denied/i,
             'clients cannot recreate removed engagement counters');
         await assert.rejects(db.query("update public.soma_users set reacts = 1 where username = 'u_abcd'"), /permission denied/i,
@@ -81,8 +81,8 @@ const D = '44444444-4444-4444-8444-444444444444';
 
         assert.equal(await mark(targetIds[0]), true, 'first mark is persisted');
         assert.equal(await mark(targetIds[0]), false, 'repeated mark is idempotent');
-        assert.equal(await scalar("select warmth from public.soma_users where username = 'u_abcd'"), 2,
-            'one new Я рядом mark awards exactly +2 warmth to the author, but a duplicate adds nothing');
+        assert.equal(await scalar("select warmth from public.soma_users where username = 'u_abcd'"), 0,
+            'a Я рядом mark carries NO warmth reward to the author (and a duplicate adds nothing)');
         rows = await status([targetIds[0]]);
         assert.equal(rows[0].can_mark, false);
         assert.equal(rows[0].i_marked, true);
@@ -95,20 +95,20 @@ const D = '44444444-4444-4444-8444-444444444444';
         assert.equal(rows[0].i_marked, false);
         assert.equal(rows[0].has_witness, false, 'non-authors never learn that another reader left a mark');
         assert.equal(await mark(targetIds[0]), true, 'a second reader may independently mark the same story');
-        assert.equal(await scalar("select warmth from public.soma_users where username = 'u_abcd'"), 4,
-            'each distinct reader mark adds +2 warmth to the author');
+        assert.equal(await scalar("select warmth from public.soma_users where username = 'u_abcd'"), 0,
+            'distinct reader marks add NO warmth to the author');
         assert.equal((await status([targetIds[0]]))[0].author_warmth, null);
 
         await asUser(B);
         for (let i = 1; i < 5; i++) assert.equal(await mark(targetIds[i]), true);
-        assert.equal(await scalar("select warmth from public.soma_users where username = 'u_abcd'"), 12,
-            'six distinct reader marks yield six +2 awards, without exposing a count');
+        assert.equal(await scalar("select warmth from public.soma_users where username = 'u_abcd'"), 0,
+            'six distinct reader marks yield no warmth awards, without exposing a count');
         assert.deepEqual(await atmosphere(), { is_lit: true }, 'a privacy floor turns on atmosphere without returning a count or target');
 
         await asUser(A);
         rows = await status(targetIds.slice(0, 5));
-        assert.ok(rows.every(r => r.is_author && r.has_witness && !r.can_mark && !r.i_marked && r.author_warmth === 12),
-            'authors see only a boolean quiet-sign state and their own warmth, never a mark count');
+        assert.ok(rows.every(r => r.is_author && r.has_witness && !r.can_mark && !r.i_marked && r.author_warmth === 0),
+            'authors see only a boolean quiet-sign state and their own warmth (0), never a mark count');
         await assert.rejects(mark(targetIds[0]), /Cannot mark own post/);
         await assert.rejects(db.query('select * from soma_private.post_witness_marks'), /permission denied/);
         await assert.rejects(db.query('insert into soma_private.post_witness_marks(post_id,reader_id) values($1,$2)', [targetIds[5], A]), /permission denied/);
@@ -131,8 +131,8 @@ const D = '44444444-4444-4444-8444-444444444444';
         assert.equal(await mark('witness_post_unbound'), true, 'a mark to an offline/unbound author is still saved');
         await asUser(D);
         assert.equal(await scalar('select public.bind_my_soma_profile($1)', ['u_d000']), true);
-        assert.equal(await scalar("select warmth from public.soma_users where username = 'u_d000'"), 2,
-            'pending warmth is delivered exactly once when the author returns and binds their profile');
+        assert.equal(await scalar("select warmth from public.soma_users where username = 'u_d000'"), 0,
+            'marks carry no pending warmth: binding the profile changes nothing');
 
         await asUser(B);
         for (let i = 5; i < 30; i++) assert.equal(await mark(targetIds[i]), true);
@@ -190,6 +190,6 @@ const D = '44444444-4444-4444-8444-444444444444';
         await db.query("insert into public.soma_users(username,xp,help_attempts,created_at) values('u_f00d',0,0, now() - interval '4 days')");
         assert.equal(await daysTotal(), 4, 'the presence aggregate works again after the legacy backfill');
 
-        console.log('Presence integration passed: repeatable migrations, restricted legacy counter ACLs, Auth-only RPCs, private RLS tables, +2 author warmth with duplicate safety and offline delivery, author-only status, reader isolation, unverified-post handling, no public counts/story targets, daily abuse cap, public person-days aggregate, and legacy created_at backfill.');
+        console.log('Presence integration passed: repeatable migrations, restricted legacy counter ACLs, Auth-only RPCs, private RLS tables, unrewarded anonymous marks with duplicate safety and offline delivery, author-only status, reader isolation, unverified-post handling, no public counts/story targets, daily abuse cap, public person-days aggregate, and legacy created_at backfill.');
     } finally { await db.close(); }
 })().catch(error => { console.error(error); process.exit(1); });

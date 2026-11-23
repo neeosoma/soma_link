@@ -21,7 +21,7 @@ function makeStorage(initial = {}) {
 function loadRoom(env = {}) {
     const localStorage = env.localStorage || makeStorage();
     return runInNewContext(
-        roomCode + ';({ ...pagerApi, stationPhases, PROGRESSION_RULES, GREENHOUSE_WARMTH_STEPS, ALIEN_WARMTH_STEPS, ALIEN_KINDS, alienSpec, gallerySpecForKind, isGreenhouseUnlocked, plantSecretAlienSeed, feedActiveRoomPlant, openGreenhouse, drawGreenhouseVines, bindSomaSceneScroll, somaClientToLocal, somaScreenDeltaToLocal, mixHex, cyclePtsAlienKind, getWhisperBreachCount, recordWhisperSent, syncWhisperBreachCounter, RARE_MALTESE_INDEX, RARE_MALTESE_BREED, RARE_MOON_CAT_INDEX, RARE_MOON_CAT_COAT, NEEO_SKY_POLY, HEARTH_LANTERNS, COSMIC_DAWN_STARS, stationState, indifferenceIndex, equipStationPhase, inspectPlantStage, togglePlantGallery, inspectPlantKind, togglePtsDrawer, togglePtsDew, cyclePtsCatCoat, cyclePtsDogBreed, togglePtsDemoCassette, loadWarmthLedger, claimDailyWarmth, fireflyState, recordWhisperEcho, daysSinceLastWarmth, whisperAdmission, loadGreenhouse, plantNewGreenhouseSeed, selectGreenhouseSlot, formatCassetteDate, formatCassetteNum, loadCassettes, saveWhisperCassette, toggleCassetteFav, ejectCassette, playCassette, pressPagerScan, pressPagerInfo, PLANT_KINDS, PLANT_NOTES, PLANT_STAGES, PLANT_WARMTH_STEPS, PLANT_LEAF, PLANT_BLOOM, PLANT_POTS, CAT_COATS, catSpec, DOG_BREEDS, dogSpec, drawCompanionCat, drawCompanionDog, CITY_WINDOWS, hashStr, rng, plantSpec, plantStage, drawPlantSprite, drawCrtMonitor, drawRoomCosmetics, drawWindowWorld, drawWindowLightBeams, drawStationFx, drawCassetteDeck, paintPlantFrame, isRealTelegramMiniApp, getNativeFullscreenElement, requestNativeRoomFullscreen, getFullscreenViewport, computeFullscreenSceneBox, toggleRoomFullscreen, enterRoomFullscreen, exitRoomFullscreen, flipRoomFullscreen, renderRoom, touchRoomObject, activateRoomObject, resetStationPreview, roomAnim });',
+        roomCode + ';({ ...pagerApi, stationPhases, PROGRESSION_RULES, GREENHOUSE_WARMTH_STEPS, ALIEN_WARMTH_STEPS, ALIEN_KINDS, alienSpec, gallerySpecForKind, isGreenhouseUnlocked, plantSecretAlienSeed, feedActiveRoomPlant, openGreenhouse, drawGreenhouseVines, bindSomaSceneScroll, somaClientToLocal, somaScreenDeltaToLocal, mixHex, cyclePtsAlienKind, getWhisperBreachCount, recordWhisperSent, syncWhisperBreachCounter, RARE_MALTESE_INDEX, RARE_MALTESE_BREED, RARE_MOON_CAT_INDEX, RARE_MOON_CAT_COAT, NEEO_SKY_POLY, HEARTH_LANTERNS, COSMIC_DAWN_STARS, stationState, indifferenceIndex, equipStationPhase, inspectPlantStage, togglePlantGallery, inspectPlantKind, togglePtsDrawer, togglePtsDew, cyclePtsCatCoat, cyclePtsDogBreed, togglePtsDemoCassette, loadWarmthLedger, claimDailyWarmth, fireflyState, recordWhisperEcho, claimWhisperCassetteAck, daysSinceLastWarmth, whisperAdmission, loadGreenhouse, plantNewGreenhouseSeed, selectGreenhouseSlot, formatCassetteDate, formatCassetteNum, loadCassettes, saveWhisperCassette, toggleCassetteFav, ejectCassette, playCassette, pressPagerScan, pressPagerInfo, PLANT_KINDS, PLANT_NOTES, PLANT_STAGES, PLANT_WARMTH_STEPS, PLANT_LEAF, PLANT_BLOOM, PLANT_POTS, CAT_COATS, catSpec, DOG_BREEDS, dogSpec, drawCompanionCat, drawCompanionDog, CITY_WINDOWS, hashStr, rng, plantSpec, plantStage, drawPlantSprite, drawCrtMonitor, drawRoomCosmetics, drawWindowWorld, drawWindowLightBeams, drawStationFx, drawCassetteDeck, paintPlantFrame, isRealTelegramMiniApp, getNativeFullscreenElement, requestNativeRoomFullscreen, getFullscreenViewport, computeFullscreenSceneBox, toggleRoomFullscreen, enterRoomFullscreen, exitRoomFullscreen, flipRoomFullscreen, renderRoom, touchRoomObject, activateRoomObject, resetStationPreview, roomAnim });',
         { player: { uid: 'u_0123456789abcdef', name: 'AGENT_1001', warmth: 0 }, roomPreview: false, localStorage, ...env }
     );
 }
@@ -58,32 +58,39 @@ test('seasonal atmospheres unlock at [0, 20, 108, 240], auto-switch on unlock, a
     assert.doesNotThrow(() => equipStationPhase(1));
 });
 
-test('90-day anti-grind caps daily warmth at 4/day, decouples cold XP, keeps pot empty until Whisper, and unlocks Greenhouse + Cassettes', () => {
+test('60-day anti-grind caps daily warmth at 6/day, decouples cold XP, keeps pot empty until Whisper, and unlocks Greenhouse + Cassettes', () => {
     const ls = makeStorage();
     const room = loadRoom({ localStorage: ls });
     const {
-        PROGRESSION_RULES, PLANT_WARMTH_STEPS, claimDailyWarmth, daysSinceLastWarmth,
+        PROGRESSION_RULES, PLANT_WARMTH_STEPS, claimDailyWarmth, claimWhisperCassetteAck, daysSinceLastWarmth,
         whisperAdmission, plantStage, indifferenceIndex, recordWhisperEcho,
         loadGreenhouse, saveWhisperCassette, loadCassettes, plantNewGreenhouseSeed, selectGreenhouseSlot, plantSpec
     } = room;
 
-    assert.equal(PROGRESSION_RULES.DAILY_WARMTH_CAP, 4);
+    assert.equal(PROGRESSION_RULES.DAILY_WARMTH_CAP, 6);
     assert.equal(PROGRESSION_RULES.SEASON_WARMTH, 360);
-    assert.equal(PROGRESSION_RULES.SEASON_WARMTH / PROGRESSION_RULES.DAILY_WARMTH_CAP, 90, 'full bloom takes 90 warm days');
+    assert.equal(PROGRESSION_RULES.SEASON_WARMTH / PROGRESSION_RULES.DAILY_WARMTH_CAP, 60, 'full bloom takes 60 warm days');
 
-    // Mindless spam on Day 1: 20 holds + 10 trainer picks yields at most 4 warmth (2 hold + 2 trainer)
+    // Mindless spam on Day 1: 20 holds give NO warmth; 10 trainer picks give at most 2
     let day1Warmth = 0;
     for (let i = 0; i < 20; i++) day1Warmth += claimDailyWarmth('hold', '2026-11-18').granted;
     for (let i = 0; i < 10; i++) day1Warmth += claimDailyWarmth('trainer', '2026-11-18').granted;
-    assert.equal(day1Warmth, 4, 'cannot grind more than 4 warmth per day');
+    assert.equal(day1Warmth, 2, 'reading gives no warmth; trainer is capped at 2/day');
 
-    // 3 days of max play = 12 warmth: cannot even unlock phase 1 (20), let alone max level (360)
-    let total = day1Warmth;
+    // The cassette ack grants up to +4, counted into the same 6/day cap:
+    // 2 trainer + 4 ack = 6 exactly, and a second ack in the same day gives nothing.
+    const ack1 = claimWhisperCassetteAck('w_1', '2026-11-18');
+    assert.equal(ack1.grantedWarmth, 4, 'cassette ack grants 4 warmth once per day');
+    assert.equal(ack1.ledger.total, 6, 'trainer + ack fill the 6/day cap exactly');
+    const ack2 = claimWhisperCassetteAck('w_2', '2026-11-18');
+    assert.equal(ack2.grantedWarmth, 0, 'a second ack in the same day grants nothing');
+
+    // 3 days of max play = 6 warmth/day: cannot even unlock phase 1 (20), let alone max level (360)
+    let total = day1Warmth + ack1.grantedWarmth;
     for (const d of ['2026-11-19', '2026-11-20']) {
-        total += claimDailyWarmth('hold', d).granted + claimDailyWarmth('hold', d).granted;
         total += claimDailyWarmth('trainer', d).granted + claimDailyWarmth('trainer', d).granted;
     }
-    assert.equal(total, 12);
+    assert.equal(total, 10);
     assert.equal(whisperAdmission(total).admitted, false);
 
     // Skipping a full week never resets warmth or warmDays; only triggers gentle dry-soil indicator
@@ -106,8 +113,9 @@ test('90-day anti-grind caps daily warmth at 4/day, decouples cold XP, keeps pot
     assert.equal(plantStage(360, { sprouted: true, requireAcks: true, bloomAcks: 5 }), 5);
 
     // Echo grants 24h dew; Indifference Index melts from 100% to 0% across the season
+    // (whisperAcks counts the 2 cassette acks above plus this echo on the shared ledger)
     const echoed = recordWhisperEcho(1000000);
-    assert.equal(echoed.whisperAcks, 1);
+    assert.equal(echoed.whisperAcks, 3);
     assert.ok(echoed.dewUntil > 1000000);
     assert.equal(indifferenceIndex(0), 100);
     assert.equal(indifferenceIndex(180), 50);
@@ -528,7 +536,7 @@ test('v7: unique 7-coat cat, Fireflies of Silence retention, live CRT + all 8 ro
     // 2. Fireflies of Silence: builds 1..7 over consecutive warm evenings, cools gently (-1 per extra missed day), never harshly wipes!
     for (let d = 1; d <= 8; d++) {
         const day = `2026-11-${String(d).padStart(2, '0')}`;
-        const res = r.claimDailyWarmth('hold', day);
+        const res = r.claimDailyWarmth('trainer', day);
         assert.equal(res.granted, 1);
         const ff = r.fireflyState(res.ledger, day);
         assert.equal(ff.active, true);
@@ -545,7 +553,7 @@ test('v7: unique 7-coat cat, Fireflies of Silence retention, live CRT + all 8 ro
     const afterPause = r.fireflyState(r.loadWarmthLedger('2026-11-11'), '2026-11-11');
     assert.deepEqual({ count: afterPause.count, active: afterPause.active, drowsy: afterPause.drowsy }, { count: 5, active: false, drowsy: true });
     // Warming on Nov 11 re-ignites from 5 -> 6 immediately!
-    const reignite = r.claimDailyWarmth('hold', '2026-11-11');
+    const reignite = r.claimDailyWarmth('trainer', '2026-11-11');
     assert.deepEqual({ count: r.fireflyState(reignite.ledger, '2026-11-11').count, active: true }, { count: 6, active: true });
 
     // 3. Fullscreen horizontal mode: rotates 90deg on portrait phones, auto-exits cleanly before opening Terminal modal
@@ -730,7 +738,7 @@ test('v8: body-portal FLIP fullscreen + 180 flip + rotated pointer mapping, Dawn
     assert.ok(indexHtml.includes('soma-post-cta') && indexHtml.includes('soma-post-beacon') && indexHtml.includes('soma-post-arrow'));
     assert.ok(
         indexHtml.includes('id="station-fs-flip"')
-        && indexHtml.includes('room.js?v=31')
+        && indexHtml.includes('room.js?v=32')
         && indexHtml.includes('cosmetics.css?v=15')
         && indexHtml.includes('receiver.js?v=17')
         && indexHtml.includes('vhs.js?v=15')

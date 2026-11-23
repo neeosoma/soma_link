@@ -43,16 +43,17 @@ const A = '11111111-1111-4111-8111-111111111111';
 
         // 2) submit_soma_post rejects blocked text.
         await assert.rejects(
-            db.query("select * from public.submit_soma_post('p_f1','Аноним','ТЕМА','Ты хуй ке го, давай поговорим.')"),
+            db.query("select * from public.submit_soma_post('p_f1','Аноним','ТЕМА','Ты хуй ке го, давай поговорим.', '{}'::jsonb)"),
             /запрещённую лексику/i
         );
         await assert.rejects(
-            db.query("select * from public.submit_soma_post('p_f2','Аноним','ТЕМА','Пиши, не юли, хуйня ето.')"),
+            db.query("select * from public.submit_soma_post('p_f2','Аноним','ТЕМА','Пиши, не юли, хуйня ето.', '{}'::jsonb)"),
             /запрещённую лексику/i
         );
         // clean signal still works.
-        const clean = await db.query("select * from public.submit_soma_post('p_f_ok','Аноним','ТЕМА','Просто хороший день в эфире.')");
+        const clean = await db.query("select * from public.submit_soma_post('p_f_ok','Аноним','ТЕМА','Просто хороший день в эфире.', '{\"seal\":true}'::jsonb)");
         assert.equal(clean.rows.length, 1);
+        assert.deepEqual(clean.rows[0].cosmetics, { seal: true }, 'cosmetics stored on the signal');
 
         // 3) send_soma_whisper rejects blocked text.
         await asUser(A);

@@ -2867,6 +2867,7 @@
                 p_author: insertRow.author,
                 p_tag: insertRow.tag,
                 p_text: insertRow.text,
+                p_cosmetics: insertRow.cosmetics || {},
             });
             if (error) throw error;
             if (!data || data.length === 0) throw new Error('RPC вернул пустой ответ');

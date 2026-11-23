@@ -145,19 +145,18 @@ test('the witness card shows four equally-sized stat counters and carries the fr
     assert.match(indexHtml, /СИГНАЛОВ СДЕЛАНО/);
     assert.match(indexHtml, /ТЕПЛО СТАНЦИИ/);
     assert.match(indexHtml, /ШЁПОТОВ ОТПРАВЛЕНО/);
-    assert.match(indexHtml, /ПРИСУТСТВИЕ/);
+    assert.match(indexHtml, /ДНЕЙ В ИГРЕ/);
     // The counters are populated by updateHeader — signals, warmth, and the presence RPC.
     assert.match(indexHtml, /document\.getElementById\('stat-signals'\)\.innerText/);
     assert.match(indexHtml, /document\.getElementById\('stat-warmth'\)\.innerText/);
-    // Presence shows the per-account lifetime (my_soma_account_days) with a
-    // small «д.» unit: «N д.» under a year, «X г. Y д.» after it. Errors fall
-    // back to a dash.
+    // Presence shows the per-account lifetime (my_soma_account_days) as a
+    // bare digit of days under the «ДНЕЙ В ИГРЕ» label — no letters. Errors
+    // fall back to a dash.
     assert.match(indexHtml, /my_soma_account_days/);
     assert.doesNotMatch(indexHtml, /rpc\('station_days_in_app_total'\)\.then/);
     assert.match(indexHtml, /!r\.error && r\.data != null/);
     assert.match(indexHtml, /Math\.max\(0, Math\.round\(Number\(r\.data\) \|\| 0\)\)/);
-    assert.match(indexHtml, /\$\{y\} г\. \$\{d\} д\./);
-    assert.match(indexHtml, /\$\{days\} д\./);
+    assert.match(indexHtml, /el\.innerText = String\(days\)/);
     // Each digit is colored like the room snapshot (share.js palette).
     assert.match(indexHtml, /witness-stat--signals/);
     assert.match(indexHtml, /witness-stat--warmth/);

@@ -842,7 +842,7 @@
                             <div id="stat-attempts" class="witness-stat-value witness-stat-big witness-stat--whispers">0</div>
                         </div>
                         <div class="witness-stat">
-                            <div class="witness-stat-label">ПРИСУТСТВИЕ</div>
+                            <div class="witness-stat-label">ДНЕЙ В ИГРЕ</div>
                             <div id="stat-presence" class="witness-stat-value witness-stat-big witness-stat--presence">—</div>
                         </div>
                     </div>
@@ -2241,20 +2241,15 @@
         document.getElementById('stat-signals').innerText =
             (typeof getMyPostIds === 'function' && getMyPostIds()) ? getMyPostIds().length : 0;
         document.getElementById('stat-warmth').innerText = (player.warmth || lsNum('soma_warmth') || 0);
-        // Срок жизни моего аккаунта: N д. (или X г. Y д. после года) — дефис, если RPC не дошёл.
+        // Срок жизни моего аккаунта в игре: только цифра суток (без букв) —
+        // дефис, если RPC не дошёл.
         if (supabaseClient && typeof supabaseClient.rpc === 'function') {
             supabaseClient.rpc('my_soma_account_days').then(function (r) {
                 const el = document.getElementById('stat-presence');
                 if (!el) return;
                 if (r && !r.error && r.data != null) {
                     const days = Math.max(0, Math.round(Number(r.data) || 0));
-                    if (days >= 365) {
-                        const y = Math.floor(days / 365);
-                        const d = days % 365;
-                        el.innerText = `${y} г. ${d} д.`;
-                    } else {
-                        el.innerText = `${days} д.`;
-                    }
+                    el.innerText = String(days);
                 } else {
                     el.innerText = '—';
                 }

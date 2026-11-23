@@ -2218,19 +2218,12 @@
         } catch(e) {}
     }
 
-    // Стабильный цифровой серийный номер для анонимного ника «Аноним #N».
-    function anonSerialNum(raw) {
-        const s = String(raw || '');
-        const hex = s.startsWith('u_') ? s.slice(2) : s;
-        const n = parseInt(hex.replace(/[^0-9a-f]/gi, ''), 16);
-        return (Number.isFinite(n) ? n : 0) % 90000 + 10000;
-    }
-
     function updateHeader() {
         document.getElementById('user-badge').innerText = `@${player.name}`;
 
-        // Карточка свидетеля: никнейм игрока — анонимный серийный номер
-        document.getElementById('card-name').innerText = `Аноним #${anonSerialNum(player.uid || player.name || 'guest')}`;
+        // Карточка свидетеля: тот же номер анонима, что в карточке атрибутов
+        // (boutique) — один общий anonLabel, без отдельного серийного числа.
+        document.getElementById('card-name').innerText = anonLabel(player.uid || 'guest');
         const breaches = typeof getWhisperBreachCount === 'function'
             ? getWhisperBreachCount()
             : Math.max(0, Number(player.whispersSent) || 0);

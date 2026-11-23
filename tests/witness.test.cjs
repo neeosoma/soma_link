@@ -165,6 +165,11 @@ test('the witness card shows four equally-sized stat counters and carries the fr
     // The cassette button lives BELOW the witness card, wired to openFriendCassette.
     assert.match(indexHtml, /<button type="button" onclick="openFriendCassette\(\)" class="witness-friend-btn"/);
     assert.match(indexHtml, /ЗАПИСАТЬ КАССЕТУ БЛИЗКОМУ/);
+    // The witness card callsign is the SAME anonLabel used by the attributes
+    // boutique card — no separate serial-number formatting.
+    assert.match(indexHtml, /function anonLabel\(s\)/);
+    assert.match(indexHtml, /document\.getElementById\('card-name'\)\.innerText = anonLabel\(player\.uid \|\| 'guest'\);/);
+    assert.doesNotMatch(indexHtml, /anonSerialNum/);
     // The old inline card button is gone, and the button was removed from the pager modal.
     assert.doesNotMatch(indexHtml, /witness-cassette-btn/);
     assert.doesNotMatch(indexHtml, /witness-stat--friend/);

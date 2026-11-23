@@ -200,7 +200,7 @@ begin
         raise exception 'Daily witness mark limit reached';
     end if;
 
-    -- Serialize rewards for one author as well as the reader-side duplicate/cap check.
+    -- Serialize mark inserts per author as well as the reader-side duplicate/cap check.
     perform pg_catalog.pg_advisory_xact_lock(
         pg_catalog.hashtextextended('soma-witness-owner:' || v_owner::text, 1)
     );
@@ -210,26 +210,8 @@ begin
     on conflict (post_id, reader_id) do nothing;
     get diagnostics v_added = row_count;
 
-    if v_added = 1 then
-        -- Queue the reward by Auth owner first so an offline/unbound author's
-        -- +2 is not lost; profile binding syncs it on their next app visit.
-        insert into soma_private.witness_author_warmth (author_id, total_warmth, synced_warmth)
-        values (v_owner, 2, 0)
-        on conflict (author_id) do update
-           set total_warmth = soma_private.witness_author_warmth.total_warmth + 2;
-
-        if v_profile_uid is not null then
-            update public.soma_users
-               set warmth = warmth + 2
-             where username = v_profile_uid;
-            get diagnostics v_updated = row_count;
-            if v_updated = 1 then
-                update soma_private.witness_author_warmth
-                   set synced_warmth = total_warmth
-                 where author_id = v_owner;
-            end if;
-        end if;
-    end if;
+    -- The mark itself carries no warmth reward: presence is anonymous and
+    -- unrewarded. Only the fact of the mark is stored.
     return v_added = 1;
 end;
 $$;
@@ -237,7 +219,7 @@ $$;
 revoke all on function public.mark_soma_post_witness(text) from public, anon, authenticated;
 grant execute on function public.mark_soma_post_witness(text) to authenticated;
 comment on function public.mark_soma_post_witness(text) is
-    'Creates one anonymous presence mark per authenticated reader and verified public story; awards +2 author warmth server-side and returns only whether this call inserted a new mark.';
+    'Creates one anonymous presence mark per authenticated reader and verified public story; carries no warmth reward and returns only whether this call inserted a new mark.';
 
 -- An authenticated viewer can ask about at most 50 public post IDs. Authors
 -- learn only whether at least one mark exists for their own post. Other readers

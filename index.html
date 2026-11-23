@@ -1044,7 +1044,7 @@
 <script src="signals.js?v=4"></script>
 <script src="station-ritual.js?v=2"></script>
 <script src="witness.js?v=2"></script>
-    <script src="room.js?v=31"></script>
+    <script src="room.js?v=32"></script>
 <script src="cosmetics.js?v=16"></script>
 <script src="receiver.js?v=17"></script>
 <script src="vhs.js?v=15"></script>
@@ -1203,7 +1203,7 @@
         try { localStorage.setItem('soma_held', JSON.stringify(held)); } catch (e) {}
         try { Telegram.WebApp.HapticFeedback.impactOccurred('light'); } catch (e) {}
         SFX.tap();
-        if (res.granted) addWarmth(res.granted, false);
+        // Чтение тепло НЕ даёт — claimDailyWarmth('hold') только отслеживает жест.
         updateHeader();
         renderFeed();
     }

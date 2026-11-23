@@ -7,9 +7,8 @@ const stationPhases = [
 
 // Сезонный ритм (~90 тёплых дней до цветения, без гринда и без наказаний за паузы)
 const PROGRESSION_RULES = {
-    DAILY_HOLD_CAP: 2,         // до +2 тепла/день за тихое дочитывание постов
     DAILY_TRAINER_CAP: 2,      // до +2 тепла/день за точное слушание в терминале
-    DAILY_WARMTH_CAP: 4,       // потолок +4 тепла/день за базовые ритуалы
+    DAILY_WARMTH_CAP: 6,       // потолок +6 тепла/день: 2 тренажёр + 4 за кассету
     WHISPER_BLOOM_ACKS: 5,     // обратная совместимость для опционального фильтра requireAcks
     WHISPER_MIN_LEN: 13,       // минимальная длина «Шёпота» (13 символов)
     WHISPER_MAX_LEN: 333,      // максимальная длина «Шёпота» (333 символа)
@@ -18,7 +17,7 @@ const PROGRESSION_RULES = {
     WHISPER_ACK_WARMTH: 4,     // +4 Тепла на рост растения (1 раз в сутки), когда твой «Шёпот» сохранили на кассету
     SPECIES_REVEAL_STAGE: 2,   // вид раскрывается на 3/6 (~1 месяц)
     DRY_SOIL_DAYS: 5,          // мягкая заметка о подсохшей земле без потери прогресса
-    SEASON_WARMTH: 360         // полный сезон тепла (90 тёплых дней × 4)
+    SEASON_WARMTH: 360         // полный сезон тепла (60 тёплых дней × 6)
 };
 
 // ===== УНИКАЛЬНОЕ РАСТЕНИЕ ИГРОКА (8 земных видов + 9-е тайное внеземное растение-пасхалка!) =====
@@ -3259,26 +3258,29 @@ function syncWhisperBreachCounter(countOverride) {
     return breaches;
 }
 
-// Начисляет тепло строго в рамках дневного потолка (не более 4/день: 2 чтение + 2 тренажёр)
+// Начисляет тепло строго в рамках дневного потолка (не более 6/день: 2 тренажёр + 4 за кассету)
 function claimDailyWarmth(source, todayOverride) {
     const ledger = loadWarmthLedger(todayOverride);
-    if (source === 'trainer') {
-        ledger.trainedTotal += 1;
-    }
     if (source === 'whisper') {
+        // Шёпот не даёт тепла и не тратит дневной бюджет — только счётчик срывов протокола.
         ledger.whispersSent += 1;
         ledger.whisperSentToday = (ledger.whisperSentToday || 0) + 1;
+        saveWarmthLedger(ledger);
+        syncWhisperBreachCounter(ledger.whispersSent);
+        if (typeof updateCloudProfile === 'function') {
+            try { updateCloudProfile(); } catch (_) {}
+        }
+        return { granted: 0, ledger };
     }
-    const srcCap = source === 'hold'
-        ? PROGRESSION_RULES.DAILY_HOLD_CAP
-        : source === 'trainer'
-            ? PROGRESSION_RULES.DAILY_TRAINER_CAP
-            : 1;
-    const used = source === 'hold' ? ledger.hold : source === 'trainer' ? ledger.trainer : 0;
-    const canGain = used < srcCap && ledger.total < PROGRESSION_RULES.DAILY_WARMTH_CAP;
+    if (source !== 'trainer') {
+        // Чтение (hold) и прочие источники тепло НЕ дают.
+        return { granted: 0, ledger };
+    }
+    ledger.trainedTotal += 1;
+    const canGain = ledger.trainer < PROGRESSION_RULES.DAILY_TRAINER_CAP
+        && ledger.total < PROGRESSION_RULES.DAILY_WARMTH_CAP;
     if (canGain) {
-        if (source === 'hold') ledger.hold += 1;
-        else if (source === 'trainer') ledger.trainer += 1;
+        ledger.trainer += 1;
         ledger.total += 1;
         if (ledger.lastWarmDay !== ledger.day) {
             const away = daysSinceLastWarmth(ledger, ledger.day);
@@ -3291,12 +3293,6 @@ function claimDailyWarmth(source, todayOverride) {
         }
     }
     saveWarmthLedger(ledger);
-    if (source === 'whisper') {
-        syncWhisperBreachCounter(ledger.whispersSent);
-        if (typeof updateCloudProfile === 'function') {
-            try { updateCloudProfile(); } catch (_) {}
-        }
-    }
     return { granted: canGain ? 1 : 0, ledger };
 }
 
@@ -3606,7 +3602,10 @@ function claimWhisperCassetteAck(whisperId, todayOverride) {
 
     if (!alreadyClaimedToday) {
         ledger.whisperAckDay = ledger.day;
-        grantedWarmth = PROGRESSION_RULES.WHISPER_ACK_WARMTH; // +4 тепла
+        // Бонусом даётся до +4, но всё вписывается в дневной лимит (2 тренажёр + 4 кассета = 6).
+        const remaining = Math.max(0, PROGRESSION_RULES.DAILY_WARMTH_CAP - (ledger.total || 0));
+        grantedWarmth = Math.min(PROGRESSION_RULES.WHISPER_ACK_WARMTH, remaining);
+        ledger.total = (ledger.total || 0) + grantedWarmth;
     }
     saveWarmthLedger(ledger);
 

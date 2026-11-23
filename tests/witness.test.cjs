@@ -135,12 +135,12 @@ test('the witness room snapshot shows a concise presence counter instead of atmo
     assert.doesNotMatch(shareJs, /АТМОСФЕРА: \$\{snap\.phaseName/);
 });
 
-test('the witness card shows four stat counters like the room snapshot and drops the inline cassette button', () => {
-    // Four counters in the witness-card stats grid, mirroring the share-screen counters.
-    assert.match(indexHtml, /<div id="stat-signals" class="witness-stat-value">0<\/div>/);
-    assert.match(indexHtml, /<div id="stat-warmth" class="witness-stat-value">0<\/div>/);
+test('the witness card shows four equally-sized stat counters and carries the friend cassette button below the card', () => {
+    // Four counters in the witness-card stats grid, all sized like «ШЁПОТОВ ОТПРАВЛЕНО».
+    assert.match(indexHtml, /<div id="stat-signals" class="witness-stat-value witness-stat-big">0<\/div>/);
+    assert.match(indexHtml, /<div id="stat-warmth" class="witness-stat-value witness-stat-big">0<\/div>/);
     assert.match(indexHtml, /<div id="stat-attempts" class="witness-stat-value witness-stat-big">0<\/div>/);
-    assert.match(indexHtml, /<div id="stat-presence" class="witness-stat-value">—<\/div>/);
+    assert.match(indexHtml, /<div id="stat-presence" class="witness-stat-value witness-stat-big">—<\/div>/);
     assert.match(indexHtml, /СИГНАЛОВ СДЕЛАНО/);
     assert.match(indexHtml, /ТЕПЛО СТАНЦИИ/);
     assert.match(indexHtml, /ШЁПОТОВ ОТПРАВЛЕНО/);
@@ -148,12 +148,22 @@ test('the witness card shows four stat counters like the room snapshot and drops
     // The counters are populated by updateHeader — signals, warmth, and the presence RPC.
     assert.match(indexHtml, /document\.getElementById\('stat-signals'\)\.innerText/);
     assert.match(indexHtml, /document\.getElementById\('stat-warmth'\)\.innerText/);
+    // Presence mirrors share.js exactly: check is != null so a 0 aggregate
+    // renders as «0 ДНЕЙ» (a digit), and errors fall back to a dash.
     assert.match(indexHtml, /station_days_in_app_total/);
+    assert.match(indexHtml, /!r\.error && r\.data != null/);
+    assert.match(indexHtml, /Math\.max\(0, Math\.round\(Number\(r\.data\) \|\| 0\)\)/);
     assert.match(indexHtml, /\$\{days\} ДНЕЙ/);
-    // The old inline «Записать кассету» button is gone from the witness card.
+    // The cassette button lives BELOW the witness card, wired to openFriendCassette.
+    assert.match(indexHtml, /<button type="button" onclick="openFriendCassette\(\)" class="witness-friend-btn"/);
+    assert.match(indexHtml, /ЗАПИСАТЬ КАССЕТУ БЛИЗКОМУ/);
+    // The old inline card button is gone, and the button was removed from the pager modal.
     assert.doesNotMatch(indexHtml, /witness-cassette-btn/);
     assert.doesNotMatch(indexHtml, /witness-stat--friend/);
     assert.doesNotMatch(indexHtml, /СВОЕМУ ЧЕЛОВЕКУ/);
+    const roomJs = readFileSync(require.resolve('../room.js'), 'utf8');
+    assert.doesNotMatch(roomJs, /pager-friend-cassette/);
+    assert.doesNotMatch(roomJs, /pager-foot-friend/);
 });
 
 test('the person-days RPC is a public aggregate over registration dates only', () => {

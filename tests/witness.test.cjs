@@ -122,3 +122,27 @@ test('SQL mark storage is private, Auth-only, duplicate-safe, and rewards author
     assert.match(migration, /create or replace function public\.bind_my_soma_profile/);
     assert.doesNotMatch(statusSignature, /reader_id|owner_id|mark_count|witness_count/i);
 });
+
+test('the witness room snapshot shows a concise presence counter instead of atmosphere', () => {
+    // The 4th stats block replaced АТМОСФЕРА with the server-side person-days aggregate.
+    assert.match(shareJs, /ПРИСУТСТВИЕ/);
+    assert.doesNotMatch(shareJs, /k: 'АТМОСФЕРА'/);
+    assert.match(shareJs, /supabaseClient\.rpc\('station_days_in_app_total'\)/);
+    assert.match(shareJs, /typeof supabaseClient !== 'undefined' && supabaseClient/);
+    // The value renders as «N# ДНЕЙ» with a dash fallback when the RPC is unavailable.
+    assert.match(shareJs, /\$\{presenceDays\}# ДНЕЙ/);
+    // The old atmosphere subtitle above the callsign is gone from the witness card.
+    assert.doesNotMatch(shareJs, /АТМОСФЕРА: \$\{snap\.phaseName/);
+});
+
+test('the person-days RPC is a public aggregate over registration dates only', () => {
+    const presence = readFileSync(require.resolve('../billing/setup_station_presence.sql'), 'utf8');
+    assert.match(presence, /create or replace function public\.station_days_in_app_total\(\)/);
+    assert.match(presence, /returns integer/);
+    assert.match(presence, /security definer/);
+    assert.match(presence, /sum\(extract\(day from now\(\) - u\.created_at\)\)/);
+    assert.match(presence, /from public\.soma_users u/);
+    assert.match(presence, /grant execute on function public\.station_days_in_app_total\(\) to anon, authenticated/);
+    // A global aggregate: no per-user column, no identity, no per-user exposure.
+    assert.doesNotMatch(presence, /station_days_in_app_total[\s\S]{0,400}username/);
+});

@@ -61,12 +61,15 @@ grant execute on function public.station_days_in_app_total() to anon, authentica
 comment on function public.station_days_in_app_total() is
     'Total person-days spent in the app since registration, counted from each user registration time; a global aggregate with no per-user data.';
 
--- Per-account lifetime: full days this Auth identity's own profile has existed
--- since it first entered the game (soma_users.created_at). Every registered
+-- Per-account lifetime: full days since THIS Auth identity first entered the
+-- game, read from the Auth account's own created_at (auth.users). The
+-- soma_users.created_at column was backfilled with the migration time for
+-- pre-existing rows, so it cannot represent the real first entry —
+-- auth.users.created_at is the true account birth time. Every registered
 -- account sees its own real stat, never anyone else's. greatest(1, ...) so a
--- fresh account (less than a day old) shows «1 ДЕНЬ» — the day of first
--- entry — instead of a confusing «0 ДНЕЙ». floor (not ceil) keeps exact
--- whole-day boundaries from drifting up a day by a millisecond.
+-- fresh account (less than a day old) shows «1 д.» — the day of first entry —
+-- instead of «0 д.». floor (not ceil) keeps exact whole-day boundaries from
+-- drifting up a day by a millisecond.
 create or replace function public.my_soma_account_days()
 returns integer
 language sql
@@ -76,11 +79,11 @@ set search_path = ''
 as $$
     select coalesce((
         select case
-            when floor(extract(epoch from now() - u.created_at) / 86400)::integer is null then 0
-            else greatest(1, floor(extract(epoch from now() - u.created_at) / 86400)::integer)
+            when floor(extract(epoch from now() - au.created_at) / 86400)::integer is null then 0
+            else greatest(1, floor(extract(epoch from now() - au.created_at) / 86400)::integer)
         end
           from soma_private.user_profile_bindings b
-          join public.soma_users u on u.username = b.profile_uid
+          join auth.users au on au.id = b.auth_id
          where b.auth_id = auth.uid()
     ), 0)::integer
 $$;

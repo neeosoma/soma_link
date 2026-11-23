@@ -27,8 +27,9 @@ will fail after the legacy counter columns are hidden.
    boolean-only atmosphere RPC; it returns no count, post ID, or reader data.
    It also provides the person-days aggregate (`station_days_in_app_total`,
    global sum, callable by anon) and the per-account lifetime
-   (`my_soma_account_days`, full days since this identity's profile first
-   entered the game — each account sees only its own stat).
+   (`my_soma_account_days`, full days since this identity's Auth account first
+   entered the game, read from `auth.users.created_at` — each account sees
+   only its own stat).
 4. Confirm Anonymous Auth is enabled. Reading, filtering, and skipping do not
    require it; the server-backed mark does.
 

@@ -149,14 +149,15 @@ test('the witness card shows four equally-sized stat counters and carries the fr
     // The counters are populated by updateHeader — signals, warmth, and the presence RPC.
     assert.match(indexHtml, /document\.getElementById\('stat-signals'\)\.innerText/);
     assert.match(indexHtml, /document\.getElementById\('stat-warmth'\)\.innerText/);
-    // Presence shows the per-account lifetime (my_soma_account_days), mirroring
-    // share.js rendering: check is != null so a 0 renders as «0 ДНЕЙ» (a digit),
-    // and errors fall back to a dash.
+    // Presence shows the per-account lifetime (my_soma_account_days) with a
+    // small «д.» unit: «N д.» under a year, «X г. Y д.» after it. Errors fall
+    // back to a dash.
     assert.match(indexHtml, /my_soma_account_days/);
     assert.doesNotMatch(indexHtml, /rpc\('station_days_in_app_total'\)\.then/);
     assert.match(indexHtml, /!r\.error && r\.data != null/);
     assert.match(indexHtml, /Math\.max\(0, Math\.round\(Number\(r\.data\) \|\| 0\)\)/);
-    assert.match(indexHtml, /\$\{days\} ДНЕЙ/);
+    assert.match(indexHtml, /\$\{y\} г\. \$\{d\} д\./);
+    assert.match(indexHtml, /\$\{days\} д\./);
     // Each digit is colored like the room snapshot (share.js palette).
     assert.match(indexHtml, /witness-stat--signals/);
     assert.match(indexHtml, /witness-stat--warmth/);
@@ -187,12 +188,15 @@ test('the person-days aggregate uses epoch math and the per-account lifetime is 
     // A global aggregate: no per-user column, no identity, no per-user exposure.
     assert.doesNotMatch(presence, /station_days_in_app_total[\s\S]{0,400}username/);
 
-    // Per-account lifetime: full days since THIS identity's profile first entered.
-    // floor keeps exact day boundaries; greatest(1, ...) counts the day of first
-    // entry for accounts younger than a day; unbound identities get 0.
+    // Per-account lifetime: full days since THIS Auth identity's account first
+    // entered (auth.users.created_at — the true birth time; soma_users.created_at
+    // was backfilled with migration time on old rows). floor keeps exact day
+    // boundaries; greatest(1, ...) counts the day of first entry for accounts
+    // younger than a day; unbound identities get 0.
     assert.match(presence, /create or replace function public\.my_soma_account_days\(\)/);
-    assert.match(presence, /greatest\(1, floor\(extract\(epoch from now\(\) - u\.created_at\) \/ 86400\)::integer\)/);
+    assert.match(presence, /greatest\(1, floor\(extract\(epoch from now\(\) - au\.created_at\) \/ 86400\)::integer\)/);
     assert.match(presence, /from soma_private\.user_profile_bindings b/);
+    assert.match(presence, /join auth\.users au on au\.id = b\.auth_id/);
     assert.match(presence, /where b\.auth_id = auth\.uid\(\)/);
     assert.match(presence, /grant execute on function public\.my_soma_account_days\(\) to authenticated/);
     assert.doesNotMatch(presence, /my_soma_account_days\([\s\S]{0,200}grant execute on function public\.my_soma_account_days\(\) to anon/, 'the per-account lifetime never leaks to anon');

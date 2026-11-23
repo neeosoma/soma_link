@@ -11020,14 +11020,8 @@ function renderPagerModal() {
 
     if (footEl) {
         footEl.innerHTML = `
-            <button type="button" class="pager-foot-friend pager-foot-right" id="pager-friend-cassette">ЗАПИСАТЬ КАССЕТУ БЛИЗКОМУ</button>
             ${isWhisperSafetyLive() ? '<button type="button" class="pager-foot-vhs pager-foot-right" id="pager-manage-blocks">БЛОКИРОВКИ</button>' : ''}
         `;
-        const friend = footEl.querySelector('#pager-friend-cassette');
-        if (friend) friend.onclick = () => {
-            if (typeof openFriendCassette === 'function') openFriendCassette();
-            else window.location.assign('gift.html');
-        };
         const manage = footEl.querySelector('#pager-manage-blocks');
         if (manage) manage.onclick = () => safetyAction(async () => {
             const result = await loadWhisperBlocks();

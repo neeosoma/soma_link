@@ -11,7 +11,7 @@
     <!-- supabase-js vendored locally (avoids CDN dependence). Fallback to CDN only if local bundle is unavailable. -->
     <script src="assets/lib/supabase.umd.js"></script>
     <script>window.supabase || document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"><\/script>');</script>
-    <link rel="stylesheet" href="room.css?v=32">
+    <link rel="stylesheet" href="room.css?v=33">
     <link rel="stylesheet" href="cosmetics.css?v=15">
     <link rel="stylesheet" href="receiver.css?v=19">
     <link rel="stylesheet" href="vhs.css?v=15">
@@ -831,11 +831,11 @@
                     <div class="witness-card-stats">
                         <div class="witness-stat">
                             <div class="witness-stat-label">СИГНАЛОВ СДЕЛАНО</div>
-                            <div id="stat-signals" class="witness-stat-value">0</div>
+                            <div id="stat-signals" class="witness-stat-value witness-stat-big">0</div>
                         </div>
                         <div class="witness-stat">
                             <div class="witness-stat-label">ТЕПЛО СТАНЦИИ</div>
-                            <div id="stat-warmth" class="witness-stat-value">0</div>
+                            <div id="stat-warmth" class="witness-stat-value witness-stat-big">0</div>
                         </div>
                         <div class="witness-stat">
                             <div class="witness-stat-label">ШЁПОТОВ ОТПРАВЛЕНО</div>
@@ -843,11 +843,16 @@
                         </div>
                         <div class="witness-stat">
                             <div class="witness-stat-label">ПРИСУТСТВИЕ</div>
-                            <div id="stat-presence" class="witness-stat-value">—</div>
+                            <div id="stat-presence" class="witness-stat-value witness-stat-big">—</div>
                         </div>
                     </div>
                 </div>
             </section>
+
+            <!-- Кнопка записи кассеты для близкого — под карточкой свидетеля -->
+            <button type="button" onclick="openFriendCassette()" class="witness-friend-btn" aria-label="Записать кассету близкому">
+                ЗАПИСАТЬ КАССЕТУ БЛИЗКОМУ
+            </button>
         </div>
 
         <!-- ЭКРАН 3: ПРОФИЛЬ -->
@@ -1039,7 +1044,7 @@
 <script src="signals.js?v=4"></script>
 <script src="station-ritual.js?v=2"></script>
 <script src="witness.js?v=2"></script>
-    <script src="room.js?v=30"></script>
+    <script src="room.js?v=31"></script>
 <script src="cosmetics.js?v=16"></script>
 <script src="receiver.js?v=17"></script>
 <script src="vhs.js?v=15"></script>
@@ -2236,14 +2241,15 @@
         document.getElementById('stat-signals').innerText =
             (typeof getMyPostIds === 'function' && getMyPostIds()) ? getMyPostIds().length : 0;
         document.getElementById('stat-warmth').innerText = (player.warmth || lsNum('soma_warmth') || 0);
-        // Присутствие: N ДНЕЙ (дефис, если RPC не дошёл — как на снимке).
+        // Присутствие: N ДНЕЙ (дефис, если RPC не дошёл) — строго по логике share.js:
+        // проверка != null, так что 0 человек-дней рендерится как «0 ДНЕЙ», а не дефис.
         if (supabaseClient && typeof supabaseClient.rpc === 'function') {
             supabaseClient.rpc('station_days_in_app_total').then(function (r) {
                 const el = document.getElementById('stat-presence');
                 if (!el) return;
-                if (r && r.data && !r.error) {
-                    const days = Number(r.data) || 0;
-                    el.innerText = days > 0 ? `${days} ДНЕЙ` : '—';
+                if (r && !r.error && r.data != null) {
+                    const days = Math.max(0, Math.round(Number(r.data) || 0));
+                    el.innerText = `${days} ДНЕЙ`;
                 } else {
                     el.innerText = '—';
                 }

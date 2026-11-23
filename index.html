@@ -2241,15 +2241,20 @@
         document.getElementById('stat-signals').innerText =
             (typeof getMyPostIds === 'function' && getMyPostIds()) ? getMyPostIds().length : 0;
         document.getElementById('stat-warmth').innerText = (player.warmth || lsNum('soma_warmth') || 0);
-        // Срок жизни моего аккаунта: N ДНЕЙ с первого входа в игру (per-account RPC).
-        // Дефис, если RPC не дошёл — по логике share.js: проверка != null.
+        // Срок жизни моего аккаунта: N д. (или X г. Y д. после года) — дефис, если RPC не дошёл.
         if (supabaseClient && typeof supabaseClient.rpc === 'function') {
             supabaseClient.rpc('my_soma_account_days').then(function (r) {
                 const el = document.getElementById('stat-presence');
                 if (!el) return;
                 if (r && !r.error && r.data != null) {
                     const days = Math.max(0, Math.round(Number(r.data) || 0));
-                    el.innerText = `${days} ДНЕЙ`;
+                    if (days >= 365) {
+                        const y = Math.floor(days / 365);
+                        const d = days % 365;
+                        el.innerText = `${y} г. ${d} д.`;
+                    } else {
+                        el.innerText = `${days} д.`;
+                    }
                 } else {
                     el.innerText = '—';
                 }

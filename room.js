@@ -10496,8 +10496,12 @@ function ensurePagerModal() {
     ov.setAttribute('role', 'dialog');
     ov.setAttribute('aria-modal', 'true');
     ov.setAttribute('aria-label', 'Пейджер NEEOSOMA // NMAV-04 — Канал Шёпот');
+    // Общая схема клавиатуры: при наборе текста клавиатура не сжимает часисы пейджера,
+    // контент остаётся навигируемым скроллом. Функции _somaKb* живут в index.html
+    // (он загружается после room.js), поэтому проверка typeof.
+    if (typeof _somaKbBind === 'function') _somaKbBind(ov);
     ov.innerHTML = `
-        <div class="soma-pager pager-modal-chassis" id="pager-modal-chassis">
+        <div class="soma-pager pager-modal-chassis soma-modal-chassis" id="pager-modal-chassis">
             <!-- ШАПКА УСТРОЙСТВА: бренд + код «ШЁПОТ» | полоски + закрыть -->
             <div class="pager-top pager-modal-top">
                 <span class="pager-brand"><i class="pager-led" aria-hidden="true"></i>NEEOSOMA // <span class="pager-code">NMAV-04 «ШЁПОТ»</span></span>
@@ -10516,7 +10520,7 @@ function ensurePagerModal() {
                 <div class="pager-lcd pager-modal-lcd">
                     <div class="pager-lcd-meta" id="pager-modal-meta"></div>
                     <div class="pager-modal-notice hidden" id="pager-modal-notice"></div>
-                    <div class="pager-modal-body" id="pager-modal-body"></div>
+                    <div class="pager-modal-body soma-kb-scroll" id="pager-modal-body"></div>
                     <div class="pager-lcd-scan" aria-hidden="true"></div>
                 </div>
             </div>
@@ -10597,7 +10601,11 @@ function openPagerModal(preferredTab) {
 
 function closePagerModal() {
     const ov = typeof document !== 'undefined' && document.getElementById('pager-overlay');
-    if (ov && ov.classList) ov.classList.add('hidden');
+    if (ov && ov.classList) {
+        ov.classList.add('hidden');
+        ov.classList.remove('is-kb-open');
+        if (ov.__somaKbOff) { ov.__somaKbOff(); ov.__somaKbOff = null; ov.__somaKbBound = false; }
+    }
     roomAnim.pagerModalOpen = false;
     roomAnim.pagerShowBlocks = false;
     roomAnim.pagerSafetyTarget = null;

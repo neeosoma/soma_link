@@ -686,7 +686,7 @@
         ov.setAttribute('aria-modal', 'true');
         ov.setAttribute('aria-label', 'Оранжерея NEEOSOMA');
         ov.innerHTML = `
-            <div class="gh-shell" id="gh-shell">
+            <div class="gh-shell soma-modal-chassis" id="gh-shell">
                 <div class="gh-head">
                     <div class="gh-brand">
                         <span class="gh-gem" aria-hidden="true"></span>
@@ -1170,6 +1170,9 @@
         renderControls();
         state.open = true;
         state.overlay.classList.add('is-open');
+        // Клавиатура в оверлэе: часисы не сжимаются, контент скроллится.
+        if (typeof _somaKbBind === 'function') _somaKbBind(state.overlay);
+        if (typeof _somaKbUpdate === 'function') _somaKbUpdate(state.overlay);
         playGlassHarp(3);
         drawFrame(performance.now());
         if (!state.raf) state.raf = requestAnimationFrame(tick);
@@ -1181,7 +1184,11 @@
         state.open = false;
         state.ptsDemo = null;
         if (state.raf) { cancelAnimationFrame(state.raf); state.raf = 0; }
-        if (state.overlay) state.overlay.classList.remove('is-open');
+        if (state.overlay) {
+            state.overlay.classList.remove('is-open');
+            state.overlay.classList.remove('is-kb-open');
+            if (state.overlay.__somaKbOff) { state.overlay.__somaKbOff(); state.overlay.__somaKbOff = null; state.overlay.__somaKbBound = false; }
+        }
         if (typeof renderRoom === 'function') renderRoom();
         if (typeof window.restoreSomaScroll === 'function') window.restoreSomaScroll();
     }

@@ -3973,6 +3973,23 @@ html.is-soma-fs-closing .app-h {
 .vinyl-modal.is-kb-open .vh-read,
 .vinyl-modal.is-kb-open .vh-turntable { flex: 0 0 auto; }
 
+/* ===== КЛАВИАТУРА В МОДАЛКАХ (общая схема) =====
+   При наборе текста в любой модалке клавиатура не должна сжимать блок с текстом
+   и менять размер панели: часисы модалки замораживаются на текущей высоте, а
+   контент остаётся доступным для навигации по панели с помощью скролла. */
+.is-kb-open .soma-modal-chassis {
+    flex: 0 0 auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,77,109,.4) transparent;
+}
+.is-kb-open .soma-modal-chassis::-webkit-scrollbar { width: 6px; }
+.is-kb-open .soma-modal-chassis::-webkit-scrollbar-thumb {
+    background: rgba(255,77,109,.4); border-radius: 3px;
+}
+
 /* ===== КАБИНЕТ-СТЕНА: плотные ряды обложек, доминирует верх ===== */
 .vh-cabinet {
     position: relative; flex: 1; min-height: 0;

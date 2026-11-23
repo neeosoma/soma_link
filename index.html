@@ -2721,20 +2721,23 @@
     }
 
     // ===== Отражаемые атрибуты сигнала (окно «ОТПРАВИТЬ В ЭФИР») =====
-    // Комбинацию выбирает игрок при отправке сигнала. Хранится локально (в памяти),
-    // бэкенд шёпота/сигнала не трогаем. Каждый атрибут отражается независимо.
+    // Комбинацию выбирает игрок при отправке сигнала. Выбор — по слотам (печать/титул/рамка),
+    // каждый отражается независимо. Атрибут можно выбрать, даже если он не надет —
+    // достаточно, чтобы он был куплен (резолюция по owned: надетый предпочтительнее).
+    // В сигнал отправляются конкретные id предметов, чтобы получатель увидел именно их.
     const tsSignalAttrSel = { seal: false, title: false, frame: false };
 
     function tsEsc(s) {
         return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     }
 
-    function tsGetCosm() {
+    // Купленные атрибуты, доступные для отражения (надетый → иначе купленный).
+    function tsGetReflection() {
         try {
-            if (typeof getRoomCosmeticsSafe === 'function') return getRoomCosmeticsSafe() || {};
+            if (typeof getOwnedReflectionCosmetics === 'function') return getOwnedReflectionCosmetics() || {};
             if (typeof getActiveCosmetics === 'function') return getActiveCosmetics() || {};
         } catch (e) {}
-        return {};
+        return { frame: '', seal: '', title: '' };
     }
 
     function tsSignalTopic() {
@@ -2743,17 +2746,27 @@
         return raw.trim();
     }
 
+    // Объект для отражения: только выбранные слоты, со значениями — id предмета.
+    function tsSignalAttrs() {
+        const ref = tsGetReflection();
+        const out = {};
+        if (tsSignalAttrSel.seal && ref.seal) out.seal = ref.seal;
+        if (tsSignalAttrSel.title && ref.title) out.title = ref.title;
+        if (tsSignalAttrSel.frame && ref.frame) out.frame = ref.frame;
+        return out;
+    }
+
     function tsRenderAttrUI() {
-        const cosm = tsGetCosm();
+        const ref = tsGetReflection();
         const rowEl = document.getElementById('ts-attr-row');
         if (rowEl) {
             rowEl.innerHTML = (typeof renderAttrToggleRow === 'function')
-                ? renderAttrToggleRow(cosm, tsSignalAttrSel, tsEsc, 'ts-attr-btn', 'ts-attr-btns')
+                ? renderAttrToggleRow(ref, tsSignalAttrSel, tsEsc, 'ts-attr-btn', 'ts-attr-btns')
                 : '';
         }
         const frameEl = document.getElementById('ts-attr-frame');
         if (frameEl && typeof renderSignalFrameHtml === 'function') {
-            frameEl.innerHTML = renderSignalFrameHtml(tsSignalTopic(), tsSignalAttrSel, cosm, tsEsc);
+            frameEl.innerHTML = renderSignalFrameHtml(tsSignalTopic(), tsSignalAttrs(), tsEsc);
         }
         document.querySelectorAll('.ts-attr-btn').forEach(btn => {
             if (btn._tsBound) return;
@@ -2842,16 +2855,11 @@
 
         const tag = window.SOMA_SIGNALS.packTag(document.getElementById('new-pain-tag').value);
         const insertRow = { id: 'p_' + Date.now(), author: randAnon(), tag: tag, text: text };
-        // Выбранные отражаемые атрибуты прикрепляются к сигналу локально (в памяти) —
-        // без изменения RPC/таблицы сигнала. Получателю атрибуты будут видны, когда
-        // сигнал придёт на его пейджер (доставка в базу — отдельный этап бэкенда).
-        {
-            const picked = {};
-            if (tsSignalAttrSel.seal) picked.seal = true;
-            if (tsSignalAttrSel.title) picked.title = true;
-            if (tsSignalAttrSel.frame) picked.frame = true;
-            if (Object.keys(picked).length) insertRow.cosmetics = picked;
-        }
+        // Выбранные отражаемые атрибуты прикрепляются к сигналу и отправляются в RPC
+        // (в памяти → в базу). В сигнале лежат конкретные id предметов, чтобы
+        // получатель увидел именно отражённые атрибуты отправителя.
+        const pickedAttrs = (typeof tsSignalAttrs === 'function') ? tsSignalAttrs() : {};
+        if (Object.keys(pickedAttrs).length) insertRow.cosmetics = pickedAttrs;
 
         const label = btn.innerText;
         btn.disabled = true;

@@ -262,6 +262,26 @@ function getActiveCosmetics() {
     return base;
 }
 
+// Атрибуты, которые игрок может выбрать для отражения в сигнале — по слотам,
+// где у него есть КУПЛЕННЫЙ предмет. Надетый предпочтительнее; если не надет —
+// берётся купленный (первый по каталогу). Это позволяет выбрать атрибут для
+// отражения даже без надевания. Формат: { frame: id|'', seal: id|'', title: id|'' }.
+function getOwnedReflectionCosmetics() {
+    const eq = shopState.equipped || {};
+    const owned = shopState.owned || [];
+    const out = { frame: '', seal: '', title: '' };
+    for (const slot of ['frame', 'seal', 'title']) {
+        const equippedId = eq[slot];
+        if (equippedId && SOMA_ITEM_MAP[equippedId] && SOMA_ITEM_MAP[equippedId].slot === slot) {
+            out[slot] = equippedId;
+            continue;
+        }
+        const first = owned.find(id => SOMA_ITEM_MAP[id] && SOMA_ITEM_MAP[id].slot === slot);
+        if (first) out[slot] = first;
+    }
+    return out;
+}
+
 function isOwned(id) {
     return shopState.owned.includes(id);
 }

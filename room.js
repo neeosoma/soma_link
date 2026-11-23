@@ -10680,7 +10680,7 @@ function renderAttrToggleRow(cosm, sel, escFn, btnClass, rowClass) {
 // Тема всегда. Печать, титул и рамка отражаются НЕЗАВИСИМО друг от друга
 // (каждый — если выбран и у игрока активирован). Комбинацию выбирает игрок
 // при отправке сигнала.
-function renderSignalFrameHtml(topic, attrs, cosm, escFn) {
+function renderSignalFrameHtml(topic, attrs, escFn) {
     try {
         const esc = escFn || (s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])));
         const label = esc(signalTagLabel(topic));
@@ -10688,14 +10688,16 @@ function renderSignalFrameHtml(topic, attrs, cosm, escFn) {
         let left = '';
         let frameClass = '';
         const a = attrs || {};
-        if (a.frame && cosm && cosm.frame && typeof frameClassOf === 'function') {
-            frameClass = frameClassOf(cosm);
+        // Атрибуты рендеряются по id из данных сигнала (отправителя), независимо
+        // от косметики получателя: каждый отражается отдельно, если есть id.
+        if (a.frame && typeof frameClassOf === 'function') {
+            frameClass = frameClassOf({ frame: a.frame });
         }
-        if (a.seal && cosm && cosm.seal && typeof sealHtmlOf === 'function') {
-            left += `<div class="pager-sig-stamp">${sealHtmlOf(cosm.seal)}</div>`;
+        if (a.seal && typeof sealHtmlOf === 'function') {
+            left += `<div class="pager-sig-stamp">${sealHtmlOf(a.seal)}</div>`;
         }
-        if (a.title && cosm && cosm.title && typeof titleSpanOf === 'function') {
-            left += `<div class="pager-sig-status">${titleSpanOf(cosm.title)}</div>`;
+        if (a.title && typeof titleSpanOf === 'function') {
+            left += `<div class="pager-sig-status">${titleSpanOf(a.title)}</div>`;
         }
         const inner = left ? `<div class="pager-sig-side">${left}</div>` + right : right;
         return `<div class="pager-sig-frame ${frameClass}" role="group" aria-label="Тема сигнала">${inner}</div>`;
@@ -10752,8 +10754,8 @@ function renderPagerModal() {
         } catch (_) {}
     }
     if (metaEl) {
-        const cosm = getRoomCosmeticsSafe();
-        metaEl.innerHTML = renderSignalFrameHtml(sigTopic, sigAttrs, cosm, escFn);
+        // Атрибуты рендерятся по id из данных сигнала — без косметики получателя.
+        metaEl.innerHTML = renderSignalFrameHtml(sigTopic, sigAttrs, escFn);
     }
 
     if (noticeEl) {

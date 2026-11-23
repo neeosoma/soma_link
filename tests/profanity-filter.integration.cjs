@@ -51,9 +51,9 @@ const A = '11111111-1111-4111-8111-111111111111';
             /запрещённую лексику/i
         );
         // clean signal still works.
-        const clean = await db.query("select * from public.submit_soma_post('p_f_ok','Аноним','ТЕМА','Просто хороший день в эфире.', '{\"seal\":true}'::jsonb)");
+        const clean = await db.query("select * from public.submit_soma_post('p_f_ok','Аноним','ТЕМА','Просто хороший день в эфире.', '{\"seal\":\"seal_eye\"}'::jsonb)");
         assert.equal(clean.rows.length, 1);
-        assert.deepEqual(clean.rows[0].cosmetics, { seal: true }, 'cosmetics stored on the signal');
+        assert.deepEqual(clean.rows[0].cosmetics, { seal: 'seal_eye' }, 'cosmetics stored on the signal');
 
         // 3) send_soma_whisper rejects blocked text.
         await asUser(A);

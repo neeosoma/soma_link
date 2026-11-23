@@ -522,6 +522,9 @@
             <div class="ts-brief">
                 <b>Одна история в день.</b> Делитесь любым. Черновик сохранится; ответ не гарантирован.
             </div>
+            <!-- Отражаемые атрибуты: превью рамки + кнопки добавления (над надписью ТЕМА) -->
+            <div id="ts-attr-frame" class="ts-attr-frame"></div>
+            <div id="ts-attr-row" class="ts-attr-row"></div>
             <!-- Тема + чипсы -->
             <div class="ts-tag-row">
                 <label class="ts-tag-label" for="new-pain-tag">ТЕМА</label>
@@ -1314,6 +1317,8 @@
                     try { localStorage.setItem('soma_signal_draft_topic', t); } catch (_) {}
                 }, 500);
             } catch (_) {}
+            // Перерисовываем превью-рамку темы при изменении темы
+            if (typeof tsRenderAttrUI === 'function') tsRenderAttrUI();
         };
     }
     function renderContactFilters() {
@@ -2008,6 +2013,7 @@
         try { Telegram.WebApp.ready(); Telegram.WebApp.expand(); } catch (e) {}
         try { Telegram.WebApp.disableVerticalSwipes(); } catch (e) {}
         renderTagChips(); initContactUI(); initSoundUI();
+        if (typeof tsRenderAttrUI === 'function') tsRenderAttrUI();
         if (cfg.ENV === 'pts') showPts();
         const wantsRoom = () => new URLSearchParams(location.search).has('room') || /^#room\b/i.test(location.hash);
         if (wantsRoom()) switchTab('room', true);
@@ -2714,6 +2720,55 @@
         } catch (e) {}
     }
 
+    // ===== Отражаемые атрибуты сигнала (окно «ОТПРАВИТЬ В ЭФИР») =====
+    // Комбинацию выбирает игрок при отправке сигнала. Хранится локально (в памяти),
+    // бэкенд шёпота/сигнала не трогаем. Каждый атрибут отражается независимо.
+    const tsSignalAttrSel = { seal: false, title: false, frame: false };
+
+    function tsEsc(s) {
+        return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    function tsGetCosm() {
+        try {
+            if (typeof getRoomCosmeticsSafe === 'function') return getRoomCosmeticsSafe() || {};
+            if (typeof getActiveCosmetics === 'function') return getActiveCosmetics() || {};
+        } catch (e) {}
+        return {};
+    }
+
+    function tsSignalTopic() {
+        const el = document.getElementById('new-pain-tag');
+        const raw = el ? (el.value || '') : '';
+        return raw.trim();
+    }
+
+    function tsRenderAttrUI() {
+        const cosm = tsGetCosm();
+        const rowEl = document.getElementById('ts-attr-row');
+        if (rowEl) {
+            rowEl.innerHTML = (typeof renderAttrToggleRow === 'function')
+                ? renderAttrToggleRow(cosm, tsSignalAttrSel, tsEsc, 'ts-attr-btn', 'ts-attr-btns')
+                : '';
+        }
+        const frameEl = document.getElementById('ts-attr-frame');
+        if (frameEl && typeof renderSignalFrameHtml === 'function') {
+            frameEl.innerHTML = renderSignalFrameHtml(tsSignalTopic(), tsSignalAttrSel, cosm, tsEsc);
+        }
+        document.querySelectorAll('.ts-attr-btn').forEach(btn => {
+            if (btn._tsBound) return;
+            btn._tsBound = true;
+            btn.onclick = () => tsToggleAttr(btn.dataset.attr);
+        });
+    }
+
+    function tsToggleAttr(slot) {
+        if (slot !== 'seal' && slot !== 'title' && slot !== 'frame') return;
+        tsSignalAttrSel[slot] = !tsSignalAttrSel[slot];
+        if (typeof SFX !== 'undefined' && SFX.tap) SFX.tap();
+        tsRenderAttrUI();
+    }
+
     function notify(msg) {
         try { Telegram.WebApp.showAlert(msg); } catch (e) { alert(msg); }
     }
@@ -2787,6 +2842,16 @@
 
         const tag = window.SOMA_SIGNALS.packTag(document.getElementById('new-pain-tag').value);
         const insertRow = { id: 'p_' + Date.now(), author: randAnon(), tag: tag, text: text };
+        // Выбранные отражаемые атрибуты прикрепляются к сигналу локально (в памяти) —
+        // без изменения RPC/таблицы сигнала. Получателю атрибуты будут видны, когда
+        // сигнал придёт на его пейджер (доставка в базу — отдельный этап бэкенда).
+        {
+            const picked = {};
+            if (tsSignalAttrSel.seal) picked.seal = true;
+            if (tsSignalAttrSel.title) picked.title = true;
+            if (tsSignalAttrSel.frame) picked.frame = true;
+            if (Object.keys(picked).length) insertRow.cosmetics = picked;
+        }
 
         const label = btn.innerText;
         btn.disabled = true;

@@ -9907,9 +9907,7 @@ function receiveIncomingWhisperLocal(whisperObj) {
         post_preview: String(whisperObj.post_preview || '').replace(/\s+/g, ' ').trim().slice(0, 140),
         text: check.value,
         created_at: whisperObj.created_at || new Date().toISOString(),
-        status: 'pending',
-        // Выбранные отправителем отражаемые атрибуты (UI-локально; бэкенд шёпота не трогаем)
-        cosmetics: whisperObj.cosmetics || null
+        status: 'pending'
     };
     const existing = loadRawInboxWhispers();
     if (!existing.some(x => x.id === id)) {
@@ -10140,17 +10138,6 @@ async function sendWhisperToPostOnce(postObj, rawText, opts) {
         status: 'pending',
         created_at: new Date().toISOString()
     };
-
-    // Выбранная комбинация отражающихся атрибутов прикрепляется к шёпоту
-    // локально (в памяти) — без изменения бэкенда/RPC шёпота. Получателю
-    // атрибуты будут видны, когда сигнал придёт на его пейджер.
-    if (o.attrSel && typeof o.attrSel === 'object') {
-        const picked = {};
-        if (o.attrSel.seal) picked.seal = true;
-        if (o.attrSel.title) picked.title = true;
-        if (o.attrSel.frame) picked.frame = true;
-        if (Object.keys(picked).length) wRow.cosmetics = picked;
-    }
 
     try {
         if (typeof supabaseClient !== 'undefined' && supabaseClient && !o.skipCloud) {
@@ -10668,23 +10655,10 @@ function closePagerModal() {
     }
 }
 
-// Выбранная комбинация отражающихся атрибутов для текущего сигнала, который
-// игрок отправляет. Хранится в roomAnim (локально, без изменения бэкенда шёпота).
-// Формат: { seal: bool, title: bool, frame: bool }.
-function getPagerSignalAttrSel() {
-    if (!roomAnim.pagerSignalAttrSel || typeof roomAnim.pagerSignalAttrSel !== 'object') {
-        roomAnim.pagerSignalAttrSel = { seal: false, title: false, frame: false };
-    }
-    return roomAnim.pagerSignalAttrSel;
-}
-
-function resetPagerSignalAttrSel() {
-    roomAnim.pagerSignalAttrSel = { seal: false, title: false, frame: false };
-}
-
-// Кнопки добавления атрибутов в окне отправки сигнала. Показываются только для
-// активированных (купленных и надетых) атрибутов. «is-on» — выбрано для отражения.
-function pagerAttrTogglesHtml(cosm, sel, escFn) {
+// Кнопки добавления атрибутов в окне отправки сигнала («ОТПРАВИТЬ В ЭФИР»).
+// Показываются только для активированных (купленных и надетых) атрибутов.
+// «is-on» — выбрано для отражения. btnClass/rowClass — CSS-классы для контекста.
+function renderAttrToggleRow(cosm, sel, escFn, btnClass, rowClass) {
     const esc = escFn || (s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])));
     const defs = [
         { slot: 'seal', label: 'ПЕЧАТЬ' },
@@ -10695,11 +10669,11 @@ function pagerAttrTogglesHtml(cosm, sel, escFn) {
         .filter(d => cosm && cosm[d.slot])
         .map(d => {
             const on = !!sel[d.slot];
-            return `<button type="button" class="pager-attr-btn ${on ? 'is-on' : ''}" data-attr="${d.slot}" data-label="${esc(d.label)}">＋ ${esc(d.label)}</button>`;
+            return `<button type="button" class="${btnClass} ${on ? 'is-on' : ''}" data-attr="${d.slot}" data-label="${esc(d.label)}">＋ ${esc(d.label)}</button>`;
         })
         .join('');
     if (!btns) return '';
-    return `<div class="pager-attr-row" role="group" aria-label="Отражаемые атрибуты">${btns}</div>`;
+    return `<div class="${rowClass}" role="group" aria-label="Отражаемые атрибуты">${btns}</div>`;
 }
 
 // Красная рамка в стиле шаси модалки для отражённых атрибутов сигнала.
@@ -10763,10 +10737,12 @@ function renderPagerModal() {
 
     let sigTopic = '';
     let sigAttrs = null;
-    if (inbox && inbox[0] && inbox[0].post_tag) {
+    if (activeTab === 'inbox' && inbox && inbox[0] && inbox[0].post_tag) {
+        // Вкладка «Входящие» — шёпот (атрибуты не трогаем).
         sigTopic = String(inbox[0].post_tag);
-        sigAttrs = (inbox[0].cosmetics) || null;
     } else {
+        // Вкладка «Поймать сигнал» — сигнал из эфира (soma_post): тема всегда,
+        // отражаемые атрибуты читаются из данных сигнала.
         try {
             const cs = getVisibleFirstSignalCandidates();
             if (cs && cs[0]) {
@@ -11018,8 +10994,6 @@ function renderPagerModal() {
                     </div>
                 `;
             } else {
-                const cosm = getRoomCosmeticsSafe();
-                const attrSel = getPagerSignalAttrSel();
                 bodyEl.innerHTML = candidates.map(post => {
                     const pid = String(post.id);
                     const done = whisperedSet.has(pid);
@@ -11048,8 +11022,6 @@ function renderPagerModal() {
                                     </div>`
                                     : isComposing
                                         ? `<div class="pager-compose">
-                                        ${pagerAttrTogglesHtml(cosm, attrSel, escFn)}
-                                        ${renderSignalFrameHtml(post.tag, attrSel, cosm, escFn)}
                                         <textarea id="pager-compose-input" class="pager-compose-input" rows="3" maxlength="${PROGRESSION_RULES.WHISPER_MAX_LEN}" placeholder="Напишите тёплый анонимный отклик...">${escFn(draft)}</textarea>
                                         <div class="pager-compose-bar">
                                             <span id="pager-compose-count" class="pager-compose-count">${draft.length} / ${PROGRESSION_RULES.WHISPER_MAX_LEN}</span>
@@ -11099,7 +11071,6 @@ function renderPagerModal() {
                         trackFirstSignalEvent('compose_open');
                         roomAnim.pagerComposingPostId = btn.dataset.postId;
                         roomAnim.pagerDraftText = '';
-                        resetPagerSignalAttrSel();
                         roomAnim.pagerModalError = '';
                         roomAnim.pagerModalNotice = '';
                         if (typeof SFX !== 'undefined' && SFX.tap) SFX.tap();
@@ -11109,19 +11080,7 @@ function renderPagerModal() {
                     };
                 });
 
-                // Переключатели отражаемых атрибутов в окне отправки сигнала.
-                bodyEl.querySelectorAll('.pager-attr-btn').forEach(btn => {
-                    btn.onclick = () => {
-                        const slot = btn.dataset.attr;
-                        if (slot !== 'seal' && slot !== 'title' && slot !== 'frame') return;
-                        const sel = getPagerSignalAttrSel();
-                        sel[slot] = !sel[slot];
-                        if (typeof SFX !== 'undefined' && SFX.tap) SFX.tap();
-                        renderPagerModal();
-                        const inp = bodyEl.querySelector('#pager-compose-input');
-                        if (inp && inp.focus && roomAnim.pagerComposingPostId) setTimeout(() => { try { inp.focus(); } catch (_) {} }, 30);
-                    };
-                });
+                // Переключатели отражаемых атрибутов — перенесены в окно «ОТПРАВИТЬ В ЭФИР» (index.html).
 
                 const inp = bodyEl.querySelector('#pager-compose-input');
                 const cnt = bodyEl.querySelector('#pager-compose-count');
@@ -11152,7 +11111,7 @@ function renderPagerModal() {
                         const targetPost = candidates.find(p => String(p.id) === String(roomAnim.pagerComposingPostId));
                         sendBtn.disabled = true;
                         if (typeof hideKeyboard === 'function') hideKeyboard();
-                        const res = await sendWhisperToPost(targetPost, inp.value, { attrSel: { ...getPagerSignalAttrSel() } });
+                        const res = await sendWhisperToPost(targetPost, inp.value);
                         if (!res.ok) {
                             roomAnim.pagerModalError = '⛔ ' + res.error;
                             if (typeof SFX !== 'undefined' && SFX.block) SFX.block();

@@ -485,7 +485,7 @@
 
     <!-- БЛОКИРОВКА ПОМОЩИ ("ЧЕСОТКА БЕССИЛИЯ") -->
     <div id="block-modal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-6">
-        <div id="block-card" class="w-full max-w-sm bg-[#14080a] border border-red-500/80 p-6 rounded-2xl space-y-4 shadow-2xl text-center">
+        <div id="block-card" class="soma-modal-chassis w-full max-w-sm bg-[#14080a] border border-red-500/80 p-6 rounded-2xl space-y-4 shadow-2xl text-center">
             <div class="text-red-500 font-mono-tech text-xs tracking-widest uppercase">// ПРОТОКОЛ БЕЗОПАСНОСТИ SOMA~LINK</div>
             <h3 class="text-base font-bold text-white">Прямой контакт заблокирован</h3>
             <p class="text-xs text-gray-300 leading-relaxed">
@@ -502,7 +502,7 @@
 
     <!-- МОДАЛЬНОЕ ОКНО ПУБЛИКАЦИИ (1 СИГНАЛ В СУТКИ · ДО 666 СИМВОЛОВ) -->
     <div id="post-modal" class="hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="w-full max-w-md max-h-[90vh] overflow-y-auto bg-[#100608] border border-red-500/40 p-5 rounded-2xl shadow-2xl" id="post-modal-chassis">
+        <div class="soma-modal-chassis w-full max-w-md max-h-[90vh] overflow-y-auto bg-[#100608] border border-red-500/40 p-5 rounded-2xl shadow-2xl" id="post-modal-chassis">
             <!-- ШАПКА: статус передатчика -->
             <div class="flex justify-between items-center mb-3">
                 <div class="flex items-center gap-2">
@@ -561,7 +561,7 @@
 
     <!-- ПАСХАЛКА: 10 ПОПЫТОК ПОМОЧЬ -->
     <div id="egg-modal" class="hidden fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-6">
-        <div class="w-full max-w-sm bg-[#0b0708] border border-amber-400/70 p-6 rounded-2xl space-y-4 shadow-2xl text-center">
+        <div class="soma-modal-chassis w-full max-w-sm bg-[#0b0708] border border-amber-400/70 p-6 rounded-2xl space-y-4 shadow-2xl text-center">
             <div class="text-amber-400 font-mono-tech text-xs tracking-widest">// СБОЙ ПРОТОКОЛА</div>
             <h3 class="text-base font-bold text-white">Вы нарушитель</h3>
             <p class="text-xs text-gray-300 leading-relaxed">Вы искали возможность откликнуться. На станции есть пейджер для бережных слов. Игра не заменяет помощь близких или специалиста — и не требует от вас кого-то спасать.</p>
@@ -573,7 +573,7 @@
 
     <!-- ПОМОЩЬ РЯДОМ -->
     <div id="safety-modal" class="hidden fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4">
-        <div class="w-full max-w-md max-h-[88vh] overflow-y-auto bg-[#0b0708] border border-red-500/40 p-5 rounded-2xl space-y-3 shadow-2xl">
+        <div class="soma-modal-chassis w-full max-w-md max-h-[88vh] overflow-y-auto bg-[#0b0708] border border-red-500/40 p-5 rounded-2xl space-y-3 shadow-2xl">
             <div class="flex justify-between items-center">
                 <span class="text-xs font-mono-tech text-red-400 uppercase">// ПОМОЩЬ РЯДОМ</span>
                 <button onclick="closeSafety()" class="text-gray-500 hover:text-white text-sm">✕</button>
@@ -604,7 +604,7 @@
 
     <!-- ПАСХАЛКА: ПЕРЕХВАЧЕННЫЙ СИГНАЛ (МУЗЫКА) -->
     <div id="music-modal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-[2px] flex items-center justify-center p-6">
-        <div class="w-full max-w-sm bg-[#0b0708] border border-red-500/70 p-6 rounded-2xl space-y-4 shadow-2xl text-center">
+        <div class="soma-modal-chassis w-full max-w-sm bg-[#0b0708] border border-red-500/70 p-6 rounded-2xl space-y-4 shadow-2xl text-center">
             <div class="text-red-400 font-mono-tech text-xs tracking-widest">// ПЕРЕХВАЧЕН СИГНАЛ</div>
             <div id="music-eq" class="flex items-end justify-center gap-1 h-14"></div>
             <h3 id="music-name" class="text-lg font-bold text-white tracking-widest font-mono-tech">NEEOSOMA</h3>
@@ -618,7 +618,7 @@
 
     <!-- ТРЕНАЖЁР «СЛУШАТЕЛЬ» (ТЕРМИНАЛ СТАНЦИИ) -->
     <div id="trainer-modal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-[2px] flex items-center justify-center p-4">
-        <div class="w-full max-w-md max-h-[88vh] overflow-y-auto bg-[#0b0708] border border-red-500/40 p-5 rounded-2xl space-y-3 shadow-2xl">
+        <div class="soma-modal-chassis w-full max-w-md max-h-[88vh] overflow-y-auto bg-[#0b0708] border border-red-500/40 p-5 rounded-2xl space-y-3 shadow-2xl">
             <div class="flex justify-between items-center">
                 <span class="text-xs font-mono-tech text-red-400 uppercase">NEEOSOMA // TRM-01 · СЛУШАТЕЛЬ</span>
                 <button onclick="closeTrainer()" class="text-gray-500 hover:text-white text-sm">✕</button>
@@ -634,7 +634,7 @@
 
     <!-- БУТИК ЭСТЕТИКИ И СТАТУСА (СТРОГО БЕЗ ВЛИЯНИЯ НА ТЕПЛО И РОСТ) -->
     <div id="shop-modal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-[2px] flex items-center justify-center p-3 sm:p-4" onclick="if(event.target===this)closeShop()">
-        <div class="shop-shell w-full max-w-md max-h-[90vh] flex flex-col bg-[#0b0608] border border-red-500/45 rounded-2xl shadow-2xl overflow-hidden">
+        <div class="shop-shell soma-modal-chassis w-full max-w-md max-h-[90vh] flex flex-col bg-[#0b0608] border border-red-500/45 rounded-2xl shadow-2xl overflow-hidden">
             <div class="flex justify-between items-center px-4 pt-3.5 pb-2 border-b border-red-500/15">
                 <div>
                     <div class="text-[11px] font-mono-tech text-amber-200/90 uppercase tracking-wider">✦ АТРИБУТЫ // БУТИК СТАНЦИИ</div>
@@ -1223,9 +1223,17 @@
         if (typeof exitRoomFullscreen === 'function') exitRoomFullscreen(true);
         SFX.tap();
         renderTrainer();
-        document.getElementById('trainer-modal').classList.remove('hidden');
+        const tModal = document.getElementById('trainer-modal');
+        _somaKbBind(tModal);
+        tModal.classList.remove('hidden');
+        _somaKbUpdate(tModal);
     }
-    function closeTrainer() { document.getElementById('trainer-modal').classList.add('hidden'); }
+    function closeTrainer() {
+        const tModal = document.getElementById('trainer-modal');
+        tModal.classList.add('hidden');
+        tModal.classList.remove('is-kb-open');
+        if (tModal.__somaKbOff) { tModal.__somaKbOff(); tModal.__somaKbOff = null; tModal.__somaKbBound = false; }
+    }
     function renderTrainer() {
         updateTrainerMeta();
         let done = {}; try { done = JSON.parse(localStorage.getItem('soma_trained') || '{}'); } catch (e) {}
@@ -1425,10 +1433,18 @@
     const CRISIS = /(суицид|самоубийств|покончить с собой|убить себя|не хочу жить|хочу умереть|свести счёты|свести счеты|вскрыть вены)/i;
     function openSafety(auto) {
         document.getElementById('safety-auto').classList.toggle('hidden', !auto);
-        document.getElementById('safety-modal').classList.remove('hidden');
+        const sModal = document.getElementById('safety-modal');
+        _somaKbBind(sModal);
+        sModal.classList.remove('hidden');
+        _somaKbUpdate(sModal);
         SFX.calm();
     }
-    function closeSafety() { document.getElementById('safety-modal').classList.add('hidden'); }
+    function closeSafety() {
+        const sModal = document.getElementById('safety-modal');
+        sModal.classList.add('hidden');
+        sModal.classList.remove('is-kb-open');
+        if (sModal.__somaKbOff) { sModal.__somaKbOff(); sModal.__somaKbOff = null; sModal.__somaKbBound = false; }
+    }
     function openExt(url) {
         try { if (window.Telegram && Telegram.WebApp.initData) { Telegram.WebApp.openLink(url); return; } } catch (e) {}
         window.open(url, '_blank');
@@ -1475,10 +1491,108 @@
             && window.SOMA_ROOM.isEntryFav(it.id));
     }
 
-    // Фикс: при открытии клавиатуры проигрыватель не сдвигается вверх,
-    // блок сигналов (шкаф) не сжимается и не закрывается.
-    // Сначала замораживаем текущую высоту шкафа (проигрыватель не сдвинется ни на пиксель),
-    // детекция клавиатуры — по уменьшению visualViewport против базовой высоты (без клавиатуры).
+    // ===== КЛАВИАТУРА В МОДАЛКАХ (общая схема для всех модалок) =====
+    // При наборе текста в модалке клавиатура НЕ должна сжимать блок с текстом и
+    // менять размер панели: часисы модалки замораживаются на текущей высоте
+    // (фиксированный пиксельный размер, без пересчёта под клавиатуру), а контент
+    // остаётся доступным для навигации по панели с помощью скролла.
+    // Детекция открытия клавиатуры — по уменьшению visualViewport против базовой
+    // высоты; armed-бита включается по фокусу любого текстового поля в модалке.
+    function _somaKbVvHeight() {
+        const vv = window.visualViewport;
+        return vv ? vv.height : window.innerHeight;
+    }
+    function _somaKbFindChassis(modal) {
+        return modal.querySelector('.soma-modal-chassis') || modal;
+    }
+    function _somaKbFreeze(modal) {
+        const chassis = _somaKbFindChassis(modal);
+        if (chassis && !chassis.__somaKbH) {
+            chassis.__somaKbH = chassis.offsetHeight;
+            chassis.style.height = chassis.__somaKbH + 'px';
+            chassis.style.maxHeight = chassis.__somaKbH + 'px';
+            chassis.style.flex = '0 0 auto';
+            chassis.style.overflowY = 'auto';
+        }
+        // Дополнительные скроллящиеся области внутри модалки (например, экран
+        // пейджера): их высота тоже фиксируется, чтобы клавиатура не сжала панель.
+        if (typeof modal.querySelectorAll === 'function') {
+            modal.querySelectorAll('.soma-kb-scroll').forEach(el => {
+                if (el && !el.__somaKbH) {
+                    el.__somaKbH = el.offsetHeight;
+                    el.style.height = el.__somaKbH + 'px';
+                    el.style.maxHeight = el.__somaKbH + 'px';
+                }
+            });
+        }
+    }
+    function _somaKbUnfreeze(modal) {
+        const chassis = _somaKbFindChassis(modal);
+        if (chassis && chassis.__somaKbH) {
+            chassis.style.height = '';
+            chassis.style.maxHeight = '';
+            chassis.style.flex = '';
+            chassis.__somaKbH = null;
+        }
+        if (typeof modal.querySelectorAll === 'function') {
+            modal.querySelectorAll('.soma-kb-scroll').forEach(el => {
+                if (el && el.__somaKbH) {
+                    el.style.height = '';
+                    el.style.maxHeight = '';
+                    el.__somaKbH = null;
+                }
+            });
+        }
+    }
+    function _somaKbUpdate(modal) {
+        const vh = _somaKbVvHeight();
+        if (modal.__somaKbBase == null) modal.__somaKbBase = vh;
+        // клавиатура открыта, если visualViewport уменьшился против базовой
+        // и текстовое поле было в фокусе (armed)
+        const kbOpen = !!modal.__somaKbArmed && (modal.__somaKbBase - vh) > 80;
+        if (!kbOpen && vh > modal.__somaKbBase) modal.__somaKbBase = vh;
+        const wasOpen = modal.classList.contains('is-kb-open');
+        modal.classList.toggle('is-kb-open', !!kbOpen);
+        if (kbOpen) (modal.__somaKbFreeze || _somaKbFreeze)(modal);
+        if (!kbOpen && wasOpen) (modal.__somaKbUnfreeze || _somaKbUnfreeze)(modal);
+    }
+    function _somaKbBind(modal, opts) {
+        if (modal.__somaKbBound) return;
+        modal.__somaKbBound = true;
+        // opts.freeze / opts.unfreeze — кастомные заморозки для конкретной модалки
+        // (например, в виниловой слушальной фиксируется шкаф, а не часисы).
+        if (opts && typeof opts.freeze === 'function') modal.__somaKbFreeze = opts.freeze;
+        if (opts && typeof opts.unfreeze === 'function') modal.__somaKbUnfreeze = opts.unfreeze;
+        const onVv = () => _somaKbUpdate(modal);
+        const onFocusIn = (e) => {
+            const t = e.target;
+            if (!t || (t.tagName !== 'INPUT' && t.tagName !== 'TEXTAREA' && !t.isContentEditable)) return;
+            modal.__somaKbArmed = true;
+            (modal.__somaKbFreeze || _somaKbFreeze)(modal);   // заморозка сразу по фокусу — клавиатура не сдвинет контент
+            _somaKbUpdate(modal);
+        };
+        const onFocusOut = () => _somaKbUpdate(modal);
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', onVv);
+            window.visualViewport.addEventListener('scroll', onVv);
+        }
+        window.addEventListener('resize', onVv);
+        modal.addEventListener('focusin', onFocusIn);
+        modal.addEventListener('focusout', onFocusOut);
+        modal.__somaKbOff = () => {
+            if (window.visualViewport) {
+                window.visualViewport.removeEventListener('resize', onVv);
+                window.visualViewport.removeEventListener('scroll', onVv);
+            }
+            window.removeEventListener('resize', onVv);
+            modal.removeEventListener('focusin', onFocusIn);
+            modal.removeEventListener('focusout', onFocusOut);
+            modal.__somaKbArmed = false;
+            (modal.__somaKbUnfreeze || _somaKbUnfreeze)(modal);
+        };
+    }
+
+    // ===== Винил: фикс шкафа по аналогии с общей схемой =====
     function _vinylKbFreeze(modal) {
         const cabinet = modal.querySelector('.vh-cabinet');
         if (cabinet && !cabinet.__vinylKbH) {
@@ -1495,54 +1609,8 @@
             cabinet.__vinylKbH = null;
         }
     }
-    function _vinylKbUpdate(modal) {
-        const vv = window.visualViewport;
-        const vh = vv ? vv.height : window.innerHeight;
-        if (modal.__vinylKbBase == null) modal.__vinylKbBase = vh;
-        // клавиатура открыта, если visualViewport уменьшился против базовой
-        // и инпут был в фокусе (armed)
-        const kbOpen = !!modal.__vinylKbArmed && (modal.__vinylKbBase - vh) > 80;
-        if (!kbOpen && vh > modal.__vinylKbBase) modal.__vinylKbBase = vh;
-        const wasOpen = modal.classList.contains('is-kb-open');
-        modal.classList.toggle('is-kb-open', !!kbOpen);
-        if (kbOpen) _vinylKbFreeze(modal);
-        if (!kbOpen && wasOpen) _vinylKbUnfreeze(modal);
-    }
     function _vinylKbBind(modal) {
-        if (modal.__vinylKbBound) return;
-        modal.__vinylKbBound = true;
-        const onVv = () => _vinylKbUpdate(modal);
-        const onInputFocus = () => {
-            modal.__vinylKbArmed = true;
-            _vinylKbFreeze(modal);   // заморозка сразу по фокусу — клавиатура не сдвинет контент
-            _vinylKbUpdate(modal);
-        };
-        const onInputBlur = () => {
-            _vinylKbUpdate(modal);   // размораживаем, когда visualViewport вернулся к базовой
-        };
-        if (window.visualViewport) {
-            window.visualViewport.addEventListener('resize', onVv);
-            window.visualViewport.addEventListener('scroll', onVv);
-        }
-        window.addEventListener('resize', onVv);
-        const input = document.getElementById('vinyl-search-input');
-        if (input) {
-            input.addEventListener('focus', onInputFocus);
-            input.addEventListener('blur', onInputBlur);
-        }
-        modal.__vinylKbOff = () => {
-            if (window.visualViewport) {
-                window.visualViewport.removeEventListener('resize', onVv);
-                window.visualViewport.removeEventListener('scroll', onVv);
-            }
-            window.removeEventListener('resize', onVv);
-            if (input) {
-                input.removeEventListener('focus', onInputFocus);
-                input.removeEventListener('blur', onInputBlur);
-            }
-            modal.__vinylKbArmed = false;
-            _vinylKbUnfreeze(modal);
-        };
+        _somaKbBind(modal, { freeze: _vinylKbFreeze, unfreeze: _vinylKbUnfreeze });
     }
 
     async function openVinylArchive() {
@@ -1551,7 +1619,7 @@
         closeVinylRead();
         modal.classList.remove('hidden');
         _vinylKbBind(modal);
-        _vinylKbUpdate(modal);
+        _somaKbUpdate(modal);
         if (!vinylDrag.bound) { vinylDrag.bound = true; initVinylDrag(); }
         if (vinylArchive.loading) return;
         vinylArchive.loading = true;
@@ -1573,7 +1641,7 @@
         if (modal) {
             modal.classList.add('hidden');
             modal.classList.remove('is-kb-open');
-            if (modal.__vinylKbOff) { modal.__vinylKbOff(); modal.__vinylKbOff = null; modal.__vinylKbBound = false; }
+            if (modal.__somaKbOff) { modal.__somaKbOff(); modal.__somaKbOff = null; modal.__somaKbBound = false; }
         }
         closeVinylRead();
         removeVinylFromTurntable(true);
@@ -1884,10 +1952,18 @@
             updateCloudProfile(); updateHeader();
         }
         document.getElementById('music-bonus').classList.toggle('hidden', !first);
-        document.getElementById('music-modal').classList.remove('hidden');
+        const mModal = document.getElementById('music-modal');
+        _somaKbBind(mModal);
+        mModal.classList.remove('hidden');
+        _somaKbUpdate(mModal);
         SFX.tune();
     }
-    function closeMusic() { document.getElementById('music-modal').classList.add('hidden'); }
+    function closeMusic() {
+        const mModal = document.getElementById('music-modal');
+        mModal.classList.add('hidden');
+        mModal.classList.remove('is-kb-open');
+        if (mModal.__somaKbOff) { mModal.__somaKbOff(); mModal.__somaKbOff = null; mModal.__somaKbBound = false; }
+    }
     function shareMusic() {
         if (window.SOMA_SHARE && typeof window.SOMA_SHARE.shareSignal === 'function') {
             window.SOMA_SHARE.shareSignal();
@@ -2514,9 +2590,17 @@
             updateHeader();
         }
         egg ? SFX.egg() : SFX.block();
-        document.getElementById(egg ? 'egg-modal' : 'block-modal').classList.remove('hidden');
+        const violModal = document.getElementById(egg ? 'egg-modal' : 'block-modal');
+        _somaKbBind(violModal);
+        violModal.classList.remove('hidden');
+        _somaKbUpdate(violModal);
     }
-    function closeEgg() { document.getElementById('egg-modal').classList.add('hidden'); }
+    function closeEgg() {
+        const eModal = document.getElementById('egg-modal');
+        eModal.classList.add('hidden');
+        eModal.classList.remove('is-kb-open');
+        if (eModal.__somaKbOff) { eModal.__somaKbOff(); eModal.__somaKbOff = null; eModal.__somaKbBound = false; }
+    }
     function shareEgg() {
         if (window.SOMA_SHARE && typeof window.SOMA_SHARE.shareEgg === 'function') {
             window.SOMA_SHARE.shareEgg();
@@ -2527,7 +2611,12 @@
             Telegram.WebApp.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(BOT_LINK) + '&text=' + encodeURIComponent(text));
         } else { notify(text + ' ' + BOT_LINK); }
     }
-    function closeBlockModal() { document.getElementById('block-modal').classList.add('hidden'); }
+    function closeBlockModal() {
+        const bModal = document.getElementById('block-modal');
+        bModal.classList.add('hidden');
+        bModal.classList.remove('is-kb-open');
+        if (bModal.__somaKbOff) { bModal.__somaKbOff(); bModal.__somaKbOff = null; bModal.__somaKbBound = false; }
+    }
 
     function openPostModal() {
         if (hasSentPainToday()) {
@@ -2547,7 +2636,10 @@
         }
         updateCharCount(true);
         updatePostQuotaUI();
-        document.getElementById('post-modal').classList.remove('hidden');
+        const pModal = document.getElementById('post-modal');
+        _somaKbBind(pModal);
+        pModal.classList.remove('hidden');
+        _somaKbUpdate(pModal);
         // Прокрутить кнопку отправки в зону видимости — клавиатура не перекроет её.
         const sendBtn = document.getElementById('send-btn');
         if (sendBtn && sendBtn.scrollIntoView) {
@@ -2559,7 +2651,10 @@
         hideKeyboard();
         const ae = document.activeElement;
         if (ae && typeof ae.blur === 'function') { try { ae.blur(); } catch (e) {} }
-        document.getElementById('post-modal').classList.add('hidden');
+        const pModal = document.getElementById('post-modal');
+        pModal.classList.add('hidden');
+        pModal.classList.remove('is-kb-open');
+        if (pModal.__somaKbOff) { pModal.__somaKbOff(); pModal.__somaKbOff = null; pModal.__somaKbBound = false; }
         updatePostQuotaUI();
         restoreSomaScroll();
     }

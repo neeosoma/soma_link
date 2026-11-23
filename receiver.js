@@ -906,7 +906,7 @@
             ov.setAttribute('aria-modal', 'true');
             ov.setAttribute('aria-label', 'Ламповый приёмник NEEOSOMA AV-88');
             ov.innerHTML = `
-                <div class="rx-chassis" id="rx-chassis">
+                <div class="rx-chassis soma-modal-chassis" id="rx-chassis">
                     <div class="rx-head">
                         <div class="rx-head-top">
                             <div class="rx-brand">
@@ -1195,7 +1195,9 @@
         if (trackId) selectTrack(trackId, false);
         state.open = true;
         syncMount();
+        if (typeof _somaKbBind === 'function') _somaKbBind(ov);
         ov.classList.remove('hidden');
+        if (typeof _somaKbUpdate === 'function') _somaKbUpdate(ov);
         playTuningChime();
         if (typeof roomAnim !== 'undefined' && roomAnim && roomAnim.isFullscreen && typeof bumpFullscreenHud === 'function') {
             bumpFullscreenHud();
@@ -1209,7 +1211,11 @@
         if (state.trayTimer) { clearTimeout(state.trayTimer); state.trayTimer = null; }
         setTray('closed');
         const ov = typeof document !== 'undefined' && document.getElementById('rx-overlay');
-        if (ov) ov.classList.add('hidden');
+        if (ov) {
+            ov.classList.add('hidden');
+            ov.classList.remove('is-kb-open');
+            if (ov.__somaKbOff) { ov.__somaKbOff(); ov.__somaKbOff = null; ov.__somaKbBound = false; }
+        }
         syncMiniPlayers();
         if (state.playing && typeof roomAnim !== 'undefined' && roomAnim && roomAnim.isFullscreen && typeof showFullscreenCaption === 'function') {
             const tr = currentTrack();

@@ -463,14 +463,22 @@ function openShop(tab) {
     applyCosmeticsToUI();
     renderShop();
     const m = document.getElementById('shop-modal');
-    if (m) m.classList.remove('hidden');
+    if (m) {
+        if (typeof _somaKbBind === 'function') _somaKbBind(m);
+        m.classList.remove('hidden');
+        if (typeof _somaKbUpdate === 'function') _somaKbUpdate(m);
+    }
 }
 
 function closeShop() {
     if (!shopState.liveRoomTry) shopState.preview = null;
     shopState.notice = '';
     const m = document.getElementById('shop-modal');
-    if (m) m.classList.add('hidden');
+    if (m) {
+        m.classList.add('hidden');
+        m.classList.remove('is-kb-open');
+        if (m.__somaKbOff) { m.__somaKbOff(); m.__somaKbOff = null; m.__somaKbBound = false; }
+    }
     applyCosmeticsToUI();
     if (typeof window !== 'undefined' && typeof window.restoreSomaScroll === 'function') {
         window.restoreSomaScroll();

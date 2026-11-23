@@ -1281,7 +1281,7 @@
         ov.setAttribute('aria-modal', 'true');
         ov.setAttribute('aria-label', 'Атмосферный снимок достижения SOMA~LINK');
         ov.innerHTML = `
-            <div class="soma-share-card">
+            <div class="soma-share-card soma-modal-chassis">
                 <div class="soma-share-head">
                     <div class="soma-share-kicker">
                         <span class="soma-share-dot" aria-hidden="true"></span>
@@ -1358,7 +1358,9 @@
         state.title = meta.title || 'SOMA~LINK';
 
         syncMount();
+        if (typeof _somaKbBind === 'function') _somaKbBind(ov);
         ov.classList.remove('hidden');
+        if (typeof _somaKbUpdate === 'function') _somaKbUpdate(ov);
 
         const headEl = document.getElementById('soma-share-heading');
         const loadEl = document.getElementById('soma-share-loading');
@@ -1395,7 +1397,11 @@
         if (!state.open) return;
         state.open = false;
         const ov = typeof document !== 'undefined' && document.getElementById('soma-share-overlay');
-        if (ov) ov.classList.add('hidden');
+        if (ov) {
+            ov.classList.add('hidden');
+            ov.classList.remove('is-kb-open');
+            if (ov.__somaKbOff) { ov.__somaKbOff(); ov.__somaKbOff = null; ov.__somaKbBound = false; }
+        }
         if (typeof window !== 'undefined' && typeof window.restoreSomaScroll === 'function') {
             window.restoreSomaScroll();
         }

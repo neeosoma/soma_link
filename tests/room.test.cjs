@@ -2037,9 +2037,19 @@ test('profanity filter blocks toxic text and obfuscation in whisper validation',
     assert.equal(r.somaTextBlocked('х——у…..—-й'), true);
     assert.equal(r.somaTextBlocked('ХУЙ'), true);
     assert.equal(r.somaTextBlocked('просто хороший день'), false);
+    // короткие термины блокируются только как самостоятельные слова,
+    // не блокируют нейтральные слова, содержащие их как подстроку
+    assert.equal(r.somaTextBlocked('дурачишься'), false);
+    assert.equal(r.somaTextBlocked('расслаблять тело'), false);
+    assert.equal(r.somaTextBlocked('геймер играет'), false);
+    assert.equal(r.somaTextBlocked('д-ура'), true);
+    assert.equal(r.somaTextBlocked('блять, давай'), true);
+    assert.equal(r.somaTextBlocked('дура!'), true);
+    assert.equal(r.somaTextBlocked('гей'), true);
     // whisper validation rejects toxic text, keeps clean text
     assert.equal(r.validateWhisperText('Ты сука, замолчи.').ok, false);
     assert.equal(r.validateWhisperText('Пусть сегодня станет немного легче.').ok, true);
+    assert.equal(r.validateWhisperText('Мне радостно, когда слышу твой смех, когда дурачишься непринужденно.').ok, true);
 });
 
 test('live Whisper validates 13..333 characters without a warmth or lesson gate', () => {

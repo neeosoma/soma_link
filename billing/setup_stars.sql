@@ -478,18 +478,37 @@ language plpgsql
 as $$
 declare
     v_clean text;
+    v_lower text;
     v_term text;
 begin
     if p_text is null then
         return false;
     end if;
     v_clean := regexp_replace(lower(p_text), '[^а-яёa-z0-9]', '', 'g');
+    v_lower := lower(p_text);
+    -- Жёсткие термины: любое вхождение в очищенной строке — блокируем.
     foreach v_term in array array[
         'хуй', 'хуя', 'хуём', 'хуев', 'хуёв', 'пидар', 'пидор', 'пидарас',
-        'педераст', 'падла', 'сука', 'блять', 'блядь', 'урод', 'ублюдок',
-        'гей', 'дурень', 'дура', 'fuck', 'shit'
+        'педераст', 'падла', 'сука', 'блядь', 'урод', 'ублюдок',
+        'дурень', 'fuck', 'shit'
     ] loop
         if v_clean like '%' || v_term || '%' then
+            return true;
+        end if;
+    end loop;
+    -- Короткие термины: блокируем только как самостоятельное слово.
+    -- Если в исходнике его нет в таком виде (обфускация d-ура),
+    -- но он есть в очищенной строке — блокируем.
+    foreach v_term in array array['блять', 'гей', 'дура'] loop
+        if not (v_clean like '%' || v_term || '%') then
+            continue;
+        end if;
+        if not (v_lower like '%' || v_term || '%') then
+            -- обфускация (в исходнике термина нет) — блокируем
+            return true;
+        end if;
+        -- ищем термин как самостоятельное слово (разделители -> пробел)
+        if position(' ' || v_term || ' ' in ' ' || regexp_replace(v_lower, '[^а-яёa-z0-9]', ' ', 'g') || ' ') > 0 then
             return true;
         end if;
     end loop;

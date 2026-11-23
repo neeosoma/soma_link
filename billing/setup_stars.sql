@@ -466,7 +466,7 @@ returns table(id text, status text) language sql stable security definer set sea
     order by w.created_at desc;
 $$;
 revoke all on function public.my_saved_soma_whispers() from public;
-grant execute on function public.my_saved_soma_whispers() to authenticated;
+grant execute on function public.my_saved_soma_whispers() to anon, authenticated;
 
 -- 9. Фильтр запрещённой лексики (анти-мат / токсичный текст).
 --    Нормализация: приведение к строчному, удаление ВСЕХ символов кроме букв/цифр,

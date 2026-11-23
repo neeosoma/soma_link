@@ -738,7 +738,7 @@ test('v8: body-portal FLIP fullscreen + 180 flip + rotated pointer mapping, Dawn
     assert.ok(indexHtml.includes('soma-post-cta') && indexHtml.includes('soma-post-beacon') && indexHtml.includes('soma-post-arrow'));
     assert.ok(
         indexHtml.includes('id="station-fs-flip"')
-        && indexHtml.includes('room.js?v=32')
+        && indexHtml.includes('room.js?v=33')
         && indexHtml.includes('cosmetics.css?v=15')
         && indexHtml.includes('receiver.js?v=17')
         && indexHtml.includes('vhs.js?v=15')
@@ -2057,7 +2057,7 @@ test('live Whisper validates 13..333 characters without a warmth or lesson gate'
     assert.equal(r.whisperAdmission(0, { trainedTotal: 0 }).admitted, true);
 });
 
-test('Whisper sends once per post, caps at three per day, and grants only warmth (no XP)', async () => {
+test('Whisper sends once per post, without a daily cap, and grants only warmth (no XP)', async () => {
     const player = { uid: 'u_0123456789abcdef', warmth: 100 };
     const localStorage = makeStorage({ soma_signal_rules_v1: 'accepted', soma_warmth_ledger: JSON.stringify({ day: '2026-11-18', trainedTotal: 0 }) });
     const r = loadRoom({ player, localStorage });
@@ -2065,11 +2065,9 @@ test('Whisper sends once per post, caps at three per day, and grants only warmth
     const text = 'Пусть сегодня станет немного легче.';
     assert.equal((await r.sendWhisperToPost({ id: 'post_1' }, text, opts)).ok, true);
     assert.equal((await r.sendWhisperToPost({ id: 'post_1' }, text, opts)).code, 'already_whispered');
-    for (const id of ['post_2', 'post_3']) assert.equal((await r.sendWhisperToPost({ id }, text, opts)).ok, true);
-    assert.equal((await r.sendWhisperToPost({ id: 'post_4' }, text, opts)).code, 'daily_cap');
+    for (const id of ['post_2', 'post_3', 'post_4', 'post_5']) assert.equal((await r.sendWhisperToPost({ id }, text, opts)).ok, true);
     assert.equal(player.xp, undefined, 'XP removed — player.xp must not exist');
     assert.equal(player.warmth, 100, 'sending whispers grants warmth only, no XP');
-    assert.equal((await r.sendWhisperToPost({ id: 'post_4' }, text, { ...opts, today: '2026-11-19' })).ok, true);
 });
 
 test('Whisper reply: sends once with p_reply_to, free of daily cap, marks original handled', async () => {
@@ -2086,7 +2084,7 @@ test('Whisper reply: sends once with p_reply_to, free of daily cap, marks origin
             return { error: null, data: [] };
         }
     };
-    // Личный счётчик уже исчерпан (3/3) — ответ НЕ должен сработать лимит.
+    // Личный счётчик шёпотов за день (3) не влияет на ответ — ответ всегда возможен.
     const ledger = JSON.stringify({ day: '2026-11-18', whisperSentToday: 3, whispersSent: 3 });
     const player = { uid: 'u_0123456789abcdef', warmth: 100 };
     const r = loadRoom({ player, localStorage: makeStorage({ soma_signal_rules_v1: 'accepted', soma_warmth_ledger: ledger }), supabaseClient });
@@ -2095,7 +2093,7 @@ test('Whisper reply: sends once with p_reply_to, free of daily cap, marks origin
     assert.equal(r.getPendingInboxWhispers().length, 1);
 
     const res = await r.sendWhisperReply({ id: 'w_in_1', post_id: 'p_a1', post_tag: 'ЛИЧНАЯ БОЛЬ', text: 'Пусть сегодня станет немного легче.' }, 'Это тёплый ответ на ваше сообщение.', { today: '2026-11-18' });
-    assert.equal(res.ok, true, 'reply succeeds even with exhausted daily cap');
+    assert.equal(res.ok, true, 'reply succeeds regardless of the sent-today counter');
 
     const call = calls.find(c => c.name === 'send_soma_whisper');
     assert.ok(call, 'send_soma_whisper called');
@@ -2104,7 +2102,7 @@ test('Whisper reply: sends once with p_reply_to, free of daily cap, marks origin
     // Оригинальный шёпот снят с входящих (handled).
     assert.equal(r.getPendingInboxWhispers().length, 0, 'answered whisper removed from inbox');
 
-    // Личный счётчик не потрачен: whisperSentToday остаётся 3, общий счётчик +1.
+    // Личный счётчик за день не тратится ответом: whisperSentToday остаётся 3, общий счётчик +1.
     const after = r.loadWarmthLedger('2026-11-18');
     assert.equal(after.whisperSentToday, 3, 'daily cap counter unchanged');
     assert.equal(after.whispersSent, 4, 'total whisper counter incremented');
@@ -2163,7 +2161,7 @@ test('Whisper schema restricts participants and sender identity, with a serializ
     assert.ok(sql.trim().endsWith('commit;'));
 });
 
-test('zero-warmth players can send three daily after rules, while channel-off still prevents real sends', async () => {
+test('zero-warmth players can send whispers unbounded after rules, while channel-off still prevents real sends', async () => {
     const window = { SOMA_CONFIG: { WHISPER_LIVE: true } };
     const player = { uid: 'u_0123456789abcdef', warmth: 0, xp: 0 };
     const r = loadRoom({ window, player });
@@ -2171,12 +2169,11 @@ test('zero-warmth players can send three daily after rules, while channel-off st
     r.acceptFirstSignalRules();
     assert.equal(r.whisperAdmission(0).admitted, true);
     const opts = { today: '2026-11-18', skipCloud: true };
-    for (const id of ['test_a', 'test_b', 'test_c']) {
+    for (const id of ['test_a', 'test_b', 'test_c', 'test_d', 'test_e']) {
         assert.equal((await r.sendWhisperToPost({ id }, 'Пусть сегодня станет немного легче.', opts)).ok, true);
     }
-    assert.equal((await r.sendWhisperToPost({ id: 'test_d' }, 'Пусть сегодня станет немного легче.', opts)).code, 'daily_cap');
     window.SOMA_CONFIG.WHISPER_LIVE = false;
-    assert.equal((await r.sendWhisperToPost({ id: 'test_e' }, 'Пусть сегодня станет немного легче.')).code, 'channel_disabled');
+    assert.equal((await r.sendWhisperToPost({ id: 'test_f' }, 'Пусть сегодня станет немного легче.')).code, 'channel_disabled');
 });
 
 

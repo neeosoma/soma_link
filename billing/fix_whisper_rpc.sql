@@ -22,14 +22,14 @@ drop function if exists public.send_soma_whisper(text, text, text, text, text, t
 -- Унікальные индексы (идемпотентно)
 create unique index if not exists soma_whispers_post_sender_uid_reply_idx
     on public.soma_whispers(post_id, sender_uid, reply_to_id);
--- Дневной лимит по ЛОКАЛЬному дню игрока: клиент передаёт day_key (YYYY-MM-DD),
--- trigger default-ит в UTC-день для прямого INSERT. Искореняет расхождение таймзон.
+-- Локальный день игрока в day_key (YYYY-MM-DD): клиент передаёт свой день,
+-- trigger default-ит в UTC-день для прямого INSERT. Хранится для записей о шёпотах.
 alter table public.soma_whispers add column if not exists day_key text;
 drop index if exists soma_whispers_auth_post_idx;
 create unique index if not exists soma_whispers_auth_post_idx
     on public.soma_whispers(post_id, sender_auth_id) where reply_to_id = '';
 
--- Guard-trigger: проверки авторизации, лимита, цели и «1 ответ на шёпот».
+-- Guard-trigger: проверки авторизации, цели и «1 ответ на шёпот».
 create or replace function public.guard_soma_whispers()
 returns trigger language plpgsql security definer set search_path = '' as $$
 begin
@@ -62,11 +62,7 @@ begin
                 raise exception 'Post has no verified recipient';
             end if;
             if public.owns_soma_post(new.post_id) then raise exception 'Cannot whisper to yourself'; end if;
-            if (select count(*) from public.soma_whispers where sender_auth_id = auth.uid()
-                and reply_to_id = ''
-                and day_key = new.day_key) >= 3 then
-                raise exception 'Daily whisper limit reached';
-            end if;
+            -- Дневного лимита на шёпоты нет: ограничение — уникальность (один шёпот на пост).
         end if;
     else
         if not public.owns_soma_post(old.post_id) or old.status <> 'pending'
@@ -128,7 +124,7 @@ begin
     end if;
 
     if v_is_reply then
-        -- Ответ на входящий шёпот: НЕ тратит дневной лимит шёпотов.
+        -- Ответ на входящий шёпот.
         insert into public.soma_whispers
             (id, post_id, post_tag, post_preview, sender_uid, text, status, created_at, reply_to_id, day_key)
         values

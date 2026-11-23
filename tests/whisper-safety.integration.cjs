@@ -57,11 +57,15 @@ const E = '55555555-5555-4555-8555-555555555555';
         assert.equal(await scalar("select public.unblock_soma_whisper_sender('whisper_ab')"), true);
         assert.equal(await scalar("select status from public.soma_whispers where id='whisper_ab'"), 'dismissed');
         await asUser(A); await send('whisper_ab2', 'post_b2', 'u_aaaa');
-        await assert.rejects(send('whisper_fourth', 'post_b1', 'u_aaaa'), /Daily whisper limit/);
+        // Шёпоты без дневного лимита: четвёртый отправленный шёпот тоже проходит (на новый пост).
+        await asUser(B); await post('post_b3');
+        await asUser(A); await send('whisper_fourth', 'post_b3', 'u_aaaa');
         await asUser(B);
         await db.query("update public.soma_whispers set status='saved' where id='whisper_ab2'");
-        assert.deepEqual(await scalar("select public.block_soma_whisper_sender('whisper_ab')"), []);
+        // Блок отправителя сбрасывает все pending-шёпоты от него: теперь это whisper_fourth.
+        assert.deepEqual(await scalar("select public.block_soma_whisper_sender('whisper_ab')"), ['whisper_fourth']);
         assert.equal(await scalar("select status from public.soma_whispers where id='whisper_ab2'"), 'saved');
+        assert.equal(await scalar("select status from public.soma_whispers where id='whisper_fourth'"), 'dismissed');
         // More independent recipients' messages for the report rate-cap check.
         await asUser(B);
         for (let i = 0; i < 6; i++) await post('post_rate_' + i);
@@ -76,6 +80,6 @@ const E = '55555555-5555-4555-8555-555555555555';
         await db.exec('reset role; set role anon');
         await assert.rejects(db.query("select public.report_soma_whisper('whisper_ab','spam')"), /permission denied/);
         await assert.rejects(db.query("select public.block_soma_whisper_sender('whisper_ab')"), /permission denied/);
-        console.log('PostgreSQL safety integration passed: repeat migration, recipient-only report/block, hidden identity, private tables, duplicate/rate caps, block/unblock, other recipient isolation, unchanged send cap, anon denial.');
+        console.log('PostgreSQL safety integration passed: repeat migration, recipient-only report/block, hidden identity, private tables, duplicate/rate caps, block/unblock, other recipient isolation, unlimited whisper sends, anon denial.');
     } finally { await db.close(); }
 })().catch(error => { console.error(error.message); process.exit(1); });

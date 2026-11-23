@@ -355,13 +355,12 @@ grant execute on function public.owns_soma_post(text) to authenticated;
 
 alter table public.soma_whispers add column if not exists sender_auth_id uuid default auth.uid();
 -- Ответ на входящий шёпот: ссылается на id того входящего шёпота, на который отвечаем.
--- Ответы НЕ тратят дневной лимит шёпотов (проверка в guard_soma_whispers).
+-- Ответы не проверяются в guard_soma_whispers по дневному лимиту (его нет).
 -- Сентинель «нет ответа» — пустая строка (не NULL): так уникальный индекс
 -- (post_id, sender_uid, reply_to_id) работает для всех строк и ON CONFLICT инферится.
 alter table public.soma_whispers add column if not exists reply_to_id text not null default '';
--- Дневной лимит шёпотов по ЛОКАЛЬНОму дню игрока: клиент передаёт day_key (YYYY-MM-DD),
--- trigger default-ит в UTC-день для прямого INSERT (тесты/миграции). Искореняет расхождение
--- таймзон: клиент обнуляет счётчик в локальный midnight, сервер считает по day_key.
+-- Локальный день игрока в day_key (YYYY-MM-DD): клиент передаёт свой день,
+-- trigger default-ит в UTC-день для прямого INSERT (тесты/миграции). Хранится для записей о шёпотах.
 alter table public.soma_whispers add column if not exists day_key text;
 -- Разрешаем статус «answered» (оригинальный шёпот, на который пришёл ответ).
 alter table public.soma_whispers drop constraint if exists soma_whispers_status_check;
@@ -416,7 +415,7 @@ begin
             new.day_key := to_char(now() at time zone 'UTC', 'YYYY-MM-DD');
         end if;
         if new.reply_to_id <> '' then
-            -- Ответ на входящий шёпот: не тратит дневной лимит шёпотов и не проверяет владение постом.
+            -- Ответ на входящий шёпот: не проверяет владение постом.
             -- Целевой шёпот должен быть входящим: его пост принадлежит мне.
             if not exists(select 1 from public.soma_whispers t
                 where t.id = new.reply_to_id
@@ -440,13 +439,8 @@ begin
                 raise exception 'Post has no verified recipient';
             end if;
             if public.owns_soma_post(new.post_id) then raise exception 'Cannot whisper to yourself'; end if;
-            -- Лимит учитывает ТОЛЬКО обычные шёпоты: ответы не тратят дневной лимит и не начисляются в счётчик.
-            -- Считаем по day_key (локальный день игрока, переданный клиентом) — без расхождения таймзон.
-            if (select count(*) from public.soma_whispers where sender_auth_id = auth.uid()
-                and reply_to_id = ''
-                and day_key = new.day_key) >= 3 then
-                raise exception 'Daily whisper limit reached';
-            end if;
+            -- Дневного лимита на шёпоты нет: обычные шёпоты ограничены только
+            -- уникальностью (один шёпот на пост для одного отправителя).
         end if;
     else
         if not public.owns_soma_post(old.post_id) or old.status <> 'pending'

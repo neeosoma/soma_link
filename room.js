@@ -12,7 +12,6 @@ const PROGRESSION_RULES = {
     WHISPER_BLOOM_ACKS: 5,     // обратная совместимость для опционального фильтра requireAcks
     WHISPER_MIN_LEN: 13,       // минимальная длина «Шёпота» (13 символов)
     WHISPER_MAX_LEN: 333,      // максимальная длина «Шёпота» (333 символа)
-    DAILY_WHISPER_SEND_CAP: 3, // не более 3 отправленных «Шёпотов» в сутки
     DAILY_WHISPER_ACK_CAP: 1,  // бонус за сохранение твоего «Шёпота» на кассету — строго не более 1 раза в сутки!
     WHISPER_ACK_WARMTH: 4,     // +4 Тепла на рост растения (1 раз в сутки), когда твой «Шёпот» сохранили на кассету
     SPECIES_REVEAL_STAGE: 2,   // вид раскрывается на 3/6 (~1 месяц)
@@ -3474,9 +3473,8 @@ function openWhisperForPost(postId) {
 
 function whisperAdmission(_warmth, ledger) {
     const l = ledger || loadWarmthLedger();
-    const sentToday = Math.max(0, Number(l.whisperSentToday) || 0);
-    const sendCap = PROGRESSION_RULES.DAILY_WHISPER_SEND_CAP;
-    // First-send status changes presentation only, never sending eligibility.
+    // Шёпоты не имеют дневного лимита: шептать можно сколько угодно раз в сутки.
+    // Первый шёпот меняет только представление, не влияя на саму возможность отправки.
     const firstAvailable = isWhisperLive() && (Number(l.whispersSent) || 0) === 0;
     const rulesAccepted = lsGet('soma_signal_rules_v1') === 'accepted';
     return {
@@ -3484,9 +3482,7 @@ function whisperAdmission(_warmth, ledger) {
         admitted: rulesAccepted,
         sprouted: l.whispersSent > 0,
         whispersSent: l.whispersSent,
-        whisperSentToday: sentToday,
-        whisperLeftToday: Math.max(0, sendCap - sentToday),
-        whisperSendCap: sendCap,
+        whisperSentToday: Math.max(0, Number(l.whisperSentToday) || 0),
         whisperAcks: l.whisperAcks,
         ackBonusClaimedToday: l.whisperAckDay === l.day,
         live: isWhisperLive()
@@ -10074,14 +10070,6 @@ async function sendWhisperToPostOnce(postObj, rawText, opts) {
     if (hasWhisperedToPost(postId)) {
         return { ok: false, code: 'already_whispered', error: 'На эту историю вы уже ответили. Один шёпот на пост.' };
     }
-    if (ledger.whisperSentToday >= PROGRESSION_RULES.DAILY_WHISPER_SEND_CAP) {
-        return {
-            ok: false,
-            code: 'daily_cap',
-            error: `Лимит эфира: не более ${PROGRESSION_RULES.DAILY_WHISPER_SEND_CAP} «Шёпотов» в сутки.`
-        };
-    }
-
     const check = validateWhisperText(rawText);
     if (!check.ok) {
         return { ok: false, code: 'invalid_text', error: check.error };
@@ -10175,7 +10163,7 @@ async function sendWhisperToPostOnce(postObj, rawText, opts) {
     return { ok: true, whisper: wRow, firstSprout, ledger: sentRes.ledger };
 }
 
-// Отправка ответа на входящий «Шёпот» — НЕ тратит дневной лимит шёпотов (1 ответ на 1 шёпот).
+// Отправка ответа на входящий «Шёпот» — 1 ответ на 1 шёпот (дневного лимита на шёпоты нет).
 // Сервер — авторитет: проверка «ответ уже отправлен» и «шёпот ещё pending» выполняется в guard.
 async function sendWhisperReply(whisper, rawText, opts) {
     const o = (opts && typeof opts === 'object') ? opts : {};
@@ -10300,7 +10288,6 @@ function renderFeedPager(warmthArg, ledgerArg) {
                     ? 'ЭФИР АКТИВЕН'
                     : 'ПРИЁМ ВХОДЯЩИХ АКТИВЕН';
     }
-    if (gateEl) gateEl.textContent = `СЕГОДНЯ: ${adm.whisperLeftToday}/${adm.whisperSendCap}`;
     // Индикатор: истории в эфире, которые ещё можно почитать (не входящие сообщения)
     if (unreadEl) {
         if (adm.live && toRead.length > 0) {
@@ -10656,7 +10643,6 @@ function renderPagerModal() {
             ? 'ТЕПЛО ОТ КАССЕТЫ СЕГОДНЯ: ✓ ПОЛУЧЕНО (1/1)'
             : `КАССЕТА ДАЁТ +${PROGRESSION_RULES.WHISPER_ACK_WARMTH} ТЕПЛА ДЛЯ РАСТЕНИЯ (1/ДЕНЬ)`;
         metaEl.innerHTML = `
-            <span>ШЁПОТОВ СЕГОДНЯ: <b>${adm.whisperLeftToday}/${adm.whisperSendCap}</b></span>
             <span>${bonusTxt}</span>
         `;
     }
@@ -10890,9 +10876,7 @@ function renderPagerModal() {
                             </div>
                             <p class="pager-card-text">${escFn(post.text || '')}</p>
                             ${!done && !isComposing ? `<div class="pager-card-actions pager-card-actions--stack">
-                                <button type="button" class="pager-act-btn pager-act-btn--save" data-act="compose" data-post-id="${escFn(pid)}" ${adm.whisperLeftToday <= 0 ? 'disabled' : ''}>
-                                    ${adm.whisperLeftToday > 0 ? '✦ ОТВЕТИТЬ ШЁПОТОМ' : 'ЛИМИТ ДНЯ ИСЧЕРПАН (3/3)'}
-                                </button>
+                                <button type="button" class="pager-act-btn pager-act-btn--save" data-act="compose" data-post-id="${escFn(pid)}">✦ ОТВЕТИТЬ ШЁПОТОМ</button>
                                 <button type="button" class="pager-act-btn pager-act-btn--dismiss" data-act="read" data-post-id="${escFn(pid)}">ПРОСТО ПРОЧИТАТЬ</button>
                             </div>` : ''}
                             ${done
@@ -10915,7 +10899,7 @@ function renderPagerModal() {
                                             <span id="pager-compose-count" class="pager-compose-count">${draft.length} / ${PROGRESSION_RULES.WHISPER_MAX_LEN}</span>
                                             <div class="pager-compose-btns">
                                                 <button type="button" class="pager-act-btn pager-act-btn--dismiss" id="pager-compose-cancel">ОТМЕНА</button>
-                                                <button type="button" class="pager-act-btn pager-act-btn--save" id="pager-compose-send" ${adm.whisperLeftToday <= 0 ? 'disabled' : ''}>◈ ПЕРЕДАТЬ СВОИ СЛОВА</button>
+                                                <button type="button" class="pager-act-btn pager-act-btn--save" id="pager-compose-send">◈ ПЕРЕДАТЬ СВОИ СЛОВА</button>
                                             </div>
                                         </div>
                                     </div>`

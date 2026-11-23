@@ -127,7 +127,7 @@
         ov.setAttribute('aria-modal', 'true');
         ov.setAttribute('aria-label', 'Видеоархив тёплых слов NEEOSOMA VTR-90');
         ov.innerHTML = `
-            <div class="vhs-chassis" id="vhs-chassis">
+            <div class="vhs-chassis soma-modal-chassis" id="vhs-chassis">
                 <div class="vhs-head">
                     <div class="vhs-brand">
                         <span class="vhs-pilot" aria-hidden="true"></span>
@@ -195,7 +195,7 @@
                                 <button type="button" class="vhs-sort-btn" id="vhs-sort">НОВЫЕ ↓</button>
                             </div>
                         </div>
-                        <div class="vhs-list" id="vhs-list" role="listbox" aria-label="Полка VHS-кассет с тёплыми словами"></div>
+                        <div class="vhs-list soma-kb-scroll" id="vhs-list" role="listbox" aria-label="Полка VHS-кассет с тёплыми словами"></div>
                     </div>
                 </div>
             </div>
@@ -207,6 +207,10 @@
             window.bindSomaSceneScroll(ov.querySelector('#vhs-list'));
             window.bindSomaSceneScroll(ov.querySelector('#vhs-crt-scroll'));
         }
+        // Клавиатура при поиске: часисы магнитофона и полка кассет не сжимаются
+        // под клавиатуру — остаются на своих высотах, навигация по полке — скроллом.
+        // Функции _somaKb* живут в index.html (загружается после vhs.js), поэтому проверка typeof.
+        if (typeof _somaKbBind === 'function') _somaKbBind(ov);
 
         // Клик по фону — аккуратно свернуть деку
         ov.addEventListener('click', ev => {
@@ -576,6 +580,7 @@
         }
         state.open = true;
         syncMount();
+        if (typeof _somaKbUpdate === 'function') _somaKbUpdate(ov);
         ov.classList.remove('hidden');
         if (didInsert) playVhsMech('insert');
         else playVhsMech('tap');
@@ -590,7 +595,11 @@
         if (!state.open) return;
         state.open = false;
         const ov = typeof document !== 'undefined' && document.getElementById('vhs-overlay');
-        if (ov) ov.classList.add('hidden');
+        if (ov) {
+            ov.classList.add('hidden');
+            ov.classList.remove('is-kb-open');
+            if (ov.__somaKbOff) { ov.__somaKbOff(); ov.__somaKbOff = null; ov.__somaKbBound = false; }
+        }
         if (typeof roomAnim !== 'undefined' && roomAnim && roomAnim.isFullscreen && typeof showFullscreenCaption === 'function') {
             const cur = getTapes().find(t => t.id === activeId());
             if (cur) showFullscreenCaption(`VHS #${padNum(cur.num)} · ${cur.date} · «${cur.text.slice(0, 58)}${cur.text.length > 58 ? '…' : ''}»`);

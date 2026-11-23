@@ -1640,6 +1640,15 @@
     background: linear-gradient(135deg, rgba(22, 10, 5, 0.85), rgba(15, 8, 4, 0.8));
 }
 
+.pager-card--ack {
+    border-color: rgba(251, 191, 36, 0.55);
+    background: linear-gradient(135deg, rgba(28, 14, 6, 0.9), rgba(18, 10, 5, 0.85));
+}
+
+.pager-card--ack .pager-card-tag {
+    color: #fcd34d;
+}
+
 .pager-card.is-whispered {
     opacity: 0.65;
     border-style: dashed;

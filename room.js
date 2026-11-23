@@ -10686,13 +10686,39 @@ function renderPagerModal() {
         badgeEl.classList.toggle('hidden', inbox.length === 0);
     }
 
+    let sigTopic = '';
+    if (inbox && inbox[0] && inbox[0].post_tag) {
+        sigTopic = String(inbox[0].post_tag);
+    } else {
+        try {
+            const cs = getVisibleFirstSignalCandidates();
+            if (cs && cs[0] && cs[0].tag) sigTopic = String(cs[0].tag);
+        } catch (_) {}
+    }
     if (metaEl) {
-        const bonusTxt = adm.ackBonusClaimedToday
-            ? 'ТЕПЛО ОТ КАССЕТЫ СЕГОДНЯ: ✓ ПОЛУЧЕНО (1/1)'
-            : `КАССЕТА ДАЁТ +${PROGRESSION_RULES.WHISPER_ACK_WARMTH} ТЕПЛА ДЛЯ РАСТЕНИЯ (1/ДЕНЬ)`;
-        metaEl.innerHTML = `
-            <span>${bonusTxt}</span>
-        `;
+        const cosm = getRoomCosmeticsSafe();
+        const frameHtml = (function () {
+            try {
+                const frameClass = (cosm && cosm.frame && typeof frameClassOf === 'function')
+                    ? frameClassOf(cosm) : '';
+                const right = `<div class="pager-sig-topic"><span class="pager-sig-topic-label">${escFn(signalTagLabel(sigTopic))}</span></div>`;
+                let inner = right;
+                if (frameClass) {
+                    let left = '';
+                    if (cosm && cosm.seal && typeof sealHtmlOf === 'function') {
+                        left += `<div class="pager-sig-stamp">${sealHtmlOf(cosm.seal)}</div>`;
+                    }
+                    if (cosm && cosm.title && typeof titleSpanOf === 'function') {
+                        left += `<div class="pager-sig-status">${titleSpanOf(cosm.title)}</div>`;
+                    }
+                    if (left) inner = `<div class="pager-sig-side">${left}</div>` + right;
+                }
+                return `<div class="pager-sig-frame ${frameClass}" role="group" aria-label="Тема сигнала">${inner}</div>`;
+            } catch (_) {
+                return '';
+            }
+        })();
+        metaEl.innerHTML = frameHtml;
     }
 
     if (noticeEl) {
@@ -10941,10 +10967,6 @@ function renderPagerModal() {
                     const trimLen = draft.trim().length;
                     return `
                         <div class="pager-card ${done ? 'is-whispered' : ''}" data-post-id="${escFn(pid)}">
-                            <div class="pager-card-head">
-                                <span class="pager-card-tag">${escFn(post.author || 'Аноним')} · #${escFn(signalTagLabel(post.tag))}</span>
-                                <span class="pager-card-meta">${done ? '✓ ОТКЛИК ОТПРАВЛЕН' : 'ГОЛОС СО СТАНЦИИ'}</span>
-                            </div>
                             <p class="pager-card-text">${escFn(post.text || '')}</p>
                             ${!done && !isComposing ? `<div class="pager-card-actions pager-card-actions--stack">
                                 <button type="button" class="pager-act-btn pager-act-btn--save" data-act="compose" data-post-id="${escFn(pid)}">✦ ОТВЕТИТЬ ШЁПОТОМ</button>

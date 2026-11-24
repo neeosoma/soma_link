@@ -39,4 +39,9 @@ $$;
 revoke all on function public.my_soma_account_days() from public, anon, authenticated;
 grant execute on function public.my_soma_account_days() to authenticated;
 
+-- 3. Правами на таблицу soma_users: RLS-политики есть, но без GRANT
+--    SELECT/INSERT/UPDATE у anon/authenticated клиент не может читать и
+--    записывать профиль (permission denied for table soma_users).
+grant select, insert, update on public.soma_users to anon, authenticated;
+
 commit;

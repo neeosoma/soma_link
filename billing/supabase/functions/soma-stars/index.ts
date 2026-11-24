@@ -56,6 +56,8 @@ const CATALOG: Record<string, { title: string; description: string; stars: numbe
     track_aurora:    { title: 'Винил 7": «Фосфорный рассвет»',  description: 'Dubplate #02 · Золото 24k. Эксклюзивная пластинка приёмника RX-88 навсегда в фонотеке.', stars: 50 },
     track_solstice:  { title: 'Винил 7": «Тишина двоих»',       description: 'Dubplate #03 · Лунный перламутр. Эксклюзивная пластинка приёмника RX-88 навсегда в фонотеке.', stars: 50 },
     track_rainline:  { title: 'Винил 7": «Последний трамвай»',  description: 'Dubplate #04 · Дымчатый аметист. Эксклюзивная пластинка приёмника RX-88 навсегда в фонотеке.', stars: 50 },
+    // 6. Альбомы лампового приёмника SOMA // RX-88 (единый тир 200 ⭐ ≈ $4, купля альбома = право на все его треки)
+    album_night_flight: { title: 'Альбом: «Ночной вылет»',     description: 'Полный альбом приёмника RX-88: 2 трека навсегда в фонотеке. Купленный альбом открывает все его диски.', stars: 200 },
 };
 
 const CORS = {

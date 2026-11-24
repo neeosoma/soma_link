@@ -57,7 +57,10 @@ const SOMA_CATALOG = [
     { id: 'room_garland', tab: 'room', group: 'ambience', slot: 'garland', stars: 140, name: 'Гирлянда Эдисона у окна',  desc: '13 винтажных лампочек с тёплыми вольфрамовыми нитями и золотым светом по каменной арке окна.' },
     { id: 'room_candles', tab: 'room', group: 'ambience',  slot: 'candles', stars: 140, name: 'Живые свечи станции',      desc: 'Шесть восковых свечей с трепещущим живым пламенем и тёплыми бликами у ковра и на полке радио.' },
     { id: 'room_cat',     tab: 'room', group: 'companion', slot: 'cat',     stars: 220, name: 'Живой кот-хранитель',      desc: 'Крупный тёплый кот одной из 7 мастей на кушетке: глубоко дышит, мурчит, откликается на данное вами имя и дружит с псом (шанс 0.1% — уникальный чёрный кот с полумесяцем во лбу!).' },
-    { id: 'room_dog',     tab: 'room', group: 'companion', slot: 'dog',     stars: 220, name: 'Живой пёс-хранитель',      desc: 'Крупный пёс одной из 7 пород спит на персидском коврике рядом с котом, виляет хвостом и помнит данное вами имя (шанс 0.1% — уникальная Белая Юна с фиолетовыми ушами и хвостом!).' }
+    { id: 'room_dog',     tab: 'room', group: 'companion', slot: 'dog',     stars: 220, name: 'Живой пёс-хранитель',      desc: 'Крупный пёс одной из 7 пород спит на персидском коврике рядом с котом, виляет хвостом и помнит данное вами имя (шанс 0.1% — уникальная Белая Юна с фиолетовыми ушами и хвостом!).' },
+
+    // 5. АЛЬБОМЫ лампового приёмника SOMA // AV-88 (единый тир 200 ⭐ ≈ $4, купля альбома = право на все его треки; в бутике не показывается — покупка в приёмнике)
+    { id: 'album_night_flight', tab: 'music', group: 'albums', slot: 'album', stars: 200, name: 'Альбом: «Ночной вылет»', desc: 'Полный альбом лампового приёмника AV-88: 2 трека навсегда в фонотеке. Купленный альбом открывает все его диски.' }
 ];
 
 const SOMA_ITEM_MAP = Object.fromEntries(SOMA_CATALOG.map(it => [it.id, it]));
@@ -67,7 +70,10 @@ function isCollectibleTrackId(id) {
     if (!id || typeof id !== 'string') return false;
     if (SOMA_DEFAULT_TRACK_IDS.includes(id)) return true;
     const list = (typeof window !== 'undefined' && Array.isArray(window.SOMA_TRACKS)) ? window.SOMA_TRACKS : [];
-    return list.some(t => t && t.collectible && t.id === id);
+    if (list.some(t => t && t.collectible && t.id === id)) return true;
+    // Альбомы AV-88 — единый товар (право на все треки), grantOwnedTrack принимает id альбома
+    const albums = (typeof window !== 'undefined' && Array.isArray(window.SOMA_ALBUMS)) ? window.SOMA_ALBUMS : [];
+    return albums.some(a => a && a.id === id);
 }
 function isOwnableSomaId(id) {
     return !!(SOMA_ITEM_MAP[id] || isCollectibleTrackId(id));
@@ -260,6 +266,26 @@ function getActiveCosmetics() {
         base[p.slot] = p.id;
     }
     return base;
+}
+
+// Атрибуты, которые игрок может выбрать для отражения в сигнале — по слотам,
+// где у него есть КУПЛЕННЫЙ предмет. Надетый предпочтительнее; если не надет —
+// берётся купленный (первый по каталогу). Это позволяет выбрать атрибут для
+// отражения даже без надевания. Формат: { frame: id|'', seal: id|'', title: id|'' }.
+function getOwnedReflectionCosmetics() {
+    const eq = shopState.equipped || {};
+    const owned = shopState.owned || [];
+    const out = { frame: '', seal: '', title: '' };
+    for (const slot of ['frame', 'seal', 'title']) {
+        const equippedId = eq[slot];
+        if (equippedId && SOMA_ITEM_MAP[equippedId] && SOMA_ITEM_MAP[equippedId].slot === slot) {
+            out[slot] = equippedId;
+            continue;
+        }
+        const first = owned.find(id => SOMA_ITEM_MAP[id] && SOMA_ITEM_MAP[id].slot === slot);
+        if (first) out[slot] = first;
+    }
+    return out;
 }
 
 function isOwned(id) {

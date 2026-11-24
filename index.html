@@ -522,6 +522,9 @@
             <div class="ts-brief">
                 <b>Одна история в день.</b> Делитесь любым. Черновик сохранится; ответ не гарантирован.
             </div>
+            <!-- Отражаемые атрибуты: превью рамки + кнопки добавления (над надписью ТЕМА) -->
+            <div id="ts-attr-frame" class="ts-attr-frame"></div>
+            <div id="ts-attr-row" class="ts-attr-row"></div>
             <!-- Тема + чипсы -->
             <div class="ts-tag-row">
                 <label class="ts-tag-label" for="new-pain-tag">ТЕМА</label>
@@ -1040,13 +1043,13 @@
 
 <script src="config.js"></script>
 <script src="scenarios.js?v=15"></script>
-<script src="music.js?v=15"></script>
+<script src="music.js?v=16"></script>
 <script src="signals.js?v=4"></script>
 <script src="station-ritual.js?v=2"></script>
 <script src="witness.js?v=2"></script>
     <script src="room.js?v=35"></script>
-<script src="cosmetics.js?v=16"></script>
-<script src="receiver.js?v=17"></script>
+<script src="cosmetics.js?v=17"></script>
+<script src="receiver.js?v=18"></script>
 <script src="vhs.js?v=15"></script>
 <script src="greenhouse.js?v=15"></script>
 <script src="blimp.js?v=15"></script>
@@ -1314,6 +1317,8 @@
                     try { localStorage.setItem('soma_signal_draft_topic', t); } catch (_) {}
                 }, 500);
             } catch (_) {}
+            // Перерисовываем превью-рамку темы при изменении темы
+            if (typeof tsRenderAttrUI === 'function') tsRenderAttrUI();
         };
     }
     function renderContactFilters() {
@@ -2008,6 +2013,7 @@
         try { Telegram.WebApp.ready(); Telegram.WebApp.expand(); } catch (e) {}
         try { Telegram.WebApp.disableVerticalSwipes(); } catch (e) {}
         renderTagChips(); initContactUI(); initSoundUI();
+        if (typeof tsRenderAttrUI === 'function') tsRenderAttrUI();
         if (cfg.ENV === 'pts') showPts();
         const wantsRoom = () => new URLSearchParams(location.search).has('room') || /^#room\b/i.test(location.hash);
         if (wantsRoom()) switchTab('room', true);
@@ -2714,6 +2720,68 @@
         } catch (e) {}
     }
 
+    // ===== Отражаемые атрибуты сигнала (окно «ОТПРАВИТЬ В ЭФИР») =====
+    // Комбинацию выбирает игрок при отправке сигнала. Выбор — по слотам (печать/титул/рамка),
+    // каждый отражается независимо. Атрибут можно выбрать, даже если он не надет —
+    // достаточно, чтобы он был куплен (резолюция по owned: надетый предпочтительнее).
+    // В сигнал отправляются конкретные id предметов, чтобы получатель увидел именно их.
+    const tsSignalAttrSel = { seal: false, title: false, frame: false };
+
+    function tsEsc(s) {
+        return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    // Купленные атрибуты, доступные для отражения (надетый → иначе купленный).
+    function tsGetReflection() {
+        try {
+            if (typeof getOwnedReflectionCosmetics === 'function') return getOwnedReflectionCosmetics() || {};
+            if (typeof getActiveCosmetics === 'function') return getActiveCosmetics() || {};
+        } catch (e) {}
+        return { frame: '', seal: '', title: '' };
+    }
+
+    function tsSignalTopic() {
+        const el = document.getElementById('new-pain-tag');
+        const raw = el ? (el.value || '') : '';
+        return raw.trim();
+    }
+
+    // Объект для отражения: только выбранные слоты, со значениями — id предмета.
+    function tsSignalAttrs() {
+        const ref = tsGetReflection();
+        const out = {};
+        if (tsSignalAttrSel.seal && ref.seal) out.seal = ref.seal;
+        if (tsSignalAttrSel.title && ref.title) out.title = ref.title;
+        if (tsSignalAttrSel.frame && ref.frame) out.frame = ref.frame;
+        return out;
+    }
+
+    function tsRenderAttrUI() {
+        const ref = tsGetReflection();
+        const rowEl = document.getElementById('ts-attr-row');
+        if (rowEl) {
+            rowEl.innerHTML = (typeof renderAttrToggleRow === 'function')
+                ? renderAttrToggleRow(ref, tsSignalAttrSel, tsEsc, 'ts-attr-btn', 'ts-attr-btns')
+                : '';
+        }
+        const frameEl = document.getElementById('ts-attr-frame');
+        if (frameEl && typeof renderSignalFrameHtml === 'function') {
+            frameEl.innerHTML = renderSignalFrameHtml(tsSignalTopic(), tsSignalAttrs(), tsEsc);
+        }
+        document.querySelectorAll('.ts-attr-btn').forEach(btn => {
+            if (btn._tsBound) return;
+            btn._tsBound = true;
+            btn.onclick = () => tsToggleAttr(btn.dataset.attr);
+        });
+    }
+
+    function tsToggleAttr(slot) {
+        if (slot !== 'seal' && slot !== 'title' && slot !== 'frame') return;
+        tsSignalAttrSel[slot] = !tsSignalAttrSel[slot];
+        if (typeof SFX !== 'undefined' && SFX.tap) SFX.tap();
+        tsRenderAttrUI();
+    }
+
     function notify(msg) {
         try { Telegram.WebApp.showAlert(msg); } catch (e) { alert(msg); }
     }
@@ -2787,6 +2855,11 @@
 
         const tag = window.SOMA_SIGNALS.packTag(document.getElementById('new-pain-tag').value);
         const insertRow = { id: 'p_' + Date.now(), author: randAnon(), tag: tag, text: text };
+        // Выбранные отражаемые атрибуты прикрепляются к сигналу и отправляются в RPC
+        // (в памяти → в базу). В сигнале лежат конкретные id предметов, чтобы
+        // получатель увидел именно отражённые атрибуты отправителя.
+        const pickedAttrs = (typeof tsSignalAttrs === 'function') ? tsSignalAttrs() : {};
+        if (Object.keys(pickedAttrs).length) insertRow.cosmetics = pickedAttrs;
 
         const label = btn.innerText;
         btn.disabled = true;
@@ -2802,6 +2875,7 @@
                 p_author: insertRow.author,
                 p_tag: insertRow.tag,
                 p_text: insertRow.text,
+                p_cosmetics: insertRow.cosmetics || {},
             });
             if (error) throw error;
             if (!data || data.length === 0) throw new Error('RPC вернул пустой ответ');

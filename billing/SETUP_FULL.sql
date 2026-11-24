@@ -55,8 +55,12 @@ create table if not exists public.soma_posts (
     tag text not null default 'ЛИЧНАЯ БОЛЬ' check (char_length(tag) <= 32),
     text text not null check (char_length(text) between 13 and 666),
     likes integer not null default 0 check (likes >= 0),
+    cosmetics jsonb not null default '{}'::jsonb,
     created_at timestamptz not null default now()
 );
+
+-- Идемпотентная миграция: добавляем колонку, если таблица уже существовала без неё.
+alter table public.soma_posts add column if not exists cosmetics jsonb not null default '{}'::jsonb;
 
 create index if not exists soma_posts_created_idx
     on public.soma_posts (created_at desc);
@@ -113,6 +117,7 @@ begin
         new.author := old.author;
         new.tag := old.tag;
         new.text := old.text;
+        new.cosmetics := old.cosmetics;
         new.created_at := old.created_at;
         new.likes := least(old.likes + 1, greatest(old.likes, coalesce(new.likes, old.likes)));
     end if;
@@ -917,7 +922,7 @@ alter table soma_private.pager_current enable row level security;
 revoke all on soma_private.pager_decisions, soma_private.pager_current from public, anon, authenticated;
 
 create or replace function public.next_soma_pager_story()
-returns table(id text, author text, tag text, text text, created_at timestamptz)
+returns table(id text, author text, tag text, text text, cosmetics jsonb, created_at timestamptz)
 language plpgsql security definer set search_path = '' as $$
 declare v_id text;
 begin
@@ -938,7 +943,7 @@ begin
             insert into soma_private.pager_current(reader_id, post_id) values (auth.uid(), v_id);
         end if;
     end if;
-    return query select p.id, p.author, p.tag, p.text, p.created_at from public.soma_posts p where p.id = v_id;
+    return query select p.id, p.author, p.tag, p.text, p.cosmetics, p.created_at from public.soma_posts p where p.id = v_id;
 end;
 $$;
 create or replace function public.decide_soma_pager_story(p_post_id text)
@@ -959,11 +964,11 @@ end;
 $$;
 -- Owners can still see their own stories and anonymous witness notes separately.
 create or replace function public.my_soma_pager_stories()
-returns table(id text, author text, tag text, text text, created_at timestamptz)
+returns table(id text, author text, tag text, text text, cosmetics jsonb, created_at timestamptz)
 language plpgsql stable security definer set search_path = '' as $$
 begin
     if auth.uid() is null then raise exception 'Authentication required'; end if;
-    return query select p.id, p.author, p.tag, p.text, p.created_at from public.soma_posts p
+    return query select p.id, p.author, p.tag, p.text, p.cosmetics, p.created_at from public.soma_posts p
       join soma_private.post_owners o on o.post_id = p.id
      where o.owner_id = auth.uid() order by p.created_at desc limit 30;
 end;

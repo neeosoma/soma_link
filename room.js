@@ -10685,7 +10685,7 @@ function renderSignalFrameHtml(topic, attrs, escFn) {
         // Тема печатается капсом (как во входном поле) и с символом #, который
         // не исчезает при вводе темы: при пустой теме остаётся просто «#».
         const topicText = String(topic || '').trim();
-        const label = '#' + (topicText ? ' ' + topicText.toUpperCase() : '');
+        const label = topicText ? '#' + topicText.toUpperCase() : '#';
         const right = `<div class="pager-sig-topic"><span class="pager-sig-topic-label">${label}</span></div>`;
         let left = '';
         let frameClass = '';

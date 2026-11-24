@@ -10682,8 +10682,10 @@ function renderAttrToggleRow(cosm, sel, escFn, btnClass, rowClass) {
 // при отправке сигнала.
 function renderSignalFrameHtml(topic, attrs, escFn) {
     try {
-        const esc = escFn || (s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])));
-        const label = esc(signalTagLabel(topic));
+        // Тема печатается капсом (как во входном поле) и с символом #, который
+        // не исчезает при вводе темы: при пустой теме остаётся просто «#».
+        const topicText = String(topic || '').trim();
+        const label = '#' + (topicText ? ' ' + topicText.toUpperCase() : '');
         const right = `<div class="pager-sig-topic"><span class="pager-sig-topic-label">${label}</span></div>`;
         let left = '';
         let frameClass = '';

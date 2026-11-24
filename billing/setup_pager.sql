@@ -15,8 +15,12 @@ alter table soma_private.pager_decisions enable row level security;
 alter table soma_private.pager_current enable row level security;
 revoke all on soma_private.pager_decisions, soma_private.pager_current from public, anon, authenticated;
 
+-- v2: RETURNS SETOF public.soma_posts вместо RETURNS TABLE(explicit types) —
+-- тип берётся из реальной таблицы, исключает 42804 при расхождении типов колонок
+-- (например created_at) между явным RETURNS TABLE и реальной схемой в Supabase.
+drop function if exists public.next_soma_pager_story();
 create or replace function public.next_soma_pager_story()
-returns table(id text, author text, tag text, text text, cosmetics jsonb, created_at timestamptz)
+returns setof public.soma_posts
 language plpgsql security definer set search_path = '' as $$
 declare v_id text;
 begin
@@ -37,7 +41,7 @@ begin
             insert into soma_private.pager_current(reader_id, post_id) values (auth.uid(), v_id);
         end if;
     end if;
-    return query select p.id, p.author, p.tag, p.text, p.cosmetics, p.created_at from public.soma_posts p where p.id = v_id;
+    return query select p.* from public.soma_posts p where p.id = v_id;
 end;
 $$;
 create or replace function public.decide_soma_pager_story(p_post_id text)
@@ -57,12 +61,14 @@ begin
 end;
 $$;
 -- Owners can still see their own stories and anonymous witness notes separately.
+-- v2: RETURNS SETOF public.soma_posts (тип из реальной таблицы) вместо RETURNS TABLE.
+drop function if exists public.my_soma_pager_stories();
 create or replace function public.my_soma_pager_stories()
-returns table(id text, author text, tag text, text text, cosmetics jsonb, created_at timestamptz)
+returns setof public.soma_posts
 language plpgsql stable security definer set search_path = '' as $$
 begin
     if auth.uid() is null then raise exception 'Authentication required'; end if;
-    return query select p.id, p.author, p.tag, p.text, p.cosmetics, p.created_at from public.soma_posts p
+    return query select p.* from public.soma_posts p
       join soma_private.post_owners o on o.post_id = p.id
      where o.owner_id = auth.uid() order by p.created_at desc limit 30;
 end;

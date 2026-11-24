@@ -8,6 +8,22 @@ otherwise it reports that signals could not be loaded rather than reverting to
 a public feed. This document is a deployment plan: no production SQL is run by
 these repository changes.
 
+## v2: pager RPCs return SETOF (fixes disappearing signals)
+
+`next_soma_pager_story` and `my_soma_pager_stories` return
+`RETURNS SETOF public.soma_posts` (type taken from the real table) instead of
+`RETURNS TABLE(id, author, tag, text, cosmetics, created_at)`. An explicit
+`RETURNS TABLE` fails in the real Supabase with
+`42804 structure of query does not match function result type` when a column
+type (e.g. `created_at`) differs between the declared list and the real schema;
+the failing RPC then makes the frontend load an empty feed — signals from other
+players disappear from the «Поймать сигнал» window. Taking the type from
+`public.soma_posts` removes the mismatch. `setup_pager.sql` uses
+`drop function if exists` before `create or replace`, so re-running it as
+project owner replaces the broken `RETURNS TABLE` versions with the `SETOF`
+ones. The functions select `p.*`, so the frontend still receives
+`id`, `author`, `tag`, `text`, `cosmetics`, `created_at` (plus the rest).
+
 `next_soma_pager_story` returns one randomly chosen verified story, excluding
 one's own and all stories previously decided by that Auth identity. The current
 story persists across reloads and parallel tabs until a decision. Reading or

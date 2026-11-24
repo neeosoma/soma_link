@@ -1047,7 +1047,7 @@
 <script src="signals.js?v=4"></script>
 <script src="station-ritual.js?v=2"></script>
 <script src="witness.js?v=2"></script>
-    <script src="room.js?v=36"></script>
+    <script src="room.js?v=37"></script>
 <script src="cosmetics.js?v=17"></script>
 <script src="receiver.js?v=18"></script>
 <script src="vhs.js?v=15"></script>
@@ -2157,8 +2157,20 @@
                 player.helpAttempts = breaches;
                 const created = await supabaseClient.from('soma_users').insert([{ username: player.uid, help_attempts: breaches }]);
                 if (!created.error) syncWitnessWarmthToLocal(0);
+                // Новое устройство/профиль: сразу отдаём локальный прогресс в облако,
+                // чтобы он не остался только в localStorage этого устройства.
+                cloudProfile.data = null;
+                pushCloudProfile();
             }
         } catch(e) {}
+
+        // Запасная пересинхронизация: если локальное состояние (Оранжерея, ведомство,
+        // cached-посты) подтянулось позже основной загрузки — пушим профиль в облако
+        // ещё раз через короткие паузы, чтобы прогресс не потерялся.
+        if (supabaseClient && player.uid) {
+            setTimeout(() => { pushCloudProfile(); }, 1200);
+            setTimeout(() => { pushCloudProfile(); }, 4000);
+        }
 
         if (supabaseClient && player.uid) {
             try {

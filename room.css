@@ -1651,6 +1651,7 @@
     font-size: 11px;
     letter-spacing: 0.08em;
     color: #ff5d6c;
+    text-transform: uppercase;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

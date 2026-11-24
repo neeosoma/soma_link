@@ -1047,7 +1047,7 @@
 <script src="signals.js?v=4"></script>
 <script src="station-ritual.js?v=2"></script>
 <script src="witness.js?v=2"></script>
-    <script src="room.js?v=35"></script>
+    <script src="room.js?v=36"></script>
 <script src="cosmetics.js?v=17"></script>
 <script src="receiver.js?v=18"></script>
 <script src="vhs.js?v=15"></script>
@@ -2000,6 +2000,76 @@
     }
 
     let player = { name: "GUEST", uid: "", warmth: lsNum('soma_warmth'), helpAttempts: 0 };
+    // ===== Кросс-устройствная синхронизация: облако — источник правды =====
+    // localStorage — кеш; при загрузке сливаем localStorage + облако (берём максимум
+    // для счётчиков, union для массивов, чтобы не потерять прогресс с телефона).
+    const cloudProfile = { loaded: false, data: null };
+
+    function numOr(v, d = 0) { const n = Number(v); return Number.isFinite(n) ? Math.max(0, Math.trunc(n)) : d; }
+
+    // Сливает облачный профиль с локальным состоянием и возвращает объединенный объект.
+    function mergeCloudProfile(cloud) {
+        const out = { warmth: 0, whispers_sent: 0, help_attempts: 0, greenhouse: {}, my_posts: [], ledger: {} };
+        if (cloud && typeof cloud === 'object') {
+            out.warmth = numOr(cloud.warmth);
+            out.whispers_sent = numOr(cloud.whispers_sent);
+            out.help_attempts = numOr(cloud.help_attempts);
+            out.greenhouse = (cloud.greenhouse && typeof cloud.greenhouse === 'object') ? cloud.greenhouse : {};
+            out.my_posts = Array.isArray(cloud.my_posts) ? cloud.my_posts.filter(x => typeof x === 'string') : [];
+            out.ledger = (cloud.ledger && typeof cloud.ledger === 'object') ? cloud.ledger : {};
+        }
+        // Тепло: максимум локального и облачного
+        const localWarmth = lsNum('soma_warmth');
+        out.warmth = Math.max(out.warmth, localWarmth);
+        // Шёпоты: максимум локального ведомства и облака
+        const localWhispers = (typeof getWhisperBreachCount === 'function') ? getWhisperBreachCount() : 0;
+        out.whispers_sent = Math.max(out.whispers_sent, localWhispers);
+        out.help_attempts = Math.max(out.help_attempts, out.whispers_sent);
+        // Сигналы (мои посты): union localStorage + облако
+        const localPosts = (typeof getMyPostIds === 'function') ? getMyPostIds() : [];
+        out.my_posts = [...new Set([...out.my_posts, ...localPosts])].slice(0, 30);
+        // Ледгер: объединяем ключевые счётчики (максимум)
+        const localLedger = (typeof loadWarmthLedger === 'function') ? loadWarmthLedger() : {};
+        const mergedLedger = { ...out.ledger };
+        ['whispersSent','warmDays','streak','trainedTotal','whisperAcks','warmth'].forEach(k => {
+            mergedLedger[k] = Math.max(numOr(out.ledger[k]), numOr(localLedger[k]));
+        });
+        out.ledger = mergedLedger;
+        // Прогресс Оранжереи/цветка: берём более насыщенный из облака и локального кеша,
+        // чтобы не стереть телефонный прогресс, если облако ещё не синхронизировалось.
+        const localGh = (typeof getCloudGreenhouse === 'function') ? getCloudGreenhouse() : {};
+        const cloudBloomed = (out.greenhouse && Array.isArray(out.greenhouse.bloomed)) ? out.greenhouse.bloomed.length : 0;
+        const localBloomed = (localGh && Array.isArray(localGh.bloomed)) ? localGh.bloomed.length : 0;
+        if (cloudBloomed >= localBloomed && cloudBloomed > 0) {
+            // облако уже богаче — оставляем облачный greenhouse
+        } else if (localBloomed > 0) {
+            out.greenhouse = { ...out.greenhouse, ...localGh };
+            if (Array.isArray(localGh.bloomed) && localGh.bloomed.length) out.greenhouse.bloomed = localGh.bloomed;
+        }
+        return out;
+    }
+
+    // Записывает объединенный профиль в облако (и обновляет localStorage-кеш).
+    async function pushCloudProfile() {
+        if (!supabaseClient || !player.uid) return;
+        const merged = mergeCloudProfile(cloudProfile.data);
+        const whispers = merged.whispers_sent;
+        player.whispersSent = whispers;
+        player.helpAttempts = whispers;
+        player.warmth = merged.warmth;
+        try { localStorage.setItem('soma_warmth', String(merged.warmth)); } catch (_) {}
+        try {
+            await supabaseClient.from('soma_users').update({
+                warmth: merged.warmth,
+                help_attempts: merged.help_attempts,
+                whispers_sent: merged.whispers_sent,
+                greenhouse: merged.greenhouse,
+                my_posts: merged.my_posts,
+                ledger: merged.ledger
+            }).eq('username', player.uid);
+        } catch (_) {}
+    }
+
     let feedPosts = [];
     let ownPagerPosts = [];
     let witnessStatuses = new Map();
@@ -2059,18 +2129,27 @@
         renderRoom();
 
         try {
-            let { data } = await supabaseClient.from('soma_users').select('username,warmth,help_attempts,whispers_sent,cosmetics,owned_cosmetics').eq('username', player.uid).single();
+            let { data } = await supabaseClient.from('soma_users').select('username,warmth,help_attempts,whispers_sent,greenhouse,my_posts,ledger,cosmetics,owned_cosmetics,created_at').eq('username', player.uid).single();
             if (data) {
-                const whispers = typeof getWhisperBreachCount === 'function' ? getWhisperBreachCount() : 0;
-                const cloudWhispers = Number.isFinite(Number(data.whispers_sent)) ? Math.max(0, Number(data.whispers_sent)) : 0;
-                const breaches = Math.max(whispers, cloudWhispers);
+                cloudProfile.loaded = true;
+                cloudProfile.data = data;
+                const merged = mergeCloudProfile(data);
                 player = {
                     ...player,
-                    whispersSent: breaches,
-                    helpAttempts: breaches,
-                    warmth: Math.max(0, Number(player.warmth) || 0)
+                    whispersSent: merged.whispers_sent,
+                    helpAttempts: merged.help_attempts,
+                    warmth: merged.warmth
                 };
+                // Записываем объединенный профиль обратно в облако (чтобы локальный телефонный
+                // прогресс, который раньше не синхронизировался, попал в облако для других устройств)
+                pushCloudProfile();
                 syncWitnessWarmthToLocal(data.warmth);
+                // Прогресс Оранжереи/цветка: слив облака с локальным кешем
+                if (typeof mergeCloudGreenhouse === 'function') mergeCloudGreenhouse(data.greenhouse);
+                // Мои посты (сигналы): union
+                if (typeof mergeCloudMyPosts === 'function') mergeCloudMyPosts(data.my_posts);
+                // Ведомство тепла/шёпотов: слив
+                if (typeof mergeCloudLedger === 'function') mergeCloudLedger(data.ledger);
                 if (typeof hydrateCosmeticsFromCloud === 'function') hydrateCosmeticsFromCloud(data);
             } else {
                 const breaches = typeof getWhisperBreachCount === 'function' ? getWhisperBreachCount() : 0;
@@ -2293,10 +2372,19 @@
             : Math.max(0, Number(player.whispersSent) || 0);
         player.whispersSent = breaches;
         player.helpAttempts = breaches;
+        const warmth = Math.max(0, Number(player.warmth) || 0);
+        try { localStorage.setItem('soma_warmth', String(warmth)); } catch (e) {}
         try {
-            await supabaseClient.from('soma_users').update({
-                help_attempts: breaches
-            }).eq('username', player.uid);
+            const patch = {
+                warmth: warmth,
+                help_attempts: breaches,
+                whispers_sent: breaches
+            };
+            // Прогресс Оранжереи/цветка и мои посты/ведомство — если функции доступны
+            if (typeof getCloudGreenhouse === 'function') patch.greenhouse = getCloudGreenhouse();
+            if (typeof getCloudMyPosts === 'function') patch.my_posts = getCloudMyPosts();
+            if (typeof getCloudLedger === 'function') patch.ledger = getCloudLedger();
+            await supabaseClient.from('soma_users').update(patch).eq('username', player.uid);
         } catch(e) {}
     }
 
@@ -2306,15 +2394,15 @@
         // Карточка свидетеля: тот же номер анонима, что в карточке атрибутов
         // (boutique) — один общий anonLabel, без отдельного серийного числа.
         document.getElementById('card-name').innerText = anonLabel(player.uid || 'guest');
-        const breaches = typeof getWhisperBreachCount === 'function'
-            ? getWhisperBreachCount()
-            : Math.max(0, Number(player.whispersSent) || 0);
+        // Шёпоты: читаем из слитого облака (player.whispersSent), а не из чистого localStorage
+        // — иначе на новом устройстве пересчитает 0 и перезапишет облачное значение.
+        const breaches = Math.max(0, Number(player.whispersSent) || 0);
         player.whispersSent = breaches;
         player.helpAttempts = breaches;
         document.getElementById('stat-attempts').innerText = breaches;
-        // Карточка свидетеля: счётчики по образцу снимка комнаты (share.js).
-        document.getElementById('stat-signals').innerText =
-            (typeof getMyPostIds === 'function' && getMyPostIds()) ? getMyPostIds().length : 0;
+        // Сигналы (мои посты): union localStorage + облако
+        const myPosts = (typeof getMergedMyPosts === 'function') ? getMergedMyPosts() : ((typeof getMyPostIds === 'function') ? getMyPostIds() : []);
+        document.getElementById('stat-signals').innerText = myPosts.length;
         document.getElementById('stat-warmth').innerText = (player.warmth || lsNum('soma_warmth') || 0);
         // Срок жизни моего аккаунта в игре: только цифра суток (без букв) —
         // дефис, если RPC не дошёл.
@@ -2373,11 +2461,31 @@
             return Array.isArray(arr) ? arr : [];
         } catch (e) { return []; }
     }
-
+    // Union localStorage + облако (кросс-устройствная синхронизация сигналов)
+    function getMergedMyPosts() {
+        const local = getMyPostIds();
+        const cloud = (cloudProfile.loaded && cloudProfile.data && Array.isArray(cloudProfile.data.my_posts))
+            ? cloudProfile.data.my_posts.filter(x => typeof x === 'string')
+            : [];
+        return [...new Set([...cloud, ...local])].slice(0, 30);
+    }
     function rememberMyPostId(id) {
         try {
             const list = [id, ...getMyPostIds().filter(x => x !== id)].slice(0, 30);
             localStorage.setItem(MY_POSTS_KEY, JSON.stringify(list));
+            // Синхронизируем в облако
+            if (supabaseClient && player.uid) {
+                supabaseClient.from('soma_users').update({ my_posts: list }).eq('username', player.uid).then(() => {}, () => {});
+            }
+        } catch (e) {}
+    }
+    function getCloudMyPosts() { return getMergedMyPosts(); }
+    // Сохраняет union localStorage + облако в localStorage (кросс-устройствная синхронизация сигналов)
+    function mergeCloudMyPosts(cloudPosts) {
+        try {
+            const cloud = (cloudPosts && Array.isArray(cloudPosts)) ? cloudPosts.filter(x => typeof x === 'string') : [];
+            const merged = [...new Set([...cloud, ...getMyPostIds()])].slice(0, 30);
+            localStorage.setItem(MY_POSTS_KEY, JSON.stringify(merged));
         } catch (e) {}
     }
 

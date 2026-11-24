@@ -3232,6 +3232,30 @@ function fireflyState(ledger, todayOverride, nowMs) {
 
 function saveWarmthLedger(ledger) {
     lsSet('soma_warmth_ledger', JSON.stringify(ledger));
+    // Кросс-устройствная синхронизация: ведомство тепла/шёпотов в облако
+    try {
+        if (typeof supabaseClient !== 'undefined' && supabaseClient && typeof player !== 'undefined' && player && player.uid) {
+            supabaseClient.from('soma_users').update({ ledger: ledger }).eq('username', player.uid).then(() => {}, () => {});
+        }
+    } catch (_) {}
+}
+
+// Сливает облачный ledger с локальным (ключевые счётчики — максимум)
+function mergeCloudLedger(cloudLedger) {
+    try {
+        const cloud = (cloudLedger && typeof cloudLedger === 'object') ? cloudLedger : null;
+        const localRaw = JSON.parse(lsGet('soma_warmth_ledger') || '{}') || {};
+        if (!cloud) return;
+        const merged = { ...localRaw };
+        ['whispersSent','warmDays','streak','trainedTotal','whisperAcks'].forEach(k => {
+            merged[k] = Math.max(Number(localRaw[k]) || 0, Number(cloud[k]) || 0);
+        });
+        lsSet('soma_warmth_ledger', JSON.stringify(merged));
+    } catch (_) {}
+}
+
+function getCloudLedger() {
+    try { return JSON.parse(lsGet('soma_warmth_ledger') || '{}') || {}; } catch (_) { return {}; }
 }
 
 // Счётчик «СРЫВОВ ПРОТОКОЛА» — строго реальные использования «Шёпота» (настоящего нарушения протокола молчания!),
@@ -3716,6 +3740,34 @@ function loadGreenhouse(currentWarmthFallback) {
 
 function saveGreenhouse(gh) {
     lsSet('soma_greenhouse', JSON.stringify(gh));
+    // Кросс-устройствная синхронизация: прогресс цветка/Оранжереи в облако
+    try {
+        if (typeof supabaseClient !== 'undefined' && supabaseClient && typeof player !== 'undefined' && player && player.uid) {
+            supabaseClient.from('soma_users').update({ greenhouse: gh }).eq('username', player.uid).then(() => {}, () => {});
+        }
+    } catch (_) {}
+}
+
+// Сливает облачный greenhouse с локальным кешем (облако выигрывает при большем прогрессе)
+function mergeCloudGreenhouse(cloudGh) {
+    try {
+        const cloud = (cloudGh && typeof cloudGh === 'object') ? cloudGh : null;
+        const local = JSON.parse(lsGet('soma_greenhouse') || '{}') || {};
+        const localBloomed = Array.isArray(local.bloomed) ? local.bloomed.length : 0;
+        const cloudBloomed = (cloud && Array.isArray(cloud.bloomed)) ? cloud.bloomed.length : 0;
+        if (cloud && cloudBloomed >= localBloomed) {
+            lsSet('soma_greenhouse', JSON.stringify(cloud));
+        } else if (cloud && localBloomed > 0 && cloudBloomed > 0) {
+            // Объединяем уже расцветшие виды (union)
+            const union = [...new Set([...(local.bloomed || []), ...(cloud.bloomed || [])])];
+            local.bloomed = union;
+            lsSet('soma_greenhouse', JSON.stringify(local));
+        }
+    } catch (_) {}
+}
+
+function getCloudGreenhouse() {
+    try { return JSON.parse(lsGet('soma_greenhouse') || '{}') || {}; } catch (_) { return {}; }
 }
 
 function isPotSkinAvailable(potId) {

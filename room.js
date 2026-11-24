@@ -10756,8 +10756,16 @@ function renderPagerModal() {
         } catch (_) {}
     }
     if (metaEl) {
-        // Атрибуты рендерятся по id из данных сигнала — без косметики получателя.
-        metaEl.innerHTML = renderSignalFrameHtml(sigTopic, sigAttrs, escFn);
+        // Рамка с атрибутами показывается только во вкладке «Поймать сигнал».
+        // Во вкладке «ВХОДЯЩИЕ» (шёпоты) рамка не показывается.
+        if (activeTab === 'feed') {
+            // Атрибуты рендерятся по id из данных сигнала — без косметики получателя.
+            metaEl.innerHTML = renderSignalFrameHtml(sigTopic, sigAttrs, escFn);
+            metaEl.classList.remove('pager-meta-hidden');
+        } else {
+            metaEl.innerHTML = '';
+            metaEl.classList.add('pager-meta-hidden');
+        }
     }
 
     if (noticeEl) {

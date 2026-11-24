@@ -1585,18 +1585,17 @@
         0 0 14px rgba(138, 38, 54, 0.18);
 }
 
-/* Одна точка — в правом нижнем углу (без точки в левом верхнем) */
-.pager-sig-frame::after {
-    content: '';
-    position: absolute;
-    width: 4px;
-    height: 4px;
-    border-radius: 50%;
-    background: #752636;
-    box-shadow: 0 0 4px rgba(117, 38, 54, 0.7);
-    z-index: 2;
-    bottom: 5px;
-    right: 5px;
+/* Точек в углах рамка не имеет. */
+
+/* В окне «Поймать сигнал» рамка с атрибутами — на всю ширину блока. */
+.pager-lcd-meta .pager-sig-frame {
+    width: 100%;
+    flex: 1 1 100%;
+}
+
+/* Во вкладке «ВХОДЯЩИЕ» рамка атрибутов не показывается. */
+.pager-lcd-meta.pager-meta-hidden {
+    display: none;
 }
 
 /* Печать + титул в одной строке (слева) */

@@ -48,6 +48,100 @@
     let uiRaf = 0;
     let noiseBuffer = null;
 
+    // ===== ОФЛАЙН-КЭШ АУДИО (IndexedDB) =====
+    // Купленные треки/альбомы кэшируются локально, чтобы звучали без сети.
+    // Продаём право на прослушивание в игре — файл не выдаётся пользователю.
+    const AUDIO_DB = 'soma_rx_audio';
+    const AUDIO_STORE = 'tracks';
+    let audioDbPromise = null;
+    const cachedAudioUrls = {}; // trackId -> objectURL
+
+    function openAudioCache() {
+        if (audioDbPromise) return audioDbPromise;
+        if (typeof indexedDB === 'undefined') {
+            audioDbPromise = Promise.resolve(null);
+            return audioDbPromise;
+        }
+        audioDbPromise = new Promise((resolve) => {
+            try {
+                const req = indexedDB.open(AUDIO_DB, 1);
+                req.onupgradeneeded = () => {
+                    const db = req.result;
+                    if (!db.objectStoreNames.contains(AUDIO_STORE)) db.createObjectStore(AUDIO_STORE);
+                };
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => resolve(null);
+            } catch (_) {
+                resolve(null);
+            }
+        });
+        return audioDbPromise;
+    }
+
+    function cacheAudio(trackId, blob) {
+        return openAudioCache().then(db => {
+            if (!db) return false;
+            return new Promise(resolve => {
+                try {
+                    const tx = db.transaction(AUDIO_STORE, 'readwrite');
+                    tx.objectStore(AUDIO_STORE).put(blob, trackId);
+                    tx.oncomplete = () => resolve(true);
+                    tx.onerror = () => resolve(false);
+                } catch (_) {
+                    resolve(false);
+                }
+            });
+        });
+    }
+
+    function getCachedAudio(trackId) {
+        return openAudioCache().then(db => {
+            if (!db) return null;
+            return new Promise(resolve => {
+                try {
+                    const tx = db.transaction(AUDIO_STORE, 'readonly');
+                    const req = tx.objectStore(AUDIO_STORE).get(trackId);
+                    req.onsuccess = () => resolve(req.result || null);
+                    req.onerror = () => resolve(null);
+                } catch (_) {
+                    resolve(null);
+                }
+            });
+        });
+    }
+
+    // Прайм: скачать аудио купленного трека/альбома в локальный кэш сразу
+    async function primeAudio(track) {
+        if (!track || !track.audioUrl || typeof fetch !== 'function') return;
+        try {
+            const res = await fetch(track.audioUrl);
+            if (!res.ok) return;
+            const blob = await res.blob();
+            if (blob && blob.size > 0) await cacheAudio(track.id, blob);
+        } catch (_) { /* offline или ошибка — проигрывание пойдёт из сети/синтеза */ }
+    }
+
+    async function primeAlbumAudio(album) {
+        if (!album || !Array.isArray(album.tracks)) return;
+        for (const t of album.tracks) {
+            if (t && t.audioUrl) await primeAudio({ id: `album.${album.id}.${album.tracks.indexOf(t)}`, audioUrl: t.audioUrl });
+        }
+    }
+
+    // Очистка object URL при смене трека
+    function revokeCachedAudioUrl(trackId) {
+        if (trackId && cachedAudioUrls[trackId] && typeof URL !== 'undefined' && URL.revokeObjectURL) {
+            try { URL.revokeObjectURL(cachedAudioUrls[trackId]); } catch (_) {}
+            delete cachedAudioUrls[trackId];
+        }
+    }
+
+    function clearAudioCacheUrls(keepTrackId) {
+        Object.keys(cachedAudioUrls).forEach(id => {
+            if (id !== keepTrackId) revokeCachedAudioUrl(id);
+        });
+    }
+
     function escHtml(s) {
         return String(s == null ? '' : s).replace(/[&<>"']/g, ch => (
             ch === '&' ? '&amp;' : ch === '<' ? '&lt;' : ch === '>' ? '&gt;' : ch === '"' ? '&quot;' : '&#39;'
@@ -67,9 +161,62 @@
         return `${m}:${String(s).padStart(2, '0')}`;
     }
 
+    // ===== АЛЬБОМЫ: разворачиваем albums из SOMA_ALBUMS в диски фонотеки =====
+    // Каждый трек альбома — отдельный диск (id album.<albumId>.<ti>).
+    // collectible: false — трек альбома не продаётся поодиночке; доступ к нему
+    // даёт покупка альбома целиком (право на прослушивание в игре, не владение).
+    function getAlbums() {
+        return (typeof window !== 'undefined' && Array.isArray(window.SOMA_ALBUMS)) ? window.SOMA_ALBUMS : [];
+    }
+
+    function albumTracks() {
+        const out = [];
+        getAlbums().forEach(album => {
+            if (!album || typeof album.id !== 'string' || !album.id || !Array.isArray(album.tracks)) return;
+            album.tracks.forEach((t, ti) => {
+                if (!t || !t.title) return;
+                out.push({
+                    id: `album.${album.id}.${ti}`,
+                    albumId: album.id,
+                    albumTitle: album.title || album.id,
+                    title: t.title,
+                    subtitle: `Альбом · ${album.title || album.id}`,
+                    note: t.note || album.note || '',
+                    freq: t.freq || album.freq || '88.4',
+                    duration: t.duration || album.duration || 180,
+                    collectible: false,
+                    priceUsd: album.priceUsd || '$4',
+                    stars: album.stars || 200,
+                    buyUrl: album.buyUrl || '',
+                    wax: t.wax || album.wax || 'crimson',
+                    accent: t.accent || album.accent || '#ff6b7d',
+                    glow: t.glow || album.glow || '#c81e3e',
+                    audioUrl: t.audioUrl || '',
+                    spotifyUrl: t.spotifyUrl || '',
+                    yandexUrl: t.yandexUrl || '',
+                    coverUrl: t.coverUrl || album.coverUrl || '',
+                    synth: t.synth || album.synth || undefined
+                });
+            });
+        });
+        return out;
+    }
+
+    function isAlbumOwned(albumId) {
+        if (!albumId || typeof albumId !== 'string') return false;
+        if (typeof isOwned === 'function' && isOwned(albumId)) return true;
+        try {
+            const raw = JSON.parse(localStorage.getItem('soma_owned') || '[]');
+            return Array.isArray(raw) && raw.includes(albumId);
+        } catch (_) {
+            return false;
+        }
+    }
+
     function getTracks() {
         const list = (typeof window !== 'undefined' && Array.isArray(window.SOMA_TRACKS)) ? window.SOMA_TRACKS : [];
-        return list.filter(t => t && typeof t.id === 'string' && t.title);
+        const base = list.filter(t => t && typeof t.id === 'string' && t.title);
+        return base.concat(albumTracks());
     }
 
     function getStreamingCfg() {
@@ -91,6 +238,8 @@
 
     function isTrackOwned(tr) {
         if (!tr) return false;
+        // Трек из альбома — доступен, если куплен альбом целиком
+        if (tr.albumId) return isAlbumOwned(tr.albumId);
         if (!tr.collectible) return true;
         if (typeof isOwned === 'function' && isOwned(tr.id)) return true;
         try {
@@ -115,7 +264,13 @@
     }
 
     function priceLabel(tr) {
-        if (!tr || !tr.collectible) return 'ЭФИР';
+        if (!tr) return 'ЭФИР';
+        if (tr.albumId) {
+            const usd = tr.priceUsd || '$4';
+            const stars = Math.max(1, Math.trunc(Number(tr.stars) || 200));
+            return `${usd} · ${stars} ⭐`;
+        }
+        if (!tr.collectible) return 'ЭФИР';
         const usd = tr.priceUsd || '$1';
         const stars = Math.max(1, Math.trunc(Number(tr.stars) || 50));
         return `${usd} · ${stars} ⭐`;
@@ -550,21 +705,40 @@
                 }
             }
             if (el) {
-                if (el.dataset.trackId !== tr.id) {
-                    el.dataset.trackId = tr.id;
-                    el.src = tr.audioUrl;
-                }
-                try { el.currentTime = state.currentTime || 0; } catch (_) {}
-                applyVolume();
-                const p = el.play();
-                if (p && typeof p.catch === 'function') {
-                    p.catch(() => { if (state.playing) startSynthPlayback(tr); });
-                }
+                // Загружаем локальный кэш аудио (офлайн), иначе — из сети
+                loadCachedAudioThenPlay(tr, el);
             } else {
                 startSynthPlayback(tr);
             }
         } else {
             startSynthPlayback(tr);
+        }
+
+        // Загружаем кэш аудио (если есть) и запускаем <audio> из него или из сети
+        async function loadCachedAudioThenPlay(tr, el) {
+            try {
+                const blob = await getCachedAudio(tr.id);
+                if (blob && typeof URL !== 'undefined' && URL.createObjectURL) {
+                    if (!cachedAudioUrls[tr.id]) {
+                        cachedAudioUrls[tr.id] = URL.createObjectURL(blob);
+                    }
+                }
+            } catch (_) { /* кэш недоступен — играем из сети */ }
+
+            const useCached = !!cachedAudioUrls[tr.id];
+            if (el.dataset.trackId && el.dataset.trackId !== tr.id) revokeCachedAudioUrl(el.dataset.trackId);
+            el.dataset.trackId = tr.id;
+            el.src = useCached ? cachedAudioUrls[tr.id] : tr.audioUrl;
+            try { el.currentTime = state.currentTime || 0; } catch (_) {}
+            applyVolume();
+            const p = el.play();
+            if (p && typeof p.catch === 'function') {
+                p.catch(() => { if (state.playing) startSynthPlayback(tr); });
+            }
+            // Купленный трек, проигрываемый из сети — качаем в кэш в фоне для офлайна
+            if (!useCached && isTrackOwned(tr)) {
+                primeAudio(tr);
+            }
         }
 
         syncMediaSession(tr);
@@ -600,7 +774,8 @@
             state.currentTime = 0;
             updateProgressDom();
             playTuningChime();
-            showNotice(`Фрагмент 0:${PREVIEW_SEC} завершён. Заберите «${tr.title}» (${priceLabel(tr)}) навсегда в фонотеку.`, 7000);
+            const what = tr.albumId ? `альбом «${tr.albumTitle}» целиком` : `«${tr.title}»`;
+            showNotice(`Фрагмент 0:${PREVIEW_SEC} завершён. Заберите ${what} (${priceLabel(tr)}) навсегда в фонотеку.`, 7000);
             return true;
         }
         return false;
@@ -754,7 +929,23 @@
     // ===== ПОКУПКА КОЛЛЕКЦИОННОЙ ДИСКОВ ($1 · 50 ⭐, 0% PAY-TO-WIN, БЕЗ ВЫХОДА ИЗ FULLSCREEN!) =====
     async function buyTrack(id) {
         const tr = getTrackById(id);
-        if (!tr || !tr.collectible || state.buying) return;
+        if (!tr || state.buying) return;
+
+        // АЛЬБОМ: покупка альбома раздаёт право на все его треки сразу.
+        if (tr.albumId) {
+            const album = getAlbums().find(a => a && a.id === tr.albumId);
+            if (!album) return;
+            if (isAlbumOwned(tr.albumId)) {
+                selectTrack(tr.id, true);
+                return;
+            }
+            return buyAlbum(album);
+        }
+
+        if (!tr.collectible) {
+            selectTrack(tr.id, true);
+            return;
+        }
         if (isTrackOwned(tr)) {
             selectTrack(tr.id, true);
             return;
@@ -849,6 +1040,112 @@
             !fnUrl
                 ? `Звучит фрагмент 0:${PREVIEW_SEC}. Касса коллекционного CD (${usd} · ${stars} ⭐) подключается.`
                 : `Звучит фрагмент 0:${PREVIEW_SEC}. Покупка навсегда (${usd} · ${stars} ⭐) доступна в Telegram Mini App.`,
+            6200
+        );
+    }
+
+    // ===== ПОКУПКА АЛЬБОМА ($4 · 200 ⭐): право на прослушивание всех его треков, не владение файлом =====
+    async function buyAlbum(album) {
+        if (!album || state.buying) return;
+        const stars = Math.max(1, Math.trunc(Number(album.stars) || 200));
+        const usd = album.priceUsd || '$4';
+        const serial = collectorSerial(album.id);
+        const pts = typeof isPtsMode === 'function' && isPtsMode();
+
+        // 1) PTS — мгновенное открытие альбома в 1 клик
+        if (pts) {
+            if (typeof grantOwnedTrack === 'function') grantOwnedTrack(album.id);
+            try { Telegram.WebApp.HapticFeedback.notificationOccurred('success'); } catch (_) {}
+            playUnlockChord();
+            const firstTrack = albumTracks().find(t => t.albumId === album.id);
+            state.trackId = firstTrack ? firstTrack.id : '';
+            state.currentTime = 0;
+            savePrefs();
+            primeAlbumAudio(album);
+            startPlayback();
+            showNotice(`✓ PTS: альбом «${album.title}» (${album.tracks.length} треков, экз. ${serial}) навсегда в вашей фонотеке! В релизе — ${usd} (${stars} ⭐).`, 7000);
+            return;
+        }
+
+        // 2) Оплата через Telegram Stars
+        const fnUrl = (typeof cfg !== 'undefined' && cfg && cfg.STARS_FUNCTION_URL) || '';
+        const tg = typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp;
+        const inTg = !!(tg && typeof tg.initData === 'string' && tg.initData.length > 0 && typeof tg.openInvoice === 'function');
+
+        if (fnUrl && inTg) {
+            state.buying = album.id;
+            showNotice(`Подготовка конверта альбома «${album.title}» (${usd} · ${stars} ⭐)...`, 0);
+            renderAll();
+            try {
+                const res = await fetch(fnUrl.replace(/\/$/, '') + '/create-invoice', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        itemId: album.id,
+                        uid: (typeof player !== 'undefined' && player && player.uid) || '',
+                        initData: tg.initData
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok || !data || !data.invoiceUrl) {
+                    throw new Error((data && data.error) || 'Счёт временно недоступен');
+                }
+                tg.openInvoice(data.invoiceUrl, async status => {
+                    state.buying = '';
+                    if (status === 'paid') {
+                        if (typeof grantOwnedTrack === 'function') grantOwnedTrack(album.id);
+                        try {
+                            if (typeof supabaseClient !== 'undefined' && supabaseClient && typeof player !== 'undefined' && player.uid) {
+                                const { data: row } = await supabaseClient.from('soma_users').select('owned_cosmetics').eq('username', player.uid).single();
+                                if (row && typeof hydrateCosmeticsFromCloud === 'function') hydrateCosmeticsFromCloud(row);
+                            }
+                        } catch (_) {}
+                        try { tg.HapticFeedback.notificationOccurred('success'); } catch (_) {}
+                        playUnlockChord();
+                        // Прайм аудио альбома в локальный кэш (офлайн)
+                        primeAlbumAudio(album);
+                        const firstTrack = albumTracks().find(t => t.albumId === album.id);
+                        if (firstTrack) {
+                            state.trackId = firstTrack.id;
+                            state.currentTime = 0;
+                            savePrefs();
+                            startPlayback();
+                        }
+                        showNotice(`✦ Альбом «${album.title}» (${album.tracks.length} треков, экз. ${serial}) навсегда в вашей фонотеке! Приятного прослушивания.`, 7000);
+                    } else if (status === 'cancelled') {
+                        showNotice('Покупка отменена — вы всегда можете послушать фрагмент 0:30.', 4200);
+                        renderAll();
+                    } else {
+                        showNotice('Оплата не завершилась. Попробуйте ещё раз чуть позже.', 5000);
+                        renderAll();
+                    }
+                });
+            } catch (e) {
+                state.buying = '';
+                showNotice('Касса временно недоступна: ' + ((e && e.message) || 'ошибка связи'), 5500);
+                renderAll();
+            }
+            return;
+        }
+
+        // 3) Внешняя ссылка автора (Bandcamp / Tribute / Boosty) для обычного браузера
+        if (album.buyUrl && /^https:\/\//i.test(String(album.buyUrl).trim())) {
+            try { window.open(String(album.buyUrl).trim(), '_blank', 'noopener', 'noreferrer'); } catch (_) {}
+            showNotice(`Открыта страница коллекционного релиза альбома «${album.title}» (${usd}).`, 5200);
+            return;
+        }
+
+        // 4) Честное прослушивание фрагмента, если открыто вне Telegram или до подключения кассы
+        const firstTrack = albumTracks().find(t => t.albumId === album.id);
+        if (firstTrack) {
+            state.trackId = firstTrack.id;
+            state.currentTime = 0;
+            startPlayback();
+        }
+        showNotice(
+            !fnUrl
+                ? `Звучит фрагмент 0:${PREVIEW_SEC}. Касса альбома (${usd} · ${stars} ⭐) подключается.`
+                : `Звучит фрагмент 0:${PREVIEW_SEC}. Покупка альбома навсегда (${usd} · ${stars} ⭐) доступна в Telegram Mini App.`,
             6200
         );
     }
@@ -1123,7 +1420,7 @@
         });
         ov.querySelector('#rx-buy-btn').addEventListener('click', () => {
             const tr = currentTrack();
-            if (tr && tr.collectible) buyTrack(tr.id);
+            if (tr && (tr.collectible || tr.albumId)) buyTrack(tr.id);
         });
 
         ov.querySelectorAll('[data-rx-tab]').forEach(btn => {
@@ -1210,6 +1507,9 @@
         state.open = false;
         if (state.trayTimer) { clearTimeout(state.trayTimer); state.trayTimer = null; }
         setTray('closed');
+        // Очистка object URL аудиокэша (free память); текущий трек остаётся (звук продолжается)
+        const cur = currentTrack();
+        clearAudioCacheUrls(cur ? cur.id : undefined);
         const ov = typeof document !== 'undefined' && document.getElementById('rx-overlay');
         if (ov) {
             ov.classList.add('hidden');
@@ -1228,8 +1528,9 @@
 
     function visibleTracks() {
         const all = getTracks();
-        if (state.tab === 'radio') return all.filter(t => !t.collectible);
-        if (state.tab === 'collect') return all.filter(t => !!t.collectible);
+        // Альбомные диски — платный товар (через альбом целиком), не «свободный эфир»
+        if (state.tab === 'radio') return all.filter(t => !t.collectible && !t.albumId);
+        if (state.tab === 'collect') return all.filter(t => !!(t.collectible || t.albumId));
         if (state.tab === 'owned') return all.filter(t => isTrackOwned(t));
         return all;
     }
@@ -1267,14 +1568,15 @@
         if (durEl) durEl.textContent = fmtTime(dur);
         if (fillEl) fillEl.style.width = `${((cur / dur) * 100).toFixed(2)}%`;
         if (gateEl) {
-            const locked = !!(tr && tr.collectible && !isTrackOwned(tr) && dur > PREVIEW_SEC);
+            const locked = !!(tr && (tr.collectible || tr.albumId) && !isTrackOwned(tr) && dur > PREVIEW_SEC);
             gateEl.classList.toggle('hidden', !locked);
             if (locked) {
                 gateEl.style.left = `${((PREVIEW_SEC / dur) * 100).toFixed(2)}%`;
                 const colSub = document.getElementById('rx-collect-sub');
                 if (colSub && state.playing && state.source === 'cd') {
                     const left = Math.max(0, Math.ceil(PREVIEW_SEC - cur));
-                    colSub.textContent = `♪ Звучит фрагмент · ещё ${fmtTime(left)} · экз. ${collectorSerial(tr.id)}`;
+                    colSub.textContent = `♪ Звучит фрагмент · ещё ${fmtTime(left)}` +
+                        (tr.albumId ? ' · альбом целиком' : ` · экз. ${collectorSerial(tr.id)}`);
                 }
             }
         }
@@ -1353,7 +1655,11 @@
         // Бейджи статуса пластинки
         const badges = ov.querySelector('#rx-badges');
         if (badges) {
-            if (!tr.collectible) {
+            if (tr.albumId) {
+                badges.innerHTML = owned
+                    ? `<span class="rx-badge rx-badge--owned">✦ Альбом · ${escHtml(tr.albumTitle || '')}</span>`
+                    : `<span class="rx-badge rx-badge--gold">✦ Альбом · ${escHtml(tr.albumTitle || '')}</span><span class="rx-badge">ПРЕВЬЮ 0:${PREVIEW_SEC}</span>`;
+            } else if (!tr.collectible) {
                 badges.innerHTML = `<span class="rx-badge">СВОБОДНЫЙ ЭФИР</span>`;
             } else if (owned) {
                 badges.innerHTML = `<span class="rx-badge rx-badge--owned">✦ В КОЛЛЕКЦИИ · ЭКЗ. ${escHtml(collectorSerial(tr.id))}</span>`;
@@ -1406,18 +1712,18 @@
             }
         }
 
-        // Коллекционная плашка покупки ($1 · 50 ⭐) для незабранных Dubplate
+        // Коллекционная плашка покупки ($1 · 50 ⭐ для трека, $4 · 200 ⭐ для альбома)
         const colBar = ov.querySelector('#rx-collect-bar');
         const buyBtn = ov.querySelector('#rx-buy-btn');
         const colSub = ov.querySelector('#rx-collect-sub');
-        const showBuy = !!(tr.collectible && !owned);
+        const showBuy = !!((tr.collectible || tr.albumId) && !owned);
         colBar.classList.toggle('hidden', !showBuy);
         if (showBuy && buyBtn) {
-            const busy = state.buying === tr.id;
+            const busy = state.buying === tr.id || state.buying === tr.albumId;
             buyBtn.disabled = busy;
             buyBtn.textContent = busy
                 ? 'СЧЁТ...'
-                : (pts ? `ЗАБРАТЬ · ${priceLabel(tr)} [PTS]` : `В КОЛЛЕКЦИЮ · ${priceLabel(tr)}`);
+                : (pts ? `ЗАБРАТЬ · ${priceLabel(tr)} [PTS]` : (tr.albumId ? `В КОЛЛЕКЦИЮ · ${priceLabel(tr)}` : `В КОЛЛЕКЦИЮ · ${priceLabel(tr)}`));
             if (colSub) {
                 colSub.textContent = `Фрагмент 0:${PREVIEW_SEC} бесплатно · ваш номер ${collectorSerial(tr.id)} навсегда`;
             }
@@ -1455,7 +1761,11 @@
                 const hasYa = !!parseYandexEmbed(item.yandexUrl);
                 const svcBits = `${hasSp ? ' · SP' : ''}${hasYa ? ' · ЯМ' : ''}`;
                 let tagHtml = '';
-                if (!item.collectible) {
+                if (item.albumId) {
+                    tagHtml = itemOwned
+                        ? `<span class="rx-tag rx-tag--owned">✦ Альбом</span>`
+                        : `<span class="rx-tag rx-tag--price">${escHtml(priceLabel(item))}</span>`;
+                } else if (!item.collectible) {
                     tagHtml = `<span class="rx-tag rx-tag--free">ЭФИР</span>`;
                 } else if (itemOwned) {
                     tagHtml = `<span class="rx-tag rx-tag--owned">✦ ${escHtml(collectorSerial(item.id))}</span>`;
@@ -1474,7 +1784,7 @@
                         </span>
                         <span class="rx-row-right">
                             ${tagHtml}
-                            <span class="rx-row-dur">${item.collectible && !itemOwned ? '0:30 / ' : ''}${fmtTime(item.duration || 180)}</span>
+                            <span class="rx-row-dur">${(item.collectible || item.albumId) && !itemOwned ? '0:30 / ' : ''}${fmtTime(item.duration || 180)}</span>
                         </span>
                     </button>
                 `;

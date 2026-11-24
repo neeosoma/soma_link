@@ -754,7 +754,7 @@ test('v8: body-portal FLIP fullscreen + 180 flip + rotated pointer mapping, Dawn
         indexHtml.includes('id="station-fs-flip"')
         && indexHtml.includes('room.js?v=35')
         && indexHtml.includes('cosmetics.css?v=15')
-        && indexHtml.includes('receiver.js?v=17')
+        && indexHtml.includes('receiver.js?v=18')
         && indexHtml.includes('vhs.js?v=15')
         && indexHtml.includes('greenhouse.js?v=15')
         && indexHtml.includes('blimp.js?v=15')
@@ -782,7 +782,7 @@ test('v8: body-portal FLIP fullscreen + 180 flip + rotated pointer mapping, Dawn
     // Exact bidirectional 1:1 count and price parity with billing/supabase/functions/soma-stars/index.ts
     const allBillable = [...cat, ...collectTracks];
     const edgeEntries = [...edgeCode.matchAll(/^\s*(\w+)\s*:\s*\{\s*title:[^}]*stars:\s*(\d+)\s*\}/gm)];
-    assert.equal(edgeEntries.length, allBillable.length, 'Edge Function must match exact 30 cosmetics + 4 collectible 7" tracks');
+    assert.equal(edgeEntries.length, allBillable.length, 'Edge Function must match exact 31 cosmetics + 1 album + 4 collectible 7" tracks');
     for (const [_, id, stars] of edgeEntries) {
         const found = allBillable.find(i => i.id === id);
         assert.ok(found, `Edge item ${id} must exist in SOMA_CATALOG or SOMA_TRACKS`);
@@ -923,7 +923,7 @@ test('v9: true native browser fullscreen (even with Telegram SDK loaded), fixed-
     // 4. Simultaneous cat + dog ownership, equipping, petting, duet journal line, PTS dog cycler, and SQL trigger protection!
     const cEnv = { localStorage: makeStorage(), player: { uid: 'u_duet_77', warmth: 42, xp: 300 }, esc: s => String(s) };
     vm.runInNewContext(cosmCode + ';globalThis.C = { SOMA_CATALOG, grantOwnedItem, getActiveCosmetics, toggleEquipCosmetic };', cEnv);
-    assert.equal(cEnv.C.SOMA_CATALOG.length, 31, '31 flagship cosmetic items including pot_amethyst and room_dog');
+    assert.equal(cEnv.C.SOMA_CATALOG.length, 32, '32 items: 31 flagship cosmetics + 1 album including pot_amethyst and room_dog');
     const dogItem = cEnv.C.SOMA_CATALOG.find(i => i.id === 'room_dog');
     const catItem = cEnv.C.SOMA_CATALOG.find(i => i.id === 'room_cat');
     assert.ok(dogItem && dogItem.stars === 220 && catItem.stars === 220, 'cat and dog share equal 220 Stars companion tier');

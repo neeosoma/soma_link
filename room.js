@@ -10553,8 +10553,8 @@ function ensurePagerModal() {
             <!-- LCD-ЭКРАН С CRT-ЭФФЕКТОМ -->
             <div class="pager-bezel pager-modal-bezel">
                 <div class="pager-lcd pager-modal-lcd">
-                    <div class="pager-lcd-meta" id="pager-modal-meta"></div>
                     <div class="pager-modal-notice hidden" id="pager-modal-notice"></div>
+                    <div class="pager-lcd-meta" id="pager-modal-meta"></div>
                     <div class="pager-modal-body soma-kb-scroll" id="pager-modal-body"></div>
                     <div class="pager-lcd-scan" aria-hidden="true"></div>
                 </div>

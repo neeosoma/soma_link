@@ -13,9 +13,11 @@ alter table public.soma_users
     add column if not exists my_posts text[] not null default '{}'::text[],
     add column if not exists ledger jsonb not null default '{}'::jsonb;
 
--- 2. my_soma_account_days: дни считать от профиля (soma_users.created_at),
---    а НЕ от auth.users.created_at (Anonymous Auth создаёт новую идентичность
---    на каждом устройстве → на новом устройстве было бы 0 дней).
+-- 2. my_soma_account_days: дни считать от earliest из auth.users.created_at
+--    и soma_users.created_at (min). Анонимная идентичность auth может быть
+--    создана раньше/позже профиля: считать от профиля alone давало 0 дней
+--    на новом устройстве, а от auth alone — проворачивало счётчик в обратную
+--    сторону (профиль создан раньше auth на некоторых устройствах).
 --    Профиль привязан к auth-идентичности через user_profile_bindings.
 create or replace function public.my_soma_account_days()
 returns integer
@@ -24,15 +26,14 @@ stable
 security definer
 set search_path = ''
 as $$
-    select coalesce((
-        select case
-            when floor(extract(epoch from now() - su.created_at) / 86400)::integer is null then 0
-            else greatest(1, floor(extract(epoch from now() - su.created_at) / 86400)::integer)
-        end
-          from soma_private.user_profile_bindings b
-          join public.soma_users su on su.username = b.profile_uid
-         where b.auth_id = auth.uid()
-    ), 0)::integer
+    select coalesce(
+        greatest(1, floor(extract(epoch from now() - least(au.created_at, su.created_at)) / 86400)::integer),
+        0
+    )::integer
+      from soma_private.user_profile_bindings b
+      join public.soma_users su on su.username = b.profile_uid
+      join auth.users au on au.id = b.auth_id
+     where b.auth_id = auth.uid()
 $$;
 
 revoke all on function public.my_soma_account_days() from public, anon, authenticated;

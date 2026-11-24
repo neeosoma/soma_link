@@ -2059,7 +2059,7 @@
         player.warmth = merged.warmth;
         try { localStorage.setItem('soma_warmth', String(merged.warmth)); } catch (_) {}
         try {
-            await supabaseClient.from('soma_users').update({
+            const res = await supabaseClient.from('soma_users').update({
                 warmth: merged.warmth,
                 help_attempts: merged.help_attempts,
                 whispers_sent: merged.whispers_sent,
@@ -2067,6 +2067,49 @@
                 my_posts: merged.my_posts,
                 ledger: merged.ledger
             }).eq('username', player.uid);
+            sendSyncEvent('push', {
+                push_ok: !res.error,
+                push_error: res.error ? String(res.error.message || res.error) : null
+            });
+        } catch (e) {
+            sendSyncEvent('push', { push_ok: false, push_error: String(e && (e.message || e)) });
+        }
+    }
+
+    // Детектирует загруженную версию room.js из script-тега (cache-busting).
+    function getJsVersion() {
+        try {
+            const tag = document.querySelector('script[src*="room.js?v="]');
+            if (!tag) return 'unknown';
+            const m = String(tag.getAttribute('src')).match(/room\.js\?v=(\d+)/);
+            return m ? m[1] : 'unknown';
+        } catch (_) { return 'unknown'; }
+    }
+
+    // Диагностический маячок: записывает в облако, какая версия JS загружена,
+    // что в localStorage и что в облаке. Помогает понять, почему прогресс
+    // с телефона не попадает в облако (старый кэш, пустой localStorage и т.п.).
+    async function sendSyncEvent(kind, extra) {
+        if (!supabaseClient || !player.uid) return;
+        try {
+            const lsWarmth = lsNum('soma_warmth');
+            const lsWhispers = (typeof getWhisperBreachCount === 'function') ? getWhisperBreachCount() : 0;
+            const lsPosts = (typeof getMyPostIds === 'function') ? getMyPostIds() : [];
+            const lsGh = (typeof getCloudGreenhouse === 'function') ? getCloudGreenhouse() : {};
+            const lsLedger = (typeof loadWarmthLedger === 'function') ? loadWarmthLedger() : {};
+            const cloudWarmth = (cloudProfile.data && cloudProfile.data.warmth != null) ? cloudProfile.data.warmth : null;
+            await supabaseClient.from('soma_sync_events').insert({
+                username: player.uid,
+                kind: kind,
+                js_version: getJsVersion(),
+                ls_warmth: lsWarmth,
+                ls_whispers: lsWhispers,
+                ls_posts: lsPosts.length,
+                ls_greenhouse: Array.isArray(lsGh.bloomed) ? lsGh.bloomed.length : 0,
+                ls_ledger: JSON.stringify(lsLedger).slice(0, 500),
+                cloud_warmth: cloudWarmth,
+                ...(extra || {})
+            });
         } catch (_) {}
     }
 
@@ -2163,6 +2206,9 @@
                 pushCloudProfile();
             }
         } catch(e) {}
+
+        // Диагностика: запись «как я загрузился» в облако (версия JS + локальный кеш).
+        sendSyncEvent('init', {});
 
         // Запасная пересинхронизация: если локальное состояние (Оранжерея, ведомство,
         // cached-посты) подтянулось позже основной загрузки — пушим профиль в облако

@@ -3148,7 +3148,11 @@ html.is-soma-fs-closing .app-h {
 
 #post-modal-chassis {
     position: relative;
-    overflow: hidden;
+    /* Скролл внутри часисы обязателен: при длинном тексте, атрибутах отражения
+       или открытой клавиатуре кнопка «ОТПРАВИТЬ В ЭФИР» выходит за край —
+       без overflow-y: auto достать её и нажать нельзя. */
+    overflow-x: hidden;
+    overflow-y: auto;
     background:
         radial-gradient(130% 70% at 50% 0%, rgba(80, 18, 32, 0.4) 0%, transparent 55%),
         #100608;
@@ -3165,6 +3169,12 @@ html.is-soma-fs-closing .app-h {
 @keyframes ts-chassis-in {
     from { opacity: 0; transform: translateY(16px) scale(0.96); }
     to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* При открытой клавиатуре часисы «Передатчика» прижимаются к верху видимой области:
+   тогда счётчик, текст и кнопка «ОТПРАВИТЬ В ЭФИР» остаются над клавиатурой и досяжны скроллом. */
+#post-modal.is-kb-open {
+    align-items: flex-start;
 }
 
 /* ===== ШАПКА ===== */

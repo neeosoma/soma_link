@@ -1549,6 +1549,17 @@
             });
         }
     }
+    // Подгонка высоты часисы под видимую область при открытой клавиатуре:
+    // предел — высота видимого окна минус отступы, иначе низ часисы (кнопка отправки)
+    // уходит под клавиатуру. Контент остаётся доступным для скролла (overflow-y: auto).
+    function _somaKbFitChassis(modal) {
+        const chassis = _somaKbFindChassis(modal);
+        if (!chassis || !chassis.classList || !chassis.classList.contains('soma-modal-chassis')) return;
+        const vh = _somaKbVvHeight();
+        const cap = Math.max(220, vh - 24);
+        const h = chassis.__somaKbH || chassis.offsetHeight;
+        chassis.style.maxHeight = Math.min(h, cap) + 'px';
+    }
     function _somaKbUpdate(modal) {
         const vh = _somaKbVvHeight();
         if (modal.__somaKbBase == null) modal.__somaKbBase = vh;
@@ -1558,8 +1569,14 @@
         if (!kbOpen && vh > modal.__somaKbBase) modal.__somaKbBase = vh;
         const wasOpen = modal.classList.contains('is-kb-open');
         modal.classList.toggle('is-kb-open', !!kbOpen);
-        if (kbOpen) (modal.__somaKbFreeze || _somaKbFreeze)(modal);
+        if (kbOpen) {
+            (modal.__somaKbFreeze || _somaKbFreeze)(modal);
+            _somaKbFitChassis(modal);
+        }
         if (!kbOpen && wasOpen) (modal.__somaKbUnfreeze || _somaKbUnfreeze)(modal);
+        // Клавиатура только открылась в «Передатчике»: текст и кнопка могут переместиться —
+        // переочетайте позицию отправки, чтобы кнопка осталась над клавиатурой.
+        if (kbOpen && !wasOpen && modal.id === 'post-modal') setTimeout(scrollSendIntoView, 80);
     }
     function _somaKbBind(modal, opts) {
         if (modal.__somaKbBound) return;

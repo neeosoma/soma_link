@@ -168,7 +168,7 @@ begin
             if public.owns_soma_post(new.post_id) then raise exception 'Cannot whisper to yourself'; end if;
         end if;
     else
-        if not public.owns_soma_post(old.post_id) or old.status <> 'pending'
+        if not public.owns_soma_post(old.post_id) or old.status not in ('pending', 'saved')
            or new.status not in ('saved', 'dismissed', 'answered') then
             raise exception 'Invalid whisper transition';
         end if;

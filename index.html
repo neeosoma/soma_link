@@ -2194,6 +2194,12 @@
                 // Ведомство тепла/шёпотов: слив
                 if (typeof mergeCloudLedger === 'function') mergeCloudLedger(data.ledger);
                 if (typeof hydrateCosmeticsFromCloud === 'function') hydrateCosmeticsFromCloud(data);
+                // Перерисовка комнаты после гидраты: в статичном режиме (reduce-motion,
+                // без RAF-цикла) комната рендерится один раз на загрузке — до поступления
+                // профиля из облака. Без этого переопределение cat_coat/dog_breed (редкий
+                // 0.1% = 7) доходит до shopState, но до рендеринга комнаты не успевает,
+                // и rare-кошка/собака не появляются.
+                if (typeof renderRoom === 'function') renderRoom();
             } else {
                 const breaches = typeof getWhisperBreachCount === 'function' ? getWhisperBreachCount() : 0;
                 player.whispersSent = breaches;

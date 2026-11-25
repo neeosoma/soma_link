@@ -2472,6 +2472,9 @@ test('server-confirmed block removes only returned incoming IDs and leaves casse
     const r = loadRoom({ localStorage, window: { SOMA_CONFIG: { WHISPER_SAFETY_LIVE: true } }, supabaseClient: { rpc: async () => ({ data: ['in_1'], error: null }) } });
     for (const id of ['in_1', 'in_2']) r.receiveIncomingWhisperLocal({ id, text: 'Пусть сегодня станет немного легче.' });
     r.saveWhisperCassette('Сохранённая кассета не должна пропасть.');
+    // Пусть async-пуш кассеты в облако завершится и synced прикрепится,
+    // чтобы archive был стабильным перед проверкой после блокировки.
+    await new Promise(r => setTimeout(r, 10));
     const archive = localStorage.getItem('soma_cassettes');
     assert.equal((await r.blockIncomingWhisper('in_1')).ok, true);
     assert.equal(r.getPendingInboxWhispers().length, 1);

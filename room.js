@@ -4062,7 +4062,12 @@ function loadCassettes() {
             date,
             ts,
             text: c.text.trim().slice(0, 2000), // полный сигнал: до 2000 символов (ранее обрезалось до 420)
-            fav: !!c.fav
+            fav: !!c.fav,
+            // synced=true значит кассета уже дошла до облака. Используется при
+            // гидрации: если кассета synced, но absent в облаке — её удалили на
+            // другом устройстве, локальную копию пора убрать. synced=false —
+            // offline-сохранение, ещё не пушено, держать локально.
+            synced: !!c.synced
         };
     });
 }
@@ -4160,6 +4165,10 @@ function cloudSaveCassette(item) {
         p_num: item.num,
         p_fav: item.fav
     }).then(({ error }) => {
+        // Отметим synced-состояние в локальном кэше — гидратация использует это,
+        // чтобы понять, какие локальные кассеты уже в облаке (и безопасно удалить
+        // те, что пропали из облака на другом устройстве).
+        markCassetteSynced(item.id, !error);
         if (error) {
             const why = error.message || error.code || 'ошибка';
             if (typeof setCloudStatus === 'function') setCloudStatus('☁ journal: ошибка кассеты — ' + why, false);
@@ -4171,10 +4180,24 @@ function cloudSaveCassette(item) {
     })
       .catch(e => {
           const why = e && e.message || String(e);
+          markCassetteSynced(item.id, false);
           if (typeof setCloudStatus === 'function') setCloudStatus('☁ journal: ошибка кассеты — ' + why, false);
           cloudWarn('save_soma_journal_entry (кассета): ' + why);
           return { ok: false, offline: false, error: e };
       });
+}
+
+// Пометить, дошла ли кассета до облака (synced). Записывает в локальный кэш,
+// не перерисовывая UI (так же, как assigned-номера в loadCassettes).
+function markCassetteSynced(id, synced) {
+    try {
+        const list = loadCassettes();
+        let changed = false;
+        for (const c of list) {
+            if (c.id === id && !!c.synced !== !!synced) { c.synced = !!synced; changed = true; }
+        }
+        if (changed) writeCassetteCache(list);
+    } catch (_) {}
 }
 
 // Save a cassette to the local cache immediately, then persist to the cloud in the
@@ -4192,7 +4215,8 @@ function saveWhisperCassette(text, dateLabel, opts) {
         date: stamp,
         ts: parseCassetteDateTs(stamp, nowTs),
         text: clean,
-        fav: !!(opts && opts.fav)
+        fav: !!(opts && opts.fav),
+        synced: false // пуш в облако винилит ниже через cloudSaveCassette
     };
     list.unshift(item);
     writeCassetteCache(list);
@@ -4229,7 +4253,11 @@ function deleteCassette(id) {
 }
 
 // One-time hydration on app start: pull the player's journal from the cloud and
-// merge it into the local cache (cloud is authoritative; local additions kept).
+// merge it into the local cache. Cloud is authoritative for cassettes it holds:
+//   - cassettes present in cloud overlay local (text, fav, num, date);
+//   - local cassettes flagged synced=true but absent from cloud were deleted on
+//     another device — drop them from the local cache;
+//   - local cassettes with synced=false are offline saves not yet pushed — kept.
 async function hydrateJournalFromCloud() {
     if (typeof supabaseClient === 'undefined' || !supabaseClient) return;
     try {
@@ -4238,17 +4266,25 @@ async function hydrateJournalFromCloud() {
         const cloud = data
             .filter(r => r && r.kind === 'cassette' && r.author_auth_id)
             .map(normalizeJournalRow);
-        if (!cloud.length) return;
         const local = loadCassettes();
         const byId = new Map(local.map(c => [c.id, c]));
+        const cloudIds = new Set();
         cloud.forEach(c => {
+            cloudIds.add(c.id);
             const prev = byId.get(c.id);
-            if (!prev || !prev.text) byId.set(c.id, c);
+            // Облако авторитетно: перекидываем текст/fav/номер/дату с облака.
+            // synced=true (дошла в облако).
+            const merged = { ...c, synced: true };
+            if (!prev) {
+                byId.set(c.id, merged);
+            } else {
+                byId.set(c.id, { ...prev, ...merged, id: c.id });
+            }
         });
-        // Номеры сохраняем как есть (не переназначать по позиции — это
-        // сдвигало номера сигналов). Записанные номера постоянны.
-        const merged = [...byId.values()];
-        writeCassetteCache(merged);
+        // Удалённые на другом устройстве кассеты: synced=true, но нет в облаке.
+        // synced=false — offline-запись, ещё не пушена — держим локально.
+        const kept = [...byId.values()].filter(c => !c.synced || cloudIds.has(c.id));
+        writeCassetteCache(kept);
         renderRoom();
     } catch (_) {}
     // Прогнать локальные записи-сигналы (сохранённые при сбое сети) в облако.
@@ -4402,6 +4438,7 @@ async function loadDiaryArchive() {
         });
     } catch (_) {}
     // Записи-сигналы из облака (Supabase journal) — перезаписывают локальные по id.
+    const cloudCassetteIds = new Set();
     if (typeof supabaseClient !== 'undefined' && supabaseClient) {
         try {
             const { data, error } = await supabaseClient.rpc('get_my_soma_journal');
@@ -4417,16 +4454,25 @@ async function loadDiaryArchive() {
                         // cassette: облако авторитетно по тексту/дате, но номер
                         // сохраняем постоянным — если в облаке его нет, берём
                         // из локальной кассеты (не перенумеровывать по позиции).
+                        cloudCassetteIds.add(norm.id);
                         const idx = items.findIndex(i => i.id === norm.id);
                         if (idx >= 0) {
-                            items[idx] = { ...norm, kind: 'cassette', num: (Number.isInteger(norm.num) && norm.num >= 1) ? norm.num : items[idx].num };
+                            items[idx] = { ...norm, kind: 'cassette', num: (Number.isInteger(norm.num) && norm.num >= 1) ? norm.num : items[idx].num, synced: true };
                         } else {
-                            items.push({ ...norm, kind: 'cassette' });
+                            items.push({ ...norm, kind: 'cassette', synced: true });
                         }
                     }
                 });
             }
         } catch (_) {}
+    }
+    // Кассеты, удалённые на другом устройстве (synced=true, но нет в облаке) —
+    // не показывать в архиве. synced=false — offline-запись, ещё не пушена.
+    for (let i = items.length - 1; i >= 0; i--) {
+        const it = items[i];
+        if (it.kind === 'cassette' && it.synced && !cloudCassetteIds.has(it.id)) {
+            items.splice(i, 1);
+        }
     }
     // Номеры сигналов: порядковые по времени создания, постоянные.
     // Записанные номера (num >= 1) бережно сохраняем; у записей без номера

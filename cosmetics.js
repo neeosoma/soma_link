@@ -37,7 +37,7 @@ const SOMA_CATALOG = [
     { id: 'seal_moth',       tab: 'status', group: 'seals',  slot: 'seal',  motion: 'ВЗМАХ КРЫЛЬЕВ',  stars: 100, name: 'Печать «Мотылёк»',      desc: 'Ночной мотылёк с узором на крыльях, которые мягко трепещут рядом с вашим позывным.' },
     { id: 'seal_crown',      tab: 'status', group: 'seals',  slot: 'seal',  motion: 'СИЯНИЕ ВЕНЦА',   stars: 100, name: 'Печать «Венец»',        desc: 'Золотая корона трибунала с тремя мерцающими искрами на острых зубцах.' },
     { id: 'seal_signal',     tab: 'status', group: 'seals',  slot: 'seal',  motion: 'БЕГУЩИЙ ЭКГ',    stars: 100, name: 'Печать «Импульс»',      desc: 'Непрерывная живая волна кардиограммы, пробегающая рядом с вашим номером в Топе.' },
-    { id: 'seal_source',     tab: 'status', group: 'seals',  slot: 'seal',  motion: 'ИСТОК', stars: 100, name: 'Печать «Хранитель»', desc: 'Выдавалась за участие в Альфа-тесте: источник с живой пульсирующей каплей-светилом.', unpurchasable: true },
+    { id: 'seal_source',     tab: 'status', group: 'seals',  slot: 'seal',  motion: 'ИСТОЧНИК', stars: 100, name: 'Печать «Хранитель»', desc: 'Выдавалась за участие в Альфа-тесте: источник с живой пульсирующей каплей-светилом.', unpurchasable: true },
     { id: 'title_architect', tab: 'status', group: 'titles', slot: 'title', label: 'АРХИТЕКТОР ТИШИНЫ',   glyph: '◈', titleCss: 'soma-title--architect', stars: 110, name: 'Титул «Архитектор тишины»',   desc: 'Холодный платиново-стальной перелив букв в Топе, Досье и карточке Свидетеля.' },
     { id: 'title_collector', tab: 'status', group: 'titles', slot: 'title', label: 'КОЛЛЕКЦИОНЕР ДРАМ',   glyph: '❖', titleCss: 'soma-title--collector', stars: 110, name: 'Титул «Коллекционер драм»',   desc: 'Бархатный рубиново-розовый перелив для ценителей ночных исповедей.' },
     { id: 'title_patrician', tab: 'status', group: 'titles', slot: 'title', label: 'ПАТРИЦИЙ ЭФИРА',      glyph: '♛', titleCss: 'soma-title--patrician', stars: 110, name: 'Титул «Патриций эфира»',      desc: 'Тёплое шампанское золото закрытой ложи Паноптикума с мягким сиянием.' },
@@ -816,10 +816,9 @@ function renderShop() {
         prev.className = `shop-preview-card ${fc}`.trim();
         prev.innerHTML = `
             <div class="flex justify-between items-center gap-2">
-                <span class="top-row-name">${sealHtmlOf(c)}<span>${esc(myAnon)}</span>${shopState.preview ? '<span class="top-you-tag">ПРИМЕРКА</span>' : ''}</span>
+                <span class="top-row-name">${sealHtmlOf(c)}<span>${esc(myAnon)}</span>${tl ? titleSpanOf(c, true) : ''}${shopState.preview ? '<span class="top-you-tag">ПРИМЕРКА</span>' : ''}</span>
                 <span class="top-row-xp">${(typeof player !== 'undefined' && player.warmth) || 0} ТЕПЛО</span>
             </div>
-            ${tl ? `<div class="top-custom-title">${titleSpanOf(c, true)}</div>` : '<div class="text-[9.5px] text-gray-500">ОБЛИК В СОЗВЕЗДИИ СТАНЦИИ И КОМНАТЕ</div>'}
             ${c.epitaph ? `<p class="top-epitaph">«${esc(c.epitaph)}»</p>` : ''}
             ${gearBits.length ? `<div class="text-[9px] text-gray-400 pt-0.5">${gearBits.map(esc).join(' · ')}</div>` : ''}
         `;

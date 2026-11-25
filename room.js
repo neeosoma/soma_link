@@ -6216,9 +6216,9 @@ function getRoomCosmeticsSafe() {
 }
 
 function drawCompanionCat(g, now, phase, still, specOverride) {
-    const uid = (typeof player !== 'undefined' && (player.uid || player.name)) || 'guest';
-    const override = Number.isInteger(roomAnim.inspectCatCoat) ? roomAnim.inspectCatCoat : null;
-    const cat = specOverride || catSpec(uid, override);
+    // activeCatSpec() учитывает профильное cat_coat (редкий 0.1% = 7) и PTS-превью
+    // inspectCatCoat — поэтому rare-вариант кота применяется в рендеринге комнаты.
+    const cat = specOverride || activeCatSpec();
     const c = cat.coat;
     const t = still ? 1.2 : now * 0.001;
 
@@ -6715,9 +6715,9 @@ function drawDogPersianRug(g, cx, cy, phase, glowBoost) {
 
 // ===== ЖИВОЙ ПЁС-ХРАНИТЕЛЬ С НАСТОЯЩЕЙ СОБАЧЬЕЙ АНАТОМИЕЙ И МАСШТАБОМ (У ПЛЕДА КУШЕТКИ РЯДОМ С КОТОМ!) =====
 function drawCompanionDog(g, now, phase, still, specOverride) {
-    const uid = (typeof player !== 'undefined' && (player.uid || player.name)) || 'guest';
-    const override = Number.isInteger(roomAnim.inspectDogBreed) ? roomAnim.inspectDogBreed : null;
-    const dog = specOverride || dogSpec(uid, override);
+    // activeDogSpec() учитывает профильное dog_breed (редкий 0.1% = 7) и PTS-превью
+    // inspectDogBreed — поэтому rare-вариант пса применяется в рендеринге комнаты.
+    const dog = specOverride || activeDogSpec();
     const b = dog.breed;
     const isRareMaltese = b.pattern === 'maltese';
     const isSamoyed = b.pattern === 'samoyed';

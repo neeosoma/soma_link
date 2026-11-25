@@ -448,7 +448,7 @@ begin
             -- уникальностью (один шёпот на пост для одного отправителя).
         end if;
     else
-        if not public.owns_soma_post(old.post_id) or old.status <> 'pending'
+        if not public.owns_soma_post(old.post_id) or old.status not in ('pending', 'saved')
            or new.status not in ('saved', 'dismissed', 'answered') then
             raise exception 'Invalid whisper transition';
         end if;

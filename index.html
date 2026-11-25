@@ -2279,6 +2279,20 @@
             return delta > 0;
         }
 
+        if (remote < seen) {
+            // Облачное значение упало ниже последнего виденного baseline —
+            // такое бывает только при исправлении данных на стороне сервера
+            // (например, откат надувшегося тепла). Облако — источник правды:
+            // сбрасываем локальное значение к облачному.
+            player.warmth = Math.max(0, remote);
+            try {
+                localStorage.setItem('soma_server_warmth_seen', String(remote));
+                localStorage.setItem('soma_warmth', String(player.warmth));
+            } catch (_) {}
+            updateHeader();
+            return true;
+        }
+
         if (remote > seen) {
             // player.warmth уже включает облачное тепло (mergeCloudProfile
             // ставит max(local, cloud) до этого вызова). Добавлять delta поверх

@@ -3867,6 +3867,11 @@ html.is-soma-fs-closing .app-h {
     font: 700 18px/1.2 'Inter', sans-serif;
     letter-spacing: 0.02em;
 }
+.witness-anon {
+    color: #ff7c8d;
+    font: 700 13px/1.2 'Inter', sans-serif;
+    letter-spacing: 0.02em;
+}
 .witness-custom-title {
     color: #ff7c8d;
     font: 11px 'Share Tech Mono', monospace;

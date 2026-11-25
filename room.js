@@ -4102,22 +4102,46 @@ function saveLocalJournalEntry(entry) {
 // Пушит локальные записи-сигналы в облако (best-effort, upsert по id).
 // Вызывать после гидраты дневника и после successful-сохранения, чтобы
 // загрузившиеся离线 записи дошли до сервера.
+// Облако — авторитетный источник номера: записи, уже синхронизированные, не
+// затираются локальным номером (он мог быть назначен по устаревшим данным и
+// перекрывал номера облака); новые offline-записи назначают номер по максимуму
+// облака + 1, чтобы не совпадали с номерами, созданными на другом устройстве.
 async function syncJournalEntriesToCloud() {
     if (typeof supabaseClient === 'undefined' || !supabaseClient) return;
-    const locals = loadLocalJournalEntries();
+    let cloudRows = [];
+    try {
+        const { data, error } = await supabaseClient.rpc('get_my_soma_journal');
+        if (!error && Array.isArray(data)) cloudRows = data;
+    } catch (_) {}
+    const cloudIds = new Set(cloudRows.map(r => String(r && r.id)));
+    let maxNum = 0;
+    for (const r of cloudRows) {
+        const n = Number(r && r.num);
+        if (Number.isInteger(n) && n > maxNum) maxNum = n;
+    }
+    const locals = loadLocalJournalEntries()
+        .filter(e => e && e.id)
+        .sort((a, b) => (Number(a.ts) || 0) - (Number(b.ts) || 0));
     for (const e of locals) {
+        const idStr = String(e.id);
+        // Запись уже в облаке — облако авторитетно, не затирать её номер локальным.
+        if (cloudIds.has(idStr)) continue;
+        let num = Number(e.num);
+        if (!(Number.isInteger(num) && num >= 1 && num > maxNum)) num = maxNum + 1;
+        maxNum = Math.max(maxNum, num);
         try {
             const { error } = await supabaseClient.rpc('save_soma_journal_entry', {
-                p_id: String(e.id),
+                p_id: idStr,
                 p_kind: 'entry',
                 p_text: String(e.text || '').slice(0, 2000),
                 p_date: e.date || '',
-                p_num: Number(e.num) || 0,
+                p_num: num,
                 p_fav: !!e.fav
             });
             if (!error) {
-                // Облако приняо — локальную копию можно оставить как кэш (загрузка
-                // мёрджит облако и локал, дубликатов по id не будет).
+                // Облако приняло — закрепить правильный номер в локальном кэше.
+                e.num = num;
+                saveLocalJournalEntry(e);
             } else {
                 cloudWarn('syncJournalEntriesToCloud: ' + (error.message || error.code));
             }
@@ -4201,17 +4225,46 @@ function markCassetteSynced(id, synced) {
 }
 
 // Save a cassette to the local cache immediately, then persist to the cloud in the
-// background. Returns the item synchronously (backward-compatible with callers).
-function saveWhisperCassette(text, dateLabel, opts) {
+// background. Номер кассеты назначается с учётом ЛОКАЛЬНОГО КЭША И ОБЛАКА —
+// иначе при сохранении с разных устройств (или до гидрации дневника) номера
+// совпадают и в облаке остаются дубли. Возвращает item (async: может запросить облако).
+async function saveWhisperCassette(text, dateLabel, opts) {
     const clean = String(text || '').trim().slice(0, 2000); // полный сигнал: до 2000 символов (ранее обрезалось до 420)
     if (!clean) return null;
     const list = loadCassettes();
-    const maxNum = list.reduce((mx, c) => Math.max(mx, Number(c.num) || 0), 0);
+    let maxNum = 0;
+    for (const c of list) {
+        const n = Number(c && c.num);
+        if (Number.isInteger(n) && n > maxNum) maxNum = n;
+    }
+    try {
+        for (const e of loadLocalJournalEntries()) {
+            const n = Number(e && e.num);
+            if (Number.isInteger(n) && n > maxNum) maxNum = n;
+        }
+    } catch (_) {}
+    // Облако — авторитетный источник номера: не дать номер, занятый на другом устройстве.
+    // Если кассета уже есть в облаке (пересохранение по id) — сохранить её номер.
+    let cloudNumForId = 0;
+    try {
+        if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+            const { data } = await supabaseClient.rpc('get_my_soma_journal');
+            const rows = Array.isArray(data) ? data : [];
+            const idStr = (opts && opts.id) ? String(opts.id) : '';
+            for (const r of rows) {
+                const n = Number(r && r.num);
+                if (!Number.isInteger(n)) continue;
+                if (idStr && r && String(r.id) === idStr) { cloudNumForId = n; continue; }
+                if (n > maxNum) maxNum = n;
+            }
+        }
+    } catch (_) {}
     const nowTs = Date.now();
     const stamp = formatCassetteDate(dateLabel, nowTs);
     const item = {
         id: (opts && opts.id) ? String(opts.id) : ('cas_' + nowTs + '_' + Math.floor(Math.random() * 900 + 100)),
-        num: (opts && Number.isInteger(opts.num) && opts.num >= 1) ? opts.num : (maxNum + 1),
+        num: (opts && Number.isInteger(opts.num) && opts.num >= 1) ? opts.num
+            : (cloudNumForId >= 1 ? cloudNumForId : (maxNum + 1)),
         date: stamp,
         ts: parseCassetteDateTs(stamp, nowTs),
         text: clean,
@@ -4354,6 +4407,10 @@ async function saveJournalEntry(id, text, dateLabel, tag) {
             return { ok: false, id: entryId, offline: true, error };
         }
         if (typeof setCloudStatus === 'function') setCloudStatus('☁ journal: сохранено', true);
+        // Закрепить номер в локальном кэше — он должен совпадать с облаком
+        // (облако авторитетно; иначе локальный номер мог перекрывать номера облака).
+        entry.num = finalNum;
+        saveLocalJournalEntry(entry);
         return { ok: true, id: entryId, offline: false };
     } catch (e) {
         const why = e && e.message || String(e);

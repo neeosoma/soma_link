@@ -1098,10 +1098,10 @@ test('v11: enlarged sleeping dogs with tucked front paws, clean RX-88 header, fu
     assert.match(migrated[0].date, /^07\.03\.\d{4}$/, 'legacy DD.MM cassette migrated seamlessly to full DD.MM.YYYY');
     assert.equal(migrated[0].num, 1, 'oldest cassette gets permanent #001');
 
-    const added1 = vRoom.saveWhisperCassette('Пусть эта ночь будет к тебе бережной.');
+    const added1 = await vRoom.saveWhisperCassette('Пусть эта ночь будет к тебе бережной.');
     assert.match(added1.date, /^\d{2}\.\d{2}\.\d{4}$/, 'new whisper cassette stamped with full DD.MM.YYYY');
     assert.equal(added1.num, 2, 'next cassette gets permanent sequential #002');
-    const added2 = vRoom.saveWhisperCassette('Тепло дошло сквозь тишину.', '5.9.2026');
+    const added2 = await vRoom.saveWhisperCassette('Тепло дошло сквозь тишину.', '5.9.2026');
     assert.equal(added2.date, '05.09.2026', 'normalizes single-digit D.M.YYYY to DD.MM.YYYY');
     assert.equal(added2.num, 3);
 

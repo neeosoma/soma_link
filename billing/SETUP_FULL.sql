@@ -208,8 +208,6 @@ begin
         new.owned_cosmetics := coalesce(old.owned_cosmetics, '{}'::text[]);
         new.xp := greatest(coalesce(old.xp, 0), coalesce(new.xp, 0));
         new.warmth := greatest(coalesce(old.warmth, 0), coalesce(new.warmth, 0));
-        new.seen := greatest(coalesce(old.seen, 0), coalesce(new.seen, 0));
-        new.reacts := greatest(coalesce(old.reacts, 0), coalesce(new.reacts, 0));
         new.help_attempts := greatest(coalesce(old.help_attempts, 0), coalesce(new.help_attempts, 0));
     end if;
 

@@ -44,4 +44,89 @@ grant execute on function public.my_soma_account_days() to authenticated;
 --    записывать профиль (permission denied for table soma_users).
 grant select, insert, update on public.soma_users to anon, authenticated;
 
+-- 4. seen/reacts: триггер guard_soma_cosmetics() ссылался на эти колонки,
+--    но они не сидели на БД, где setup применялся частично — поэтому любой
+--    INSERT/UPDATE на soma_users падал с 'record "new" has no field "seen"'
+--    и прогресс с устройств не доставался в облако.
+--    Колонки добавляются (SETUP_FULL.sql их уже создаёт), а функция триггера
+--    редефинируется без ссылок на seen/reacts — пусть они существуют,
+--    триггер не должен зависеть от них.
+alter table public.soma_users
+    add column if not exists seen integer not null default 0,
+    add column if not exists reacts integer not null default 0;
+
+create or replace function public.guard_soma_cosmetics()
+returns trigger
+language plpgsql
+as $$
+declare
+    v_owned text[];
+    v_slot text;
+    v_val text;
+begin
+    -- Edge Function (service_role) и SQL Editor (postgres) имеют полные права
+    if current_setting('request.jwt.claim.role', true) = 'service_role'
+       or current_user in ('postgres', 'supabase_admin') then
+        return new;
+    end if;
+
+    -- Обычный клиент не может сам дописать себе owned_cosmetics
+    if tg_op = 'INSERT' then
+        new.owned_cosmetics := '{}'::text[];
+    else
+        new.username := old.username;
+        new.owned_cosmetics := coalesce(old.owned_cosmetics, '{}'::text[]);
+        new.xp := greatest(coalesce(old.xp, 0), coalesce(new.xp, 0));
+        new.warmth := greatest(coalesce(old.warmth, 0), coalesce(new.warmth, 0));
+        new.help_attempts := greatest(coalesce(old.help_attempts, 0), coalesce(new.help_attempts, 0));
+    end if;
+
+    v_owned := new.owned_cosmetics;
+
+    -- Проверяем, что каждый надетый слот действительно куплен
+    if new.cosmetics is not null and jsonb_typeof(new.cosmetics) = 'object' then
+        foreach v_slot in array array['frame', 'seal', 'title', 'pager', 'pot'] loop
+            v_val := coalesce(new.cosmetics ->> v_slot, '');
+            if v_val <> '' and not (v_val = any(v_owned)) then
+                new.cosmetics := new.cosmetics - v_slot;
+            end if;
+        end loop;
+
+        if coalesce((new.cosmetics ->> 'cat')::boolean, false) and not ('room_cat' = any(v_owned)) then
+            new.cosmetics := jsonb_set(new.cosmetics, '{cat}', 'false'::jsonb);
+        end if;
+        if coalesce((new.cosmetics ->> 'dog')::boolean, false) and not ('room_dog' = any(v_owned)) then
+            new.cosmetics := jsonb_set(new.cosmetics, '{dog}', 'false'::jsonb);
+        end if;
+        if coalesce((new.cosmetics ->> 'steam')::boolean, false) and not ('room_steam' = any(v_owned)) then
+            new.cosmetics := jsonb_set(new.cosmetics, '{steam}', 'false'::jsonb);
+        end if;
+        if coalesce((new.cosmetics ->> 'tape')::boolean, false) and not ('room_tape' = any(v_owned)) then
+            new.cosmetics := jsonb_set(new.cosmetics, '{tape}', 'false'::jsonb);
+        end if;
+        if coalesce((new.cosmetics ->> 'garland')::boolean, false) and not ('room_garland' = any(v_owned)) then
+            new.cosmetics := jsonb_set(new.cosmetics, '{garland}', 'false'::jsonb);
+        end if;
+        if coalesce((new.cosmetics ->> 'candles')::boolean, false) and not ('room_candles' = any(v_owned)) then
+            new.cosmetics := jsonb_set(new.cosmetics, '{candles}', 'false'::jsonb);
+        end if;
+        if coalesce(new.cosmetics ->> 'epitaph', '') <> '' and not ('perk_epitaph' = any(v_owned)) then
+            new.cosmetics := new.cosmetics - 'epitaph';
+        end if;
+        if length(coalesce(new.cosmetics ->> 'epitaph', '')) > 66 then
+            new.cosmetics := jsonb_set(new.cosmetics, '{epitaph}', to_jsonb(left(new.cosmetics ->> 'epitaph', 66)));
+        end if;
+    else
+        new.cosmetics := '{}'::jsonb;
+    end if;
+
+    return new;
+end;
+$$;
+
+drop trigger if exists trg_guard_soma_cosmetics on public.soma_users;
+create trigger trg_guard_soma_cosmetics
+    before insert or update on public.soma_users
+    for each row execute function public.guard_soma_cosmetics();
+
 commit;

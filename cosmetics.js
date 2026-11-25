@@ -830,9 +830,9 @@ function renderShop() {
         note.classList.toggle('hidden', !shopState.notice);
     }
 
-    // Атрибуты альфа-теста (unpurchasable) не показываются в бутике, пока их нет в коллекции —
-    // у владельца доступно только надевание, покупка недоступна никому.
-    const items = SOMA_CATALOG.filter(it => it.tab === shopState.tab && (!it.unpurchasable || isOwned(it.id)));
+    // Атрибуты альфа-теста (unpurchasable) показываются в магазине, но не продаются:
+    // у не-владельцев — заблокированная подсказка, у владельца — только надевание.
+    const items = SOMA_CATALOG.filter(it => it.tab === shopState.tab);
     let html = '';
 
     // Редактор личной эпитафии во вкладке «Статус», если открыто право на эпитафию
@@ -945,13 +945,15 @@ function renderShop() {
                         ${personalPet}
                     </div>
                 </div>
-                <span class="shop-price ${owned ? 'is-owned' : ''}">${owned ? 'В КОЛЛЕКЦИИ' : `${it.stars} ⭐`}</span>
+                <span class="shop-price ${owned ? 'is-owned' : ''}">${owned ? 'В КОЛЛЕКЦИИ' : (it.unpurchasable ? 'НЕ ПРОДАЁТСЯ' : `${it.stars} ⭐`)}</span>
             </div>
             <div class="shop-actions">
                 ${owned
                     ? `<button type="button" class="shop-btn shop-btn--equip" ${it.slot === 'epitaph_unlock' ? 'disabled' : `onclick="toggleEquipCosmetic('${it.id}')"`}>${eqLabel}</button>${petNameBtn}`
-                    : `<button type="button" class="shop-btn shop-btn--buy" onclick="purchaseCosmetic('${it.id}')">${buyLabel}</button>
-                       <button type="button" class="shop-btn shop-btn--try" onclick="tryCosmetic('${it.id}')">${tryLabel}</button>`}
+                    : (it.unpurchasable
+                        ? `<button type="button" class="shop-btn shop-btn--buy is-disabled" disabled title="Атрибут альфа-теста — покупке не подлежит">🔒 НЕ ПРОДАЁТСЯ</button>`
+                        : `<button type="button" class="shop-btn shop-btn--buy" onclick="purchaseCosmetic('${it.id}')">${buyLabel}</button>
+                           <button type="button" class="shop-btn shop-btn--try" onclick="tryCosmetic('${it.id}')">${tryLabel}</button>`)}
             </div>
             ${petNameEditor}
         </div>`;

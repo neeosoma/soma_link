@@ -2280,16 +2280,20 @@
         }
 
         if (remote > seen) {
-            const delta = remote - seen;
-            player.warmth = Math.max(current, seen) + delta;
+            // player.warmth уже включает облачное тепло (mergeCloudProfile
+            // ставит max(local, cloud) до этого вызова). Добавлять delta поверх
+            // этого удваивает облачную часть — берём строго максимум текущего
+            // и серверного значения.
+            const delta = Math.max(0, remote - current);
+            player.warmth = Math.max(current, remote);
             try {
                 localStorage.setItem('soma_server_warmth_seen', String(remote));
                 localStorage.setItem('soma_warmth', String(player.warmth));
             } catch (_) {}
-            if (typeof feedActiveRoomPlant === 'function') {
+            if (delta > 0 && typeof feedActiveRoomPlant === 'function') {
                 try { feedActiveRoomPlant(delta, player.warmth); } catch (_) {}
             }
-            updateHeader();
+            if (delta > 0) updateHeader();
             return true;
         }
         if (current < seen) {

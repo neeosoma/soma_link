@@ -73,13 +73,17 @@ const C = '33333333-3333-4333-8333-333333333333';
             "select * from public.send_soma_whisper('w_reply2','post_a1','ЛИЧНАЯ БОЛЬ','Пусть сегодня станет немного легче.','u_aaaa','Ещё один тёплый ответ на ваше сообщение.','whisper_w1')"),
             /Reply already sent/);
 
-        // 6) Ответ на обработанный (saved) шёпот — недоступно.
+        // 6) Ответ на сохранённый (saved) шёпот — разрешён по дизайну: guard
+        //    разрешает ответы на saved, приложение сохраняет шёпот на кассету
+        //    и оставляет возможность ответить.
         await asUser(B); await send('whisper_w2', 'post_a2', 'u_bbbb');
         await asUser(A);
         assert.equal(await scalar("select status from public.set_soma_whisper_status('whisper_w2','saved')"), 'saved');
-        await assert.rejects(db.query(
-            "select * from public.send_soma_whisper('w_reply3','post_a2','ЛИЧНАЯ БОЛЬ','Пусть сегодня станет немного легче.','u_aaaa','Тёплый ответ на ваше сообщение.','whisper_w2')"),
-            /Reply target unavailable/);
+        const replySaved = (await db.query(
+            "select * from public.send_soma_whisper('w_reply3','post_a2','ЛИЧНАЯ БОЛЬ','Пусть сегодня станет немного легче.','u_aaaa','Тёплый ответ на ваше сообщение.','whisper_w2')")).rows;
+        assert.equal(replySaved.length, 1);
+        assert.equal(replySaved[0].reply_to_id, 'whisper_w2');
+        assert.equal(await whisperStatus('whisper_w2'), 'answered');
 
         // 7) Обычный шёпот без p_reply_to (null) — сигнатура 7 аргументов.
         await asUser(A);
@@ -128,18 +132,21 @@ const C = '33333333-3333-4333-8333-333333333333';
         // 12) Guard: сохранённый шёпот (saved) необратим — от него зависит отклик
         //     отправителю (тепло + сообщение во входящие). saved → dismissed/pending
         //     должно падать; saved → saved (no-op) и saved → answered — работать.
-        assert.equal(await whisperStatus('whisper_w2'), 'saved', 'whisper_w2 is saved before guard checks');
+        //     (whisper_w2 уже ответён на шаге 6 — проверяем на whisper_w4.)
+        await asUser(A);
+        assert.equal(await scalar("select status from public.set_soma_whisper_status('whisper_w4','saved')"), 'saved',
+            'whisper_w4 is saved before guard checks');
         await assert.rejects(db.query(
-            "select * from public.set_soma_whisper_status('whisper_w2','dismissed')"),
+            "select * from public.set_soma_whisper_status('whisper_w4','dismissed')"),
             /Invalid whisper transition/);
-        assert.equal(await whisperStatus('whisper_w2'), 'saved',
+        assert.equal(await whisperStatus('whisper_w4'), 'saved',
             'saved → dismissed rejected, status stays saved (ack/warmth intact)');
         await assert.rejects(db.query(
-            "select * from public.set_soma_whisper_status('whisper_w2','pending')"),
+            "select * from public.set_soma_whisper_status('whisper_w4','pending')"),
             /Invalid whisper transition/);
-        assert.equal(await scalar("select status from public.set_soma_whisper_status('whisper_w2','saved')"), 'saved',
+        assert.equal(await scalar("select status from public.set_soma_whisper_status('whisper_w4','saved')"), 'saved',
             'saved → saved no-op still allowed');
-        assert.equal(await scalar("select status from public.set_soma_whisper_status('whisper_w2','answered')"), 'answered',
+        assert.equal(await scalar("select status from public.set_soma_whisper_status('whisper_w4','answered')"), 'answered',
             'saved → answered still allowed');
 
         console.log('Whisper reply integration passed: 1 answer per whisper, free of daily cap, answered status, reply delivery to sender.');

@@ -10297,12 +10297,17 @@ async function acceptIncomingWhisper(whisperId) {
     const w = pending.find(x => x.id === id);
     if (!w) return { ok: false, error: 'Шёпот уже обработан.' };
 
+    const cassetteId = 'cas_' + w.id;
+    // Если шёпот уже сохранён на кассету — повторное сохранение идёмпотентно:
+    // та же кассета (без дубля в локальном кэше), статус в облаке остаётся saved.
+    const alreadySaved = !!(w.cassetteSaved || w.status === 'saved');
     const cloud = await persistWhisperStatus(w.id, 'saved');
     if (!cloud.ok) return cloud;
-    const cas = await saveWhisperCassette(w.text, undefined, { id: 'cas_' + w.id });
+    const existing = alreadySaved ? loadCassettes().find(c => c.id === cassetteId) : null;
+    const cas = existing || await saveWhisperCassette(w.text, undefined, { id: cassetteId });
     // Сохраняем на кассету, но НЕ вычеркиваем шёпот из входящих: игрок остаётся в окне
     // и может нажать «Ответить». Сервер разрешает ответ на статус saved (guard_soma_whispers).
-    markWhisperCassetteSaved(w.id);
+    if (!alreadySaved) markWhisperCassetteSaved(w.id);
     trackFirstSignalEvent('cassette_saved');
     roomAnim.activeCassetteId = cas ? cas.id : roomAnim.activeCassetteId;
     roomAnim.cassettePlaying = true;

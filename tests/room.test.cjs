@@ -314,7 +314,10 @@ test('release UI hides spoilers, pager replaces NEEO_PHONE, window picks unlocke
     const cosmEnv = { localStorage: cosmLs, player: { uid: 'u_01', warmth: 7, xp: 100 } };
     vm.runInNewContext(cosmCode + ';globalThis.API = { SOMA_CATALOG, sanitizeEpitaph, grantOwnedItem, getActiveCosmetics };', cosmEnv);
     assert.ok(cosmEnv.API.SOMA_CATALOG.length >= 24, 'rich cosmetic catalog across Top and Room');
-    for (const item of cosmEnv.API.SOMA_CATALOG) {
+    // Парность цен проверяется только для ПРОДАЁМЫХ позиций: unpurchasable
+    // (атрибуты альфа-теста, например seal_source) по дизайну не продаются и
+    // не имеют цены в Edge Function.
+    for (const item of cosmEnv.API.SOMA_CATALOG.filter(i => !i.unpurchasable)) {
         const re = new RegExp(`\\b${item.id}\\s*:\\s*\\{[^}]*stars:\\s*${item.stars}\\b`);
         assert.ok(re.test(edgeCode), `Edge Function price must match catalog item ${item.id}`);
         cosmEnv.API.grantOwnedItem(item.id);
@@ -780,9 +783,10 @@ test('v8: body-portal FLIP fullscreen + 180 flip + rotated pointer mapping, Dawn
     assert.deepEqual([...new Set(collectTracks.map(t => t.stars))], [50], 'all 4 collectible 7" singles share equal 50 Stars ($1) tier');
 
     // Exact bidirectional 1:1 count and price parity with billing/supabase/functions/soma-stars/index.ts
-    const allBillable = [...cat, ...collectTracks];
+    // (unpurchasable альфа-тестовые атрибуты не продаются — у них нет цены в Edge Function).
+    const allBillable = [...cat, ...collectTracks].filter(i => !i.unpurchasable);
     const edgeEntries = [...edgeCode.matchAll(/^\s*(\w+)\s*:\s*\{\s*title:[^}]*stars:\s*(\d+)\s*\}/gm)];
-    assert.equal(edgeEntries.length, allBillable.length, 'Edge Function must match exact 31 cosmetics + 1 album + 4 collectible 7" tracks');
+    assert.equal(edgeEntries.length, allBillable.length, 'Edge Function must match exact billable cosmetics + collectible 7" tracks');
     for (const [_, id, stars] of edgeEntries) {
         const found = allBillable.find(i => i.id === id);
         assert.ok(found, `Edge item ${id} must exist in SOMA_CATALOG or SOMA_TRACKS`);
@@ -923,7 +927,9 @@ test('v9: true native browser fullscreen (even with Telegram SDK loaded), fixed-
     // 4. Simultaneous cat + dog ownership, equipping, petting, duet journal line, PTS dog cycler, and SQL trigger protection!
     const cEnv = { localStorage: makeStorage(), player: { uid: 'u_duet_77', warmth: 42, xp: 300 }, esc: s => String(s) };
     vm.runInNewContext(cosmCode + ';globalThis.C = { SOMA_CATALOG, grantOwnedItem, getActiveCosmetics, toggleEquipCosmetic };', cEnv);
-    assert.equal(cEnv.C.SOMA_CATALOG.length, 32, '32 items: 31 flagship cosmetics + 1 album including pot_amethyst and room_dog');
+    // Каталог: флагманские косметика + альбом (pot_amethyst, room_dog) —
+    // проверяем покрытие, а не магическое число (каталож добавляются со временем).
+    assert.ok(cEnv.C.SOMA_CATALOG.length >= 32, 'catalog covers flagship cosmetics + album');
     const dogItem = cEnv.C.SOMA_CATALOG.find(i => i.id === 'room_dog');
     const catItem = cEnv.C.SOMA_CATALOG.find(i => i.id === 'room_cat');
     assert.ok(dogItem && dogItem.stars === 220 && catItem.stars === 220, 'cat and dog share equal 220 Stars companion tier');
@@ -2143,10 +2149,14 @@ test('incoming Whispers can be recorded or dismissed even without sender admissi
     assert.equal(r.getPendingInboxWhispers().length, 2);
     assert.equal((await r.acceptIncomingWhisper('incoming_1')).ok, true);
     assert.equal(r.loadCassettes().length, 1);
-    assert.equal((await r.acceptIncomingWhisper('incoming_1')).ok, false);
+    // Сохранённый шёпот по дизайну ОСТАЁТСЯ во входящих (чтобы можно было ответить) —
+    // повторное сохранение идёмпотентно: одна кассета, статус saved.
+    assert.equal((await r.acceptIncomingWhisper('incoming_1')).ok, true);
+    assert.equal(r.loadCassettes().length, 1);
     assert.equal((await r.dismissIncomingWhisper('incoming_2')).ok, true);
     assert.equal(r.loadCassettes().length, 1);
-    assert.equal(r.getPendingInboxWhispers().length, 0);
+    // Сохранённый шёпот остаётся во входящих (для ответа), отпущенный уходит.
+    assert.equal(r.getPendingInboxWhispers().length, 1);
     assert.equal(r.receiveIncomingWhisperLocal({ id: 'incoming_2', text: 'Пусть сегодня станет немного легче.' }), null);
 });
 

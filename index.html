@@ -1047,7 +1047,7 @@
 <script src="signals.js?v=4"></script>
 <script src="station-ritual.js?v=2"></script>
 <script src="witness.js?v=2"></script>
-    <script src="room.js?v=40"></script>
+    <script src="room.js?v=41"></script>
 <script src="cosmetics.js?v=20"></script>
 <script src="receiver.js?v=18"></script>
 <script src="vhs.js?v=15"></script>
@@ -3056,39 +3056,41 @@
         btn.innerText = 'ОТПРАВКА В ЭФИР...';
         // Анимация передачи: V-метр ведёт к максимуму
         updateTsVmeter(POST_MIN_LEN * 2); // заполняем полностью
-        let failed = false, reason = '';
+        let feedOk = false, feedReason = '';
         try {
             if (!supabaseClient) throw new Error('Supabase не подключён');
             // Все write-операции через server-side RPC (security definer) — обходит RLS напрямую.
-            const { data, error } = await supabaseClient.rpc('submit_soma_post', {
-                p_id: insertRow.id,
-                p_author: insertRow.author,
-                p_tag: insertRow.tag,
-                p_text: insertRow.text,
-                p_cosmetics: insertRow.cosmetics || {},
-            });
-            if (error) throw error;
-            if (!data || data.length === 0) throw new Error('RPC вернул пустой ответ');
+            // Отправка в эфир с retry: если первый экземпляр уже ушёл на сервер, но ответ
+            // не дошёл (сетевой флэк), повторный вызов с тем же p_id даст 23505 (дубликат
+            // ключа) — это значит сигнал уже на пэйджерах, т.е. успех, не ошибка.
+            for (let attempt = 0; attempt < 3 && !feedOk; attempt++) {
+                const { data, error } = await supabaseClient.rpc('submit_soma_post', {
+                    p_id: insertRow.id,
+                    p_author: insertRow.author,
+                    p_tag: insertRow.tag,
+                    p_text: insertRow.text,
+                    p_cosmetics: insertRow.cosmetics || {},
+                });
+                if (!error && data && data.length > 0) {
+                    feedOk = true;
+                } else if (error && (error.code === '23505' || /duplicate key/i.test(error.message || ''))) {
+                    // Сигнал уже на сервере (дубликат ключа) — отправка завершена.
+                    feedOk = true;
+                } else {
+                    feedReason = [error && error.message, error && error.code, error && error.hint].filter(Boolean).join(' | ') || 'ошибка сети';
+                    if (attempt < 2) await new Promise(r => setTimeout(r, 600 * (attempt + 1)));
+                }
+            }
         } catch (e) {
             console.error('Ошибка отправки:', e);
-            failed = true;
-            reason = [e && e.message, e && e.code, e && e.hint].filter(Boolean).join(' | ') || String(e);
+            feedReason = [e && e.message, e && e.code, e && e.hint].filter(Boolean).join(' | ') || String(e);
         }
         btn.disabled = false;
         btn.innerText = label;
+        updateTsVmeter(feedOk ? POST_MIN_LEN * 2 : 0);
 
-        if (failed) {
-            // При ошибке сети дневной сигнал НЕ сгорает, а черновик бережно сохраняется!
-            updateTsVmeter(0);
-            showPostError('Сигнал не дошёл до сети (лимит дня сохранён): ' + reason);
-            return;
-        }
-        try { localStorage.setItem(POST_DAY_KEY, currentPostDayKey()); } catch (e) {}
-        try { localStorage.removeItem(POST_DRAFT_KEY); } catch (e) {}
-        rememberMyPostId(insertRow.id);
-        hideKeyboard();
-        // Сохраняем собственную запись в дневник в Supabase (journal) — кассеты/записи
-        // синхронизируются между устройствами, а не только в localStorage.
+        // Сохраняем собственную запись на ВИНИЛЕ в любом случае — сигнал не должен
+        // потеряться, даже если отправка в эфир (feed/пейджеры) не удалась.
         try {
             const journalApi = window.SOMA_ROOM;
             if (journalApi && typeof journalApi.saveJournalEntry === 'function') {
@@ -3097,6 +3099,18 @@
                 journalApi.saveJournalEntry('e_' + insertRow.id, text, today, insertRow.tag);
             }
         } catch (_) {}
+
+        if (!feedOk) {
+            // Сетевой сбой: сигнал сохранён на виниле (и в облаке, если сеть вернётся),
+            // лимит дня сохранён для повторной отправки, черновик не трогаем.
+            showPostError('Сигнал сохранён на виниле, но не дошёл до эфира (лимит дня сохранён): ' + feedReason);
+            return;
+        }
+        // Победа: сгораем лимит дня, помечкаем пост, закрываем интерфейс.
+        try { localStorage.setItem(POST_DAY_KEY, currentPostDayKey()); } catch (e) {}
+        try { localStorage.removeItem(POST_DRAFT_KEY); } catch (e) {}
+        rememberMyPostId(insertRow.id);
+        hideKeyboard();
         activeFeedTag = 'ВСЕ';
         closePostModal();
         textareaEl.value = '';

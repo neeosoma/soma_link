@@ -4074,6 +4074,54 @@ function writeCassetteCache(list) {
     }
 }
 
+// ===== Локальное хранение записей-сигналов (устойчивость при сбое сети) =====
+// Записи-сигналы обычно хранятся в облаке (Supabase journal). Но если сеть
+// падает в момент отправки, запись не должна потеряться на виниле: она сразу
+// сохраняется локально и синхронизируется в облако позже (save_soma_journal_entry
+// — upsert по id, поэтому повторная отправка не создаёт дубликатов).
+const JOURNAL_ENTRIES_KEY = 'soma_journal_entries';
+function loadLocalJournalEntries() {
+    try {
+        const list = JSON.parse(lsGet(JOURNAL_ENTRIES_KEY) || '[]');
+        return Array.isArray(list) ? list : [];
+    } catch (_) { return []; }
+}
+function saveLocalJournalEntry(entry) {
+    try {
+        if (!entry || !entry.id) return;
+        const list = loadLocalJournalEntries().filter(e => e && e.id !== entry.id);
+        list.unshift(entry);
+        lsSet(JOURNAL_ENTRIES_KEY, JSON.stringify(list.slice(0, 120)));
+    } catch (_) {}
+}
+// Пушит локальные записи-сигналы в облако (best-effort, upsert по id).
+// Вызывать после гидраты дневника и после successful-сохранения, чтобы
+// загрузившиеся离线 записи дошли до сервера.
+async function syncJournalEntriesToCloud() {
+    if (typeof supabaseClient === 'undefined' || !supabaseClient) return;
+    const locals = loadLocalJournalEntries();
+    for (const e of locals) {
+        try {
+            const { error } = await supabaseClient.rpc('save_soma_journal_entry', {
+                p_id: String(e.id),
+                p_kind: 'entry',
+                p_text: String(e.text || '').slice(0, 2000),
+                p_date: e.date || '',
+                p_num: Number(e.num) || 0,
+                p_fav: !!e.fav
+            });
+            if (!error) {
+                // Облако приняо — локальную копию можно оставить как кэш (загрузка
+                // мёрджит облако и локал, дубликатов по id не будет).
+            } else {
+                cloudWarn('syncJournalEntriesToCloud: ' + (error.message || error.code));
+            }
+        } catch (e2) {
+            cloudWarn('syncJournalEntriesToCloud: ' + (e2 && e2.message || e2));
+        }
+    }
+}
+
 // Записи-сигналы хранятся ТОЛЬКО в облаке (Supabase journal). Локального
 // хранения записей нет — сохранение и загрузка проходят через RPC, чтобы
 // синхронизация с игрой проверялась на реальном Supabase.
@@ -4203,11 +4251,14 @@ async function hydrateJournalFromCloud() {
         writeCassetteCache(merged);
         renderRoom();
     } catch (_) {}
+    // Прогнать локальные записи-сигналы (сохранённые при сбое сети) в облако.
+    syncJournalEntriesToCloud();
 }
 
 // Save the player's own diary/journal entry (a signal they published).
-// Записи хранятся ТОЛЬКО в облаке (Supabase journal) — сохранение проходит
-// через RPC, чтобы синхронизация с игрой проверялась на реальном Supabase.
+// Запись сохраняется СРАЗУ локально (чтобы не потерялась на виниле при сбое сети),
+// а в облако (Supabase journal) отправляется best-effort — save_soma_journal_entry
+// это upsert по id, поэтому повторная синхронизация не создаёт дубликатов.
 async function saveJournalEntry(id, text, dateLabel, tag) {
     const clean = String(text || '').trim().slice(0, 2000); // полный сигнал: до 2000 символов (ранее обрезалось до 420)
     // Диагностика: показываем, что journal-сохранение началось (что функция вызвана).
@@ -4215,22 +4266,39 @@ async function saveJournalEntry(id, text, dateLabel, tag) {
     if (!clean) return null;
     const entryId = String(id || 'e_' + Date.now());
     try { saveEntryTag(entryId, tag); } catch (_) {}
+    // Номер сигнала: следующее свободное по порядку (максимум + 1).
+    // Считаем локальные кассеты, локальные записи и облачные записи, чтобы
+    // номер не перекрывался — записываем в облак, номер навеки крепится к сигналу.
+    let maxNum = 0;
+    try {
+        const list = loadCassettes();
+        for (const c of list) {
+            const n = Number(c && c.num);
+            if (Number.isInteger(n) && n > maxNum) maxNum = n;
+        }
+    } catch (_) {}
+    try {
+        for (const e of loadLocalJournalEntries()) {
+            const n = Number(e && e.num);
+            if (Number.isInteger(n) && n > maxNum) maxNum = n;
+        }
+    } catch (_) {}
+    const entry = {
+        id: entryId,
+        num: maxNum + 1,
+        date: dateLabel || formatCassetteDate(dateLabel, Date.now()),
+        ts: parseCassetteDateTs(dateLabel || '', Date.now()),
+        text: clean,
+        fav: false
+    };
+    // Сначала локально — запись-сигнал не должна потеряться на виниле при сбое
+    // сети. Облако записывается best-effort ниже (upsert по id — без дубликатов).
+    saveLocalJournalEntry(entry);
     if (typeof supabaseClient === 'undefined' || !supabaseClient) {
         cloudWarn('supabaseClient отсутствует (проверьте config.js и загрузку supabase-js)');
         return { id: entryId, offline: true };
     }
     try {
-        // Номер сигнала: следующее свободное по порядку (максимум + 1).
-        // Считаем и локальный кэш и облачные записи, чтобы номер не
-        // перекрывался — записываем в облак, номер навеки крепится к сигналу.
-        let maxNum = 0;
-        try {
-            const list = loadCassettes();
-            for (const c of list) {
-                const n = Number(c && c.num);
-                if (Number.isInteger(n) && n > maxNum) maxNum = n;
-            }
-        } catch (_) {}
         try {
             const cur = await supabaseClient.rpc('get_my_soma_journal');
             const rows = Array.isArray(cur && cur.data) ? cur.data : [];
@@ -4239,23 +4307,24 @@ async function saveJournalEntry(id, text, dateLabel, tag) {
                 if (Number.isInteger(n) && n > maxNum) maxNum = n;
             }
         } catch (_) {}
-        const newNum = maxNum + 1;
+        const finalNum = maxNum + 1;
         const { error } = await supabaseClient.rpc('save_soma_journal_entry', {
-            p_id: entryId, p_kind: 'entry', p_text: clean, p_date: dateLabel, p_num: newNum, p_fav: false
+            p_id: entryId, p_kind: 'entry', p_text: clean, p_date: entry.date, p_num: finalNum, p_fav: false
         });
         if (error) {
             const why = error.message || error.code || 'ошибка';
             if (typeof setCloudStatus === 'function') setCloudStatus('☁ journal: ошибка — ' + why, false);
             cloudWarn('save_soma_journal_entry (сигнал): ' + why);
-        } else {
-            if (typeof setCloudStatus === 'function') setCloudStatus('☁ journal: сохранено', true);
+            return { ok: false, id: entryId, offline: true, error };
         }
-        return { ok: !error, id: entryId, offline: !!error, error };
+        if (typeof setCloudStatus === 'function') setCloudStatus('☁ journal: сохранено', true);
+        return { ok: true, id: entryId, offline: false };
     } catch (e) {
         const why = e && e.message || String(e);
         if (typeof setCloudStatus === 'function') setCloudStatus('☁ journal: ошибка — ' + why, false);
         cloudWarn('save_soma_journal_entry (сигнал): ' + why);
-        return { ok: false, id: entryId, offline: false, error: e };
+        // Локальная запись уже сохранена — винил не потерян, облако синхронизируется позже.
+        return { ok: false, id: entryId, offline: true, error: e };
     }
 }
 
@@ -4316,7 +4385,23 @@ async function loadDiaryArchive() {
     // Локальные кассеты (их механика локального хранения остаётся неизменной).
     const localCassettes = loadCassettes();
     localCassettes.forEach(c => items.push({ ...c, kind: 'cassette' }));
-    // Записи-сигналы — ТОЛЬКО из облака (Supabase journal).
+    // Локальные записи-сигналы (сохранённые при сбое сети, до синхронизации в облако).
+    // Облако ниже авторитетно — перезаписывает их по id, но offline-записи винил
+    // показывает из локального кэша, чтобы сигнал не пропадал.
+    try {
+        loadLocalJournalEntries().forEach(e => {
+            if (!e || !e.id) return;
+            items.push({
+                id: String(e.id), kind: 'entry',
+                num: Number(e.num) || 0,
+                date: e.date || '',
+                ts: Number(e.ts) || parseCassetteDateTs(e.date || '', Date.now()),
+                text: String(e.text || '').slice(0, 2000),
+                fav: !!e.fav
+            });
+        });
+    } catch (_) {}
+    // Записи-сигналы из облака (Supabase journal) — перезаписывают локальные по id.
     if (typeof supabaseClient !== 'undefined' && supabaseClient) {
         try {
             const { data, error } = await supabaseClient.rpc('get_my_soma_journal');
@@ -4325,7 +4410,9 @@ async function loadDiaryArchive() {
                     if (!r || !r.id) return;
                     const norm = normalizeJournalRow(r);
                     if (r.kind === 'entry') {
-                        items.push({ ...norm, kind: 'entry' });
+                        const idx = items.findIndex(i => i.id === norm.id);
+                        if (idx >= 0) items[idx] = { ...norm, kind: 'entry' };
+                        else items.push({ ...norm, kind: 'entry' });
                     } else {
                         // cassette: облако авторитетно по тексту/дате, но номер
                         // сохраняем постоянным — если в облаке его нет, берём

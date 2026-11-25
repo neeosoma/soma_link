@@ -65,8 +65,12 @@ begin
             -- Дневного лимита на шёпоты нет: ограничение — уникальность (один шёпот на пост).
         end if;
     else
+        -- Сохранённый шёпот (saved) необратим: от него зависит отклик отправителю
+        -- (тепло + сообщение во входящие, my_saved_soma_whispers). Переворот в
+        -- dismissed/pending отключает отклик — запрещаем.
         if not public.owns_soma_post(old.post_id) or old.status not in ('pending', 'saved')
-           or new.status not in ('saved', 'dismissed', 'answered') then
+           or new.status not in ('saved', 'dismissed', 'answered')
+           or (old.status = 'saved' and new.status in ('dismissed', 'pending')) then
             raise exception 'Invalid whisper transition';
         end if;
         new.id := old.id; new.post_id := old.post_id;

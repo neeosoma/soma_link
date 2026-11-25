@@ -125,6 +125,23 @@ const C = '33333333-3333-4333-8333-333333333333';
         assert.equal(bInbox.length, 4, 'sender must see all whispers on own posts');
         assert.ok(!bInbox.some(r => r.id === 'w_reply1' || r.id === 'w_reply4'), 'replies must not appear in sender inbox by post id');
 
+        // 12) Guard: сохранённый шёпот (saved) необратим — от него зависит отклик
+        //     отправителю (тепло + сообщение во входящие). saved → dismissed/pending
+        //     должно падать; saved → saved (no-op) и saved → answered — работать.
+        assert.equal(await whisperStatus('whisper_w2'), 'saved', 'whisper_w2 is saved before guard checks');
+        await assert.rejects(db.query(
+            "select * from public.set_soma_whisper_status('whisper_w2','dismissed')"),
+            /Invalid whisper transition/);
+        assert.equal(await whisperStatus('whisper_w2'), 'saved',
+            'saved → dismissed rejected, status stays saved (ack/warmth intact)');
+        await assert.rejects(db.query(
+            "select * from public.set_soma_whisper_status('whisper_w2','pending')"),
+            /Invalid whisper transition/);
+        assert.equal(await scalar("select status from public.set_soma_whisper_status('whisper_w2','saved')"), 'saved',
+            'saved → saved no-op still allowed');
+        assert.equal(await scalar("select status from public.set_soma_whisper_status('whisper_w2','answered')"), 'answered',
+            'saved → answered still allowed');
+
         console.log('Whisper reply integration passed: 1 answer per whisper, free of daily cap, answered status, reply delivery to sender.');
     } catch (e) {
         console.error('Whisper reply integration FAILED:', e.message);

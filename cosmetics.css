@@ -183,6 +183,36 @@
     100% { stroke-dashoffset: 0; opacity: 0.75; }
 }
 
+/* 6) Хранитель источников — восходящий живой струмент и пульсирующая капля-светило (альфа-тест) */
+.soma-seal--source {
+    color: #7fe9c4;
+    filter: drop-shadow(0 0 5px rgba(94, 230, 190, 0.72));
+    animation: soma-seal-source-aura 3.6s ease-in-out infinite;
+}
+.soma-seal--source .seal-flow {
+    stroke-dasharray: 3 3.2;
+    stroke-dashoffset: 0;
+    animation: soma-seal-source-flow 2.4s linear infinite;
+}
+.soma-seal--source .seal-drop {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: soma-seal-drop-pulse 3.6s ease-in-out infinite;
+}
+@keyframes soma-seal-source-aura {
+    0%, 100% { filter: drop-shadow(0 0 4px rgba(94, 230, 190, 0.5)); }
+    50% { filter: drop-shadow(0 0 8px rgba(150, 255, 220, 0.95)); }
+}
+@keyframes soma-seal-source-flow {
+    0% { stroke-dashoffset: 0; opacity: 0.35; }
+    50% { opacity: 1; }
+    100% { stroke-dashoffset: -19.4; opacity: 0.35; }
+}
+@keyframes soma-seal-drop-pulse {
+    0%, 100% { transform: scale(0.85); }
+    50% { transform: scale(1.18); }
+}
+
 /* ===== 5 АВТОРСКИХ ТИТУЛОВ С УНИКАЛЬНОЙ ЖИВОЙ ТИПОГРАФИКОЙ (ЕДИНЫЙ ТИР 110 ⭐) ===== */
 @keyframes soma-title-shimmer {
     0% { background-position: 0% 50%; }
@@ -233,6 +263,13 @@
     background-image: linear-gradient(90deg, #fb923c 0%, #fef08a 38%, #f87171 64%, #fdba74 100%);
     filter: drop-shadow(0 0 7px rgba(251, 146, 60, 0.38));
     animation: soma-title-shimmer 4.2s linear infinite;
+}
+
+.soma-title--sourcekeeper {
+    color: #bff5e0;
+    background-image: linear-gradient(90deg, #0f9d78 0%, #5eead4 30%, #fde68a 58%, #7fe9c4 80%, #0f9d78 100%);
+    filter: drop-shadow(0 0 7px rgba(45, 212, 191, 0.42));
+    animation: soma-title-shimmer 5.0s linear infinite;
 }
 
 /* ===== 6 КОЛЛЕКЦИОННЫХ РАМОК ВЫСШЕЙ ПРОБЫ (ЕДИНЫЙ ТИР 150 ⭐ · У КАЖДОЙ СВОЯ АНИМАЦИЯ!) ===== */

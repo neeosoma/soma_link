@@ -8,7 +8,9 @@ const SOMA_SEALS_SVG = {
     seal_eclipse: '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.25"><circle cx="8" cy="8" r="5.3" stroke-opacity="0.72"/><path d="M9.8 3.05A4.65 4.65 0 0 0 9.8 12.95A5.25 5.25 0 1 1 9.8 3.05Z" fill="currentColor"/><g class="seal-flare" stroke="none"><circle cx="12.3" cy="4.8" r="1.35" fill="#fffbeb"/><path d="M12.3 2.4L12.65 4.45L14.7 4.8L12.65 5.15L12.3 7.2L11.95 5.15L9.9 4.8L11.95 4.45Z" fill="currentColor"/></g></svg>',
     seal_moth: '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><g class="seal-wings"><path d="M8 5C5.5 2.1 1.5 2.9 1.9 6.8C2.2 9.3 5.1 9.8 8 8.2C10.9 9.8 13.8 9.3 14.1 6.8C14.5 2.9 10.5 2.1 8 5Z" fill="currentColor" fill-opacity="0.16"/><path d="M8 8.2L4.4 12.8L7.4 11.5L8 8.2ZM8 8.2L11.6 12.8L8.6 11.5L8 8.2Z"/><circle cx="4.6" cy="6.4" r="0.85" fill="currentColor" stroke="none"/><circle cx="11.4" cy="6.4" r="0.85" fill="currentColor" stroke="none"/></g><path d="M8 3.6V13M6.6 2.3L8 4L9.4 2.3"/></svg>',
     seal_crown: '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12.2L3.1 5L6.1 8.1L8 3.2L9.9 8.1L12.9 5L14 12.2H2Z" fill="currentColor" fill-opacity="0.15"/><line x1="2.3" y1="14" x2="13.7" y2="14"/><g class="seal-gems" fill="#fffbeb" stroke="none"><circle cx="8" cy="2.6" r="1.05"/><circle cx="3" cy="4.4" r="0.8"/><circle cx="13" cy="4.4" r="0.8"/></g></svg>',
-    seal_signal: '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,8.6 4.2,8.6 6,3 8.3,13.2 10.3,5.8 11.7,8.6 15,8.6" stroke-width="1.2" stroke-opacity="0.3"/><polyline class="seal-wave" points="1,8.6 4.2,8.6 6,3 8.3,13.2 10.3,5.8 11.7,8.6 15,8.6" stroke-width="1.55"/></svg>'
+    seal_signal: '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,8.6 4.2,8.6 6,3 8.3,13.2 10.3,5.8 11.7,8.6 15,8.6" stroke-width="1.2" stroke-opacity="0.3"/><polyline class="seal-wave" points="1,8.6 4.2,8.6 6,3 8.3,13.2 10.3,5.8 11.7,8.6 15,8.6" stroke-width="1.55"/></svg>',
+    // ХРАНИТЕЛЬ ИСТОКОВ — чаша-источник с живым восходящим струменем и пульсирующей каплей-светилом
+    seal_source: '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 9.7h8.8l-1.1 3a1.4 1.4 0 0 1-1.3 1.1H6.4a1.4 1.4 0 0 1-1.3-1.1L3.6 9.7z" fill="currentColor" fill-opacity="0.12"/><path class="seal-flow" d="M8 9.7V4.8"/><path class="seal-flow" d="M8 9.7C6.5 8.1 6.1 7 6.6 5.5" stroke-opacity="0.5"/><path class="seal-flow" d="M8 9.7C9.5 8.1 9.9 7 9.4 5.5" stroke-opacity="0.5"/><path class="seal-drop" d="M8 2.7c1.8 2.3 2.6 3.8 2.6 5.2a2.6 2.6 0 0 1-5.2 0C5.4 6.5 6.2 5 8 2.7z" fill="currentColor" fill-opacity="0.28"/></svg>'
 };
 
 const SOMA_SEAL_CLASS = {
@@ -16,7 +18,8 @@ const SOMA_SEAL_CLASS = {
     seal_eclipse: 'soma-seal--eclipse',
     seal_moth: 'soma-seal--moth',
     seal_crown: 'soma-seal--crown',
-    seal_signal: 'soma-seal--signal'
+    seal_signal: 'soma-seal--signal',
+    seal_source: 'soma-seal--source'
 };
 
 const SOMA_CATALOG = [
@@ -34,11 +37,13 @@ const SOMA_CATALOG = [
     { id: 'seal_moth',       tab: 'status', group: 'seals',  slot: 'seal',  motion: 'ВЗМАХ КРЫЛЬЕВ',  stars: 100, name: 'Печать «Мотылёк»',      desc: 'Ночной мотылёк с узором на крыльях, которые мягко трепещут рядом с вашим позывным.' },
     { id: 'seal_crown',      tab: 'status', group: 'seals',  slot: 'seal',  motion: 'СИЯНИЕ ВЕНЦА',   stars: 100, name: 'Печать «Венец»',        desc: 'Золотая корона трибунала с тремя мерцающими искрами на острых зубцах.' },
     { id: 'seal_signal',     tab: 'status', group: 'seals',  slot: 'seal',  motion: 'БЕГУЩИЙ ЭКГ',    stars: 100, name: 'Печать «Импульс»',      desc: 'Непрерывная живая волна кардиограммы, пробегающая рядом с вашим номером в Топе.' },
+    { id: 'seal_source',     tab: 'status', group: 'seals',  slot: 'seal',  motion: 'СТРУМЕНЬ ИСТОЧНИКА', stars: 100, name: 'Печать «Хранитель источников»', desc: 'Выдавалась за участие в альфа-тесте: чаша-источник с живым восходящим струменем и пульсирующей каплей-светилом.', unpurchasable: true },
     { id: 'title_architect', tab: 'status', group: 'titles', slot: 'title', label: 'АРХИТЕКТОР ТИШИНЫ',   glyph: '◈', titleCss: 'soma-title--architect', stars: 110, name: 'Титул «Архитектор тишины»',   desc: 'Холодный платиново-стальной перелив букв в Топе, Досье и карточке Свидетеля.' },
     { id: 'title_collector', tab: 'status', group: 'titles', slot: 'title', label: 'КОЛЛЕКЦИОНЕР ДРАМ',   glyph: '❖', titleCss: 'soma-title--collector', stars: 110, name: 'Титул «Коллекционер драм»',   desc: 'Бархатный рубиново-розовый перелив для ценителей ночных исповедей.' },
     { id: 'title_patrician', tab: 'status', group: 'titles', slot: 'title', label: 'ПАТРИЦИЙ ЭФИРА',      glyph: '♛', titleCss: 'soma-title--patrician', stars: 110, name: 'Титул «Патриций эфира»',      desc: 'Тёплое шампанское золото закрытой ложи Паноптикума с мягким сиянием.' },
     { id: 'title_ghost',     tab: 'status', group: 'titles', slot: 'title', label: 'ПРИЗРАК NEEO~CITY',   glyph: '◌', titleCss: 'soma-title--ghost',     stars: 110, name: 'Титул «Призрак NEEO~CITY»',   desc: 'Спектральный опалово-серебряный перелив — повсюду в эфире и неуловим.' },
     { id: 'title_oracle',    tab: 'status', group: 'titles', slot: 'title', label: 'ПОСЛЕДНИЙ СВИДЕТЕЛЬ', glyph: '✦', titleCss: 'soma-title--oracle',    stars: 110, name: 'Титул «Последний свидетель»', desc: 'Рассветно-янтарный огненный градиент хранителя ночной станции.' },
+    { id: 'title_sourcekeeper', tab: 'status', group: 'titles', slot: 'title', label: 'ХРАНИТЕЛЬ ИСТОКОВ', glyph: '❋', titleCss: 'soma-title--sourcekeeper', stars: 110, name: 'Титул «Хранитель источников»', desc: 'Выдавался за участие в альфа-тесте: полночно-золотой перелив хранителя истока станции.', unpurchasable: true },
     { id: 'perk_epitaph',    tab: 'status', group: 'epitaph', slot: 'epitaph_unlock', stars: 150, name: 'Право на эпитафию', desc: 'Ваша личная фраза (до 66 символов) на Троне #1, в строке Топа, в Досье и в профиле.' },
 
     // 3. ЖИВЫЕ КОРПУСА ПЕЙДЖЕРА NEEOSOMA // NMAV-04 (ЕДИНЫЙ ТИР 140 ⭐)
@@ -699,6 +704,7 @@ function skipMyPetName() {
 async function purchaseCosmetic(id) {
     const it = SOMA_ITEM_MAP[id];
     if (!it || shopState.buying) return;
+    if (it.unpurchasable) return; // атрибуты альфа-теста — не продаются в бутике
     if (isOwned(id)) { toggleEquipCosmetic(id); return; }
 
     const isPet = id === 'room_cat' || id === 'room_dog';
@@ -824,7 +830,9 @@ function renderShop() {
         note.classList.toggle('hidden', !shopState.notice);
     }
 
-    const items = SOMA_CATALOG.filter(it => it.tab === shopState.tab);
+    // Атрибуты альфа-теста (unpurchasable) не показываются в бутике, пока их нет в коллекции —
+    // у владельца доступно только надевание, покупка недоступна никому.
+    const items = SOMA_CATALOG.filter(it => it.tab === shopState.tab && (!it.unpurchasable || isOwned(it.id)));
     let html = '';
 
     // Редактор личной эпитафии во вкладке «Статус», если открыто право на эпитафию

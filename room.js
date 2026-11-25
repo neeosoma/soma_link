@@ -5878,8 +5878,8 @@ const CAT_COATS = [
 const RARE_MOON_CAT_INDEX = 7;
 const RARE_MOON_CAT_COAT = {
     id: 'midnight_luna',
-    name: 'Полуночная Луна',
-    short: 'редчайший чёрный кот с полумесяцем во лбу',
+    name: 'Чёрная Луна',
+    short: 'Чёрная Луна',
     rarity: '0.1%',
     rare: true,
     dark: '#040108', mid: '#0e0717', light: '#241438', rim: '#d8b4fe',
@@ -5921,7 +5921,7 @@ function catSpec(rawId, overrideCoat) {
     const purrHz = isRare ? 44 : (46 + ((mix >>> 14) % 14));
     const coat = isRare ? RARE_MOON_CAT_COAT : CAT_COATS[coatIdx];
     const summary = isRare
-        ? 'Чёрный кот с полумесяцем во лбу (✦ 0.1%)'
+        ? 'Чёрная Луна (✦ 0.1%)'
         : `${coat.name}${earStyle === 1 ? ' · рысьи кисточки' : ''}`;
     return {
         coatIdx, coat, rare: isRare, rarity: isRare ? '0.1%' : '',
@@ -5989,7 +5989,7 @@ const RARE_MALTESE_INDEX = 7;
 const RARE_MALTESE_BREED = {
     id: 'maltese_violet',
     name: 'Белая Юна',
-    short: 'Белая Юна с фиолетовыми ушками',
+    short: 'Белая Юна',
     rarity: '0.1%',
     rare: true,
     dark: '#6e5274', mid: '#d8c8de', light: '#f6eef9', cream: '#fffafe', rim: '#f8e6ff',
@@ -6030,7 +6030,7 @@ function dogSpec(rawId, overrideBreed) {
     const browSpot = !isRare && ((mix >>> 8) % 2) === 0;
     const woofHz = isRare ? 168 : (118 + ((mix >>> 11) % 34));
     const summary = isRare
-        ? 'Белая Юна с фиолетовыми ушами и хвостом (✦ 0.1%)'
+        ? 'Белая Юна (✦ 0.1%)'
         : breed.name;
     return {
         breedIdx, breed, rare: isRare, rarity: isRare ? '0.1%' : '', browSpot, woofHz, seed: mix, summary
@@ -6403,7 +6403,7 @@ function drawCompanionCat(g, now, phase, still, specOverride) {
     g.ellipse(hx, hy, 11.2, 9.0, -0.1, 0, Math.PI * 2);
     g.fill();
 
-    // Сияющий золотой полумесяц во лбу (0.1% «Полуночная Луна»!) / сиамская маска / буква «М» табби / звёздочка
+    // Сияющий золотой полумесяц во лбу (0.1% «Чёрная Луна»!) / сиамская маска / буква «М» табби / звёздочка
     if (c.pattern === 'luna') {
         const mx = hx - 1.1, my = hy - 3.9, mr = 2.95;
         const mPulse = 0.72 + breath * 0.28 + (isPetted ? 0.2 : 0);
@@ -9788,8 +9788,8 @@ function touchRoomObject(obj, event) {
                     ])
                 : (myCat.rare
                     ? [
-                        'Ваш редчайший чёрный кот (шанс 0.1%!) приподнял голову: золотой полумесяц во лбу мягко вспыхнул, и он тихо замурчал под ладонью.',
-                        'Обсидианово-чёрный хранитель с сияющим полумесяцем во лбу блаженно зажмурился и согрел край пледа тёплым мурчанием.'
+                        'Ваша редчайшая Чёрная Луна (шанс 0.1%!) приподняла голову: золотой полумесяц во лбу мягко вспыхнул, и она тихо замурчала под ладонью.',
+                        'Чёрная Луна — обсидианово-чёрный хранитель с сияющим полумесяцем во лбу — блаженно зажмурилась и согрела край пледа тёплым мурчанием.'
                     ]
                     : [
                         `Ваш ${myCat.coat.short} кот приподнял голову, блеснул глазами и тепло замурчал под ладонью.`,
@@ -9822,7 +9822,7 @@ function touchRoomObject(obj, event) {
             ? (myDog.rare
                 ? [
                     `${dName} сонно дрогнула шелковистыми фиолетовыми ушками на ваше прикосновение и мягко взмахнула фиолетовым хвостом сквозь дрёму!`,
-                    `${dName} — белоснежное чудо с фиолетовыми ушками — блаженно зажмурилась от ласки, ещё уютнее подогнув лапки на персидском коврике.`
+                    `${dName} — Белая Юна — блаженно зажмурилась от ласки, ещё уютнее подогнув лапки на персидском коврике.`
                 ]
                 : [
                     `${dName} сонно приподнял голову, ткнулся тёплым носом в вашу ладонь и счастливо завилял хвостом сквозь дрёму!`,
@@ -9831,7 +9831,7 @@ function touchRoomObject(obj, event) {
             : (myDog.rare
                 ? [
                     `Ваша редчайшая Белая Юна (шанс 0.1%!) сонно дрогнула шелковистыми фиолетовыми ушками и мягко взмахнула фиолетовым хвостом сквозь дрёму!`,
-                    `Белоснежное чудо с фиолетовыми ушками и фиолетовым хвостом блаженно зажмурилось от ласки, ещё уютнее подогнув лапки на персидском коврике.`
+                    `Белая Юна блаженно зажмурилась от ласки, ещё уютнее подогнув лапки на персидском коврике.`
                 ]
                 : [
                     `Ваш ${myDog.breed.short} сонно приподнял голову, ткнулся тёплым носом в ладонь и счастливо завилял хвостом сквозь дрёму!`,
@@ -11308,10 +11308,10 @@ function cyclePtsCatCoat() {
     const shown = activeCatSpec();
     roomAnim.catPetStart = typeof performance !== 'undefined' ? performance.now() : Date.now();
     roomAnim.customMode = shown.rare
-        ? 'PTS // ✦ КОТ 0.1% · ПОЛУНОЧНАЯ ЛУНА'
+        ? 'PTS // ✦ КОТ 0.1% · ЧЁРНАЯ ЛУНА'
         : `PTS // КОТ ${next + 1}/7 · ${shown.coat.name.toUpperCase()}`;
     roomAnim.customEntry = shown.rare
-        ? 'Ультра-редкая масть (шанс 0.1%): полностью чёрный кот с сияющим золотым полумесяцем во лбу!'
+        ? 'Ультра-редкая масть (шанс 0.1%): Чёрная Луна.'
         : (next === own.coatIdx
             ? `Ваш родной кот: ${shown.summary}.`
             : `Осмотр масти «${shown.coat.name}» (родной: ${own.coat.name}).`);
@@ -11341,7 +11341,7 @@ function cyclePtsDogBreed() {
         ? 'PTS // ✦ ПЁС 0.1% · БЕЛАЯ ЮНА'
         : `PTS // ПЁС ${next + 1}/7 · ${shown.breed.name.toUpperCase()}`;
     roomAnim.customEntry = shown.rare
-        ? `Ультра-редкая порода (шанс 0.1%): Белая Юна с фиолетовыми ушами и фиолетовым хвостом!`
+        ? 'Ультра-редкая порода (шанс 0.1%): Белая Юна.'
         : (next === own.breedIdx
             ? `Ваш родной пёс: ${shown.summary}.`
             : `Осмотр породы «${shown.breed.name}» (родной: ${own.breed.name}).`);

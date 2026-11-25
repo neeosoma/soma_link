@@ -752,7 +752,7 @@ test('v8: body-portal FLIP fullscreen + 180 flip + rotated pointer mapping, Dawn
     assert.ok(indexHtml.includes('soma-post-cta') && indexHtml.includes('soma-post-beacon') && indexHtml.includes('soma-post-arrow'));
     assert.ok(
         indexHtml.includes('id="station-fs-flip"')
-        && indexHtml.includes('room.js?v=39')
+        && indexHtml.includes('room.js?v=40')
         && indexHtml.includes('cosmetics.css?v=15')
         && indexHtml.includes('receiver.js?v=18')
         && indexHtml.includes('vhs.js?v=15')
@@ -1552,7 +1552,7 @@ test('v13: scroll freedom, 66-char epitaph, 13..666 Call, 8 Earth + hidden 9th a
     cEnv.C.saveMyEpitaph();
     assert.equal(cEnv.C.getActiveCosmetics().epitaph, ep66, 'saveMyEpitaph persists full 66-char epitaph cleanly');
     assert.ok(sqlCode.includes("length(coalesce(new.cosmetics ->> 'epitaph', '')) > 66") && sqlCode.includes("left(new.cosmetics ->> 'epitaph', 66)"), 'Supabase SQL trigger updated to 66 chars');
-    assert.ok(cEnv.C.SOMA_ITEM_MAP.room_cat.desc.includes('0.1%') && cEnv.C.SOMA_ITEM_MAP.room_cat.desc.includes('полумесяцем'), 'cat shop card notes 0.1% black crescent-moon cat');
+    assert.ok(cEnv.C.SOMA_ITEM_MAP.room_cat.desc.includes('0.1%') && cEnv.C.SOMA_ITEM_MAP.room_cat.desc.includes('Чёрная Луна'), 'cat shop card notes 0.1% rare Чёрная Луна');
 
     assert.ok(
         indexHtml.includes('minlength="13" maxlength="666"')
@@ -1562,10 +1562,10 @@ test('v13: scroll freedom, 66-char epitaph, 13..666 Call, 8 Earth + hidden 9th a
         'Pain Feed («Зов») enforces exact 13..666 character bounds with live 0 / 666 counter'
     );
 
-    // 3. 0.1% ultra-rare black crescent-moon cat («Полуночная Луна»)
+    // 3. 0.1% ultra-rare black crescent-moon cat («Чёрная Луна»)
     const r = loadRoom();
     assert.equal(r.RARE_MOON_CAT_INDEX, 7);
-    assert.equal(r.RARE_MOON_CAT_COAT.name, 'Полуночная Луна');
+    assert.equal(r.RARE_MOON_CAT_COAT.name, 'Чёрная Луна');
     let rareCount = 0;
     let rareUid = null;
     for (let i = 0; i < 50000; i++) {
@@ -1941,13 +1941,13 @@ test('v15: 4th pot (pot_amethyst) + per-flower Greenhouse picker, sheer FS capti
     // 7. IMG_2254.png FIX: Selecting 0.1% Moon Cat + 0.1% White Yuna (even after closing PTS drawer!) displays exact names in Boutique preview!
     env.grantOwnedItem('room_cat');
     env.grantOwnedItem('room_dog');
-    env.roomAnim.inspectCatCoat = env.RARE_MOON_CAT_INDEX;   // 7 -> Полуночная Луна
+    env.roomAnim.inspectCatCoat = env.RARE_MOON_CAT_INDEX;   // 7 -> Чёрная Луна
     env.roomAnim.inspectDogBreed = env.RARE_MALTESE_INDEX;   // 7 -> Белая Юна
     env.roomAnim.ptsOpen = true;
     env.togglePtsDrawer(); // collapse PTS drawer — must NOT wipe chosen cat/dog!
     env.renderShop();
     const prevHtml = regEl('shop-preview').innerHTML;
-    assert.ok(prevHtml.includes('🐈 Полуночная Луна'), 'Boutique preview shows selected 0.1% Black Moon Cat');
+    assert.ok(prevHtml.includes('🐈 Чёрная Луна'), 'Boutique preview shows selected 0.1% Black Moon Cat');
     assert.ok(prevHtml.includes('🐕 Белая Юна'), 'Boutique preview shows selected 0.1% White Yuna');
     assert.ok(!prevHtml.includes('Рыжий огонёк') && !prevHtml.includes('Рыжий сиба-ину'), 'never falls back to wrong index-0 names');
 

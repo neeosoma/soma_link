@@ -826,7 +826,6 @@
                             <div class="witness-label">СВИДЕТЕЛЬ</div>
                             <div class="witness-name-row">
                                 <span id="card-anon" class="witness-anon"></span>
-                                <span id="card-name" class="witness-name">@USER</span>
                                 <div id="card-custom-title" class="witness-custom-title"></div>
                             </div>
                             <p id="card-epitaph" class="witness-epitaph"></p>
@@ -2474,9 +2473,8 @@
     function updateHeader() {
         document.getElementById('user-badge').innerText = `@${player.name}`;
 
-        // Карточка свидетеля: тот же номер анонима, что в карточке атрибутов
-        // (boutique) — один общий anonLabel, без отдельного серийного числа.
-        document.getElementById('card-name').innerText = anonLabel(player.uid || 'guest');
+        // Карточка свидетеля: номер аноника красным — отрендерен в applyCosmeticsToUI
+        // (card-anon). Белого крупного «Аноним» больше нет.
         // Шёпоты: читаем из слитого облака (player.whispersSent), а не из чистого localStorage
         // — иначе на новом устройстве пересчитает 0 и перезапишет облачное значение.
         const breaches = Math.max(0, Number(player.whispersSent) || 0);

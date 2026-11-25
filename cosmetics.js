@@ -166,6 +166,13 @@ function currentSelfCatSpec() {
     if (typeof activeCatSpec === 'function') return activeCatSpec();
     if (typeof catSpec === 'function') {
         const ov = (typeof roomAnim !== 'undefined' && Number.isInteger(roomAnim.inspectCatCoat)) ? roomAnim.inspectCatCoat : null;
+        if (ov === null) {
+            // Профильное переопределение вариации (редкий 0.1% = 7 или явно заданная масть).
+            try {
+                const c = (typeof getActiveCosmetics === 'function') ? getActiveCosmetics() || {} : {};
+                if (Number.isInteger(c.cat_coat) && c.cat_coat >= 0 && c.cat_coat <= 7) ov = c.cat_coat;
+            } catch (_) {}
+        }
         return catSpec(undefined, ov);
     }
     return null;
@@ -175,6 +182,13 @@ function currentSelfDogSpec() {
     if (typeof activeDogSpec === 'function') return activeDogSpec();
     if (typeof dogSpec === 'function') {
         const ov = (typeof roomAnim !== 'undefined' && Number.isInteger(roomAnim.inspectDogBreed)) ? roomAnim.inspectDogBreed : null;
+        if (ov === null) {
+            // Профильное переопределение породы (редкий 0.1% = 7 или явно заданная порода).
+            try {
+                const c = (typeof getActiveCosmetics === 'function') ? getActiveCosmetics() || {} : {};
+                if (Number.isInteger(c.dog_breed) && c.dog_breed >= 0 && c.dog_breed <= 7) ov = c.dog_breed;
+            } catch (_) {}
+        }
         return dogSpec(undefined, ov);
     }
     return null;
@@ -238,6 +252,9 @@ function normalizeEquipped(raw, ownedList) {
     const hasFlag = (val, id) => !!val && (!Array.isArray(ownedList) || ownedList.includes(id));
     const canEp = !Array.isArray(ownedList) || ownedList.includes('perk_epitaph');
     const ep = canEp ? sanitizeEpitaph(r.epitaph || '') : { ok: true, value: '' };
+    // Переопределение вариации хранителя: cat_coat / dog_breed (0..7; 7 = редкий 0.1%).
+    // Пропускаем через нормализацию, чтобы не потерять при загрузке профиля из облака.
+    const normIdx = v => (Number.isInteger(v) && v >= 0 && v <= 7) ? v : null;
     return {
         frame: check(r.frame, 'frame'),
         seal: check(r.seal, 'seal'),
@@ -247,6 +264,8 @@ function normalizeEquipped(raw, ownedList) {
         pot: check(r.pot, 'pot'),
         cat: hasFlag(r.cat, 'room_cat'),
         dog: hasFlag(r.dog, 'room_dog'),
+        cat_coat: normIdx(r.cat_coat),
+        dog_breed: normIdx(r.dog_breed),
         steam: hasFlag(r.steam, 'room_steam'),
         tape: hasFlag(r.tape, 'room_tape'),
         garland: hasFlag(r.garland, 'room_garland'),

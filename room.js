@@ -11242,16 +11242,28 @@ function togglePtsDew() {
 
 // Активные спутники игрока (с учётом выбранной масти/породы в комнате и PTS, без подмены на базовый индекс 0!)
 function activeCatSpec(uid) {
-    const ov = (uid === undefined && isPtsMode() && Number.isInteger(roomAnim.inspectCatCoat))
-        ? roomAnim.inspectCatCoat
-        : (uid === undefined && Number.isInteger(roomAnim.inspectCatCoat) ? roomAnim.inspectCatCoat : null);
+    let ov = null;
+    if (uid === undefined && Number.isInteger(roomAnim.inspectCatCoat)) ov = roomAnim.inspectCatCoat;
+    if (ov === null && uid === undefined && !(typeof isPtsMode === 'function' && isPtsMode())) {
+        // Профильное переопределение вариации (редкий 0.1% = 7 или явно заданная масть).
+        try {
+            const c = (typeof getActiveCosmetics === 'function') ? getActiveCosmetics() || {} : {};
+            if (Number.isInteger(c.cat_coat) && c.cat_coat >= 0 && c.cat_coat <= RARE_MOON_CAT_INDEX) ov = c.cat_coat;
+        } catch (_) {}
+    }
     return catSpec(uid, ov);
 }
 
 function activeDogSpec(uid) {
-    const ov = (uid === undefined && Number.isInteger(roomAnim.inspectDogBreed))
-        ? roomAnim.inspectDogBreed
-        : null;
+    let ov = null;
+    if (uid === undefined && Number.isInteger(roomAnim.inspectDogBreed)) ov = roomAnim.inspectDogBreed;
+    if (ov === null && uid === undefined && !(typeof isPtsMode === 'function' && isPtsMode())) {
+        // Профильное переопределение породы (редкий 0.1% = 7 или явно заданная порода).
+        try {
+            const c = (typeof getActiveCosmetics === 'function') ? getActiveCosmetics() || {} : {};
+            if (Number.isInteger(c.dog_breed) && c.dog_breed >= 0 && c.dog_breed <= RARE_MALTESE_INDEX) ov = c.dog_breed;
+        } catch (_) {}
+    }
     return dogSpec(uid, ov);
 }
 

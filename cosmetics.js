@@ -830,8 +830,9 @@ function renderShop() {
         note.classList.toggle('hidden', !shopState.notice);
     }
 
-    // Атрибуты альфа-теста (unpurchasable) показываются в магазине, но не продаются:
-    // у не-владельцев — заблокированная подсказка, у владельца — только надевание.
+    // Атрибуты альфа-теста (unpurchasable) показываются в магазине без маркера «не продаётся»:
+    // цена-рамка со звёздами, у не-владельцев — только кнопка «ПРИМЕРИТЬ», у владельца — надевание.
+    // Покупка по-прежнему заблокирована в purchaseCosmetic (guard unpurchasable).
     const items = SOMA_CATALOG.filter(it => it.tab === shopState.tab);
     let html = '';
 
@@ -945,13 +946,13 @@ function renderShop() {
                         ${personalPet}
                     </div>
                 </div>
-                <span class="shop-price ${owned ? 'is-owned' : ''}">${owned ? 'В КОЛЛЕКЦИИ' : (it.unpurchasable ? 'НЕ ПРОДАЁТСЯ' : `${it.stars} ⭐`)}</span>
+                <span class="shop-price ${owned ? 'is-owned' : ''}">${owned ? 'В КОЛЛЕКЦИИ' : `${it.stars} ⭐`}</span>
             </div>
             <div class="shop-actions">
                 ${owned
                     ? `<button type="button" class="shop-btn shop-btn--equip" ${it.slot === 'epitaph_unlock' ? 'disabled' : `onclick="toggleEquipCosmetic('${it.id}')"`}>${eqLabel}</button>${petNameBtn}`
                     : (it.unpurchasable
-                        ? `<button type="button" class="shop-btn shop-btn--buy is-disabled" disabled title="Атрибут альфа-теста — покупке не подлежит">🔒 НЕ ПРОДАЁТСЯ</button>`
+                        ? `<button type="button" class="shop-btn shop-btn--try" onclick="tryCosmetic('${it.id}')">${tryLabel}</button>`
                         : `<button type="button" class="shop-btn shop-btn--buy" onclick="purchaseCosmetic('${it.id}')">${buyLabel}</button>
                            <button type="button" class="shop-btn shop-btn--try" onclick="tryCosmetic('${it.id}')">${tryLabel}</button>`)}
             </div>

@@ -3628,6 +3628,12 @@ function claimWhisperCassetteAck(whisperId, todayOverride) {
     const wid = String(whisperId || '').trim();
     if (wid) {
         if (getAckedWhispers().includes(wid)) {
+            // Уже зачтён ранее — тепло не двойное. Но входящее уведомление может
+            // не дойти (клиент синхронизировал до сохранения, или уведомление потерялось):
+            // доставляем его, если ещё не прочитано.
+            if (typeof receiveCassetteAckNotice === 'function') {
+                try { receiveCassetteAckNotice(wid, 0); } catch (_) {}
+            }
             return { duplicate: true, grantedWarmth: 0, ledger: loadWarmthLedger(todayOverride) };
         }
         rememberAckedWhisper(wid);
@@ -3674,6 +3680,22 @@ function claimWhisperCassetteAck(whisperId, todayOverride) {
     renderRoom();
     if (typeof renderFeedPager === 'function') renderFeedPager();
     return { duplicate: false, grantedWarmth, ledger };
+}
+
+// Уведомление об отклике кассеты — ТОЛЬКО входящее сообщение, без зачёта тепла.
+// Тепло зачисляется СЕРВЕРНО (триггер credit_soma_whisper_saved_ack при переходе
+// шёпота в статус saved) — не зависит от клиентской polling и от того, остаётся
+// ли статус saved (ответ recipient переключает его в answered).
+function notifyCassetteAck(whisperId) {
+    const wid = String(whisperId || '').trim();
+    if (!wid) return null;
+    // Дедупликация по handled-мапу: уведомление не дублируется каждым синком.
+    const id = 'ack_' + wid;
+    if (getHandledWhispers()[id]) return null;
+    if (typeof receiveCassetteAckNotice === 'function') {
+        try { return receiveCassetteAckNotice(wid, 0); } catch (_) {}
+    }
+    return null;
 }
 
 // ===== ОРАНЖЕРЕЯ + СЕКРЕТНОЕ ВНЕЗЕМНОЕ СЕМЯ (1 ИЗ 7 ПОСЛЕ 7/7) =====
@@ -10765,7 +10787,9 @@ async function syncPagerWhispers() {
                 const acked = new Set(getAckedWhispers());
                 savedRows.forEach(r => {
                     if (r && r.id && !acked.has(String(r.id))) {
-                        claimWhisperCassetteAck(String(r.id));
+                        // Тепло зачисляется серверно (триггер при сохранении);
+                        // клиент только доставляет входящее уведомление об отклике.
+                        notifyCassetteAck(String(r.id));
                     }
                 });
             }
@@ -12274,7 +12298,7 @@ const pagerApi = {
     acceptFirstSignalRules, completeFirstSession, updateFirstSignalRoom, trackFirstSignalEvent,
     renderFirstSignalEntry, getFirstSignalCandidates, getVisibleFirstSignalCandidates,
     validateWhisperText, somaTextBlocked, hasWhisperedToPost, rememberWhisperedPost,
-    claimWhisperCassetteAck, getPendingInboxWhispers, receiveIncomingWhisperLocal, receiveCassetteAckNotice,
+    claimWhisperCassetteAck, notifyCassetteAck, getPendingInboxWhispers, receiveIncomingWhisperLocal, receiveCassetteAckNotice,
     markWhisperHandled,
     acceptIncomingWhisper, dismissIncomingWhisper, sendWhisperToPost, sendWhisperReply,
     syncPagerWhispers, openPagerModal, closePagerModal, renderPagerModal,

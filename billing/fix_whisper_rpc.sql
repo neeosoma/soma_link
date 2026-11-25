@@ -85,6 +85,77 @@ drop trigger if exists trg_guard_soma_whispers on public.soma_whispers;
 create trigger trg_guard_soma_whispers before insert or update on public.soma_whispers
 for each row execute function public.guard_soma_whispers();
 
+-- Триггер: при сохранении шёпота на кассету (status → saved) зачислять тепло
+-- отправителю СЕРВЕРНО — не зависит от клиентской polling и от того, остаётся
+-- ли статус saved (ответ recipient переключает его в answered и убил бы отклик).
+-- Колонка soma_users.ledger добавляется fix_cross_device_sync.sql — проверка
+-- на её наличие делает триггер совместимым со схемами, где её ещё нет.
+create or replace function public.credit_soma_whisper_saved_ack()
+returns trigger
+language plpgsql
+as $$
+declare
+    v_has_ledger boolean;
+    v_ledger jsonb;
+    v_today text;
+    v_ack_day text;
+    v_total int;
+    v_remaining int;
+    v_grant int;
+    v_acks int;
+begin
+    if new.status = 'saved' and old.status is distinct from 'saved' then
+        v_today := to_char(now() at time zone 'UTC', 'YYYY-MM-DD');
+        select exists(
+            select 1 from information_schema.columns
+            where table_schema = 'public' and table_name = 'soma_users' and column_name = 'ledger'
+        ) into v_has_ledger;
+        v_grant := 0;
+        if v_has_ledger then
+            select coalesce(ledger, '{}'::jsonb) into v_ledger
+            from public.soma_users where username = new.sender_uid;
+            v_ack_day := coalesce(v_ledger->>'whisperAckDay', '');
+            if v_ack_day is distinct from v_today then
+                v_total := coalesce((v_ledger->>'total')::int, 0);
+                v_remaining := greatest(0, 6 - v_total);
+                v_grant := least(4, v_remaining);
+            end if;
+        else
+            v_grant := 4;
+        end if;
+        if v_grant > 0 then
+            if v_has_ledger then
+                v_acks := coalesce((v_ledger->>'whisperAcks')::int, 0) + 1;
+                execute $q$
+                    update public.soma_users
+                    set warmth = warmth + $1,
+                        ledger = jsonb_set(jsonb_set(jsonb_set(
+                            $2,
+                            '{total}', to_jsonb(coalesce(($2->>'total')::int, 0) + $1)),
+                            '{whisperAcks}', to_jsonb($3)),
+                            '{whisperAckDay}', to_jsonb($4))
+                    where username = $5
+                $q$ using v_grant, v_ledger, v_acks, v_today, new.sender_uid;
+            else
+                update public.soma_users set warmth = warmth + v_grant
+                where username = new.sender_uid;
+            end if;
+        end if;
+    end if;
+    return new;
+exception
+    when insufficient_privilege then
+        -- Триггер выполняется под ролью DML (не SECURITY DEFINER): если роли нет
+        -- прав на soma_users — тепло не зачисляем, но сохранение шёпота не роняем
+        -- (в продакшене DML идёт через SECURITY DEFINER RPC — права есть).
+        return new;
+end;
+$$;
+drop trigger if exists trg_soma_whisper_saved_ack on public.soma_whispers;
+create trigger trg_soma_whisper_saved_ack
+    after update on public.soma_whispers
+    for each row execute function public.credit_soma_whisper_saved_ack();
+
 -- Текущая версия RPC — без ON CONFLICT (дубликат пресекается уникальным индексом,
 -- клиент обрабатывает 23505 как «уже поддержали»).
 create or replace function public.send_soma_whisper(

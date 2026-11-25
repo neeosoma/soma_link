@@ -170,9 +170,11 @@ test('the witness card shows four equally-sized stat counters and carries the fr
     assert.match(indexHtml, /<button type="button" onclick="openFriendCassette\(\)" class="witness-friend-btn"/);
     assert.match(indexHtml, /ЗАПИСАТЬ КАССЕТУ БЛИЗКОМУ/);
     // The witness card callsign is the SAME anonLabel used by the attributes
-    // boutique card — no separate serial-number formatting.
+    // boutique card — no separate serial-number formatting. Rendered into
+    // #card-anon by applyCosmeticsToUI (cosmetics.js).
     assert.match(indexHtml, /function anonLabel\(s\)/);
-    assert.match(indexHtml, /document\.getElementById\('card-name'\)\.innerText = anonLabel\(player\.uid \|\| 'guest'\);/);
+    assert.match(cosmeticsJs, /document\.getElementById\('card-anon'\)/);
+    assert.match(cosmeticsJs, /anonLabel\(\(typeof player !== 'undefined' && player\.uid\) \|\| 'guest'\)/);
     assert.doesNotMatch(indexHtml, /anonSerialNum/);
     // The old inline card button is gone, and the button was removed from the pager modal.
     assert.doesNotMatch(indexHtml, /witness-cassette-btn/);

@@ -377,7 +377,14 @@ function hydrateCosmeticsFromCloud(row) {
 function syncCosmeticsCloud() {
     try {
         if (typeof supabaseClient === 'undefined' || !supabaseClient || typeof player === 'undefined' || !player.uid) return;
-        const payload = { cosmetics: shopState.equipped };
+        // Косметика надета. cat_coat/dog_breed — профильные переопределения вариации
+        // хранителей (редкий 0.1% = 7). Если локально не задано (null), НЕ пишем в
+        // payload: иначе синхронизация с пустым локальным состоянием глушит серверное
+        // значение (7), и rare-вариант теряется. Серверное значение остаётся.
+        const cosmetics = { ...shopState.equipped };
+        if (cosmetics.cat_coat == null) delete cosmetics.cat_coat;
+        if (cosmetics.dog_breed == null) delete cosmetics.dog_breed;
+        const payload = { cosmetics };
         // На PTS разрешаем синхронизировать и тестовые предметы; в проде owned_cosmetics пишет только Edge Function!
         if (typeof isPtsMode === 'function' && isPtsMode()) payload.owned_cosmetics = shopState.owned;
         supabaseClient.from('soma_users').update(payload).eq('username', player.uid).then(() => {}, () => {});

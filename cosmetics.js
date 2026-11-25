@@ -830,9 +830,9 @@ function renderShop() {
         note.classList.toggle('hidden', !shopState.notice);
     }
 
-    // Атрибуты альфа-теста (unpurchasable) показываются в магазине без маркера «не продаётся»:
-    // цена-рамка со звёздами, у не-владельцев — только кнопка «ПРИМЕРИТЬ», у владельца — надевание.
-    // Покупка по-прежнему заблокирована в purchaseCosmetic (guard unpurchasable).
+    // Атрибуты альфа-теста (unpurchasable) показываются в магазине: цена-рамка «НЕ ПРОДАЁТСЯ»,
+    // у не-владельцев — только кнопка «ПРИМЕРИТЬ», у владельца — надевание.
+    // Покупка заблокирована в purchaseCosmetic (guard unpurchasable).
     const items = SOMA_CATALOG.filter(it => it.tab === shopState.tab);
     let html = '';
 
@@ -946,7 +946,7 @@ function renderShop() {
                         ${personalPet}
                     </div>
                 </div>
-                <span class="shop-price ${owned ? 'is-owned' : ''}">${owned ? 'В КОЛЛЕКЦИИ' : `${it.stars} ⭐`}</span>
+                <span class="shop-price ${owned ? 'is-owned' : ''}">${owned ? 'В КОЛЛЕКЦИИ' : (it.unpurchasable ? 'НЕ ПРОДАЁТСЯ' : `${it.stars} ⭐`)}</span>
             </div>
             <div class="shop-actions">
                 ${owned

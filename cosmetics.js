@@ -357,6 +357,15 @@ function hydrateCosmeticsFromCloud(row) {
     if (row.cosmetics && typeof row.cosmetics === 'object') {
         const hasLocal = Object.values(shopState.equipped).some(Boolean);
         if (!hasLocal) shopState.equipped = normalizeEquipped(row.cosmetics, shopState.owned);
+        // Серверное переопределение вариации хранителей (cat_coat/dog_breed, редкий
+        // 0.1% = 7) — всегда принимаем от облака, даже если локальный equipped уже
+        // заполнен старым кэшем без этих полей (иначе rare-вариант не применится).
+        if (Number.isInteger(row.cosmetics.cat_coat) && row.cosmetics.cat_coat >= 0 && row.cosmetics.cat_coat <= 7) {
+            shopState.equipped.cat_coat = row.cosmetics.cat_coat;
+        }
+        if (Number.isInteger(row.cosmetics.dog_breed) && row.cosmetics.dog_breed >= 0 && row.cosmetics.dog_breed <= 7) {
+            shopState.equipped.dog_breed = row.cosmetics.dog_breed;
+        }
     }
     saveCosmeticsLocal();
     applyCosmeticsToUI();

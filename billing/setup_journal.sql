@@ -26,6 +26,11 @@ create table if not exists public.soma_journal (
     author_auth_id uuid not null default auth.uid()
 );
 
+-- Удалить устаревшее 500-символьное ограничение (leftover от ранних миграций):
+-- иначе оба check-ограничения применяются и действительный лимит становится 500,
+-- в то время как RPC/клиент работают с лимитом 2000.
+alter table public.soma_journal drop constraint if exists soma_journal_text_check;
+
 create index if not exists soma_journal_author_idx
     on public.soma_journal (author_auth_id, kind, num desc);
 create index if not exists soma_journal_created_idx

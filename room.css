@@ -1890,6 +1890,26 @@
     transform: translateY(1px);
 }
 
+/* Погурбже «ЗАПИСАНО НА КАССЕТУ» — статичный статус вместо кнопки покупки-записи */
+.pager-act-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 9px;
+    font-size: 9.5px;
+    font-family: var(--mono-tech, monospace);
+    letter-spacing: 0.02em;
+    border-radius: 8px;
+    border: 1px solid rgba(120, 180, 140, 0.4);
+    background: linear-gradient(180deg, rgba(40, 84, 64, 0.85), rgba(24, 52, 40, 0.9));
+    color: #b9f0cf;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(150, 230, 180, 0.14), 0 0 14px rgba(80, 200, 140, 0.14);
+    cursor: default;
+}
+.pager-act-badge--saved {
+    text-shadow: 0 0 10px rgba(120, 220, 170, 0.35);
+}
+
 /* Кнопка «Ответить» — мягкий тёплый акцент (ответ на входящий шёпот, без дневного лимита) */
 .pager-act-btn--reply {
     flex: 1 1 auto;

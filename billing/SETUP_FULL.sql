@@ -442,7 +442,7 @@ begin
             -- Шёпот ещё должен быть pending (не обработан, не уже отвечен).
             if not exists(select 1 from public.soma_whispers t
                 where t.id = new.reply_to_id
-                  and t.status = 'pending') then
+                  and t.status in ('pending', 'saved')) then
                 raise exception 'Reply target unavailable';
             end if;
         else

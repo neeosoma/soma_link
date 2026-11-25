@@ -10072,9 +10072,23 @@ function saveRawInboxWhispers(list) {
 }
 
 // Возвращает все непрочитанные входящие «Шёпоты», пришедшие на посты игрока (доступно с 1-го дня даже при 0 тепла!)
+// Шёпоты, уже сохранённые на кассету (cassetteSaved), остаются в списке: они помечены, но игрок
+// должен иметь возможность нажать «Ответить» — сохранение на кассету не закрывает окно шёпота.
 function getPendingInboxWhispers() {
     const handled = getHandledWhispers();
-    return loadRawInboxWhispers().filter(w => !handled[w.id] && (!w.status || w.status === 'pending'));
+    return loadRawInboxWhispers().filter(w => !handled[w.id] && (!w.status || w.status === 'pending' || w.cassetteSaved));
+}
+
+// Отмечает входящий шёпот как сохранённый на кассету: остаётся в входящих (для ответа),
+// но уже не предлагает «ЗАПИСАТЬ НА КАССЕТУ» дважды. Не скрывает шёпот из входящих.
+function markWhisperCassetteSaved(whisperId) {
+    const id = String(whisperId || '').trim();
+    if (!id) return;
+    const list = loadRawInboxWhispers();
+    const idx = list.findIndex(x => x.id === id);
+    if (idx < 0) return;
+    list[idx] = { ...list[idx], status: 'saved', cassetteSaved: true };
+    saveRawInboxWhispers(list);
 }
 
 // Добавляет входящий «Шёпот» в очередь пейджера (при синхронизации из облака или локально)
@@ -10229,14 +10243,16 @@ async function acceptIncomingWhisper(whisperId) {
     const cloud = await persistWhisperStatus(w.id, 'saved');
     if (!cloud.ok) return cloud;
     const cas = await saveWhisperCassette(w.text, undefined, { id: 'cas_' + w.id });
-    markWhisperHandled(w.id, 'saved');
+    // Сохраняем на кассету, но НЕ вычеркиваем шёпот из входящих: игрок остаётся в окне
+    // и может нажать «Ответить». Сервер разрешает ответ на статус saved (guard_soma_whispers).
+    markWhisperCassetteSaved(w.id);
     trackFirstSignalEvent('cassette_saved');
     roomAnim.activeCassetteId = cas ? cas.id : roomAnim.activeCassetteId;
     roomAnim.cassettePlaying = true;
     roomAnim.cassetteStartedAt = typeof performance !== 'undefined' ? performance.now() : Date.now();
 
     const numStr = cas ? formatCassetteNum(cas.num) : '001';
-    roomAnim.pagerModalNotice = `✓ Тёплый «Шёпот» записан на кассету #${numStr} в ваш магнитофон VTR-90! Отправителю ушёл благодарный импульс.`;
+    roomAnim.pagerModalNotice = `✓ Тёплый «Шёпот» записан на кассету #${numStr} в ваш магнитофон VTR-90. Отправителю ушёл благодарный импульс. Шёпот остаётся открытым — можно ответить.`;
     roomAnim.customMode = `МАГНИТОФОН // ЗАПИСАНА КАССЕТА #${numStr}`;
     roomAnim.customEntry = `«${w.text}»`;
     playObjectTone('deck');
@@ -11031,7 +11047,9 @@ function renderPagerModal() {
                     ${w.post_preview ? `<div class="pager-card-quote">${isReply ? 'Ваше сообщение:' : 'На ваш сигнал:'} «${escFn(w.post_preview)}»</div>` : ''}
                     <p class="pager-card-text">«${escFn(w.text)}»</p>
                     <div class="pager-card-actions">
-                        <button type="button" class="pager-act-btn pager-act-btn--save" data-act="save" data-id="${escFn(w.id)}">📼 ЗАПИСАТЬ НА КАССЕТУ VTR-90</button>
+                        ${w.cassetteSaved
+                            ? `<span class="pager-act-badge pager-act-badge--saved">✓ ЗАПИСАНО НА КАССЕТУ VTR-90</span>`
+                            : `<button type="button" class="pager-act-btn pager-act-btn--save" data-act="save" data-id="${escFn(w.id)}">📼 ЗАПИСАТЬ НА КАССЕТУ VTR-90</button>`}
                         <button type="button" class="pager-act-btn pager-act-btn--dismiss" data-act="dismiss" data-id="${escFn(w.id)}">◌ ОТПУСТИТЬ</button>
                     </div>
                     ${(!isReply || isWhisperSafetyLive()) ? `<div class="pager-card-menu">

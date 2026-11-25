@@ -500,6 +500,12 @@ function applyCosmeticsToUI() {
     }
     const sealSlot = document.getElementById('card-seal');
     if (sealSlot) sealSlot.innerHTML = sealHtmlOf(c);
+    const anonSlot = document.getElementById('card-anon');
+    if (anonSlot) {
+        const anon = typeof anonLabel === 'function' ? anonLabel((typeof player !== 'undefined' && player.uid) || 'guest') : '';
+        anonSlot.textContent = anon;
+        anonSlot.classList.toggle('hidden', !anon);
+    }
     const titleSlot = document.getElementById('card-custom-title');
     if (titleSlot) {
         const th = titleSpanOf(c, true);
@@ -816,7 +822,7 @@ function renderShop() {
         prev.className = `shop-preview-card ${fc}`.trim();
         prev.innerHTML = `
             <div class="flex justify-between items-center gap-2">
-                <span class="top-row-name">${sealHtmlOf(c)}<span>${esc(myAnon)}</span>${tl ? titleSpanOf(c, true) : ''}${shopState.preview ? '<span class="top-you-tag">ПРИМЕРКА</span>' : ''}</span>
+                <span class="top-row-name">${sealHtmlOf(c)}${tl ? titleSpanOf(c, true) : ''}${shopState.preview ? '<span class="top-you-tag">ПРИМЕРКА</span>' : ''}</span>
                 <span class="top-row-xp">${(typeof player !== 'undefined' && player.warmth) || 0} ТЕПЛО</span>
             </div>
             ${c.epitaph ? `<p class="top-epitaph">«${esc(c.epitaph)}»</p>` : ''}

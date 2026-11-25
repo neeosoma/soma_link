@@ -19,7 +19,7 @@ const B = '22222222-2222-4222-8222-222222222222';
         const next = async () => (await db.query('select * from public.next_soma_pager_story()')).rows;
         const decide = async id => (await db.query('select public.decide_soma_pager_story($1) as ok', [id])).rows[0].ok;
         await user('authenticated', A);
-        await db.exec("insert into public.soma_posts(id,text) values ('post_a1','Проверка первого сигнала.'),('post_a2','Проверка второго сигнала.')");
+        await db.exec("insert into public.soma_posts(id,text,created_at) values ('post_a1','Проверка первого сигнала.', now() - interval '2 hours'),('post_a2','Проверка второго сигнала.', now() - interval '1 hour')");
         assert.equal((await next()).length, 0, 'own posts are not suggested');
         assert.deepEqual((await db.query('select id from public.my_soma_pager_stories() order by id')).rows.map(r => r.id), ['post_a1', 'post_a2']);
         await user('authenticated', B);
@@ -27,6 +27,8 @@ const B = '22222222-2222-4222-8222-222222222222';
         let first = await next();
         assert.equal(first.length, 1);
         assert.notEqual(first[0].id, 'post_b1');
+        // Хронологический порядок: самый старый непрочитанный пост предлагается первым
+        assert.equal(first[0].id, 'post_a1', 'oldest undecided post is offered first');
         assert.deepEqual(await next(), first, 'current story persists until a decision');
         await assert.rejects(decide('post_b1'), /not current/i);
         await assert.rejects(db.query('select * from soma_private.pager_decisions'), /permission denied/i);

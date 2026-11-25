@@ -936,7 +936,7 @@ begin
           join soma_private.post_owners o on o.post_id = p.id
          where o.owner_id <> auth.uid()
            and not exists (select 1 from soma_private.pager_decisions d where d.reader_id = auth.uid() and d.post_id = p.id)
-         order by random() limit 1;
+         order by p.created_at asc, p.id asc limit 1;
         if v_id is not null then
             insert into soma_private.pager_current(reader_id, post_id) values (auth.uid(), v_id);
         end if;

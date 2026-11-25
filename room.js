@@ -10326,11 +10326,22 @@ async function dismissIncomingWhisper(whisperId) {
     const w = pending.find(x => x.id === id);
     if (!w) return { ok: false, error: 'Шёпот уже обработан.' };
 
-    const cloud = await persistWhisperStatus(w.id, 'dismissed');
-    if (!cloud.ok) return cloud;
+    // Если шёпот уже сохранён на кассету — статус в облаке ДОЛЖЕН остаться
+    // 'saved': от него зависит отклик отправителю (тепло + сообщение во входящие,
+    // my_saved_soma_whispers). Переворот в 'dismissed' отключает отклик и даёт
+    // неверное уведомление («не сохраняется на кассету»). Guard на сервере
+    // (guard_soma_whispers) запрещает saved → dismissed — поэтому в облаке
+    // при уже сохранённом шёпоте ничего не пишем.
+    const alreadySaved = !!(w.cassetteSaved || w.status === 'saved');
+    if (!alreadySaved) {
+        const cloud = await persistWhisperStatus(w.id, 'dismissed');
+        if (!cloud.ok) return cloud;
+    }
     markWhisperHandled(w.id, 'dismissed');
 
-    roomAnim.pagerModalNotice = '◌ Сигнал прочитан и бережно отпущен в ночной эфир без записи на кассету.';
+    roomAnim.pagerModalNotice = alreadySaved
+        ? '◌ Шёпот записан на кассету и бережно отпущен в ночной эфир — отклик отправителю уже ушёл.'
+        : '◌ Сигнал прочитан и бережно отпущен в ночной эфир без записи на кассету.';
     if (typeof SFX !== 'undefined' && SFX.tap) SFX.tap();
     if (roomAnim.pagerModalOpen) renderPagerModal();
     return { ok: true, whisper: w };

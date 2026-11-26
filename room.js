@@ -4317,15 +4317,34 @@ function toggleCassetteFav(id) {
     return found.fav;
 }
 
-// Delete a cassette from cache + cloud (cloud removal is best-effort).
-function deleteCassette(id) {
+// Delete a cassette from cache + cloud. Waits for the cloud RPC to complete
+// before returning — otherwise a reload before the RPC resolves leaves the
+// cassette in the cloud, and hydrateJournalFromCloud restores it on next boot.
+async function deleteCassette(id) {
     const list = loadCassettes();
+    const target = list.find(c => c.id === id);
+    if (!target) return false;
     const next = list.filter(c => c.id !== id);
     writeCassetteCache(next);
     renderRoom();
-    if (typeof supabaseClient !== 'undefined' && supabaseClient) {
-        supabaseClient.rpc('delete_soma_journal_entry', { p_id: id })
-            .catch(_ => {});
+    if (typeof supabaseClient === 'undefined' || !supabaseClient) {
+        return true; // offline — local delete is enough
+    }
+    try {
+        const { error } = await supabaseClient.rpc('delete_soma_journal_entry', { p_id: id });
+        if (error) {
+            // Cloud deletion failed — restore the cassette locally so it doesn't
+            // reappear from the cloud on the next hydrate.
+            writeCassetteCache([...list]);
+            renderRoom();
+            cloudWarn('delete_soma_journal_entry: ' + (error.message || error.code || 'ошибка'));
+            return false;
+        }
+    } catch (e) {
+        writeCassetteCache([...list]);
+        renderRoom();
+        cloudWarn('delete_soma_journal_entry: ' + (e && e.message || String(e)));
+        return false;
     }
     return true;
 }

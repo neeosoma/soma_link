@@ -3230,32 +3230,100 @@ function fireflyState(ledger, todayOverride, nowMs) {
     return { count: 0, active: false, drowsy: false, max: 7 };
 }
 
-function saveWarmthLedger(ledger) {
-    lsSet('soma_warmth_ledger', JSON.stringify(ledger));
-    // Кросс-устройствная синхронизация: ведомство тепла/шёпотов в облако
+// Кэш облачного ledger, полученный при загрузке профиля (mergeCloudLedger) и
+// обновляемый при каждом saveWarmthLedger (fetchCloudLedger). Серверные гарантии
+// total / whisperAckDay / whisperAcks принадлежат триггеру credit_soma_whisper_saved_ack
+// (once/day + дневной лимит 6). Клиент не должен сбрасывать их при локальной
+// перезаписи — иначе серверный guard whisperAckDay терялся, и тепло начислялось
+// при каждом сохранении шёпота.
+let cloudLedgerCache = null;
+
+// Слияние локального ledger с облачным для пуска в облако: счётчики — максимум,
+// whisperAckDay — облако wins (серверный триггер owns этот ключ для гарантии once/day).
+function mergeForPush(ledger, cloud) {
+    if (!cloud || typeof cloud !== 'object') return ledger;
+    const merged = { ...ledger };
+    ['total','whisperAcks','whispersSent','warmDays','streak','trainedTotal'].forEach(k => {
+        merged[k] = Math.max(Number(ledger[k]) || 0, Number(cloud[k]) || 0);
+    });
+    if (typeof cloud.whisperAckDay === 'string' && cloud.whisperAckDay) {
+        merged.whisperAckDay = cloud.whisperAckDay;
+    }
+    return merged;
+}
+
+// Асинхронно подхватывает актуальный облачный ledger (и обновляет кэш).
+function fetchCloudLedger() {
     try {
         if (typeof supabaseClient !== 'undefined' && supabaseClient && typeof player !== 'undefined' && player && player.uid) {
-            supabaseClient.from('soma_users').update({ ledger: ledger }).eq('username', player.uid).then(() => {}, () => {});
+            return supabaseClient.from('soma_users').select('ledger').eq('username', player.uid).maybeSingle()
+                .then(res => {
+                    if (res && res.data && typeof res.data === 'object') {
+                        cloudLedgerCache = res.data;
+                        return res.data;
+                    }
+                    return null;
+                });
+        }
+    } catch (_) {}
+    return Promise.resolve(null);
+}
+
+function saveWarmthLedger(ledger) {
+    lsSet('soma_warmth_ledger', JSON.stringify(ledger));
+    // Кросс-устройствная синхронизация: ведомство тепла/шёпотов в облако.
+    // Подхватываем АКТУАЛЬный облачный ledger перед пуском и сливаем, чтобы НЕ
+    // сбросить серверные total/whisperAckDay/whisperAcks (guard once/day + лимит 6).
+    // Без этого локальная перезапись (тренажёр, шёпот) стирала бы серверные счётчики,
+    // и тепло начислялось бы при каждом сохранении шёпота.
+    try {
+        if (typeof supabaseClient !== 'undefined' && supabaseClient && typeof player !== 'undefined' && player && player.uid) {
+            fetchCloudLedger().then(cloud => {
+                try {
+                    const pushLedger = mergeForPush(ledger, cloud);
+                    supabaseClient.from('soma_users').update({ ledger: pushLedger }).eq('username', player.uid).then(() => {}, () => {});
+                } catch (_) {}
+            }).catch(() => {
+                try {
+                    const pushLedger = mergeForPush(ledger, cloudLedgerCache);
+                    supabaseClient.from('soma_users').update({ ledger: pushLedger }).eq('username', player.uid).then(() => {}, () => {});
+                } catch (_) {}
+            });
         }
     } catch (_) {}
 }
 
-// Сливает облачный ledger с локальным (ключевые счётчики — максимум)
+// Сливает облачный ledger с локальным (ключевые счётчики — максимум).
+// total/whisperAcks тоже берём максимум: серверный триггер credit_soma_whisper_saved_ack
+// инкрементирует их при сохранении шёпота, и локальный телефонный прогресс не должен
+// их понижать. whisperAckDay — облако wins: это гарантия once/day, которую сервер
+// ставит при начислении тепла за шёпот-отклик.
 function mergeCloudLedger(cloudLedger) {
     try {
         const cloud = (cloudLedger && typeof cloudLedger === 'object') ? cloudLedger : null;
         const localRaw = JSON.parse(lsGet('soma_warmth_ledger') || '{}') || {};
         if (!cloud) return;
+        cloudLedgerCache = cloud;
         const merged = { ...localRaw };
-        ['whispersSent','warmDays','streak','trainedTotal','whisperAcks'].forEach(k => {
+        ['whispersSent','warmDays','streak','trainedTotal','whisperAcks','total'].forEach(k => {
             merged[k] = Math.max(Number(localRaw[k]) || 0, Number(cloud[k]) || 0);
         });
+        if (typeof cloud.whisperAckDay === 'string' && cloud.whisperAckDay) {
+            merged.whisperAckDay = cloud.whisperAckDay;
+        }
         lsSet('soma_warmth_ledger', JSON.stringify(merged));
     } catch (_) {}
 }
 
+// Возвращает локальный ledger, слитый с кэшем облачного (как в saveWarmthLedger):
+// счётчики — максимум, whisperAckDay — облако wins. updateCloudProfile пускает именно
+// это значение в облако, поэтому оно не должно сбрасывать серверные гарантии
+// (total / whisperAckDay / whisperAcks принадлежат триггеру credit_soma_whisper_saved_ack).
 function getCloudLedger() {
-    try { return JSON.parse(lsGet('soma_warmth_ledger') || '{}') || {}; } catch (_) { return {}; }
+    try {
+        const local = JSON.parse(lsGet('soma_warmth_ledger') || '{}') || {};
+        return mergeForPush(local, cloudLedgerCache);
+    } catch (_) { return {}; }
 }
 
 // Счётчик «СРЫВОВ ПРОТОКОЛА» — строго реальные использования «Шёпота» (настоящего нарушения протокола молчания!),
@@ -3622,6 +3690,25 @@ function rememberAckedWhisper(whisperId) {
     lsSet('soma_acked_whispers', JSON.stringify(list));
 }
 
+// Отметка отклика кассеты в ведомстве — СЧЁТЧИК «кассета 0/1» и счётчик whisperAcks.
+// Тепло НЕ крипим клиентски: серверный триггер credit_soma_whisper_saved_ack
+// зачисляет тепло при transition status → saved. Эта функция только ставит
+// whisperAckDay (для счётчика) и инкрементирует whisperAcks, дедуплицированно по ID
+// шёпота (getAckedWhispers), чтобы повторные синки не увеличивали счётчик заново.
+function markCassetteAckLedger(whisperId, todayOverride) {
+    const wid = String(whisperId || '').trim();
+    if (!wid) return null;
+    if (getAckedWhispers().includes(wid)) return loadWarmthLedger(todayOverride);
+    rememberAckedWhisper(wid);
+    const ledger = loadWarmthLedger(todayOverride);
+    ledger.whisperAcks = (ledger.whisperAcks || 0) + 1;
+    if (ledger.whisperAckDay !== ledger.day) {
+        ledger.whisperAckDay = ledger.day;
+    }
+    saveWarmthLedger(ledger);
+    return ledger;
+}
+
 // Когда ваш «Шёпот» другой человек сохранил себе на кассету VTR-90:
 // даёт +4 Тепла для роста растения (без XP), но СТРОГО НЕ БОЛЕЕ 1 РАЗА В СУТКИ!
 function claimWhisperCassetteAck(whisperId, todayOverride) {
@@ -3692,6 +3779,12 @@ function claimWhisperCassetteAck(whisperId, todayOverride) {
 function notifyCassetteAck(whisperId, ackEventId) {
     const wid = String(whisperId || '').trim();
     if (!wid) return null;
+    // Отметка в ведомстве: счётчик «кассета 0/1» (whisperAckDay) и whisperAcks.
+    // Тепло НЕ крипим клиентски — серверный триггер credit_soma_whisper_saved_ack.
+    // markCassetteAckLedger дедуплицирует по ID шёпота, поэтому безопасен на каждом синке.
+    if (typeof markCassetteAckLedger === 'function') {
+        try { markCassetteAckLedger(wid); } catch (_) {}
+    }
     // Дедупликация по handled-мапу: уведомление не дублируется каждым синком.
     const id = 'ack_' + wid;
     if (getHandledWhispers()[id]) return null;
@@ -12331,7 +12424,7 @@ const pagerApi = {
     acceptFirstSignalRules, completeFirstSession, updateFirstSignalRoom, trackFirstSignalEvent,
     renderFirstSignalEntry, getFirstSignalCandidates, getVisibleFirstSignalCandidates,
     validateWhisperText, somaTextBlocked, hasWhisperedToPost, rememberWhisperedPost,
-    claimWhisperCassetteAck, notifyCassetteAck, getPendingInboxWhispers, receiveIncomingWhisperLocal, receiveCassetteAckNotice,
+    claimWhisperCassetteAck, notifyCassetteAck, markCassetteAckLedger, getPendingInboxWhispers, receiveIncomingWhisperLocal, receiveCassetteAckNotice,
     markWhisperHandled,
     acceptIncomingWhisper, dismissIncomingWhisper, sendWhisperToPost, sendWhisperReply,
     syncPagerWhispers, openPagerModal, closePagerModal, renderPagerModal,

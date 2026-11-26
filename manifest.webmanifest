@@ -1,0 +1,21 @@
+{
+  "name": "NEEOSOMA · SOMA~LINK — АНОНИМНЫЙ ДНЕВНИК",
+  "short_name": "NEEOSOMA",
+  "description": "Ночная станция живого контакта. Разделите историю, маленькую победу или несколько слов с другим человеком.",
+  "id": "/",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#0b0708",
+  "background_color": "#0b0708",
+  "lang": "ru",
+  "icons": [
+    { "src": "assets/icons/icon-96.png", "sizes": "96x96", "type": "image/png" },
+    { "src": "assets/icons/icon-144.png", "sizes": "144x144", "type": "image/png" },
+    { "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "assets/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

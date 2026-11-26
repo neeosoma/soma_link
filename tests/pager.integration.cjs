@@ -41,6 +41,17 @@ const B = '22222222-2222-4222-8222-222222222222';
         assert.equal((await next()).length, 0);
         await user('authenticated', A);
         assert.equal((await next())[0].id, 'post_b1', 'decisions are per-reader');
+        // Профильный фикс (баг в браузере): сигналы профиля видны из второго
+        // сеанса, привязанного к тому же профилю, хотя owner_id != auth.uid().
+        const C = '33333333-3333-4333-8333-333333333333';
+        await user('authenticated', A);
+        await db.exec("insert into public.soma_users(username) values ('u_cafebabe') on conflict (username) do nothing");
+        await db.query("select public.bind_my_soma_profile($1) as ok", ['u_cafebabe']);
+        await user('authenticated', C);
+        await db.query("select public.bind_my_soma_profile($1) as ok", ['u_cafebabe']);
+        assert.deepEqual((await db.query('select id from public.my_soma_pager_stories() order by id')).rows.map(r => r.id), ['post_a1', 'post_a2'], 'profile signals visible from a second session');
+        const feedC = await next();
+        assert.ok(!feedC.some(p => p.id === 'post_a1' || p.id === 'post_a2'), 'own profile posts are not suggested to the profile');
         await user('anon');
         await assert.rejects(next(), /permission denied/i);
         console.log('Pager integration passed');

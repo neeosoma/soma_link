@@ -1,7 +1,9 @@
 // Regression test for the client-side cassette-ack notification path.
-// syncPagerWhispers step 2 (my_saved_soma_whispers) now delivers ONLY the
-// incoming "echo" notice via notifyCassetteAck — warmth is credited server-side
-// by the credit_soma_whisper_saved_ack trigger. The notice must be added once
+// syncPagerWhispers step 2 (my_soma_whisper_acks — server-side ack-events) delivers
+// ONLY the incoming "echo" notice via notifyCassetteAck — warmth is credited
+// server-side by the credit_soma_whisper_saved_ack trigger. Ack-events are
+// independent of the whisper status: even if the recipient replied (saved→answered),
+// the ack-event remains and the notice still arrives. The notice must be added once
 // and not duplicated on every sync.
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
@@ -28,14 +30,16 @@ function loadRoom(env = {}) {
     );
 }
 
-function makeCloud(savedRows = []) {
+// ackEvents — rows returned by my_soma_whisper_acks: { id, whisper_id, day_key, created_at }.
+function makeCloud(ackEvents = []) {
     const calls = [];
     const supabaseClient = {
         rpc: async (name, args) => {
             calls.push({ name, args });
             if (name === 'get_my_pending_whispers') return { data: [], error: null };
             if (name === 'get_my_whisper_replies') return { data: [], error: null };
-            if (name === 'my_saved_soma_whispers') return { data: savedRows, error: null };
+            if (name === 'my_soma_whisper_acks') return { data: ackEvents, error: null };
+            if (name === 'mark_soma_whisper_ack_read') return { data: true, error: null };
             if (name === 'set_soma_whisper_status') {
                 return { data: [{ id: args.p_id, status: args.p_status }], error: null };
             }
@@ -48,7 +52,7 @@ function makeCloud(savedRows = []) {
 const settle = () => new Promise(r => setTimeout(r, 20));
 
 test('syncPagerWhispers delivers the cassette-ack inbox notice for a saved whisper', async () => {
-    const { calls, supabaseClient } = makeCloud([{ id: 'w_s1', status: 'saved' }]);
+    const { calls, supabaseClient } = makeCloud([{ id: 1, whisper_id: 'w_s1', day_key: '2026-11-25', created_at: new Date().toISOString() }]);
     const ls = makeStorage({
         'soma_my_posts': JSON.stringify(['p_1']),
         'soma_handled_whispers': '{}',
@@ -61,8 +65,8 @@ test('syncPagerWhispers delivers the cassette-ack inbox notice for a saved whisp
     await room.syncPagerWhispers();
     await settle();
 
-    assert.ok(calls.some(c => c.name === 'my_saved_soma_whispers'),
-        'my_saved_soma_whispers RPC must be called');
+    assert.ok(calls.some(c => c.name === 'my_soma_whisper_acks'),
+        'my_soma_whisper_acks RPC must be called');
 
     // Inbox notice added (echo that the whisper was saved on cassette).
     const inbox = JSON.parse(ls.getItem('soma_inbox_whispers') || '[]');
@@ -73,7 +77,7 @@ test('syncPagerWhispers delivers the cassette-ack inbox notice for a saved whisp
 });
 
 test('syncPagerWhispers does not credit warmth client-side (server-side trigger does)', async () => {
-    const { supabaseClient } = makeCloud([{ id: 'w_s1', status: 'saved' }]);
+    const { supabaseClient } = makeCloud([{ id: 1, whisper_id: 'w_s1', day_key: '2026-11-25', created_at: new Date().toISOString() }]);
     const ls = makeStorage({
         'soma_my_posts': JSON.stringify(['p_1']),
         'soma_handled_whispers': '{}',
@@ -92,7 +96,7 @@ test('syncPagerWhispers does not credit warmth client-side (server-side trigger 
 });
 
 test('syncPagerWhispers does not duplicate the ack notice on repeat syncs', async () => {
-    const { supabaseClient } = makeCloud([{ id: 'w_s1', status: 'saved' }]);
+    const { supabaseClient } = makeCloud([{ id: 1, whisper_id: 'w_s1', day_key: '2026-11-25', created_at: new Date().toISOString() }]);
     const ls = makeStorage({
         'soma_my_posts': JSON.stringify(['p_1']),
         'soma_handled_whispers': '{}',

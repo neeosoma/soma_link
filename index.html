@@ -2421,12 +2421,14 @@
             window.SOMA_ROOM.hydrateJournalFromCloud();
         }
         if (typeof syncPagerWhispers === 'function') syncPagerWhispers();
-        setInterval(refreshFeed, 8000);
+        if (window.SOMA_ROOM && typeof window.SOMA_ROOM.setupBatterySaver === 'function') window.SOMA_ROOM.setupBatterySaver();
+        scheduleFeed();
         document.addEventListener('visibilitychange', () => {
             updatePostQuotaUI();
             refreshFeed();
             if (!document.hidden) refreshStationRitual();
             if (!document.hidden && typeof syncPagerWhispers === 'function') syncPagerWhispers();
+            scheduleFeed();
         });
         // Заставка закрывается только по тапу пользователя (см. splashBoot),
         // чтобы можно было досмотреть анимацию и превентивное окно.
@@ -2596,6 +2598,26 @@
             feedLoadFailed = true;
             renderFeed();
         }
+    }
+
+    // ===== Адаптивный polling (батарея): активная игра — 8 сек (как раньше, задержка
+    // приёма сигналов/шёпотов не меняется); фон/низкий заряд/энергосбережение — сбрасываем
+    // интервал. В фоне polling и так паузируется (document.hidden), а при возвращении
+    // visibilitychange делает immediate sync — так что открытие приложения даёт мгновенный
+    // refresh независимо от интервала.
+    let feedTimer = null;
+    function getFeedIntervalMs() {
+        if (document.hidden) return 30000;
+        const saver = !!(window.SOMA_ROOM && typeof window.SOMA_ROOM.isBatterySaver === 'function' && window.SOMA_ROOM.isBatterySaver());
+        return saver ? 30000 : 8000;
+    }
+    function scheduleFeed() {
+        if (feedTimer) { clearTimeout(feedTimer); feedTimer = null; }
+        feedTimer = setTimeout(async () => {
+            feedTimer = null;
+            try { await refreshFeed(); } catch (_) {}
+            scheduleFeed();
+        }, getFeedIntervalMs());
     }
 
     async function refreshFeed() {
@@ -3405,19 +3427,30 @@
 
     // ===== Вкладка Оранжерея: живой купол без выхода из приложения =====
     let ghTabRaf = 0;
+    let ghLastFrame = 0;
     function startGreenhouseTab() {
         const cv = document.getElementById('gh-tab-canvas');
         if (!cv) return;
         if (ghTabRaf) cancelAnimationFrame(ghTabRaf);
+        ghLastFrame = 0;
         const status = document.getElementById('gh-tab-status');
         const draw = () => {
             if (!document.getElementById('view-greenhouse') || document.getElementById('view-greenhouse').classList.contains('hidden')) {
                 if (ghTabRaf) { cancelAnimationFrame(ghTabRaf); ghTabRaf = 0; }
                 return;
             }
+            const now = performance.now();
+            // Идл-троттл: купол живой (непрерывные синусы), поэтому держим плавность,
+            // но перерисовываем ~20 fps вместо 60–120 (10 fps при энергосбережении).
+            const idleMs = (window.SOMA_ROOM && typeof window.SOMA_ROOM.isBatterySaver === 'function' && window.SOMA_ROOM.isBatterySaver()) ? 100 : 50;
+            if (ghLastFrame && now - ghLastFrame < idleMs) {
+                ghTabRaf = requestAnimationFrame(draw);
+                return;
+            }
+            ghLastFrame = now;
             const gh = window.SOMA_GREENHOUSE;
             if (gh && typeof gh.paintScene === 'function' && cv.getContext) {
-                try { gh.paintScene(cv.getContext('2d'), cv.width, cv.height, performance.now()); } catch (_) {}
+                try { gh.paintScene(cv.getContext('2d'), cv.width, cv.height, now); } catch (_) {}
             }
             if (typeof isGreenhouseUnlocked === 'function' && !isGreenhouseUnlocked()) {
                 if (status) status.textContent = 'Оранжерея откроется после расцвета первого растения.';

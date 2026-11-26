@@ -4848,6 +4848,39 @@ function prefersStillRoom() {
     catch (_) { return false; }
 }
 
+// Энергосбережение: низкий заряд батареи (≤20%, не на зарядке) или
+// prefers-reduced-motion. Используется для замедления фоновой отрисовки и
+// polling-интервала — при активных анимациях (лампа/дека/ночники) поведение
+// не меняется, только фон. Статус батареи кэшируется и обновляется по событиям.
+const _battery = { saver: false, wired: false };
+function setupBatterySaver() {
+    if (_battery.wired) return;
+    _battery.wired = true;
+    const sync = () => {
+        let reduced = false;
+        try { reduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); } catch (_) {}
+        let low = false;
+        try { if (navigator.getBattery && _battery.batt) { const b = _battery.batt; low = !b.charging && b.level <= 0.2; } } catch (_) {}
+        _battery.saver = reduced || low;
+    };
+    try {
+        if (navigator.getBattery) {
+            _battery.batt = navigator.getBattery();
+            _battery.batt.addEventListener && _battery.batt.addEventListener('levelchange', sync);
+            _battery.batt.addEventListener && _battery.batt.addEventListener('chargingchange', sync);
+        }
+    } catch (_) {}
+    sync();
+}
+function isBatterySaver() {
+    return _battery.saver;
+}
+// Идл-интервал фоновой перерисовки: при обычной работе ~10 fps (почти не видно на
+// статичной/медленной сцене), при энергосбережении ~5 fps. Активные анимации
+// (busy) остаются на полной частоте экрана.
+const IDLE_FRAME_MS = 100;
+const IDLE_FRAME_MS_LOW = 200;
+
 function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
 function smooth01(v) { const t = clamp01(v); return t * t * (3 - 2 * t); }
 function easeOutCubic(v) { const t = clamp01(v); return 1 - Math.pow(1 - t, 3); }
@@ -9234,7 +9267,11 @@ function stationLoop(now) {
         || (now - roomAnim.nightLStart < 3600)
         || (now - roomAnim.nightRStart < 3600)
         || roomAnim.ripples.length > 0;
-    if (busy || now - roomAnim.lastFrame >= 33) {
+    // При busy — каждый кадр (полная плавность). В идле — фоновая перерисовка
+    // замедлена до ~10 fps (а при энергосбережении ~5 fps): статичная/медленная
+    // сцена выглядит так же, но нагрузка на GPU/батарею сильно ниже.
+    const idleFrameMs = isBatterySaver() ? IDLE_FRAME_MS_LOW : IDLE_FRAME_MS;
+    if (busy || now - roomAnim.lastFrame >= idleFrameMs) {
         const stepWorld = (now - roomAnim.lastFrame) >= 28;
         if (stepWorld) roomAnim.lastFrame = now;
         drawStationFx(now, stepWorld);
@@ -9247,6 +9284,7 @@ function stationLoop(now) {
 }
 
 function ensureStationLoop() {
+    setupBatterySaver();
     const now = typeof performance !== 'undefined' ? performance.now() : 0;
     paintPlantFrame(now);
     drawStationFx(now, false);
@@ -12463,7 +12501,8 @@ const pagerApi = {
     acceptIncomingWhisper, dismissIncomingWhisper, sendWhisperToPost, sendWhisperReply,
     syncPagerWhispers, openPagerModal, closePagerModal, renderPagerModal,
     hydrateJournalFromCloud, saveJournalEntry, deleteCassette, loadDiaryArchive,
-    playCassette, toggleCassetteFav, getEntryTag, isEntryFav, toggleEntryFav
+    playCassette, toggleCassetteFav, getEntryTag, isEntryFav, toggleEntryFav,
+    isBatterySaver, setupBatterySaver
 };
 if (typeof window !== 'undefined') window.SOMA_ROOM = Object.assign(window.SOMA_ROOM || {}, pagerApi);
 if (typeof module !== 'undefined' && module.exports) Object.assign(module.exports, pagerApi);

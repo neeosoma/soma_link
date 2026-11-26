@@ -4,6 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
     <meta id="soma-theme-color" name="theme-color" content="#0b0708">
+    <!-- PWA: installable web app (add to home screen, standalone, no store) -->
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" type="image/svg+xml" href="assets/icons/icon.svg">
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png">
+    <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon-180.png">
+    <meta name="application-name" content="NEEOSOMA">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <title>АНОНИМНЫЙ ДНЕВНИК · NEEOSOMA // SOMA~LINK</title>
     <meta name="description" content="Ночная станция живого контакта. Разделите историю, маленькую победу или несколько слов с другим человеком. Отвечать не обязательно.">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -3362,6 +3371,14 @@
         splash.addEventListener('click', dismissSplash);
         splash.addEventListener('touchstart', dismissSplash, { passive: true });
     })();
+
+    // PWA service worker: offline shell + installability (registered only in a
+    // real browser context, not inside the Telegram in-app browser).
+    if ('serviceWorker' in navigator && !/(Telegram|tg)/i.test(navigator.userAgent)) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js').catch(() => {});
+        });
+    }
 
     window.addEventListener('load', initApp);
 </script>

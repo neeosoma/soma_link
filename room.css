@@ -4726,3 +4726,118 @@ html.is-soma-fs-closing .app-h {
     .vh-meter { height: 26px; }
 }
 
+
+/* ===== ПЕРЕНОС ПРОГРЕССА: модальное окно с кодом и восстановлением (PWA/cloud) ===== */
+.progress-chassis {
+    font-family: 'Share Tech Mono', monospace;
+    animation: progress-chassis-in 0.35s cubic-bezier(0.34, 1.2, 0.64, 1);
+}
+@keyframes progress-chassis-in {
+    from { opacity: 0; transform: translateY(14px) scale(0.97); }
+    to { opacity: 1; transform: none; }
+}
+
+/* Код прогресса — «чип» с uid */
+.progress-code {
+    display: flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 6px 11px;
+    border-radius: 9px;
+    background: #080305;
+    border: 1px solid rgba(255, 77, 109, 0.32);
+    color: #ffc3cc;
+    font: 700 12px 'Share Tech Mono', monospace;
+    letter-spacing: 0.04em;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+}
+.progress-code::before {
+    content: 'UID';
+    flex-shrink: 0;
+    margin-right: 8px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: #0b0708;
+    background: linear-gradient(135deg, #ff8a9a, #ff4d5e);
+}
+
+/* Кнопка «Скопировать» */
+.progress-copy {
+    flex-shrink: 0;
+    min-height: 40px;
+    padding: 6px 13px;
+    border-radius: 9px;
+    font: 700 10px 'Share Tech Mono', monospace;
+    letter-spacing: 0.06em;
+    color: #ffe7b8;
+    background: linear-gradient(180deg, #2a0d14, #1c090d);
+    border: 1px solid rgba(235, 179, 92, 0.52);
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.progress-copy:hover { border-color: rgba(255, 206, 120, 0.85); box-shadow: 0 0 12px rgba(235, 179, 92, 0.2); }
+.progress-copy:active { transform: translateY(1px); }
+
+/* Разделитель между блоками */
+.progress-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 77, 109, 0.3), transparent);
+    margin: 1px 0;
+}
+
+/* Кнопка «Восстановить» — акцентная */
+.progress-restore {
+    flex-shrink: 0;
+    min-height: 40px;
+    padding: 6px 14px;
+    border-radius: 9px;
+    font: 700 10px 'Share Tech Mono', monospace;
+    letter-spacing: 0.06em;
+    color: #fff1f3;
+    background: linear-gradient(180deg, #3a0f1a, #23090f);
+    border: 1px solid rgba(255, 92, 112, 0.6);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 170, 186, 0.18);
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+.progress-restore:hover { border-color: rgba(255, 120, 140, 0.95); box-shadow: 0 0 14px rgba(255, 77, 109, 0.22); }
+.progress-restore:active { transform: translateY(1px); }
+
+.progress-hint {
+    margin-top: 8px;
+    font-size: 10.5px;
+    line-height: 1.5;
+    color: #8a6b72;
+}
+
+/* Сообщение об статусе (окно проверки/успеха/ошибки) */
+.progress-notice {
+    margin-top: 10px;
+    padding: 8px 11px;
+    border-radius: 9px;
+    font-size: 10.5px;
+    line-height: 1.45;
+    word-break: break-word;
+}
+.progress-notice[data-kind="ok"] {
+    color: #ffc9d2;
+    background: rgba(64, 18, 30, 0.42);
+    border: 1px solid rgba(255, 92, 112, 0.4);
+}
+.progress-notice[data-kind="err"] {
+    color: #ffb3b3;
+    background: rgba(80, 16, 22, 0.45);
+    border: 1px solid rgba(255, 77, 109, 0.45);
+}
+.progress-notice[data-kind="info"] {
+    color: #c99ca4;
+    background: rgba(20, 10, 13, 0.6);
+    border: 1px solid rgba(120, 60, 72, 0.4);
+}

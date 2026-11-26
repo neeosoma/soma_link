@@ -671,6 +671,45 @@
         </div>
     </div>
 
+    <!-- ПЕРЕНОС ПРОГРЕССА: код = uid аккаунта в облаке. Показывает код (Telegram и браузер),
+         в браузере/десктопе позволяет восстановить прогресс, введя код с телефона. -->
+    <div id="progress-modal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-[2px] flex items-center justify-center p-3 sm:p-4" onclick="if(event.target===this)closeProgressModal()">
+        <div class="soma-modal-chassis progress-chassis w-full max-w-sm max-h-[90vh] overflow-y-auto bg-[#0b0608] border border-red-500/45 rounded-2xl shadow-2xl">
+            <div class="flex justify-between items-center px-4 pt-3.5 pb-2 border-b border-red-500/15">
+                <div>
+                    <div class="text-[11px] font-mono-tech text-amber-200/90 uppercase tracking-wider">✦ ПРОГРЕСС // ПЕРЕНОС</div>
+                    <div class="text-[9.5px] font-mono-tech text-gray-500">Код — ваш неизменяемый идентификатор в NEEOSOMA</div>
+                </div>
+                <button type="button" onclick="closeProgressModal()" class="text-gray-500 hover:text-white text-sm px-1.5 py-0.5" aria-label="Закрыть">✕</button>
+            </div>
+            <div class="px-4 py-3.5 space-y-4">
+                <div>
+                    <div class="text-[9.5px] font-mono-tech text-gray-500 uppercase tracking-wider mb-2">Ваш код прогресса</div>
+                    <div class="flex items-stretch gap-2">
+                        <code id="progress-code" class="progress-code flex-1 min-w-0"></code>
+                        <button type="button" onclick="copyProgressCode()" class="progress-copy">Скопировать</button>
+                    </div>
+                    <p class="progress-hint">Сохраните код — чтобы продолжить игру на другом устройстве.</p>
+                </div>
+                <div class="progress-divider"></div>
+                <div>
+                    <div class="text-[9.5px] font-mono-tech text-gray-500 uppercase tracking-wider mb-2">Восстановить прогресс</div>
+                    <div class="flex items-stretch gap-2">
+                        <input id="progress-input" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"
+                               placeholder="u_…" aria-label="Код прогресса"
+                               class="flex-1 min-w-0 bg-[#080305] border border-red-500/35 focus:border-red-400 rounded-lg px-2.5 py-2 text-xs text-white outline-none font-mono-tech"
+                               oninput="this.value=this.value.trim().toLowerCase()">
+                        <button type="button" onclick="restoreProgress()" class="progress-restore">Восстановить</button>
+                    </div>
+                    <p id="progress-notice" class="progress-notice hidden"></p>
+                </div>
+            </div>
+            <div class="px-4 py-2 bg-[#080305] border-t border-red-500/15 text-[9.5px] font-mono-tech text-gray-500 text-center">
+                ⚖ Код не раскрывает ваш Telegram-аккаунт. Прогресс хранится в облаке NEEOSOMA.
+            </div>
+        </div>
+    </div>
+
     <!-- ФОНОТЕКА — СЛУШАЛЬНАЯ: архив сигналов на виниле. Атмосферный фон + детальный проигрыватель (VU-метры, тонарм) + шкаф с обложками пластинок -->
     <div id="vinyl-archive-modal" class="hidden fixed inset-0 z-[60] vinyl-modal" onclick="if(event.target===this)closeVinylArchive()">
         <!-- Атмосферный фон-сцена (слушальная, пиксельная) -->
@@ -828,6 +867,7 @@
                     <div class="witness-card-top">
                         <span class="witness-card-kicker">NEEOSOMA // АНОНИМНЫЙ ДНЕВНИК</span>
                         <button type="button" onclick="openShop('room')" class="top-shop-btn">✦ АТРИБУТЫ</button>
+                        <button type="button" onclick="openProgressModal()" class="top-shop-btn top-shop-btn--progress">⚓ ПРОГРЕСС</button>
                     </div>
                     <div class="witness-card-id">
                         <span id="card-seal" class="witness-seal"></span>
@@ -1459,6 +1499,108 @@
         sModal.classList.remove('is-kb-open');
         if (sModal.__somaKbOff) { sModal.__somaKbOff(); sModal.__somaKbOff = null; sModal.__somaKbBound = false; }
     }
+
+    // ===== ПЕРЕНОС ПРОГРЕССА (код = uid аккаунта в облаке) =====
+    // Код — это необратимый uid, по которому прогресс хранится в Supabase.
+    // В Telegram он показывает код своего аккаунта; в браузере/десктопе позволяет
+    // принять uid и загрузить прогресс, введённый с телефона.
+    function openProgressModal() {
+        const m = document.getElementById('progress-modal');
+        if (!m) return;
+        const codeEl = document.getElementById('progress-code');
+        if (codeEl) codeEl.textContent = (player && player.uid) || '—';
+        const notice = document.getElementById('progress-notice');
+        if (notice) { notice.textContent = ''; notice.classList.add('hidden'); notice.removeAttribute('data-kind'); }
+        const input = document.getElementById('progress-input');
+        if (input) input.value = '';
+        m.classList.remove('hidden');
+        _somaKbBind(m);
+        _somaKbUpdate(m);
+        try { if (window.Telegram && Telegram.WebApp && Telegram.WebApp.HapticFeedback) Telegram.WebApp.HapticFeedback.impactOccurred('light'); } catch (_) {}
+    }
+    function closeProgressModal() {
+        const m = document.getElementById('progress-modal');
+        if (!m) return;
+        m.classList.add('hidden');
+        m.classList.remove('is-kb-open');
+        if (m.__somaKbOff) { m.__somaKbOff(); m.__somaKbOff = null; m.__somaKbBound = false; }
+    }
+    function setProgressNotice(msg, kind) {
+        const el = document.getElementById('progress-notice');
+        if (!el) return;
+        el.textContent = msg;
+        el.classList.remove('hidden');
+        el.dataset.kind = kind || 'info';
+    }
+    async function copyProgressCode() {
+        const code = (player && player.uid) || '';
+        if (!code) { setProgressNotice('Кода ещё нет — дождитесь загрузки профиля.', 'err'); return; }
+        let ok = false;
+        try {
+            // В Telegram используем WebApp-клипборд (открывает встроенный аппендер).
+            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.clipboard && window.Telegram.WebApp.clipboard.setText) {
+                window.Telegram.WebApp.clipboard.setText(code);
+                ok = true;
+            }
+            if (!ok && navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(code);
+                ok = true;
+            }
+        } catch (_) {}
+        if (!ok) {
+            // Фолбэк без clipboard API
+            const ta = document.createElement('textarea');
+            ta.value = code;
+            ta.setAttribute('readonly', '');
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            try { ok = document.execCommand('copy'); } catch (_) {}
+            document.body.removeChild(ta);
+        }
+        setProgressNotice(ok ? `✓ Код скопирован: ${code}` : `Скопируйте код вручную: ${code}`, ok ? 'ok' : 'err');
+        try { if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) window.Telegram.WebApp.HapticFeedback.notificationOccurred(ok ? 'success' : 'error'); } catch (_) {}
+    }
+    async function restoreProgress() {
+        const input = document.getElementById('progress-input');
+        const raw = String((input && input.value) || '').trim().toLowerCase();
+        if (!raw) { setProgressNotice('Введите код прогресса.', 'err'); return; }
+        if (!/^u_[0-9a-f]{16}$/.test(raw)) {
+            setProgressNotice('Код выглядит некорректно — проверьте, что скопировали полностью (вид u_…).', 'err');
+            try { if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) window.Telegram.WebApp.HapticFeedback.notificationOccurred('error'); } catch (_) {}
+            return;
+        }
+        if (!supabaseClient || !player) { setProgressNotice('Сеть не подключена. Проверьте config.js.', 'err'); return; }
+        setProgressNotice('Проверяю код в облаке…', 'info');
+        try {
+            const { data, error } = await supabaseClient.from('soma_users')
+                .select('username,warmth,help_attempts,whispers_sent,greenhouse,my_posts,ledger,cosmetics,owned_cosmetics,created_at')
+                .eq('username', raw).single();
+            if (error || !data) {
+                setProgressNotice('Код не найден — проверьте ввод или сохранённый код.', 'err');
+                try { if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) window.Telegram.WebApp.HapticFeedback.notificationOccurred('error'); } catch (_) {}
+                return;
+            }
+            // Код найден — принимаем uid и гидратируем прогресс из облака.
+            player.uid = raw;
+            // Запоминаем привязанный uid, чтобы прогресс сохранялся и после перезагрузки.
+            try { localStorage.setItem('soma_linked_uid', raw); } catch (_) {}
+            applyCloudProfile(data);
+            pushCloudProfile();
+            // Обновляем интерфейс после смены аккаунта
+            if (typeof updateHeader === 'function') updateHeader();
+            if (typeof applyCosmeticsToUI === 'function') applyCosmeticsToUI();
+            if (typeof updatePostQuotaUI === 'function') updatePostQuotaUI();
+            setProgressNotice(`✓ Прогресс загружен: ${Number(data.warmth) || 0} тепла, ${Number(data.whispers_sent) || 0} шёпотов`, 'ok');
+            const codeEl = document.getElementById('progress-code');
+            if (codeEl) codeEl.textContent = player.uid;
+            try { if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) window.Telegram.WebApp.HapticFeedback.notificationOccurred('success'); } catch (_) {}
+        } catch (e) {
+            setProgressNotice('Не удалось восстановить: ' + ((e && e.message) || 'ошибка сети'), 'err');
+        }
+    }
+
     function openExt(url) {
         try { if (window.Telegram && Telegram.WebApp.initData) { Telegram.WebApp.openLink(url); return; } } catch (e) {}
         window.open(url, '_blank');
@@ -2085,6 +2227,28 @@
         }
     }
 
+    // Единая гидрация профиля из облака. Используется и при начальной загрузке,
+    // и при восстановлении прогресса по коду — чтобы сливать тепло, шёпоты,
+    // Оранжерею, сигналы, ведомство и косметику одним кодом.
+    function applyCloudProfile(data) {
+        cloudProfile.loaded = true;
+        cloudProfile.data = data;
+        const merged = mergeCloudProfile(data);
+        player.whispersSent = merged.whispers_sent;
+        player.helpAttempts = merged.help_attempts;
+        player.warmth = merged.warmth;
+        syncWitnessWarmthToLocal(data.warmth);
+        // Прогресс Оранжереи/цветка: слив облака с локальным кешем
+        if (typeof mergeCloudGreenhouse === 'function') mergeCloudGreenhouse(data.greenhouse);
+        // Мои посты (сигналы): union
+        if (typeof mergeCloudMyPosts === 'function') mergeCloudMyPosts(data.my_posts);
+        // Ведомство тепла/шёпотов: слив
+        if (typeof mergeCloudLedger === 'function') mergeCloudLedger(data.ledger);
+        if (typeof hydrateCosmeticsFromCloud === 'function') hydrateCosmeticsFromCloud(data);
+        // Перерисовка комнаты после гидраты (редкий cat/dog coat доходит до рендеринга)
+        if (typeof renderRoom === 'function') renderRoom();
+    }
+
     // Детектирует загруженную версию room.js из script-тега (cache-busting).
     function getJsVersion() {
         try {
@@ -2156,7 +2320,15 @@
                 localStorage.setItem('soma_local_name', savedName);
             }
             player.name = savedName;
-            player.uid = await makeUid(savedName);
+            // Если прогресс был восстановлен по коду (привязан к uid Telegram-аккаунта),
+            // сохраняем этот uid как «привязанный» — иначе после перезагрузки браузер
+            // сгенерирует другой uid из сохранённого имени и прогресс потеряется.
+            const linkedUid = localStorage.getItem('soma_linked_uid');
+            if (linkedUid && /^u_[0-9a-f]{16}$/.test(linkedUid)) {
+                player.uid = linkedUid;
+            } else {
+                player.uid = await makeUid(savedName);
+            }
         }
         // Anonymous Auth supplies an unforgeable database identity, not a public nickname.
         if (supabaseClient) {
@@ -2183,32 +2355,10 @@
         try {
             let { data } = await supabaseClient.from('soma_users').select('username,warmth,help_attempts,whispers_sent,greenhouse,my_posts,ledger,cosmetics,owned_cosmetics,created_at').eq('username', player.uid).single();
             if (data) {
-                cloudProfile.loaded = true;
-                cloudProfile.data = data;
-                const merged = mergeCloudProfile(data);
-                player = {
-                    ...player,
-                    whispersSent: merged.whispers_sent,
-                    helpAttempts: merged.help_attempts,
-                    warmth: merged.warmth
-                };
+                applyCloudProfile(data);
                 // Записываем объединенный профиль обратно в облако (чтобы локальный телефонный
                 // прогресс, который раньше не синхронизировался, попал в облако для других устройств)
                 pushCloudProfile();
-                syncWitnessWarmthToLocal(data.warmth);
-                // Прогресс Оранжереи/цветка: слив облака с локальным кешем
-                if (typeof mergeCloudGreenhouse === 'function') mergeCloudGreenhouse(data.greenhouse);
-                // Мои посты (сигналы): union
-                if (typeof mergeCloudMyPosts === 'function') mergeCloudMyPosts(data.my_posts);
-                // Ведомство тепла/шёпотов: слив
-                if (typeof mergeCloudLedger === 'function') mergeCloudLedger(data.ledger);
-                if (typeof hydrateCosmeticsFromCloud === 'function') hydrateCosmeticsFromCloud(data);
-                // Перерисовка комнаты после гидраты: в статичном режиме (reduce-motion,
-                // без RAF-цикла) комната рендерится один раз на загрузке — до поступления
-                // профиля из облака. Без этого переопределение cat_coat/dog_breed (редкий
-                // 0.1% = 7) доходит до shopState, но до рендеринга комнаты не успевает,
-                // и rare-кошка/собака не появляются.
-                if (typeof renderRoom === 'function') renderRoom();
             } else {
                 const breaches = typeof getWhisperBreachCount === 'function' ? getWhisperBreachCount() : 0;
                 player.whispersSent = breaches;

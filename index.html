@@ -867,7 +867,6 @@
                     <div class="witness-card-top">
                         <span class="witness-card-kicker">NEEOSOMA // АНОНИМНЫЙ ДНЕВНИК</span>
                         <button type="button" onclick="openShop('room')" class="top-shop-btn">✦ АТРИБУТЫ</button>
-                        <button type="button" onclick="openProgressModal()" class="top-shop-btn top-shop-btn--progress">⚓ ПРОГРЕСС</button>
                     </div>
                     <div class="witness-card-id">
                         <span id="card-seal" class="witness-seal"></span>
@@ -904,6 +903,11 @@
             <!-- Кнопка записи кассеты для близкого — под карточкой свидетеля -->
             <button type="button" onclick="openFriendCassette()" class="witness-friend-btn" aria-label="Записать кассету близкому">
                 ЗАПИСАТЬ КАССЕТУ БЛИЗКОМУ
+            </button>
+
+            <!-- Кнопка переноса прогресса — под кнопкой кассеты -->
+            <button type="button" onclick="openProgressModal()" class="witness-progress-btn" aria-label="Перенос прогресса">
+                ⚓ ПЕРЕНЕСТИ ПРОГРЕСС
             </button>
         </div>
 
@@ -1588,6 +1592,13 @@
             try { localStorage.setItem('soma_linked_uid', raw); } catch (_) {}
             applyCloudProfile(data);
             pushCloudProfile();
+            // Перепривязываем auth-сессию к новому профилю: journal (винил + кассеты)
+            // хранится по профилю, а не по auth.uid — без перепривязки он не перенесётся.
+            try { await supabaseClient.rpc('bind_my_soma_profile', { p_username: raw }); } catch (_) {}
+            // Загружаем винил/кассеты по новому профилю и перерисовываем архив.
+            if (typeof window !== 'undefined' && window.SOMA_ROOM && typeof window.SOMA_ROOM.hydrateJournalFromCloud === 'function') {
+                window.SOMA_ROOM.hydrateJournalFromCloud();
+            }
             // Обновляем интерфейс после смены аккаунта
             if (typeof updateHeader === 'function') updateHeader();
             if (typeof applyCosmeticsToUI === 'function') applyCosmeticsToUI();

@@ -799,7 +799,6 @@ security definer
 set search_path = ''
 as $$
 declare
-    v_bound text;
     v_pending integer := 0;
     v_updated integer := 0;
 begin
@@ -816,10 +815,8 @@ begin
     );
     insert into soma_private.user_profile_bindings (auth_id, profile_uid)
     values (auth.uid(), p_username)
-    on conflict (auth_id) do nothing;
-    select b.profile_uid into v_bound
-      from soma_private.user_profile_bindings b where b.auth_id = auth.uid();
-    if v_bound is distinct from p_username then raise exception 'Profile binding mismatch'; end if;
+    on conflict (auth_id) do update
+        set profile_uid = excluded.profile_uid;
 
     update soma_private.post_owners
        set profile_uid = p_username

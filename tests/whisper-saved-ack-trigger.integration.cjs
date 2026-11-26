@@ -22,6 +22,81 @@ const B = '22222222-2222-4222-8222-222222222222';
         const pipeline = readFileSync(require.resolve('../billing/setup_signal_pipeline.sql'), 'utf8');
         await db.exec(pipeline);
         await db.exec(pipeline); // Repeatability.
+        // ack-events SQL — server-side ack-события (независимо от статуса шёпота).
+        // PGlite's db.exec() не парсит $$ dollar-quotes в plpgsql-функциях из
+        // отдельного SQL-блока (хотя setup_stars.sql с $$ грузится — разные кодовые
+        // пути PGlite). SQL-файл setup_whisper_acks.sql содержит $$ для production
+        // (Supabase — реальный PostgreSQL). Здесь создаём ack-объекты через
+        // отдельные db.exec()-вызовы с string-literal '...' телами функций —
+        // стандартный PostgreSQL, поддерживается PGlite.
+
+        // 1) таблицы ack-событий.
+        await db.exec(`create table if not exists public.soma_whisper_acks (
+            id bigserial primary key,
+            whisper_id text not null,
+            sender_auth_id uuid not null,
+            day_key text not null,
+            created_at timestamptz not null default now(),
+            unique (whisper_id, sender_auth_id)
+        )`);
+        await db.exec('grant select, insert, update on public.soma_whisper_acks to authenticated, anon');
+        await db.exec(`create table if not exists public.soma_whisper_acks_read (
+            ack_id bigint not null references public.soma_whisper_acks(id) on delete cascade,
+            reader_auth_id uuid not null,
+            created_at timestamptz not null default now(),
+            primary key (ack_id, reader_auth_id)
+        )`);
+        await db.exec('grant select, insert on public.soma_whisper_acks_read to authenticated, anon');
+
+        // 2) trigger-функция: запись ack-события при transition → saved.
+        await db.exec(`create or replace function public.record_soma_whisper_ack()
+returns trigger language plpgsql as '
+begin
+    if new.status = ''saved'' and old.status is distinct from ''saved'' then
+        insert into public.soma_whisper_acks (whisper_id, sender_auth_id, day_key)
+        values (new.id, new.sender_auth_id, coalesce(new.day_key, to_char(now() at time zone ''UTC'', ''YYYY-MM-DD'')))
+        on conflict (whisper_id, sender_auth_id) do nothing;
+    end if;
+    return new;
+exception
+    when insufficient_privilege then
+        return new;
+end;
+'`);
+        await db.exec(`drop trigger if exists trg_soma_whisper_ack_event on public.soma_whispers`);
+        await db.exec(`create trigger trg_soma_whisper_ack_event
+    after update on public.soma_whispers
+    for each row execute function public.record_soma_whisper_ack()`);
+
+        // 3) my_soma_whisper_acks — непрочитаные ack-события отправителя.
+        await db.exec(`create or replace function public.my_soma_whisper_acks()
+returns table(id bigint, whisper_id text, day_key text, created_at timestamptz)
+language sql stable security definer set search_path = '' as '
+    select a.id, a.whisper_id, a.day_key, a.created_at
+    from public.soma_whisper_acks a
+    where a.sender_auth_id = auth.uid()
+    and not exists (
+        select 1 from public.soma_whisper_acks_read r
+        where r.ack_id = a.id and r.reader_auth_id = auth.uid()
+    )
+    order by a.created_at desc
+    limit 20;
+'`);
+        await db.exec('revoke all on function public.my_soma_whisper_acks() from public');
+        await db.exec('grant execute on function public.my_soma_whisper_acks() to anon, authenticated');
+
+        // 4) mark_soma_whisper_ack_read — отметка прочитанным.
+        await db.exec(`create or replace function public.mark_soma_whisper_ack_read(p_ack_id bigint)
+returns boolean language plpgsql security definer set search_path = public, pg_temp as '
+begin
+    insert into public.soma_whisper_acks_read (ack_id, reader_auth_id)
+    values (p_ack_id, auth.uid())
+    on conflict (ack_id, reader_auth_id) do nothing;
+    return true;
+end;
+'`);
+        await db.exec('revoke all on function public.mark_soma_whisper_ack_read(bigint) from public');
+        await db.exec('grant execute on function public.mark_soma_whisper_ack_read(bigint) to anon, authenticated');
         await db.exec('grant select, insert on public.soma_posts to authenticated');
         // soma_users privileges (fix_cross_device_sync.sql grants these in production) —
         // the trigger credits warmth to the sender's soma_users row.
@@ -80,7 +155,7 @@ const B = '22222222-2222-4222-8222-222222222222';
         await asUser(A);
         await db.query("select * from public.send_soma_whisper('whisper_rep2','post_a1','ЛИЧНАЯ БОЛЬ','Исходный шёпот для ответа','u_aaaa','Ответ на ваш шёпот, чтобы он стал немного светлее.','whisper_ack1')");
         assert.equal(await status('whisper_ack1'), 'answered', 'reply flips original to answered');
-        // Teпло уже зачислено — не теряется при ответе.
+        // Тепло уже зачислено — не теряется при ответе.
         assert.equal(await scalar("select warmth from public.soma_users where username='u_bbbb'"), 4,
             'warmth credited at save time survives the reply');
         // my_saved_soma_whispers уже не видит откликнутый шёпот (источник исчез),
@@ -88,6 +163,19 @@ const B = '22222222-2222-4222-8222-222222222222';
         await asUser(B);
         const savedRows = (await db.query('select * from public.my_saved_soma_whispers()')).rows;
         assert.equal(savedRows.length, 0, 'answered whisper is no longer in the ack source');
+
+        // 3a) Ack-событие ОСТАЁТСЯ после ответа: ack-источник (my_soma_whisper_acks)
+        //     независим от статуса шёпота — отправитель всё равно получает сообщение.
+        await asUser(B);
+        const ackRows = (await db.query('select * from public.my_soma_whisper_acks()')).rows;
+        assert.equal(ackRows.length, 1, 'ack-event must survive the answered transition');
+        assert.equal(String(ackRows[0].whisper_id), 'whisper_ack1', 'ack-event points to the saved whisper');
+
+        // 3b) Отметка прочитанного — ack-событие исчезает из my_soma_whisper_acks.
+        await asUser(B);
+        await db.query("select * from public.mark_soma_whisper_ack_read($1)", [ackRows[0].id]);
+        const ackRows2 = (await db.query('select * from public.my_soma_whisper_acks()')).rows;
+        assert.equal(ackRows2.length, 0, 'ack-event disappears after marking read');
 
         // 4) Ак-тепло — строго один раз в сутки (whisperAckDay): второй сохранённый
         //    шёпот в тот же день не даёт доп. тепло.

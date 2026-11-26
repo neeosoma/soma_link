@@ -3686,14 +3686,17 @@ function claimWhisperCassetteAck(whisperId, todayOverride) {
 // Тепло зачисляется СЕРВЕРНО (триггер credit_soma_whisper_saved_ack при переходе
 // шёпота в статус saved) — не зависит от клиентской polling и от того, остаётся
 // ли статус saved (ответ recipient переключает его в answered).
-function notifyCassetteAck(whisperId) {
+// Сообщение доставляется из server-side ack-событий (soma_whisper_acks) — не
+// зависит от текущего статуса шёпота. ackEventId — id события для server-side
+// отметки прочитанного (mark_soma_whisper_ack_read).
+function notifyCassetteAck(whisperId, ackEventId) {
     const wid = String(whisperId || '').trim();
     if (!wid) return null;
     // Дедупликация по handled-мапу: уведомление не дублируется каждым синком.
     const id = 'ack_' + wid;
     if (getHandledWhispers()[id]) return null;
     if (typeof receiveCassetteAckNotice === 'function') {
-        try { return receiveCassetteAckNotice(wid, 0); } catch (_) {}
+        try { return receiveCassetteAckNotice(wid, 0, ackEventId); } catch (_) {}
     }
     return null;
 }
@@ -10199,7 +10202,9 @@ function receiveIncomingWhisperLocal(whisperObj) {
 // Сообщение во входящие пейджера: человек принял ваш «Шёпот» и сохранил его себе на кассету.
 // Показывается каждый раз при сохранении — даже если дневной бонус тепла уже потрачен,
 // чтобы отклик не «пропадался» незаметно.
-function receiveCassetteAckNotice(whisperId, grantedWarmth) {
+// ackEventId — id server-side ack-события (soma_whisper_acks): используется для
+// server-side отметки прочитанного (mark_soma_whisper_ack_read).
+function receiveCassetteAckNotice(whisperId, grantedWarmth, ackEventId) {
     const wid = String(whisperId || '').trim();
     if (!wid) return null;
     const id = 'ack_' + wid;
@@ -10209,6 +10214,7 @@ function receiveCassetteAckNotice(whisperId, grantedWarmth) {
         : ' (бонус тепла за сегодня уже впитался).';
     const item = {
         id,
+        ack_event_id: ackEventId != null ? Number(ackEventId) : null,
         post_id: '',
         post_tag: 'ОТКЛИК КАССЕТЫ',
         post_preview: '',
@@ -10778,18 +10784,19 @@ async function syncPagerWhispers() {
             }
         }
 
-        // 2) Проверяем, сохранил ли кто-то из поддержанных нами людей наш «Шёпот» себе на кассету VTR-90
+        // 2) Проверяем ack-события: recipient сохранил наш «Шёпот» себе на кассету.
+        //    Server-side события (soma_whisper_acks) — независимы от текущего статуса
+        //    шёпота: если recipient отверг/ответил на saved-шёпот, ack-событие остаётся
+        //    и сообщение всё равно доставляется. Тепло зачисляется серверным триггером
+        //    при сохранении — клиент здесь только доставляет уведомление и отмечает
+        //    ack-событие прочитанным (server-side read-tracking).
         const myUid = typeof player !== 'undefined' && player && player.uid;
         if (myUid) {
-            const { data: savedRows } = await supabaseClient
-                .rpc('my_saved_soma_whispers');
-            if (Array.isArray(savedRows) && savedRows.length) {
-                const acked = new Set(getAckedWhispers());
-                savedRows.forEach(r => {
-                    if (r && r.id && !acked.has(String(r.id))) {
-                        // Тепло зачисляется серверно (триггер при сохранении);
-                        // клиент только доставляет входящее уведомление об отклике.
-                        notifyCassetteAck(String(r.id));
+            const { data: ackRows } = await supabaseClient.rpc('my_soma_whisper_acks');
+            if (Array.isArray(ackRows) && ackRows.length) {
+                ackRows.forEach(r => {
+                    if (r && r.whisper_id && r.id) {
+                        notifyCassetteAck(String(r.whisper_id), r.id);
                     }
                 });
             }
@@ -11195,6 +11202,13 @@ function renderPagerModal() {
             bodyEl.querySelectorAll('[data-act="ack-read"]').forEach(btn => {
                 btn.onclick = () => {
                     markWhisperHandled(btn.dataset.id, 'ack_read');
+                    // Server-side отметка: ack-событие помечено прочитанным
+                    // (my_soma_whisper_acks больше не вернёт это событие).
+                    const notice = getPendingInboxWhispers().find(x => x.id === btn.dataset.id);
+                    if (notice && notice.ack_event_id != null && typeof supabaseClient !== 'undefined' && supabaseClient) {
+                        supabaseClient.rpc('mark_soma_whisper_ack_read', { p_ack_id: Number(notice.ack_event_id) })
+                            .catch(() => {});
+                    }
                     roomAnim.pagerModalNotice = '';
                     renderPagerModal();
                 };

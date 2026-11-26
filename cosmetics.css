@@ -25,6 +25,18 @@
     transform: translateY(1px);
 }
 
+/* Кнопка «ПРОГРЕСС» (перенос прогресса по коду) — второстепенная, розовый акцент */
+.top-shop-btn--progress {
+    color: #ffc3cc;
+    background: linear-gradient(135deg, #1f0a10 0%, #16070b 55%, #230d13 100%);
+    border-color: rgba(255, 92, 112, 0.52);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 170, 186, 0.18);
+}
+.top-shop-btn--progress:hover {
+    border-color: rgba(255, 110, 132, 0.9);
+    box-shadow: 0 0 14px rgba(255, 92, 112, 0.22);
+}
+
 
 /* Плашка азарта / погони за следующим местом */
 

@@ -75,10 +75,10 @@ const A = '11111111-1111-4111-8111-111111111111';
 
         // 4) save_soma_journal_entry rejects blocked text.
         await assert.rejects(
-            db.query("select * from public.save_soma_journal_entry('e_f1','entry','Тут дурень пишет мат','2026-11-21',0,false)"),
+            db.query("select * from public.save_soma_journal_entry('e_f1','entry','Тут дурень пишет мат','2026-11-21',0,false,null)"),
             /запрещённую лексику/i
         );
-        const cleanJournal = await db.query("select * from public.save_soma_journal_entry('e_f_ok','entry','Просто запись в дневник','2026-11-21',0,false)");
+        const cleanJournal = await db.query("select * from public.save_soma_journal_entry('e_f_ok','entry','Просто запись в дневник','2026-11-21',0,false,'тема')");
         assert.equal(cleanJournal.rows.length, 1);
 
         console.log('Anti-profanity filter integration passed: soma_text_blocked normalization + submit_soma_post/send_soma_whisper/save_soma_journal_entry rejection.');

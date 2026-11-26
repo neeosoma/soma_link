@@ -39,7 +39,9 @@ create table if not exists public.soma_journal (
     -- Прогресс (винил + кассеты) следует за профилем (player.uid), а не за
     -- сессией анонимной авторизации auth.uid() — чтобы перенос по коду переносил
     -- и журнал. Бэкфилл для старых строк ниже.
-    author_profile_uid text
+    author_profile_uid text,
+    -- Тег темы записи (винил) — синхронизируется в облако и переносится с журналом.
+    tag text
 );
 
 -- Удалить устаревшее 500-символьное ограничение (leftover от ранних миграций):
@@ -82,8 +84,9 @@ grant delete on public.soma_journal to authenticated;
 -- 2. RPC: сохранение записи (upsert по id)
 -- ----------------------------------------------------------------------
 drop function if exists public.save_soma_journal_entry(text, text, text, text, integer, boolean);
+drop function if exists public.save_soma_journal_entry(text, text, text, text, integer, boolean, text);
 create or replace function public.save_soma_journal_entry(
-    p_id text, p_kind text, p_text text, p_date text, p_num integer, p_fav boolean
+    p_id text, p_kind text, p_text text, p_date text, p_num integer, p_fav boolean, p_tag text
 )
 returns setof public.soma_journal
 language plpgsql
@@ -108,6 +111,9 @@ begin
     if public.soma_text_blocked(p_text) then
         raise exception 'invalid_text: содержит запрещённую лексику';
     end if;
+    if p_tag is not null and char_length(p_tag) > 32 then
+        p_tag := substr(p_tag, 1, 32);
+    end if;
 
     -- Журнал привязан к профилю (player.uid) через привязку auth -> profile.
     select b.profile_uid into v_profile
@@ -117,14 +123,15 @@ begin
         raise exception 'Profile not bound';
     end if;
 
-    insert into public.soma_journal (id, kind, text, date_label, num, fav, author_auth_id, author_profile_uid)
-    values (p_id, p_kind, p_text, p_date, coalesce(p_num, 0), coalesce(p_fav, false), auth.uid(), v_profile)
+    insert into public.soma_journal (id, kind, text, date_label, num, fav, tag, author_auth_id, author_profile_uid)
+    values (p_id, p_kind, p_text, p_date, coalesce(p_num, 0), coalesce(p_fav, false), coalesce(p_tag, ''), auth.uid(), v_profile)
     on conflict (id) do update
         set kind = excluded.kind,
             text = excluded.text,
             date_label = excluded.date_label,
             num = excluded.num,
-            fav = excluded.fav
+            fav = excluded.fav,
+            tag = excluded.tag
         where public.soma_journal.author_profile_uid = v_profile;
 
     return query select * from public.soma_journal where id = p_id;
@@ -229,16 +236,46 @@ update public.soma_journal j
  where j.author_auth_id = b.auth_id
    and j.author_profile_uid is null;
 
-revoke all on function public.save_soma_journal_entry(text, text, text, text, integer, boolean) from public;
+-- ----------------------------------------------------------------------
+-- 7b. RPC: задать/обновить тег одной записи (миграция локальных тегов в облако)
+-- ----------------------------------------------------------------------
+drop function if exists public.set_soma_journal_tag(text, text);
+create or replace function public.set_soma_journal_tag(p_id text, p_tag text)
+returns boolean
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+begin
+    if auth.uid() is null then
+        raise exception 'Authentication required';
+    end if;
+    if p_tag is not null and char_length(p_tag) > 32 then
+        p_tag := substr(p_tag, 1, 32);
+    end if;
+    update public.soma_journal
+       set tag = coalesce(p_tag, '')
+      where id = p_id
+        and author_profile_uid = (
+            select b.profile_uid
+              from soma_private.user_profile_bindings b
+             where b.auth_id = auth.uid());
+    return found;
+end;
+$$;
+
+revoke all on function public.save_soma_journal_entry(text, text, text, text, integer, boolean, text) from public;
 revoke all on function public.get_my_soma_journal() from public;
 revoke all on function public.set_soma_journal_fav(text, boolean) from public;
 revoke all on function public.delete_soma_journal_entry(text) from public;
 revoke all on function public.next_soma_journal_num() from public;
+revoke all on function public.set_soma_journal_tag(text, text) from public;
 
-grant execute on function public.save_soma_journal_entry(text, text, text, text, integer, boolean) to authenticated;
+grant execute on function public.save_soma_journal_entry(text, text, text, text, integer, boolean, text) to authenticated;
 grant execute on function public.get_my_soma_journal() to authenticated;
 grant execute on function public.set_soma_journal_fav(text, boolean) to authenticated;
 grant execute on function public.delete_soma_journal_entry(text) to authenticated;
 grant execute on function public.next_soma_journal_num() to authenticated;
+grant execute on function public.set_soma_journal_tag(text, text) to authenticated;
 
 commit;

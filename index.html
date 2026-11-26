@@ -1626,6 +1626,9 @@
     const vinylDrag = { id: '', ghost: null, sx: 0, sy: 0, dx: 0, dy: 0, moved: false, suppress: false, bound: false };
 
     function _vinylTagRaw(it) {
+        // Тег из облака (journal.tag) — он синхронизируется и переносится.
+        // Фолбэк на локальный каталог (старые записи, тег ещё не пушен в облако).
+        if (it && it.tag) return String(it.tag);
         const api = window.SOMA_ROOM;
         return (api && typeof api.getEntryTag === 'function') ? api.getEntryTag(it.id) : '';
     }

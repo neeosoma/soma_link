@@ -4137,7 +4137,8 @@ function normalizeJournalRow(row) {
         date,
         ts: Number(row.created_at) ? new Date(row.created_at).getTime() : parseCassetteDateTs(date, Date.now()),
         text: String(row.text || '').trim().slice(0, 2000), // полный сигнал: до 2000 символов (ранее обрезалось до 420)
-        fav: !!row.fav
+        fav: !!row.fav,
+        tag: String(row.tag || '') // тег темы (винил) — синхронизируется в облако
     };
 }
 
@@ -4305,7 +4306,8 @@ function cloudSaveCassette(item) {
         p_text: item.text,
         p_date: item.date,
         p_num: item.num,
-        p_fav: item.fav
+        p_fav: item.fav,
+        p_tag: null // кассетам тег не нужен
     }).then(({ error }) => {
         // Отметим synced-состояние в локальном кэше — гидратация использует это,
         // чтобы понять, какие локальные кассеты уже в облаке (и безопасно удалить
@@ -4479,6 +4481,8 @@ async function hydrateJournalFromCloud() {
     } catch (_) {}
     // Прогнать локальные записи-сигналы (сохранённые при сбое сети) в облако.
     syncJournalEntriesToCloud();
+    // Прогнать локальные теги записей в облако (миграция: теги не синхронизировались).
+    syncEntryTagsToCloud();
 }
 
 // Save the player's own diary/journal entry (a signal they published).
@@ -4535,7 +4539,8 @@ async function saveJournalEntry(id, text, dateLabel, tag) {
         } catch (_) {}
         const finalNum = maxNum + 1;
         const { error } = await supabaseClient.rpc('save_soma_journal_entry', {
-            p_id: entryId, p_kind: 'entry', p_text: clean, p_date: entry.date, p_num: finalNum, p_fav: false
+            p_id: entryId, p_kind: 'entry', p_text: clean, p_date: entry.date, p_num: finalNum, p_fav: false,
+            p_tag: tag ? String(tag).slice(0, 32) : null
         });
         if (error) {
             const why = error.message || error.code || 'ошибка';
@@ -4575,6 +4580,32 @@ function getEntryTag(entryId) {
         const map = JSON.parse(lsGet(ENTRY_TAGS_KEY) || '{}');
         return map[String(entryId)] || '';
     } catch (_) { return ''; }
+}
+// Пушит локальные теги записей в облако (миграция: теги раньше были ТОЛЬКО в
+// localStorage и в RPC не передавались, поэтому не синхронизировались и не
+// переносились). Вызывать после гидраты дневника.
+async function syncEntryTagsToCloud() {
+    if (typeof supabaseClient === 'undefined' || !supabaseClient) return;
+    let map = {};
+    try { map = JSON.parse(lsGet(ENTRY_TAGS_KEY) || '{}'); } catch (_) { map = {}; }
+    const entries = Object.keys(map);
+    if (!entries.length) return;
+    // Сравниваем с облаком, чтобы не пушить уже синхронизированные теги.
+    let cloudTags = {};
+    try {
+        const { data } = await supabaseClient.rpc('get_my_soma_journal');
+        if (Array.isArray(data)) {
+            for (const r of data) { if (r && r.id) cloudTags[String(r.id)] = String(r.tag || ''); }
+        }
+    } catch (_) {}
+    for (const id of entries) {
+        const tag = map[id];
+        if (!tag) continue;
+        if (cloudTags[id] === String(tag)) continue; // уже совпадает
+        try {
+            await supabaseClient.rpc('set_soma_journal_tag', { p_id: id, p_tag: String(tag).slice(0, 32) });
+        } catch (_) {}
+    }
 }
 
 // Избранное для собственных записей: флаг синхронизируется в облако (journal.fav).

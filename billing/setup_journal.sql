@@ -85,8 +85,10 @@ grant delete on public.soma_journal to authenticated;
 -- ----------------------------------------------------------------------
 drop function if exists public.save_soma_journal_entry(text, text, text, text, integer, boolean);
 drop function if exists public.save_soma_journal_entry(text, text, text, text, integer, boolean, text);
+drop function if exists public.save_soma_journal_entry(text, text, text, text, integer, boolean, text, text);
 create or replace function public.save_soma_journal_entry(
-    p_id text, p_kind text, p_text text, p_date text, p_num integer, p_fav boolean, p_tag text
+    p_id text, p_kind text, p_text text, p_date text, p_num integer, p_fav boolean, p_tag text,
+    p_uid text default null
 )
 returns setof public.soma_journal
 language plpgsql
@@ -115,10 +117,21 @@ begin
         p_tag := substr(p_tag, 1, 32);
     end if;
 
-    -- Журнал привязан к профилю (player.uid) через привязку auth -> profile.
-    select b.profile_uid into v_profile
-      from soma_private.user_profile_bindings b
-     where b.auth_id = auth.uid();
+    -- Профиль: явный p_uid (с авто-привязкой сессии) или существующая привязка.
+    -- p_uid делает сохранение самодостаточным — не зависит от того, выполнилась
+    -- ли привязка в boot. Клиент передаёт player.uid.
+    if p_uid is not null and p_uid ~ '^u_[0-9a-f]{4,32}$' then
+        v_profile := p_uid;
+        insert into soma_private.user_profile_bindings (auth_id, profile_uid)
+        values (auth.uid(), p_uid)
+        on conflict (auth_id) do update
+            set profile_uid = excluded.profile_uid;
+    else
+        -- Журнал привязан к профилю (player.uid) через привязку auth -> profile.
+        select b.profile_uid into v_profile
+          from soma_private.user_profile_bindings b
+         where b.auth_id = auth.uid();
+    end if;
     if v_profile is null then
         raise exception 'Profile not bound';
     end if;
@@ -264,14 +277,14 @@ begin
 end;
 $$;
 
-revoke all on function public.save_soma_journal_entry(text, text, text, text, integer, boolean, text) from public;
+revoke all on function public.save_soma_journal_entry(text, text, text, text, integer, boolean, text, text) from public;
 revoke all on function public.get_my_soma_journal() from public;
 revoke all on function public.set_soma_journal_fav(text, boolean) from public;
 revoke all on function public.delete_soma_journal_entry(text) from public;
 revoke all on function public.next_soma_journal_num() from public;
 revoke all on function public.set_soma_journal_tag(text, text) from public;
 
-grant execute on function public.save_soma_journal_entry(text, text, text, text, integer, boolean, text) to authenticated;
+grant execute on function public.save_soma_journal_entry(text, text, text, text, integer, boolean, text, text) to authenticated;
 grant execute on function public.get_my_soma_journal() to authenticated;
 grant execute on function public.set_soma_journal_fav(text, boolean) to authenticated;
 grant execute on function public.delete_soma_journal_entry(text) to authenticated;

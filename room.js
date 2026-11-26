@@ -4255,7 +4255,8 @@ async function syncJournalEntriesToCloud() {
                 p_text: String(e.text || '').slice(0, 2000),
                 p_date: e.date || '',
                 p_num: num,
-                p_fav: !!e.fav
+                p_fav: !!e.fav,
+                p_uid: (typeof player !== 'undefined' && player && player.uid) ? player.uid : null
             });
             if (!error) {
                 // Облако приняло — закрепить правильный номер в локальном кэше.
@@ -4307,7 +4308,8 @@ function cloudSaveCassette(item) {
         p_date: item.date,
         p_num: item.num,
         p_fav: item.fav,
-        p_tag: null // кассетам тег не нужен
+        p_tag: null, // кассетам тег не нужен
+        p_uid: (typeof player !== 'undefined' && player && player.uid) ? player.uid : null
     }).then(({ error }) => {
         // Отметим synced-состояние в локальном кэше — гидратация использует это,
         // чтобы понять, какие локальные кассеты уже в облаке (и безопасно удалить
@@ -4540,7 +4542,8 @@ async function saveJournalEntry(id, text, dateLabel, tag) {
         const finalNum = maxNum + 1;
         const { error } = await supabaseClient.rpc('save_soma_journal_entry', {
             p_id: entryId, p_kind: 'entry', p_text: clean, p_date: entry.date, p_num: finalNum, p_fav: false,
-            p_tag: tag ? String(tag).slice(0, 32) : null
+            p_tag: tag ? String(tag).slice(0, 32) : null,
+            p_uid: (typeof player !== 'undefined' && player && player.uid) ? player.uid : null
         });
         if (error) {
             const why = error.message || error.code || 'ошибка';

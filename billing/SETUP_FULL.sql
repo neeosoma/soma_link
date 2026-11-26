@@ -605,6 +605,10 @@ create trigger trg_soma_whisper_ack_event
     for each row execute function public.record_soma_whisper_ack();
 
 -- Непрочитаные ack-события отправителя (независимо от статуса шёпота).
+-- Профильный фильтр: шёпот может быть отправлен одним сеансом профиля, а
+-- приложение сейчас работает с другим (анонимный сеанс пересоздан, кэш очищен).
+-- my_profile_auth_ids() возвращает ВСЕ auth-ID, привязанные к текущему профилю,
+-- поэтому ack за шёпот, отправленный другим сеансом профиля, всё равно доставляется.
 create or replace function public.my_soma_whisper_acks()
 returns table(id bigint, whisper_id text, day_key text, created_at timestamptz)
 language sql
@@ -614,10 +618,10 @@ set search_path = ''
 as $$
     select a.id, a.whisper_id, a.day_key, a.created_at
     from public.soma_whisper_acks a
-    where a.sender_auth_id = auth.uid()
+    where a.sender_auth_id = any(public.my_profile_auth_ids())
     and not exists (
         select 1 from public.soma_whisper_acks_read r
-        where r.ack_id = a.id and r.reader_auth_id = auth.uid()
+        where r.ack_id = a.id and r.reader_auth_id = any(public.my_profile_auth_ids())
     )
     order by a.created_at desc
     limit 20;

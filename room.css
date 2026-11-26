@@ -3947,6 +3947,34 @@ html.is-soma-fs-closing .app-h {
     transform: translateY(1px);
 }
 
+/* Кнопка переноса прогресса — под кнопкой кассеты, розовый акцент */
+.witness-progress-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin-top: 10px;
+    padding: 9px 16px;
+    background: linear-gradient(180deg, #1a080d 0%, #12060a 100%);
+    border: 1px solid rgba(255, 92, 112, 0.32);
+    color: #ffb8c2;
+    font: 10px 'Share Tech Mono', monospace;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    touch-action: manipulation;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+.witness-progress-btn:hover {
+    border-color: rgba(255, 110, 132, 0.72);
+    color: #ffe1e6;
+    box-shadow: 0 0 14px rgba(255, 77, 109, 0.18);
+}
+.witness-progress-btn:active {
+    transform: translateY(1px);
+}
+
 
 
 /* ===== Вкладка Оранжерея ===== */

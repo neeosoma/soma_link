@@ -10,6 +10,18 @@
 begin;
 
 -- ----------------------------------------------------------------------
+-- 0. Зависимость: привязка auth-сессии к профилю (player.uid)
+--    Журнал привязан к профилю через эту таблицу (см. author_profile_uid).
+--    В production создаётся SETUP_FULL.sql; здесь — защищённое создание, чтобы
+--    setup_journal.sql был самодостаточным.
+-- ----------------------------------------------------------------------
+create schema if not exists soma_private;
+create table if not exists soma_private.user_profile_bindings (
+    auth_id uuid primary key,
+    profile_uid text not null check (profile_uid ~ '^u_[0-9a-f]{4,32}$')
+);
+
+-- ----------------------------------------------------------------------
 -- 1. Таблица дневника игрока
 --    kind: 'cassette' — сохранённый вbound шёпот (кассета)
 --         'entry'    — собственная запись игрока (дневник / отправленный сигнал)
@@ -23,7 +35,11 @@ create table if not exists public.soma_journal (
     num integer not null default 0,
     fav boolean not null default false,
     created_at timestamptz not null default now(),
-    author_auth_id uuid not null default auth.uid()
+    author_auth_id uuid not null default auth.uid(),
+    -- Прогресс (винил + кассеты) следует за профилем (player.uid), а не за
+    -- сессией анонимной авторизации auth.uid() — чтобы перенос по коду переносил
+    -- и журнал. Бэкфилл для старых строк ниже.
+    author_profile_uid text
 );
 
 -- Удалить устаревшее 500-символьное ограничение (leftover от ранних миграций):
@@ -74,6 +90,8 @@ language plpgsql
 security definer
 set search_path = public, pg_temp
 as $$
+declare
+    v_profile text;
 begin
     if auth.uid() is null then
         raise exception 'Authentication required';
@@ -91,15 +109,23 @@ begin
         raise exception 'invalid_text: содержит запрещённую лексику';
     end if;
 
-    insert into public.soma_journal (id, kind, text, date_label, num, fav, author_auth_id)
-    values (p_id, p_kind, p_text, p_date, coalesce(p_num, 0), coalesce(p_fav, false), auth.uid())
+    -- Журнал привязан к профилю (player.uid) через привязку auth -> profile.
+    select b.profile_uid into v_profile
+      from soma_private.user_profile_bindings b
+     where b.auth_id = auth.uid();
+    if v_profile is null then
+        raise exception 'Profile not bound';
+    end if;
+
+    insert into public.soma_journal (id, kind, text, date_label, num, fav, author_auth_id, author_profile_uid)
+    values (p_id, p_kind, p_text, p_date, coalesce(p_num, 0), coalesce(p_fav, false), auth.uid(), v_profile)
     on conflict (id) do update
         set kind = excluded.kind,
             text = excluded.text,
             date_label = excluded.date_label,
             num = excluded.num,
             fav = excluded.fav
-        where public.soma_journal.author_auth_id = auth.uid();
+        where public.soma_journal.author_profile_uid = v_profile;
 
     return query select * from public.soma_journal where id = p_id;
 end;
@@ -118,7 +144,10 @@ set search_path = ''
 as $$
     select j.*
       from public.soma_journal j
-     where j.author_auth_id = auth.uid()
+     where j.author_profile_uid = (
+            select b.profile_uid
+              from soma_private.user_profile_bindings b
+             where b.auth_id = auth.uid())
      order by j.kind asc, j.num desc, j.created_at desc;
 $$;
 
@@ -138,7 +167,11 @@ begin
     end if;
     update public.soma_journal
        set fav = coalesce(p_fav, false)
-      where id = p_id and author_auth_id = auth.uid();
+      where id = p_id
+        and author_profile_uid = (
+            select b.profile_uid
+              from soma_private.user_profile_bindings b
+             where b.auth_id = auth.uid());
     return found;
 end;
 $$;
@@ -158,7 +191,11 @@ begin
         raise exception 'Authentication required';
     end if;
     delete from public.soma_journal
-      where id = p_id and author_auth_id = auth.uid();
+      where id = p_id
+        and author_profile_uid = (
+            select b.profile_uid
+              from soma_private.user_profile_bindings b
+             where b.auth_id = auth.uid());
     return found;
 end;
 $$;
@@ -177,8 +214,20 @@ set search_path = ''
 as $$
     select coalesce(max(num), 0) + 1
       from public.soma_journal
-     where author_auth_id = auth.uid() and kind = 'cassette';
+     where author_profile_uid = (
+            select b.profile_uid
+              from soma_private.user_profile_bindings b
+             where b.auth_id = auth.uid())
+       and kind = 'cassette';
 $$;
+
+-- Бэкфилл author_profile_uid для строк, созданных до этого изменения:
+-- журнал привязать к профилю через существующую привязку auth_id -> profile_uid.
+update public.soma_journal j
+   set author_profile_uid = b.profile_uid
+  from soma_private.user_profile_bindings b
+ where j.author_auth_id = b.auth_id
+   and j.author_profile_uid is null;
 
 revoke all on function public.save_soma_journal_entry(text, text, text, text, integer, boolean) from public;
 revoke all on function public.get_my_soma_journal() from public;

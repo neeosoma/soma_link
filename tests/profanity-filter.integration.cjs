@@ -17,6 +17,9 @@ const A = '11111111-1111-4111-8111-111111111111';
         await db.exec('grant insert on public.soma_posts to authenticated');
         await db.exec('grant insert on public.soma_whispers to authenticated');
         await db.exec('grant insert on public.soma_journal to authenticated');
+        // Журнал привязан к профилю (author_profile_uid). Подготавливаем привязку
+        // для пользователя A, чтобы save_soma_journal_entry работал как в проде.
+        await db.exec('insert into soma_private.user_profile_bindings (auth_id, profile_uid) values (\'' + A + '\', \'u_aaaaaaaaaaaaaaaa\')');
         const scalar = async q => { const r = (await db.query(q)).rows[0]; return r ? r[Object.keys(r)[0]] : undefined; };
         const asUser = async id => {
             await db.exec('reset role');

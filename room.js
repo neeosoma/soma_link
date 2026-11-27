@@ -10383,6 +10383,30 @@ function receiveIncomingWhisperLocal(whisperObj) {
     return item;
 }
 
+// Неблокирующее всплывающее уведомление (toast) об отклике кассеты. Сообщение
+// «ваш шёпот сохранили, вы согрели человека» доставляется в инбок пейджера, но
+// без toast оно было видно только при открытом пейджере — пользователь не видел
+// отклика. Toast появляется сам и исчезает через некоторое время.
+let somaAckToastTimer = null;
+function showAckToast(msg) {
+    try {
+        if (typeof document === 'undefined' || !document.createElement || !document.body) return;
+        let t = document.getElementById('soma-ack-toast');
+        if (!t) {
+            t = document.createElement('div');
+            t.id = 'soma-ack-toast';
+            t.className = 'soma-ack-toast';
+            document.body.appendChild(t);
+        }
+        t.textContent = msg;
+        t.classList.add('is-visible');
+        if (somaAckToastTimer) clearTimeout(somaAckToastTimer);
+        somaAckToastTimer = setTimeout(() => {
+            t.classList.remove('is-visible');
+        }, 7500);
+    } catch (_) {}
+}
+
 // Сообщение во входящие пейджера: человек принял ваш «Шёпот» и сохранил его себе на кассету.
 // Показывается каждый раз при сохранении — даже если дневной бонус тепла уже потрачен,
 // чтобы отклик не «пропадался» незаметно.
@@ -10411,6 +10435,8 @@ function receiveCassetteAckNotice(whisperId, grantedWarmth, ackEventId) {
     if (!existing.some(x => x.id === id)) {
         saveRawInboxWhispers([item, ...existing]);
         if (typeof playObjectTone === 'function') playObjectTone('pager');
+        // Всплывающее уведомление — без открытия пейджера пользователь видит отклик.
+        showAckToast(item.text);
     }
     if (typeof roomAnim !== 'undefined' && roomAnim && roomAnim.pagerModalOpen && typeof renderPagerModal === 'function') {
         renderPagerModal();

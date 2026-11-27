@@ -4869,3 +4869,37 @@ html.is-soma-fs-closing .app-h {
     background: rgba(20, 10, 13, 0.6);
     border: 1px solid rgba(120, 60, 72, 0.4);
 }
+
+/* Всплывающее уведомление об отклике кассеты (тоast): «ваш шёпот сохранили, вы согрели человека».
+   Неблокирующее — появляется сам и исчезает через 7.5 сек. */
+.soma-ack-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 18px;
+    transform: translate(-50%, 24px);
+    transform-origin: bottom center;
+    z-index: 9999;
+    max-width: min(92vw, 460px);
+    padding: 12px 18px;
+    border-radius: 14px;
+    color: #fff;
+    background: linear-gradient(135deg, rgba(255, 77, 94, 0.92), rgba(120, 50, 70, 0.92));
+    border: 1px solid rgba(255, 150, 160, 0.45);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+    font-size: 13px;
+    line-height: 1.4;
+    text-align: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease, transform 0.35s ease;
+    font-family: inherit;
+}
+.soma-ack-toast.is-visible {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+.soma-ack-toast::before {
+    content: '✦';
+    margin-right: 8px;
+    color: #ffd9e0;
+}

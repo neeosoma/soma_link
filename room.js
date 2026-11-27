@@ -4876,12 +4876,6 @@ function setupBatterySaver() {
 function isBatterySaver() {
     return _battery.saver;
 }
-// Идл-интервал фоновой перерисовки: при обычной работе ~10 fps (почти не видно на
-// статичной/медленной сцене), при энергосбережении ~5 fps. Активные анимации
-// (busy) остаются на полной частоте экрана.
-const IDLE_FRAME_MS = 100;
-const IDLE_FRAME_MS_LOW = 200;
-
 function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
 function smooth01(v) { const t = clamp01(v); return t * t * (3 - 2 * t); }
 function easeOutCubic(v) { const t = clamp01(v); return 1 - Math.pow(1 - t, 3); }
@@ -9262,17 +9256,16 @@ function stationLoop(now) {
         roomAnim.raf = null;
         return;
     }
-    // Полная частота экрана (60–120 fps) во время анимации лампы, кассеты и ночников для идеальной плавности!
+    // Полная частота экрана (60–120 fps) всегда — как до энергосбережения.
+    // Идл-троттл (10 fps / 5 fps) сделать анимацию вялой, поэтому комната
+    // рендерится каждый кадр. Энергосбережение остаётся только для polling
+    // (сетевой опрос), который не влияет на визуальную плавность.
     const busy = (now - roomAnim.lampStart < 5500)
         || (now - roomAnim.deckStart < 2950)
         || (now - roomAnim.nightLStart < 3600)
         || (now - roomAnim.nightRStart < 3600)
         || roomAnim.ripples.length > 0;
-    // При busy — каждый кадр (полная плавность). В идле — фоновая перерисовка
-    // замедлена до ~10 fps (а при энергосбережении ~5 fps): статичная/медленная
-    // сцена выглядит так же, но нагрузка на GPU/батарею сильно ниже.
-    const idleFrameMs = isBatterySaver() ? IDLE_FRAME_MS_LOW : IDLE_FRAME_MS;
-    if (busy || now - roomAnim.lastFrame >= idleFrameMs) {
+    {
         const stepWorld = (now - roomAnim.lastFrame) >= 28;
         if (stepWorld) roomAnim.lastFrame = now;
         drawStationFx(now, stepWorld);

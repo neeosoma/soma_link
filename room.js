@@ -4256,6 +4256,7 @@ async function syncJournalEntriesToCloud() {
                 p_date: e.date || '',
                 p_num: num,
                 p_fav: !!e.fav,
+                p_tag: e.tag ? String(e.tag).slice(0, 32) : null,
                 p_uid: (typeof player !== 'undefined' && player && player.uid) ? player.uid : null
             });
             if (!error) {

@@ -10997,6 +10997,71 @@ async function syncPagerWhispers() {
     renderFeedPager();
 }
 
+// ===== Realtime-доставка оповещений (без poll-задержки) =====
+// Подписки на INSERT-события soma_whispers (шёпот на наш пост) и
+// soma_whisper_acks (recipient сохранил шёпот на кассету). События приходят
+// сразу — без ожидания тика syncPagerWhispers (8 сек). Poll остаётся fallback
+// для событий, пропущенных при переподключении/перезагруке. Дедупликация
+// через handled-map и проверка по инбок-листу — realtime и poll не дублируют.
+let whisperRealtimeChannel = null;
+
+function setupWhisperRealtime() {
+    if (typeof supabaseClient === 'undefined' || !supabaseClient) return;
+    if (whisperRealtimeChannel) return;
+    try {
+        if (typeof supabaseClient.channel !== 'function') return;
+        whisperRealtimeChannel = supabaseClient.channel('soma-whisper-realtime', {
+            config: { broadcast: { self: false } }
+        });
+        // Шёпот на наш пост — сразу во входящие пейджера.
+        whisperRealtimeChannel
+            .on('postgres_changes', {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'soma_whispers'
+            }, (payload) => {
+                try {
+                    const row = payload && payload.new;
+                    if (!row || !row.id) return;
+                    // RLS отдаёт INSERT всем: отправителю (sender_auth_id = auth.uid())
+                    // и владельцу поста. Берём только шёпоты на НАШИ посты — остальные
+                    // (включая свои же, отправленные другим сеансом) игнорируем.
+                    const myPosts = getLocalMyPostIdsSafe();
+                    if (!myPosts.includes(String(row.post_id || ''))) return;
+                    receiveIncomingWhisperLocal({
+                        id: row.id,
+                        post_id: row.post_id,
+                        post_tag: row.post_tag,
+                        post_preview: row.post_preview,
+                        text: row.text,
+                        created_at: row.created_at
+                    });
+                } catch (_) {}
+            })
+            // Ack-событие: recipient сохранил наш шёпот на кассету — сразу отклик.
+            // RLS на soma_whisper_acks отдаёт INSERT только отправителю шёпота
+            // (sender_auth_id = любой auth-ID профиля), поэтому фильтр не нужен.
+            .on('postgres_changes', {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'soma_whisper_acks'
+            }, (payload) => {
+                try {
+                    const row = payload && payload.new;
+                    if (!row || !row.whisper_id) return;
+                    if (notifyCassetteAck(String(row.whisper_id), row.id)) {
+                        if (typeof renderRoom === 'function') {
+                            try { renderRoom(); } catch (_) {}
+                        }
+                    }
+                } catch (_) {}
+            })
+            .subscribe(() => {});
+    } catch (_) {
+        whisperRealtimeChannel = null;
+    }
+}
+
 function pressPagerScan() {
     if (isWhisperLive()) {
         const inbox = getPendingInboxWhispers();
@@ -12506,7 +12571,7 @@ const pagerApi = {
     claimWhisperCassetteAck, notifyCassetteAck, markCassetteAckLedger, getPendingInboxWhispers, receiveIncomingWhisperLocal, receiveCassetteAckNotice,
     markWhisperHandled,
     acceptIncomingWhisper, dismissIncomingWhisper, sendWhisperToPost, sendWhisperReply,
-    syncPagerWhispers, openPagerModal, closePagerModal, renderPagerModal,
+    syncPagerWhispers, setupWhisperRealtime, openPagerModal, closePagerModal, renderPagerModal,
     hydrateJournalFromCloud, saveJournalEntry, deleteCassette, loadDiaryArchive,
     playCassette, toggleCassetteFav, getEntryTag, isEntryFav, toggleEntryFav,
     isBatterySaver, setupBatterySaver

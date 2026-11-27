@@ -10975,15 +10975,22 @@ async function syncPagerWhispers() {
         //    при сохранении — клиент здесь только доставляет уведомление и отмечает
         //    ack-событие прочитанным (server-side read-tracking).
         const myUid = typeof player !== 'undefined' && player && player.uid;
+        let ackDelivered = false;
         if (myUid) {
             const { data: ackRows } = await supabaseClient.rpc('my_soma_whisper_acks');
             if (Array.isArray(ackRows) && ackRows.length) {
                 ackRows.forEach(r => {
                     if (r && r.whisper_id && r.id) {
-                        notifyCassetteAck(String(r.whisper_id), r.id);
+                        if (notifyCassetteAck(String(r.whisper_id), r.id)) ackDelivered = true;
                     }
                 });
             }
+        }
+        // Перекрасовываем комнату, когда пришёл отклик кассеты: счётчик «кассета 0/1 → 1/1»
+        // читается из ведомства в renderRoom — без этого перерисовки не было и счётчик
+        // оставался на старом значении, хотя отклик уже доставлен.
+        if (ackDelivered && typeof renderRoom === 'function') {
+            try { renderRoom(); } catch (_) {}
         }
     } catch (_) {}
     if (roomAnim.pagerModalOpen) renderPagerModal();
